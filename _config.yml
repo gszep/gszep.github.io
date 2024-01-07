@@ -7,13 +7,13 @@ url: ''
 baseurl: 
 
 # Title of the Site
-title: What A Theme
+title: Grisha // Portfolio
 # Description of the Site
-description: A customizable Jekyll portfolio theme
+description: Where deep learning, biology and creativity intersect
 # URL of Image of the Site
 site-image: /WhatATheme/assets/images/meta.jpg
 # Keywords of the Site
-site-keywords: Site, Template, Theme
+site-keywords: Deep learning, Biology, Software, Creativity
 # URL for the Image of custom Favicon
 favicon-url: 
 
@@ -22,32 +22,21 @@ heroimage: https://images.pexels.com/photos/220444/pexels-photo-220444.jpeg?auto
 
 # Social Media and Contact
 # If you don't want to use any icon, you can leave them blank.
-email: thedevslot@gmail.com
-facebook_username: thedevslot
-twitter_username: thedevslot
-instagram_username: thedevslot
-linkedin_username: thedevslot
-github_username:  thedevslot
-youtube_channel_id: UCk_93NXYP-U_AOB5GfWlOow
-reddit_username: /
-behance_username: /
-dribbble_username: /
-spotify_username: /
+email: grisha.szep@gmail.com
+linkedin_username: gszep
+github_username:  gszep
 
 # Google Analytics
-google-analytics: UA-163806439-1
-
-# Disqus
-disqus-shortname: thedevslot
+# google-analytics: UA-163806439-1
 
 # Name of the Author
-author-name: TheDevsLot
+author-name: Grisha Szep
 # URL for the Image of the Author
-author-image: https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_960_720.png
+author-image: ./assets/images/headshot.jpg
 # 60 Words About the Author
-author-about: Lorem ipsum dolor sit amet, consectetur adipiscing elit. Suspendisse eget pharetra velit, dapibus bibendum ex. Maecenas vitae laoreet mauris, ac luctus metus. Aliquam luctus velit vel ipsum feugiat, vel venenatis mauris hendrerit. Sed at vulputate sapien, eget vehicula dolor. Aliquam volutpat pulvinar neque sit amet sodales.
+author-about: I'm a researcher with a creative streak. I mainly work in biomedical and computational research groups within academia and software industry. I've worked with multi-omics datasets and love collaborating with experimental biologists. Reach out if you want to work on deep learning for biomedicine or have a cool project idea!
 # URL to the Author's Profile (i.e., Github, Twitter, Stackoverflow, etc)
-author-url: https://github.com/thedevslot
+author-url: https://github.com/gszep
 
 # SASS
 sass:
