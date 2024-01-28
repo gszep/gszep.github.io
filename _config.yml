@@ -34,7 +34,7 @@ author-name: Grisha Szep
 # URL for the Image of the Author
 author-image: ./assets/images/headshot.jpg
 # 60 Words About the Author
-author-about: I'm a researcher with a creative streak. I mainly work in biomedical and computational research groups within academia and software industry. I've worked with multi-omics datasets and love collaborating with experimental biologists. Reach out if you want to work on deep learning for biomedicine or have a cool project idea!
+author-about: Computational biology and deep learning with a creative streak.
 # URL to the Author's Profile (i.e., Github, Twitter, Stackoverflow, etc)
 author-url: https://github.com/gszep
 
