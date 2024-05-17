@@ -2,10 +2,10 @@
   image: /assets/images/pMHC.png
   link: /projects/designing-immune-receptors
   description: Using Blender to visualise AI-generated immune receptors.
-- name: Interactive Vector Fields
+- name: Interactive Dynamical Systems
   link:
   image: https://cdn.pixabay.com/photo/2015/01/09/11/08/startup-594090_960_720.jpg
-  description: Instant feeback between code and dynamical systems with Julia and Makie.jl.
+  description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 - name: Brutalism and Pencil Shaders
   link:
   image: https://cdn.pixabay.com/photo/2015/01/09/11/08/startup-594090_960_720.jpg
@@ -13,7 +13,7 @@
 - name: Exploring High-dimensional Point Clouds
   link:
   image: /assets/images/flowatlas.gif
-  description: How can we explore high-dimensional data? In biology, the need is growing.
+  description: Building high-dimensional exploration tools in OpenLayers and D3.js.
 - name: Microscopy and Machine Learning
   link:
   image: https://cdn.pixabay.com/photo/2016/06/25/12/55/art-1478831_960_720.jpg
