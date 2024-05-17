@@ -2,62 +2,40 @@
 title: Designing Immune Receptors
 layout: post
 post-image: /assets/images/pMHC.png
-description:
-  Jekyll is a static site generator. You give it text written in your favorite
-  markup language and it uses layouts to create a static website.
+description: The surfaces of white blood cells are covered in receptors that act as three-dimensional puzzle pieces that only match proteins that are not native to the body.
 tags:
-  - jekyll
-  - informative
-  - technology
+  - Blender
+  - PDB Files
+  - Geometry Nodes
 ---
 
-Jekyll is a simple, blog-aware, static site generator perfect for personal, project, or organization sites. Think of it like a file-based CMS, without all the complexity. Jekyll takes your content, renders Markdown and Liquid templates, and spits out a complete, static website ready to be served by Apache, Nginx or another web server. Jekyll is the engine behind GitHub Pages, which you can use to host sites right from your GitHub repositories and if you don't know what GitHub Pages are you can visit on click [here](https://help.github.com/en/github/working-with-github-pages/about-github-pages){:target="blank"} or [here](https://pages.github.com/){:target="blank"}
+### Signals of cancer can appear on the surface of tumor cells
 
-###### Source : [`Jekyll Docs`](https://jekyllrb.com/docs/)
+Healthy cells present fragments of their proteins, called peptides, on their surface. These peptides are held in place by molecules called MHC. When a cell aquires a mutation that causes it to behave like a tumor cell, there is a chance that the mutation in question gets presented by the MHC. When this happens, white blood cells have an opportunity to recognise the mutated peptide with the receptors on its surface.
 
-> ### To know more and get started with Jekyll you can click [here](https://jekyllrb.com/){:targe="\_blank"}
+<figure>
+  <img src="/assets/images/pmhc-2.png" width="128"/>
+  <img src="/assets/images/pmhc-3.png" width="128"/>
+  <img src="/assets/images/pmhc-4.png" width="128"/>
+  <img src="/assets/images/pmhc-5.png" width="128"/>
+  <figcaption>A mutation (black) appears in the peptide (white) presented by an MHC molecule (cyan)</figcaption>
+</figure>
 
-# Installation
+### Designing receptors that match the cancer signal, but not healthy cells, is hard
 
-**Jekyll is a Ruby Gem that can be installed on most systems.**
+- Explain how receptors work
+- Explain combinatoric complexity
 
-### Requirements
+<figure>
+  <img src="/assets/images/tcr-1.png" width="128"/>
+  <img src="/assets/images/tcr-2.png" width="128"/>
+  <img src="/assets/images/tcr-3.png" width="128"/>
+  <img src="/assets/images/tcr-4.png" width="128"/>
+  <figcaption>A white blood cell receptor (red) is generated with the help of AI to match the shape of the mutated peptide presented on the MHC</figcaption>
+</figure>
 
-- [Ruby](https://www.ruby-lang.org/en/downloads/){:target="\_blank"} version 2.5.0 or above, including all development headers (ruby version can be checked by running ruby -v)
-- [Ruby Gems](https://rubygems.org/pages/download){:target="\_blank"} (which you can check by running gem -v)
-- [GCC](https://gcc.gnu.org/install/){:target="\_blank"} and [Make](https://www.gnu.org/software/make/){:target="\_blank"}
+### Using Blender to Visualise the Combinatoric Complexity
 
-### After Installing the Requirements you can follow these guides:
-
-**For detailed install instructions have a look at the guide for your operating system.**
-
-- [macOS](https://jekyllrb.com/docs/installation/macos/){:target="\_blank"}
-- [Ubuntu](https://jekyllrb.com/docs/installation/ubuntu/){:target="\_blank"}
-- [Other Linux Distros](https://jekyllrb.com/docs/installation/other-linux/){:target="\_blank"}
-- [Windows](https://jekyllrb.com/docs/installation/windows/){:target="\_blank"}
-
-### Creating a new Jekyll site
-
-**We can create a new Jekyll site just by a simple command:**<br>
-
-> # `jekyll new my-site`
-
-Jekyll will create a new directory named as `my-site` which is customizable (i.e., you can change the name from `my-site` to anything you want for example `jekyll new brutus`).
-
-### Changing into the Directory
-
-**We have to go inside the directory:**<br>
-
-> # `cd my-site`
-
-Again, `my-site` is just a random name which is customizable.
-
-### Building the site and making it available on a local server
-
-> # `bundle exec jekyll serve`
-
-### Browsing your Jekyll site
-
-> # Browse to [`http://localhost:4000/`](http://localhost:4000/){:target="\_blank"}
-
-###### On encountering any problem while building and serving your Jekyll site you can consider visiting to the [troubleshooting](https://jekyllrb.com/docs/troubleshooting/#configuration-problems){:target="\_blank"} page
+- Explain PDB file format
+- How do I design an AI to generate them?
+- Use molecular nodes https://bradyajohnston.github.io/MolecularNodes/
