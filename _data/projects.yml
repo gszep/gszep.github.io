@@ -3,8 +3,8 @@
   link: /projects/designing-immune-receptors
   description: Using Blender to visualise AI-generated immune receptors.
 - name: Interactive Dynamical Systems
-  link:
-  image: https://cdn.pixabay.com/photo/2015/01/09/11/08/startup-594090_960_720.jpg
+  link: /projects/interactive-dynamical-systems
+  image: /assets/images/limit-cycle.gif
   description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 - name: Brutalism and Pencil Shaders
   link:
