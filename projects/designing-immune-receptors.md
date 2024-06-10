@@ -25,7 +25,7 @@ Healthy cells present fragments of their proteins, called peptides, on their sur
 
 Finding white blood cell receptors that bind to the mutated peptide and not the healthy variant is difficult because often there is only one amino acid difference between healthy and cancerous. If cells bind the heathly variant there is a risk that they will attack healthy cells, generating an auto-immune response.
 
-This is where AI can be used to navigate the search space of the white blood cell receptor sequences ( [L. Cornwall, G. Szep et al. 2023](https://openreview.net/forum?id=YOGss3XXp0)). By training models to predict which amino acids best the surface of the MHC, we can restrict the search space for amino acid sequences in the loop regions of the receptor that are responsible for recogising diseased cells.
+This is where AI can be used to navigate the search space of the white blood cell receptor sequences ([L. Cornwall, G. Szep et al. 2023](https://openreview.net/forum?id=YOGss3XXp0)). By training models to predict which amino acids best the surface of the MHC, we can restrict the search space for amino acid sequences in the loop regions of the receptor that are responsible for recogising diseased cells.
 
 <figure>
   <img src="/assets/images/tcr-1.png" width="128"/>
