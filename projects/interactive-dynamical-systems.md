@@ -29,7 +29,7 @@ A bit of text describing what we are seeing
   <figcaption>Painting initial conditions with your mouse, changing paramters with sliders.</figcaption>
 </figure>
 
-Code to run the web app is available on GitHub: https://github.com/gszep/reaction-diffusion
+Code to run the web app is [available on GitHub](https://github.com/gszep/reaction-diffusion)
 
 ### References
 
@@ -37,4 +37,4 @@ G. Szep. 2022. Inferring bifurcations between phenotypes. Thesis
 
 P.K. Grant, G. Szep et al. 2020. Interpretation of morphogen gradients by a synthetic bistable circuit. Nature communications 11 (1), 5545
 
-G. Szep. 2020. Reaction-diffusion in two spatial dimensions. 
+G. Szep. 2020. Reaction-diffusion in two spatial dimensions.

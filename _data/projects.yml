@@ -8,13 +8,13 @@
   description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 - name: Brutalism and Pencil Shaders
   link:
-  image: https://cdn.pixabay.com/photo/2015/01/09/11/08/startup-594090_960_720.jpg
+  image:
   description: An experiment in pencil shaders in a brutalist environments in Unity.
 - name: Exploring High-dimensional Point Clouds
-  link:
+  link: /projects/exploring-high-dimensional-point-clouds
   image: /assets/images/flowatlas.gif
   description: Building high-dimensional exploration tools in OpenLayers and D3.js.
-- name: Microscopy and Machine Learning
+- name: Signal Processing in Microscopy
   link:
-  image: https://cdn.pixabay.com/photo/2016/06/25/12/55/art-1478831_960_720.jpg
-  description: From image to math - machine learning to extract useful representations.
+  image:
+  description: From image to math - machine learning to extract sparse representations.
