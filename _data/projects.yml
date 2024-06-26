@@ -8,7 +8,7 @@
   description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 - name: Brutalism and Pencil Compute Shaders
   link: /projects/brutalism-and-pencil-shaders
-  image: /assets/images/pencil-shader.gif
+  image: /assets/images/pencil-shader-thumbnail.gif
   description: An experiment in pencil shaders in HLSL painting brutalism in Unity.
 - name: Exploring High-dimensional Point Clouds
   link: /projects/exploring-high-dimensional-point-clouds
