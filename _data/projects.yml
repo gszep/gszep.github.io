@@ -2,10 +2,6 @@
   image: /assets/images/pMHC.png
   link: /projects/designing-immune-receptors
   description: Using Blender to visualise AI-generated immune receptors.
-- name: Interactive Dynamical Systems
-  link: /projects/interactive-dynamical-systems
-  image: /assets/images/limit-cycle-thumbnail.gif
-  description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 - name: Brutalism and Pencil Compute Shaders
   link: /projects/brutalism-and-pencil-shaders
   image: /assets/images/pencil-shader-thumbnail.gif
@@ -14,6 +10,10 @@
   link: /projects/exploring-high-dimensional-point-clouds
   image: /assets/images/flowatlas-thumbnail.gif
   description: Building high-dimensional exploration tools in OpenLayers and D3.js.
+- name: Interactive Dynamical Systems
+  link: /projects/interactive-dynamical-systems
+  image: /assets/images/limit-cycle-thumbnail.gif
+  description: Instant feeback between code and result with Julia, Makie.jl, Python and WebGL.
 # - name: Signal Processing in Microscopy
 # link: /projects/signal-processing-in-microscopy
 # image: /assets/images/microscopy.gif
