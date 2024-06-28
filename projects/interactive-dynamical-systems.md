@@ -26,7 +26,7 @@ Suppose we have a set of parameters that we would like to see the effect of, on 
 
 <figure>
   <img src="/assets/images/double-exclusive-reporter.gif"/>
-  <figcaption>Painting initial conditions with your mouse, changing paramters with sliders.</figcaption>
+  <figcaption>Painting initial conditions with your mouse, changing parameters with sliders.</figcaption>
 </figure>
 
 Code to run the web app is [available on GitHub](https://github.com/gszep/reaction-diffusion)

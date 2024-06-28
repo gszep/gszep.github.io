@@ -9,7 +9,7 @@ tags:
   - C#
 ---
 
-### Walking through a penicl drawing of a brutalist building
+### Walking through a pencil drawing of a brutalist building
 
 I would like to create a walking simulation of what it would be like to explore a pencil drawing of a brutalist building. Below is an example of the style I am aiming for.
 
@@ -27,7 +27,7 @@ As the player walks through the environment, the style of the pencil strokes and
 
 ### How do pencil strokes look as a shader?
 
-We take inspiration from [Slime mold simulations](https://www.youtube.com/watch?v=X-iSQQgOd1A) and use compute shaders to define the update rules for the position and velocity of each pencil. In our case, instead of having the pencil react to each other, as the slime mold does, the penicls will be a post-processing effect in a rendering pipeline.
+We take inspiration from [slime mold simulations](https://www.youtube.com/watch?v=X-iSQQgOd1A) and use compute shaders to define the update rules for the position and velocity of each pencil. In our case, instead of having the pencil react to each other, as the slime mold does, the pencils will be a post-processing effect in a rendering pipeline.
 
 <figure>
   <img src="/assets/images/color-pencil.gif"/>
