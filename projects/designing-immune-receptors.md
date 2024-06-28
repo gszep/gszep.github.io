@@ -9,9 +9,9 @@ tags:
   - Geometry Nodes
 ---
 
-### Signals of cancer can appear on the surface of tumor cells
+### Signals of cancer can appear on the surface of tumour cells
 
-Healthy cells present fragments of their proteins, called peptides, on their surface. These peptides are held in place by molecules called MHC. When a cell aquires a mutation that causes it to behave like a tumor cell, there is a chance that the mutation in question gets presented by the MHC. When this happens, white blood cells have an opportunity to recognise the mutated peptide with the receptors on its surface.
+Healthy cells present fragments of their proteins, called peptides, on their surface. These peptides are held in place by molecules called MHC. When a cell acquires a mutation that causes it to behave like a tumour cell, there is a chance that the mutation in question gets presented by the MHC. When this happens, white blood cells have an opportunity to recognise the mutated peptide with the receptors on its surface.
 
 <figure>
   <img src="/assets/images/pmhc-2.png" width="128"/>
@@ -23,9 +23,9 @@ Healthy cells present fragments of their proteins, called peptides, on their sur
 
 ### Designing receptors that match the cancer signal, but not healthy cells, is hard
 
-Finding white blood cell receptors that bind to the mutated peptide and not the healthy variant is difficult because often there is only one amino acid difference between healthy and cancerous. If cells bind the heathly variant there is a risk that they will attack healthy cells, generating an auto-immune response.
+Finding white blood cell receptors that bind to the mutated peptide and not the healthy variant is difficult because often there is only one amino acid difference between healthy and cancerous. If cells bind the healthy variant there is a risk that they will attack healthy cells, generating an auto-immune response.
 
-This is where AI can be used to navigate the search space of the white blood cell receptor sequences ([L. Cornwall, G. Szep et al. 2023](https://openreview.net/forum?id=YOGss3XXp0)). By training models to predict which amino acids best the surface of the MHC, we can restrict the search space for amino acid sequences in the loop regions of the receptor that are responsible for recogising diseased cells.
+This is where AI can be used to navigate the search space of the white blood cell receptor sequences ([L. Cornwall, G. Szep et al. 2023](https://openreview.net/forum?id=YOGss3XXp0)). By training models to predict which amino acids best the surface of the MHC, we can restrict the search space for amino acid sequences in the loop regions of the receptor that are responsible for recognising diseased cells.
 
 <figure>
   <img src="/assets/images/tcr-1.png" width="128"/>
