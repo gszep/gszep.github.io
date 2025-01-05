@@ -1,3 +1,7 @@
+- name: Fault<br>Tolerance<br>Exhibition
+  link: /projects/fault-tolerance
+  image: /assets/images/fault-tolerance.gif
+  description: An exhibition exploring failures in software, hardware and wetware.
 - name: Designing Immune Receptors
   image: /assets/images/pMHC.png
   link: /projects/designing-immune-receptors

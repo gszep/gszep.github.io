@@ -2,9 +2,6 @@
 # Created by https://www.toptal.com/developers/gitignore/api/jekyll,ruby
 # Edit at https://www.toptal.com/developers/gitignore?templates=jekyll,ruby
 
-### Julia ###
-assets/julia/Manifest.toml
-
 ## VS Code ##
 .vscode/
 
