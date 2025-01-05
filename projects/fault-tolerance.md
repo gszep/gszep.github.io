@@ -16,7 +16,7 @@ The exhibition **Fault Tolerance** explores artistic outlets that use data from 
 
 <figure>
   <img src="/assets/images/coils.png"/>
-  <figcaption>Magnification 5x: A bunch of aluminium coils coming undone. <a href="https://www.instagram.com/disaster_chemistry/">@disaster_chemistry</a></figcaption>
+  <figcaption>Collapsed aluminum rings: Light and electron microscopy visible at 1/100cm <a href="https://www.instagram.com/disaster_chemistry/">@disaster_chemistry</a></figcaption>
 </figure>
 
 <figure>
