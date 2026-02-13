@@ -1,0 +1,47 @@
+name: Sync staging to deploy repo
+
+on:
+  push:
+    branches: [staging]
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout staging branch
+        uses: actions/checkout@v4
+        with:
+          ref: staging
+          fetch-depth: 0
+
+      - name: Prepare deploy content
+        run: |
+          # Set staging CNAME
+          echo "staging.gszep.com" > CNAME
+
+          # Remove bot infrastructure (not needed in deploy repo)
+          rm -rf slack-bot/ .amplifier/
+          rm -f CLAUDE.md
+
+          # Remove this sync workflow (deploy repo doesn't need it)
+          rm -f .github/workflows/sync-staging.yml
+
+      - name: Set up SSH deploy key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_DEPLOY_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan github.com >> ~/.ssh/known_hosts
+
+      - name: Push to staging deploy repo
+        env:
+          GIT_SSH_COMMAND: "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Sync from upstream staging ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git push --force \
+            git@github.com:gszep/staging-gszep-github-io.git \
+            HEAD:main

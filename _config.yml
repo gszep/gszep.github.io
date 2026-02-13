@@ -2,7 +2,7 @@
 markdown: kramdown
 
 # URL of the Site
-url: ""
+url: "https://gszep.com"
 # Base URL of the Site (i.e., Name of the Repository in which the Site is hosted)
 baseurl:
 
@@ -11,7 +11,7 @@ title: Grisha // Portfolio
 # Description of the Site
 description: Where deep learning, biology and creativity intersect
 # URL of Image of the Site
-site-image: /WhatATheme/assets/images/meta.jpg
+site-image: /assets/images/meta.jpg
 # Keywords of the Site
 site-keywords: Deep learning, Biology, Software, Creativity
 # URL for the Image of custom Favicon
@@ -82,3 +82,5 @@ exclude:
   - vendor/cache/
   - vendor/gems/
   - vendor/ruby/
+  - slack-bot/
+  - CLAUDE.md
