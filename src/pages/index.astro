@@ -17,11 +17,12 @@ projects.sort((a, b) => a.data.order - b.data.order);
 
   <!-- Hero -->
   <section
-    class="min-h-screen flex items-center justify-center text-center bg-cover bg-center"
+    class="min-h-screen flex items-center justify-center text-center bg-cover bg-center relative"
     style={`background-image: url(${site.heroImage})`}
     id="hero"
   >
-    <div class="px-4">
+    <div class="absolute inset-0 bg-black/75"></div>
+    <div class="px-4 relative z-10">
       <h1 class="text-5xl md:text-7xl font-bold uppercase tracking-wide text-white">
         {site.title}
       </h1>
@@ -49,7 +50,7 @@ projects.sort((a, b) => a.data.order - b.data.order);
       <p class="text-center text-gray-500 uppercase tracking-wide font-medium mb-12">
         Creative
       </p>
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 justify-items-center">
         {projects.map((project) => (
           <ProjectCard
             title={project.data.title}
