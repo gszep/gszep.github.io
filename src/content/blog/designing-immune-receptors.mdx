@@ -1,0 +1,54 @@
+---
+title: "Designing Immune Receptors"
+description: "The surfaces of white blood cells are covered in receptors that act as three-dimensional puzzle pieces that only match proteins that are not native to the body."
+date: 2023-11-01
+image: "/images/pMHC.png"
+order: 2
+---
+
+### Signals of cancer can appear on the surface of tumour cells
+
+Healthy cells present fragments of their proteins, called peptides, on their surface. These peptides are held in place by molecules called MHC. When a cell acquires a mutation that causes it to behave like a tumour cell, there is a chance that the mutation in question gets presented by the MHC. When this happens, white blood cells have an opportunity to recognise the mutated peptide with the receptors on its surface.
+
+<figure>
+  <img src="/images/pmhc-2.png" width="128" alt="pMHC variant 2" />
+  <img src="/images/pmhc-3.png" width="128" alt="pMHC variant 3" />
+  <img src="/images/pmhc-4.png" width="128" alt="pMHC variant 4" />
+  <img src="/images/pmhc-5.png" width="128" alt="pMHC variant 5" />
+  <figcaption>A mutation (black) appears in the peptide (white) presented by an MHC molecule (cyan)</figcaption>
+</figure>
+
+### Designing receptors that match the cancer signal, but not healthy cells, is hard
+
+Finding white blood cell receptors that bind to the mutated peptide and not the healthy variant is difficult because often there is only one amino acid difference between healthy and cancerous. If cells bind the healthy variant there is a risk that they will attack healthy cells, generating an auto-immune response.
+
+This is where AI can be used to navigate the search space of the white blood cell receptor sequences ([L. Cornwall, G. Szep et al. 2023](https://openreview.net/forum?id=YOGss3XXp0)). By training models to predict which amino acids best the surface of the MHC, we can restrict the search space for amino acid sequences in the loop regions of the receptor that are responsible for recognising diseased cells.
+
+<figure>
+  <img src="/images/tcr-1.png" width="128" alt="TCR variant 1" />
+  <img src="/images/tcr-2.png" width="128" alt="TCR variant 2" />
+  <img src="/images/tcr-3.png" width="128" alt="TCR variant 3" />
+  <img src="/images/tcr-4.png" width="128" alt="TCR variant 4" />
+  <figcaption>A white blood cell receptor (red) is generated with the help of AI to match the shape of the mutated peptide presented on the MHC</figcaption>
+</figure>
+
+### Using Blender to Visualise the Combinatoric Complexity
+
+The generative model produces [PDB Files](https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html) that look like this
+
+```
+ATOM      1  N   GLY A   1     -17.507  12.508  39.735  1.00 56.47           N
+ATOM      2  CA  GLY A   1     -16.155  12.561  40.353  1.00 60.73           C
+ATOM      3  C   GLY A   1     -15.103  12.063  39.385  1.00 59.90           C
+ATOM      4  O   GLY A   1     -15.449  11.565  38.306  1.00 61.33           O
+ATOM      5  N   SER A   2     -13.833  12.192  39.769  1.00 56.73           N
+...
+```
+
+Each line contains the coordinates of an atom, which species it is, and which chain and amino acid it belongs to. It is possible to import these files into Blender using the amazing [Molecular Nodes](https://bradyajohnston.github.io/MolecularNodes/) add-on. This add-on allows you to use Geometry Nodes to render desired properties using any of the information available in the PDB file.
+
+### References
+
+L. Cornwall, G. Szep et al. 2023. NeurIPS Generative AI & Biology Workshop. Fine-tuned protein language models capture T cell receptor stochasticity
+
+B.A. Johnston. 2024. MolecularNodes. zenodo.org/records/11483365

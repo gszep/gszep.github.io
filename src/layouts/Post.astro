@@ -1,0 +1,49 @@
+---
+import Base from './Base.astro';
+import Nav from '../components/ui/Nav.astro';
+import Footer from '../components/ui/Footer.astro';
+import '../styles/post.css';
+
+interface Props {
+  title: string;
+  date: Date;
+  description: string;
+  tags?: string[];
+  hero?: string;
+}
+
+const { title, date, description, tags = [], hero } = Astro.props;
+const formattedDate = date.toLocaleDateString('en-US', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<Base title={title} description={description}>
+  <Nav />
+  <article class="post">
+    {hero && (
+      <div class="post-hero">
+        <img src={hero} alt={title} class="w-full h-64 object-cover" />
+      </div>
+    )}
+    <header class="l-body pt-24 pb-8">
+      <h1 class="text-4xl font-bold text-white mb-4">{title}</h1>
+      <div class="flex items-center gap-4 text-gray-400 text-sm">
+        <time datetime={date.toISOString()}>{formattedDate}</time>
+        {tags.length > 0 && (
+          <div class="flex gap-2">
+            {tags.map((tag) => (
+              <span class="bg-gray-800 px-2 py-1 rounded text-xs">{tag}</span>
+            ))}
+          </div>
+        )}
+      </div>
+    </header>
+    <div class="post-content l-body">
+      <slot />
+    </div>
+  </article>
+  <Footer />
+</Base>

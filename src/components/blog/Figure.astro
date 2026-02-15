@@ -1,0 +1,25 @@
+---
+interface Props {
+  src: string;
+  alt: string;
+  caption?: string;
+  width?: 'body' | 'page' | 'screen';
+}
+
+const { src, alt, caption, width = 'body' } = Astro.props;
+
+const widthClass = {
+  body: 'l-body',
+  page: 'l-page',
+  screen: 'l-screen',
+}[width];
+---
+
+<figure class:list={[widthClass, 'my-8']}>
+  <img src={src} alt={alt} class="w-full rounded-lg" loading="lazy" />
+  {caption && (
+    <figcaption class="text-center text-gray-500 text-sm mt-2">
+      {caption}
+    </figcaption>
+  )}
+</figure>

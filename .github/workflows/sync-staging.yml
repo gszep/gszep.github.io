@@ -15,17 +15,24 @@ jobs:
           ref: staging
           fetch-depth: 0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build Astro site
+        run: npm run build
+
       - name: Prepare deploy content
         run: |
+          # Disable Jekyll so _astro/ directory is served
+          touch dist/.nojekyll
           # Set staging CNAME
-          echo "staging.gszep.com" > CNAME
-
-          # Remove bot infrastructure (not needed in deploy repo)
-          rm -rf slack-bot/ .amplifier/
-          rm -f CLAUDE.md
-
-          # Remove this sync workflow (deploy repo doesn't need it)
-          rm -f .github/workflows/sync-staging.yml
+          echo "staging.gszep.com" > dist/CNAME
 
       - name: Set up SSH deploy key
         run: |
@@ -38,10 +45,12 @@ jobs:
         env:
           GIT_SSH_COMMAND: "ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no"
         run: |
+          cd dist
+          git init
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add -A
-          git commit -m "Sync from upstream staging ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
+          git commit -m "Deploy from upstream staging ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
           git push --force \
             git@github.com:gszep/staging.gszep.github.io.git \
             HEAD:main

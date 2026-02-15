@@ -1,0 +1,81 @@
+---
+import Base from '../layouts/Base.astro';
+import Nav from '../components/ui/Nav.astro';
+import Footer from '../components/ui/Footer.astro';
+import ProjectCard from '../components/ui/ProjectCard.astro';
+import CitationCard from '../components/ui/CitationCard.astro';
+import site from '../data/site.json';
+import citations from '../data/citations.json';
+import { getCollection } from 'astro:content';
+
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+posts.sort((a, b) => a.data.order - b.data.order);
+---
+
+<Base>
+  <Nav />
+
+  <!-- Hero -->
+  <section
+    class="min-h-screen flex items-center justify-center text-center bg-cover bg-center relative"
+    style={`background-image: url(${site.heroImage})`}
+    id="hero"
+  >
+    <div class="absolute inset-0 bg-black/75"></div>
+    <div class="px-4 relative z-10">
+      <h1 class="font-bold uppercase tracking-wide text-white" style="font-size: 3rem;">
+        {site.title}
+      </h1>
+      <p class="text-gray-200 uppercase tracking-wide mt-4 text-lg">
+        {site.description}
+      </p>
+      <hr class="border-white my-6 mx-auto" style="width: 90vw;" />
+      <div class="flex flex-wrap justify-center gap-2">
+        {site.tags.map((tag) => (
+          <span class="bg-gray-600 text-white text-sm px-3 py-1 rounded">{tag}</span>
+        ))}
+      </div>
+      <a
+        href="#blog"
+        class="inline-block mt-8 border border-white text-white px-6 py-2 rounded-full uppercase text-sm hover:bg-white hover:text-black transition-colors"
+      >
+        Scroll Down // Read More
+      </a>
+    </div>
+  </section>
+
+  <!-- Blog -->
+  <section class="bg-gray-100 py-16" id="blog">
+    <div class="max-w-6xl mx-auto px-4">
+      <p class="text-center text-gray-500 uppercase font-medium mb-12" style="letter-spacing: 0.25rem; font-size: 1.25rem;">
+        Blog
+      </p>
+      <div class="flex flex-wrap justify-center gap-4">
+        {posts.map((post) => (
+          <ProjectCard
+            title={post.data.title}
+            description={post.data.description}
+            image={post.data.image || ''}
+            href={`/blog/${post.slug}`}
+          />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Publications -->
+  <section class="bg-black py-16" id="publications">
+    <div class="max-w-4xl mx-auto px-4">
+      <p class="text-center text-gray-500 uppercase font-medium mb-12" style="letter-spacing: 0.25rem; font-size: 1.25rem;">
+        Publications
+      </p>
+      <div class="space-y-4">
+        {citations.map((cite) => (
+          <CitationCard {...cite} />
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <Footer />
+</Base>

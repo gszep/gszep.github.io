@@ -1,0 +1,17 @@
+---
+interface Props {
+  lang?: string;
+  title?: string;
+}
+
+const { lang = '', title } = Astro.props;
+---
+
+<div class="code-block my-6">
+  {title && (
+    <div class="bg-gray-800 text-gray-400 text-xs px-4 py-2 rounded-t-lg font-mono">
+      {title}
+    </div>
+  )}
+  <pre class:list={[title ? 'rounded-t-none' : '', `language-${lang}`]}><code><slot /></code></pre>
+</div>

@@ -1,0 +1,93 @@
+[
+  {
+    "authors": "Caballero-Mancebo, Silvia; Shinde, Rushikesh; Bolger-Munro, Madison; Peruzzo, Matilda; Szep, Gregory; Steccari, Irene; Labrousse-Arias, David; Zheden, Vanessa; Merrin, Jack; Callan-Jones, Andrew",
+    "title": "Friction forces determine cytoplasmic reorganization and shape changes of ascidian oocytes upon fertilization",
+    "publication": "Nature Physics",
+    "year": 2024,
+    "pages": "1-12",
+    "publisher": "Nature Publishing Group UK London"
+  },
+  {
+    "authors": "Coppard, Valerie; Szep, Grisha; Georgieva, Zoya; Howlett, Sarah K; Jarvis, Lorna B; Rainbow, Daniel B; Suchanek, Ondrej; Needham, Edward J; Mousa, Hani S; Menon, David K",
+    "title": "FlowAtlas.jl: an interactive tool bridging FlowJo with computational tools in Julia",
+    "publication": "Frontiers in Immunology",
+    "volume": "15",
+    "year": 2024,
+    "pages": "1664-3224"
+  },
+  {
+    "authors": "Cornwall, Lewis; Szep, Grisha; Day, James; Krishnan, SR Gokul; Carter, David; Blundell, Jamie; Wollman, Lilly; Dalchau, Neil; Sim, Aaron",
+    "title": "Fine-tuned protein language models capture T cell receptor stochasticity",
+    "publication": "NeurIPS 2023 Generative AI and Biology (GenBio) Workshop",
+    "year": 2023
+  },
+  {
+    "authors": "Trioni, Andrea; Peruzzo, Matilda; Hassani Bijarbooneh, Farid; Szep, Grisha; Redchenko, Elena; Zemlicka, Martin; Fink, Johannes",
+    "title": "Geometric Superinductance Qubits: Controlling Phase Delocalization across a Single Josephson Junction",
+    "publication": "APS March Meeting Abstracts",
+    "year": 2022,
+    "pages": "M41.011"
+  },
+  {
+    "authors": "Szep, Grisha",
+    "title": "Inferring Bifurcations between Phenotypes",
+    "publication": "PhD Thesis",
+    "year": 2022,
+    "publisher": "King's College London"
+  },
+  {
+    "authors": "Peruzzo, Matilda; Hassani, Farid; Szep, Gregory; Trioni, Andrea; Redchenko, Elena; Zemli\u010dka, Martin; Fink, Johannes M",
+    "title": "Geometric superinductance qubits: Controlling phase delocalization across a single Josephson junction",
+    "publication": "PRX Quantum",
+    "volume": "2",
+    "number": "4",
+    "pages": "040341",
+    "year": 2021,
+    "publisher": "APS"
+  },
+  {
+    "authors": "Szep, Gregory; Dalchau, Neil; Csik\u00e1sz-Nagy, Attila",
+    "title": "Parameter inference with bifurcation diagrams",
+    "publication": "Advances in Neural Information Processing Systems",
+    "volume": "34",
+    "pages": "5620-5630",
+    "year": 2021
+  },
+  {
+    "authors": "Grant, Paul K; Szep, Gregory; Patange, Om; Halatek, Jacob; Coppard, Valerie; Csik\u00e1sz-Nagy, Attila; Haseloff, Jim; Locke, James CW; Dalchau, Neil; Phillips, Andrew",
+    "title": "Interpretation of morphogen gradients by a synthetic bistable circuit",
+    "publication": "Nature communications",
+    "volume": "11",
+    "number": "1",
+    "pages": "5545",
+    "year": 2020,
+    "publisher": "Nature Publishing Group UK London"
+  },
+  {
+    "authors": "Dalchau, Neil; Sz\u00e9p, Gregory; Hernansaiz-Ballesteros, Rosa; Barnes, Chris P; Cardelli, Luca; Phillips, Andrew; Csik\u00e1sz-Nagy, Attila",
+    "title": "Computing with biological switches and clocks",
+    "publication": "Natural computing",
+    "volume": "17",
+    "number": "4",
+    "pages": "761-779",
+    "year": 2018,
+    "publisher": "Springer Netherlands Dordrecht"
+  },
+  {
+    "authors": "Mueller, Jan; Szep, Gregory; Nemethova, Maria; De Vries, Ingrid; Lieber, Arnon D; Winkler, Christoph; Kruse, Karsten; Small, J Victor; Schmeiser, Christian; Keren, Kinneret",
+    "title": "Load adaptation of lamellipodial actin networks",
+    "publication": "Cell",
+    "volume": "171",
+    "number": "1",
+    "pages": "188-200.e16",
+    "year": 2017,
+    "publisher": "Elsevier"
+  },
+  {
+    "authors": "Szep, Grisha",
+    "title": "Angular dependence of molecular current-voltage characteristics",
+    "publication": "MSci Thesis",
+    "year": 2015,
+    "publisher": "King's College London"
+  }
+]

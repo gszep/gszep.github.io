@@ -1,14 +1,22 @@
 # Personal Portfolio Website
 
-This website is managed by Claude Code via a Slack bot. See `CLAUDE.md` at the repo
-root for the full project context, workflow, and rules.
+Astro 5 static site with MDX content, Tailwind CSS, and optional React islands.
+See `CLAUDE.md` at the repo root for the full project context, workflow, and rules.
 
 The Slack bot (`slack-bot/`) bridges a Slack channel to Claude Code sessions.
 Messages are posted in Slack, Claude edits the repo and pushes to the
-`staging` branch. A GitHub Action syncs staging to a deploy repo at
+`staging` branch. A GitHub Action builds the Astro site and syncs to a deploy repo at
 https://staging.gszep.com. The `/approve` command creates and merges a PR
 from `staging` to `main`; production deploys automatically.
 
 Always commit and push to staging after finishing edits. Never leave uncommitted work.
 
 If you are working in this repo via Amplifier, follow the same rules as in `CLAUDE.md`.
+
+## Quick Reference
+
+- **Build**: `npm run build` (output to `dist/`)
+- **Dev**: `npm run dev` (localhost:4321)
+- **Content**: `src/content/blog/*.mdx` (unified collection -- no separate projects)
+- **Images**: `public/images/` (referenced as `/images/filename.ext`)
+- **Site data**: `src/data/site.json` and `src/data/citations.json`

@@ -1,0 +1,42 @@
+---
+interface Props {
+  authors: string;
+  title: string;
+  publication: string;
+  year: number;
+  volume?: string;
+  number?: string;
+  pages?: string;
+}
+
+const { authors, title, publication, year, volume, number, pages } = Astro.props;
+
+// Format authors: "Last, First; Last, First" -> "Last, F., Last, F., ..."
+function formatAuthors(raw: string): string {
+  return raw
+    .split(';')
+    .map((name) => name.trim())
+    .filter(Boolean)
+    .map((name) => {
+      const parts = name.split(',').map((p) => p.trim());
+      if (parts.length >= 2) {
+        const initial = parts[1].charAt(0);
+        return `${parts[0]}, ${initial}.`;
+      }
+      return name;
+    })
+    .join(', ');
+}
+
+const formattedAuthors = formatAuthors(authors);
+const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(title)}`;
+---
+
+<div class="text-gray-400 text-sm leading-relaxed">
+  {formattedAuthors}
+  ({year}).
+  <a href={searchUrl} class="text-white hover:underline" target="_blank" rel="noopener noreferrer">
+    {title}
+  </a>.
+  <em class="text-gray-300">{publication}</em>{volume && `, ${volume}`}{number && `(${number})`}{pages && `, ${pages}`}.
+</div>
