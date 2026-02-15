@@ -29,6 +29,8 @@ jobs:
 
       - name: Prepare deploy content
         run: |
+          # Disable Jekyll so _astro/ directory is served
+          touch dist/.nojekyll
           # Set staging CNAME
           echo "staging.gszep.com" > dist/CNAME
 
