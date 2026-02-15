@@ -47,4 +47,10 @@ const isHome = currentPath === '/';
     const expanded = burger.getAttribute('aria-expanded') === 'true';
     burger.setAttribute('aria-expanded', String(!expanded));
   });
+  menu?.querySelectorAll('a').forEach((link) => {
+    link.addEventListener('click', () => {
+      menu.classList.add('hidden');
+      burger?.setAttribute('aria-expanded', 'false');
+    });
+  });
 </script>
