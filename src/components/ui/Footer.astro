@@ -12,8 +12,16 @@ import site from '../../data/site.json';
       />
       <div class="text-center md:text-left">
         <h3 class="text-gray-300 font-medium">{site.author.name}</h3>
-        <p class="text-gray-500 text-sm mt-1">{site.author.about}</p>
+        <p class="text-gray-500 text-sm mt-1 max-w-lg">{site.author.about}</p>
         <div class="flex gap-4 mt-3 justify-center md:justify-start">
+          <a
+            href="https://www.henkaku.center/en/people/grisha-szep/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="text-white hover:text-gray-300 text-sm"
+          >
+            Henkaku Center
+          </a>
           <a
             href={`https://github.com/${site.author.github}`}
             target="_blank"
