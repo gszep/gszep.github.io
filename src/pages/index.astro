@@ -8,8 +8,8 @@ import site from '../data/site.json';
 import citations from '../data/citations.json';
 import { getCollection } from 'astro:content';
 
-const projects = await getCollection('projects', ({ data }) => !data.draft);
-projects.sort((a, b) => a.data.order - b.data.order);
+const posts = await getCollection('blog', ({ data }) => !data.draft);
+posts.sort((a, b) => a.data.order - b.data.order);
 ---
 
 <Base>
@@ -36,7 +36,7 @@ projects.sort((a, b) => a.data.order - b.data.order);
         ))}
       </div>
       <a
-        href="#projects"
+        href="#blog"
         class="inline-block mt-8 border border-white text-white px-6 py-2 rounded-full uppercase text-sm hover:bg-white hover:text-black transition-colors"
       >
         Scroll Down // Read More
@@ -44,19 +44,19 @@ projects.sort((a, b) => a.data.order - b.data.order);
     </div>
   </section>
 
-  <!-- Projects -->
-  <section class="bg-gray-100 py-16" id="projects">
+  <!-- Blog -->
+  <section class="bg-gray-100 py-16" id="blog">
     <div class="max-w-6xl mx-auto px-4">
       <p class="text-center text-gray-500 uppercase font-medium mb-12" style="letter-spacing: 0.25rem; font-size: 1.25rem;">
-        Creative
+        Blog
       </p>
       <div class="flex flex-wrap justify-center gap-4">
-        {projects.map((project) => (
+        {posts.map((post) => (
           <ProjectCard
-            title={project.data.title}
-            description={project.data.description}
-            image={project.data.image}
-            href={`/projects/${project.slug}`}
+            title={post.data.title}
+            description={post.data.description}
+            image={post.data.image || ''}
+            href={`/blog/${post.slug}`}
           />
         ))}
       </div>

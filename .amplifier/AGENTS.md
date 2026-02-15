@@ -17,6 +17,6 @@ If you are working in this repo via Amplifier, follow the same rules as in `CLAU
 
 - **Build**: `npm run build` (output to `dist/`)
 - **Dev**: `npm run dev` (localhost:4321)
-- **Content**: `src/content/blog/*.mdx` and `src/content/projects/*.mdx`
+- **Content**: `src/content/blog/*.mdx` (unified collection -- no separate projects)
 - **Images**: `public/images/` (referenced as `/images/filename.ext`)
 - **Site data**: `src/data/site.json` and `src/data/citations.json`
