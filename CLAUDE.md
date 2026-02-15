@@ -4,20 +4,15 @@ Personal portfolio website. Astro 5 static site with MDX content, deployed to Gi
 
 ## How This Site Is Managed
 
-This website is managed through a Slack channel. A Slack bot relays messages
-to Claude Code, who edits the repo, builds, commits, and pushes changes.
-The workflow:
+This website is managed directly through Claude Code.
 
-1. Messages are posted in the Slack channel (text, images, links)
-2. The Slack bot forwards messages to a Claude Code session running in this repo
-3. Claude makes the changes, runs `npm run build` to verify, commits, and pushes to `staging`
-4. A GitHub Action builds the Astro site and syncs to a deploy repo: https://staging.gszep.com
-5. Changes are reviewed on the staging site
-6. When ready, run `/approve` in Slack to create and merge a PR from `staging` to `main`
-7. Production deploys automatically: https://gszep.com
+1. Changes are made on the `staging` branch
+2. Run `npm run build` to verify, commit, and push to `staging`
+3. A GitHub Action builds the Astro site and syncs to staging.gszep.com
+4. When ready, merge `staging` to `main` for production deploy to gszep.com
 
 This is a single-repo model:
-- **`staging` branch** (you are here) -- bot works here, synced to staging.gszep.com
+- **`staging` branch** -- work happens here, synced to staging.gszep.com
 - **`main` branch** -- production, deploys to gszep.com via GitHub Pages
 
 ## Tech Stack
@@ -37,10 +32,9 @@ This is a single-repo model:
 
 ```
 src/
-  content/                 # All content (AI edits these)
-    blog/                  # Blog posts as MDX files
-    projects/              # Project pages as MDX
-    config.ts              # Content collection schemas
+  content/
+    blog/                  # All content as MDX files (unified collection)
+    config.ts              # Content collection schema
   components/
     interactive/           # Client-side islands (WebGPU, simulations)
     ui/                    # Static layout components (.astro)
@@ -48,11 +42,10 @@ src/
   layouts/
     Base.astro             # HTML shell, meta, fonts, Tailwind
     Page.astro             # Generic page
-    Post.astro             # Blog post (Distill-inspired typography)
+    Post.astro             # Blog post layout
   pages/
-    index.astro            # Homepage
+    index.astro            # Homepage (Blog + Publications sections)
     blog/                  # Blog listing + dynamic routes
-    projects/              # Projects listing + dynamic routes
   styles/
     post.css               # Distill-inspired article typography
   data/
@@ -60,7 +53,6 @@ src/
     citations.json         # Publications data
 public/
   images/                  # Static image assets
-slack-bot/                 # Slack bot (unchanged)
 astro.config.mjs           # Astro config
 tailwind.config.mjs        # Tailwind config
 tsconfig.json              # TypeScript config
@@ -73,8 +65,7 @@ Most requests are content updates. Key files:
 
 | File | What it controls |
 |------|-----------------|
-| `src/content/projects/*.mdx` | Project pages |
-| `src/content/blog/*.mdx` | Blog posts |
+| `src/content/blog/*.mdx` | Blog posts (unified -- art, science, projects) |
 | `src/data/citations.json` | Publications list |
 | `src/data/site.json` | Site title, author info, social links |
 | `src/pages/index.astro` | Homepage layout |
@@ -92,24 +83,31 @@ Create a single MDX file in `src/content/blog/`:
 title: "My Post Title"
 date: 2026-02-20
 description: "A short description"
+image: "/images/thumbnail.png"
 tags: ["tag1", "tag2"]
+order: 1
 ---
 
-Your markdown content here. You can import components:
-
-import Equation from '../../components/blog/Equation.astro'
-
-<Equation>E = mc^2</Equation>
+Your markdown content here.
 ```
 
+Frontmatter fields: title, description, date (required); image, tags, hero, order, draft (optional).
+
 No routing config or manifest changes needed.
+
+## Blog Post Layout
+
+Blog posts use a Distill.pub-inspired editorial layout:
+- White background with dark text
+- 700px text column (`l-body`) for optimal readability
+- Figures break wider than text (up to 900px)
+- Centered figcaptions with muted color
+- `github-light` syntax highlighting for code blocks
 
 ## Staging Password Gate
 
 The staging site at staging.gszep.com has a client-side password gate.
-The password is `preview`. It uses sessionStorage so it persists within
-a browser tab. Production (gszep.com) and localhost are not affected.
-
+The password is `preview`. Production (gszep.com) and localhost are not affected.
 The gate is implemented in `src/layouts/Base.astro`.
 
 ## After Making Changes (MANDATORY)
@@ -119,7 +117,7 @@ Always commit and push after finishing edits:
 1. Run `npm run build` to verify the build passes
 2. Stage and commit with a descriptive message
 3. Run `git push origin staging`
-4. Tell the team changes will be live at https://staging.gszep.com in ~2 minutes
+4. Changes will be live at https://staging.gszep.com in ~2 minutes
 
 Never leave uncommitted work. If the build fails, fix it before moving on.
 

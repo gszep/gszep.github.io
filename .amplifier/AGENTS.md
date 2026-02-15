@@ -3,11 +3,8 @@
 Astro 5 static site with MDX content, Tailwind CSS, and optional React islands.
 See `CLAUDE.md` at the repo root for the full project context, workflow, and rules.
 
-The Slack bot (`slack-bot/`) bridges a Slack channel to Claude Code sessions.
-Messages are posted in Slack, Claude edits the repo and pushes to the
-`staging` branch. A GitHub Action builds the Astro site and syncs to a deploy repo at
-https://staging.gszep.com. The `/approve` command creates and merges a PR
-from `staging` to `main`; production deploys automatically.
+A GitHub Action builds the Astro site and syncs to a deploy repo at
+https://staging.gszep.com. Merging staging to main triggers production deploy.
 
 Always commit and push to staging after finishing edits. Never leave uncommitted work.
 

@@ -10,7 +10,7 @@ Implementation plan for rewriting gszep.com as an AI-native personal website wit
 
 2. **Discoverability**: Every page must be a real HTML file with real content — no client-side rendering required. Crawlers, AI agents, RSS readers, and `curl` must see full content without executing JavaScript.
 
-3. **AI editability**: The site is managed by an AI agent via a Slack bot. The codebase must be structured so an LLM can reliably create, edit, and navigate content and components. Prioritize formats and frameworks with the largest LLM training corpus.
+3. **AI editability**: The site is managed by an AI agent via Claude Code. The codebase must be structured so an LLM can reliably create, edit, and navigate content and components. Prioritize formats and frameworks with the largest LLM training corpus.
 
 4. **Interactive publishing**: Support Distill.pub-quality interactive demos and WebGPU simulations embedded in blog posts. Client-side computation only (GitHub Pages hosting, no server).
 
@@ -42,13 +42,11 @@ Implementation plan for rewriting gszep.com as an AI-native personal website wit
 gszep.github.io/
 ├── src/
 │   ├── content/                 # All content lives here (AI edits these)
-│   │   ├── blog/                # Blog posts as MDX files
-│   │   │   ├── growing-ca.mdx
-│   │   │   └── momentum.mdx
-│   │   ├── projects/            # Project pages as MDX
-│   │   │   ├── immune-receptors.mdx
-│   │   │   └── dynamical-systems.mdx
-│   │   └── config.ts            # Content collection schemas
+│   │   ├── blog/                # All posts as MDX (unified collection)
+│   │   │   ├── fault-tolerance.mdx
+│   │   │   ├── designing-immune-receptors.mdx
+│   │   │   └── ...
+│   │   └── config.ts            # Content collection schema
 │   │
 │   ├── components/              # Reusable components
 │   │   ├── interactive/         # Client-side islands
@@ -76,13 +74,10 @@ gszep.github.io/
 │   │   └── Post.astro           # Blog post (Distill-inspired typography)
 │   │
 │   ├── pages/
-│   │   ├── index.astro          # Homepage
-│   │   ├── blog/
-│   │   │   ├── index.astro      # Blog listing
-│   │   │   └── [...slug].astro  # Dynamic blog routes from content
-│   │   └── projects/
-│   │       ├── index.astro      # Projects listing
-│   │       └── [...slug].astro  # Dynamic project routes
+│   │   ├── index.astro          # Homepage (Blog + Publications sections)
+│   │   └── blog/
+│   │       ├── index.astro      # Blog listing
+│   │       └── [...slug].astro  # Dynamic blog routes
 │   │
 │   ├── styles/
 │   │   └── post.css             # Distill-inspired article typography
@@ -95,7 +90,6 @@ gszep.github.io/
 │   ├── fonts/
 │   └── favicon.svg
 │
-├── slack-bot/                   # Slack bot (unchanged)
 ├── astro.config.mjs             # Astro config
 ├── tailwind.config.mjs          # Tailwind config
 ├── tsconfig.json
@@ -254,7 +248,6 @@ These files are committed to git and should be addressed:
 
 ### Files to Keep
 
-- `slack-bot/` (Slack bot, unchanged)
 - `CLAUDE.md` (AI instructions, update for new structure)
 - `.amplifier/AGENTS.md` (Amplifier config, update for new structure)
 - `.github/workflows/sync-staging.yml` (update for Astro build)
