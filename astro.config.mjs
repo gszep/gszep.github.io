@@ -6,6 +6,11 @@ import react from '@astrojs/react';
 export default defineConfig({
   site: 'https://gszep.com',
   output: 'static',
+  markdown: {
+    shikiConfig: {
+      theme: 'github-light',
+    },
+  },
   integrations: [
     mdx(),
     tailwind(),
