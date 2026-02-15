@@ -9,7 +9,7 @@ interface Props {
 const { title, description, image, href } = Astro.props;
 ---
 
-<a href={href} class="group block bg-black overflow-hidden">
+<a href={href} class="group block bg-black overflow-hidden w-full sm:w-[calc(50%-0.5rem)] lg:w-[calc(33.333%-0.7rem)]">
   <div
     class="aspect-[3/1] bg-cover bg-center transition-transform duration-300 group-hover:scale-105"
     style={`background-image: url(${image})`}
