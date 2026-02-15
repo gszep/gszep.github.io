@@ -1,15 +1,15 @@
 {
   "title": "Grisha // Portfolio",
-  "description": "Where deep learning, biology and creativity intersect",
+  "description": "First-generation cognitive cyberware for education, medicine, and art",
   "url": "https://gszep.com",
   "author": {
     "name": "Grisha Szep",
     "email": "grisha.szep@gmail.com",
-    "about": "Computational biology and deep learning with a creative streak.",
+    "about": "Building cognitive cyberware for educators, clinicians, and creatives.",
     "image": "/images/headshot.jpg",
     "github": "gszep",
     "linkedin": "gszep"
   },
   "heroImage": "/images/background.png",
-  "tags": ["JAX", "Shaders", "D3", "Blender", "Unity"]
+  "tags": ["Education", "Medicine", "Interactive Art"]
 }
