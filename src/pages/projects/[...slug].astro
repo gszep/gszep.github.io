@@ -20,34 +20,20 @@ const { Content } = await project.render();
 <Base title={project.data.title} description={project.data.description}>
   <Nav />
   <article class="project-page bg-white">
-    <!-- Hero section -->
-    <section class="pt-28 pb-12">
-      <div class="max-w-5xl mx-auto px-4">
-        <h1 class="text-4xl font-semibold text-gray-900 text-center mb-6">{project.data.title}</h1>
-        <hr class="border-gray-300 mb-10" />
-        <div class="flex flex-col md:flex-row gap-8 items-start">
-          <div class="md:w-1/2">
-            <img
-              src={project.data.image}
-              alt={project.data.title}
-              class="rounded-lg shadow-lg w-full"
-            />
-          </div>
-          <div class="md:w-1/2">
-            <p class="text-gray-600 text-sm uppercase font-medium tracking-wide mb-4">
-              {project.data.description}
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
+    <!-- Header -->
+    <header class="l-body pt-32 pb-4">
+      <h1 class="project-title">{project.data.title}</h1>
+      <p class="project-description">{project.data.description}</p>
+    </header>
 
     <!-- Body content -->
-    <section class="pb-16">
-      <div class="post-content l-body">
-        <Content />
-      </div>
-    </section>
+    <div class="post-content l-body">
+      <Content />
+    </div>
+
+    <div class="l-body pb-16" style="padding-top: 3rem;">
+      <hr class="project-separator" />
+    </div>
   </article>
   <Footer />
 </Base>

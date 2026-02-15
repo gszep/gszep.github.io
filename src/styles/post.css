@@ -89,69 +89,30 @@
 }
 
 .post-content img {
-  border-radius: 0.5rem;
+  border-radius: 0.25rem;
   margin-bottom: 0.5rem;
-  width: 100%;
 }
 
 .post-content figure {
-  margin: 2rem auto;
-  width: 80%;
+  margin: 2.5rem auto;
   text-align: center;
-}
-
-@media (min-width: 768px) {
-  .post-content figure {
-    width: 33%;
-  }
 }
 
 .post-content figure img {
-  margin-bottom: 0.5rem;
-  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 0.75rem;
+  max-width: 100%;
+  height: auto;
 }
 
 .post-content figcaption {
-  font-size: 0.875rem;
+  font-size: 0.85rem;
   color: #9ca3af;
   line-height: 1.5;
-  margin-top: 0.25rem;
   text-align: center;
-}
-
-/* Project page overrides (white background) */
-.project-page .post-content {
-  color: #374151;
-}
-
-.project-page .post-content h2,
-.project-page .post-content h3 {
-  color: #111827;
-}
-
-.project-page .post-content a {
-  color: #2563eb;
-}
-
-.project-page .post-content a:hover {
-  color: #1d4ed8;
-}
-
-.project-page .post-content blockquote {
-  border-left-color: #d1d5db;
-  color: #6b7280;
-}
-
-.project-page .post-content code {
-  background: #f3f4f6;
-}
-
-.project-page .post-content pre {
-  background: #f9fafb;
-}
-
-.project-page .post-content figcaption {
-  color: #6b7280;
+  max-width: 540px;
+  margin: 0 auto;
 }
 
 .post-content ul,
@@ -189,4 +150,130 @@
     font-size: 0.9rem;
     color: #9ca3af;
   }
+}
+
+/* ===================================
+   Project page overrides (white bg)
+   =================================== */
+
+.project-title {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: #1a1a1a;
+  line-height: 1.2;
+  margin-bottom: 0.75rem;
+  letter-spacing: -0.01em;
+}
+
+.project-description {
+  font-size: 1.15rem;
+  color: #666;
+  line-height: 1.6;
+  margin-bottom: 0;
+}
+
+.project-separator {
+  border: none;
+  border-top: 1px solid #e5e5e5;
+}
+
+/* Typography */
+.project-page .post-content {
+  color: #353535;
+  font-size: 1.1rem;
+  line-height: 1.85;
+}
+
+.project-page .post-content h2 {
+  color: #1a1a1a;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin-top: 3rem;
+  margin-bottom: 1rem;
+}
+
+.project-page .post-content h3 {
+  color: #1a1a1a;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 2.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.project-page .post-content p {
+  margin-bottom: 1.4rem;
+}
+
+/* Links */
+.project-page .post-content a {
+  color: #1a1a1a;
+  text-decoration: underline;
+  text-decoration-color: #ccc;
+  text-underline-offset: 3px;
+  transition: text-decoration-color 0.15s;
+}
+
+.project-page .post-content a:hover {
+  text-decoration-color: #1a1a1a;
+}
+
+/* Code */
+.project-page .post-content code {
+  background: #f5f5f5;
+  color: #333;
+}
+
+.project-page .post-content pre {
+  background: #fafafa;
+  border: 1px solid #eee;
+}
+
+/* Blockquotes */
+.project-page .post-content blockquote {
+  border-left-color: #ddd;
+  color: #666;
+}
+
+/* Figures - break wider than text column */
+.project-page .post-content figure {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+  width: 90vw;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+@media (min-width: 940px) {
+  .project-page .post-content figure {
+    width: 900px;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+}
+
+.project-page .post-content figure img {
+  border-radius: 0.25rem;
+  max-width: 100%;
+}
+
+.project-page .post-content figcaption {
+  color: #888;
+  font-size: 0.85rem;
+  padding-top: 0.5rem;
+}
+
+/* Standalone images (not in figures) */
+.project-page .post-content > p > img {
+  display: block;
+  margin: 2rem auto;
+  max-width: 100%;
+  border-radius: 0.25rem;
+}
+
+/* Strong text */
+.project-page .post-content strong {
+  color: #1a1a1a;
+  font-weight: 600;
 }
