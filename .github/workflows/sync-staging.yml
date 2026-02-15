@@ -43,5 +43,5 @@ jobs:
           git add -A
           git commit -m "Sync from upstream staging ($(date -u +%Y-%m-%dT%H:%M:%SZ))"
           git push --force \
-            git@github.com:gszep/staging-gszep-github-io.git \
+            git@github.com:gszep/staging.gszep.github.io.git \
             HEAD:main
