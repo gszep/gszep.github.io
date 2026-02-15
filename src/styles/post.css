@@ -95,11 +95,20 @@
 }
 
 .post-content figure {
-  margin: 2rem 0;
+  margin: 2rem auto;
+  width: 80%;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .post-content figure {
+    width: 33%;
+  }
 }
 
 .post-content figure img {
   margin-bottom: 0.5rem;
+  width: 100%;
 }
 
 .post-content figcaption {
@@ -107,6 +116,42 @@
   color: #9ca3af;
   line-height: 1.5;
   margin-top: 0.25rem;
+  text-align: center;
+}
+
+/* Project page overrides (white background) */
+.project-page .post-content {
+  color: #374151;
+}
+
+.project-page .post-content h2,
+.project-page .post-content h3 {
+  color: #111827;
+}
+
+.project-page .post-content a {
+  color: #2563eb;
+}
+
+.project-page .post-content a:hover {
+  color: #1d4ed8;
+}
+
+.project-page .post-content blockquote {
+  border-left-color: #d1d5db;
+  color: #6b7280;
+}
+
+.project-page .post-content code {
+  background: #f3f4f6;
+}
+
+.project-page .post-content pre {
+  background: #f9fafb;
+}
+
+.project-page .post-content figcaption {
+  color: #6b7280;
 }
 
 .post-content ul,

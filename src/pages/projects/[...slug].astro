@@ -19,12 +19,12 @@ const { Content } = await project.render();
 
 <Base title={project.data.title} description={project.data.description}>
   <Nav />
-  <article>
+  <article class="project-page bg-white">
     <!-- Hero section -->
     <section class="pt-28 pb-12">
       <div class="max-w-5xl mx-auto px-4">
-        <h1 class="text-4xl font-semibold text-white text-center mb-6">{project.data.title}</h1>
-        <hr class="border-gray-700 mb-10" />
+        <h1 class="text-4xl font-semibold text-gray-900 text-center mb-6">{project.data.title}</h1>
+        <hr class="border-gray-300 mb-10" />
         <div class="flex flex-col md:flex-row gap-8 items-start">
           <div class="md:w-1/2">
             <img
@@ -34,7 +34,7 @@ const { Content } = await project.render();
             />
           </div>
           <div class="md:w-1/2">
-            <p class="text-gray-400 text-sm uppercase font-medium tracking-wide mb-4">
+            <p class="text-gray-600 text-sm uppercase font-medium tracking-wide mb-4">
               {project.data.description}
             </p>
           </div>
