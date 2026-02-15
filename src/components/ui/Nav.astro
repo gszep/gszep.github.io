@@ -1,0 +1,50 @@
+---
+import site from '../../data/site.json';
+
+const currentPath = Astro.url.pathname;
+const isHome = currentPath === '/';
+---
+
+<nav class="fixed top-0 w-full bg-black z-50" role="navigation" aria-label="main navigation">
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
+    <a href="/" class="font-bold text-white text-lg">{site.title}</a>
+
+    <!-- Mobile burger -->
+    <button
+      class="md:hidden text-white"
+      id="nav-burger"
+      aria-label="Toggle navigation"
+      aria-expanded="false"
+    >
+      <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+      </svg>
+    </button>
+
+    <!-- Desktop nav -->
+    <div class="hidden md:flex items-center gap-6 text-sm uppercase tracking-wide">
+      <a href="/" class:list={["hover:text-gray-300", { 'text-white': isHome, 'text-gray-400': !isHome }]}>Home</a>
+      <a href="/#projects" class="text-gray-400 hover:text-gray-300">Creative</a>
+      <a href="/#publications" class="text-gray-400 hover:text-gray-300">Publications</a>
+      <a href="/#contact" class="text-gray-400 hover:text-gray-300">Contact</a>
+    </div>
+  </div>
+
+  <!-- Mobile menu -->
+  <div class="hidden md:hidden bg-black px-4 pb-4" id="nav-menu">
+    <a href="/" class="block py-2 text-gray-400 hover:text-white uppercase text-sm">Home</a>
+    <a href="/#projects" class="block py-2 text-gray-400 hover:text-white uppercase text-sm">Creative</a>
+    <a href="/#publications" class="block py-2 text-gray-400 hover:text-white uppercase text-sm">Publications</a>
+    <a href="/#contact" class="block py-2 text-gray-400 hover:text-white uppercase text-sm">Contact</a>
+  </div>
+</nav>
+
+<script>
+  const burger = document.getElementById('nav-burger');
+  const menu = document.getElementById('nav-menu');
+  burger?.addEventListener('click', () => {
+    menu?.classList.toggle('hidden');
+    const expanded = burger.getAttribute('aria-expanded') === 'true';
+    burger.setAttribute('aria-expanded', String(!expanded));
+  });
+</script>

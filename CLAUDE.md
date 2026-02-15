@@ -1,6 +1,6 @@
 # Grisha Szep - Personal Portfolio
 
-Personal portfolio website. Jekyll static site deployed to GitHub Pages.
+Personal portfolio website. Astro 5 static site with MDX content, deployed to GitHub Pages.
 
 ## How This Site Is Managed
 
@@ -10,8 +10,8 @@ The workflow:
 
 1. Messages are posted in the Slack channel (text, images, links)
 2. The Slack bot forwards messages to a Claude Code session running in this repo
-3. Claude makes the changes, runs `bundle exec jekyll build` to verify, commits, and pushes to `staging`
-4. A GitHub Action syncs the staging branch to a deploy repo: https://staging.gszep.com
+3. Claude makes the changes, runs `npm run build` to verify, commits, and pushes to `staging`
+4. A GitHub Action builds the Astro site and syncs to a deploy repo: https://staging.gszep.com
 5. Changes are reviewed on the staging site
 6. When ready, run `/approve` in Slack to create and merge a PR from `staging` to `main`
 7. Production deploys automatically: https://gszep.com
@@ -24,32 +24,47 @@ This is a single-repo model:
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Jekyll 4 (Ruby) |
-| Styling | Bulma CSS 0.8.2 (CDN), custom SCSS |
-| Icons | FontAwesome |
-| Search | simple-jekyll-search (client-side) |
+| Framework | Astro 5.x (pinned) |
+| Content | MDX (Markdown + components) |
+| Interactive | Vanilla TypeScript + WebGPU |
+| Complex UI | React (escape hatch only) |
+| Styling | Tailwind CSS |
+| Math | KaTeX |
 | Deploy | GitHub Pages via GitHub Actions |
 | Domain | staging.gszep.com (staging), gszep.com (production) |
 
 ## Project Structure
 
 ```
-_config.yml             # Jekyll config (title, author, plugins, excludes)
-_data/
-  projects.yml          # Project entries (data-driven)
-  citations.csv         # Publications
-_includes/              # Partials: navbar, footer, showcase, cards, etc.
-  password-gate.html    # Client-side password gate for staging
-_layouts/               # default, page, post, blog, project, publication
-_sass/main.scss         # Base styles (Bulma import + Poppins font)
-assets/
-  css/style.scss        # Main stylesheet
-  images/               # Image assets
-  js/                   # Client-side search
-art/                    # Interactive JS art projects (muscle, thread-panic)
-projects/               # Project markdown pages
-CNAME                   # Custom domain: gszep.com
-slack-bot/              # Slack bot (bridges channel to Claude Code)
+src/
+  content/                 # All content (AI edits these)
+    blog/                  # Blog posts as MDX files
+    projects/              # Project pages as MDX
+    config.ts              # Content collection schemas
+  components/
+    interactive/           # Client-side islands (WebGPU, simulations)
+    ui/                    # Static layout components (.astro)
+    blog/                  # Blog-specific components (Equation, Figure, Aside)
+  layouts/
+    Base.astro             # HTML shell, meta, fonts, Tailwind
+    Page.astro             # Generic page
+    Post.astro             # Blog post (Distill-inspired typography)
+  pages/
+    index.astro            # Homepage
+    blog/                  # Blog listing + dynamic routes
+    projects/              # Projects listing + dynamic routes
+  styles/
+    post.css               # Distill-inspired article typography
+  data/
+    site.json              # Site metadata
+    citations.json         # Publications data
+public/
+  images/                  # Static image assets
+slack-bot/                 # Slack bot (unchanged)
+astro.config.mjs           # Astro config
+tailwind.config.mjs        # Tailwind config
+tsconfig.json              # TypeScript config
+package.json               # Node dependencies
 ```
 
 ## Content Editing
@@ -58,16 +73,36 @@ Most requests are content updates. Key files:
 
 | File | What it controls |
 |------|-----------------|
-| `_data/projects.yml` | Project entries |
-| `_data/citations.csv` | Publications list |
-| `_config.yml` | Site title, author info, social links |
-| `_includes/showcase.html` | Hero/showcase section |
-| `_includes/navbar.html` | Navigation bar |
-| `_includes/footer.html` | Footer content |
-| `projects/*.md` | Individual project pages |
+| `src/content/projects/*.mdx` | Project pages |
+| `src/content/blog/*.mdx` | Blog posts |
+| `src/data/citations.json` | Publications list |
+| `src/data/site.json` | Site title, author info, social links |
+| `src/pages/index.astro` | Homepage layout |
+| `src/components/ui/Nav.astro` | Navigation bar |
+| `src/components/ui/Footer.astro` | Footer content |
 
-Images go in `assets/images/` and are referenced as `/assets/images/filename.ext`.
-Uploaded files from Slack are saved to `assets/images/uploads/`.
+Images go in `public/images/` and are referenced as `/images/filename.ext`.
+
+## Adding a Blog Post
+
+Create a single MDX file in `src/content/blog/`:
+
+```mdx
+---
+title: "My Post Title"
+date: 2026-02-20
+description: "A short description"
+tags: ["tag1", "tag2"]
+---
+
+Your markdown content here. You can import components:
+
+import Equation from '../../components/blog/Equation.astro'
+
+<Equation>E = mc^2</Equation>
+```
+
+No routing config or manifest changes needed.
 
 ## Staging Password Gate
 
@@ -75,14 +110,13 @@ The staging site at staging.gszep.com has a client-side password gate.
 The password is `preview`. It uses sessionStorage so it persists within
 a browser tab. Production (gszep.com) and localhost are not affected.
 
-The gate is implemented in `_includes/password-gate.html` and included
-via `_includes/head.html` on every page.
+The gate is implemented in `src/layouts/Base.astro`.
 
 ## After Making Changes (MANDATORY)
 
 Always commit and push after finishing edits:
 
-1. Run `bundle exec jekyll build` to verify the build passes
+1. Run `npm run build` to verify the build passes
 2. Stage and commit with a descriptive message
 3. Run `git push origin staging`
 4. Tell the team changes will be live at https://staging.gszep.com in ~2 minutes
@@ -92,15 +126,24 @@ Never leave uncommitted work. If the build fails, fix it before moving on.
 ## Development Commands
 
 ```bash
-bundle install            # Install dependencies
-bundle exec jekyll serve  # Dev server at http://localhost:4000
-bundle exec jekyll build  # Production build (output to _site/)
+npm install               # Install dependencies
+npm run dev               # Dev server at http://localhost:4321
+npm run build             # Production build (output to dist/)
+npm run preview           # Preview production build
 ```
+
+## Framework Constraints
+
+- **Pin Astro to 5.x** -- do not upgrade to v6 until it stabilizes
+- **No Svelte** -- LLMs mix Svelte 4 and 5 syntax
+- **No exotic Astro features** -- no middleware, no SSR, no view transitions
+- **Minimal Content Collections config** -- simple frontmatter schemas only
+- **`.astro` files for layout only** -- no complex logic
 
 ## Rules
 
 1. Always read files before editing -- understand structure first
-2. Run `bundle exec jekyll build` to validate before pushing
+2. Run `npm run build` to validate before pushing
 3. Commit frequently with small, atomic changes
 4. Always push to the `staging` branch -- never push directly to `main`
-5. Images go in `assets/images/` -- referenced as `/assets/images/filename.ext`
+5. Images go in `public/images/` -- referenced as `/images/filename.ext`

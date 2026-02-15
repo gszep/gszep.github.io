@@ -1,0 +1,131 @@
+/* Distill-inspired content width system */
+.l-body {
+  max-width: 700px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.l-page {
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.l-screen {
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+/* Post typography */
+.post-content {
+  color: #d1d5db;
+  line-height: 1.8;
+  font-size: 1.125rem;
+}
+
+.post-content h2 {
+  color: white;
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin-top: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.post-content h3 {
+  color: white;
+  font-size: 1.375rem;
+  font-weight: 600;
+  margin-top: 2rem;
+  margin-bottom: 0.75rem;
+}
+
+.post-content p {
+  margin-bottom: 1.25rem;
+}
+
+.post-content a {
+  color: #93c5fd;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.post-content a:hover {
+  color: #bfdbfe;
+}
+
+.post-content code {
+  background: #1f2937;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.25rem;
+  font-size: 0.9em;
+}
+
+.post-content pre {
+  background: #111827;
+  border-radius: 0.5rem;
+  padding: 1.25rem;
+  overflow-x: auto;
+  margin-bottom: 1.25rem;
+}
+
+.post-content pre code {
+  background: none;
+  padding: 0;
+}
+
+.post-content blockquote {
+  border-left: 3px solid #4b5563;
+  padding-left: 1rem;
+  color: #9ca3af;
+  margin-bottom: 1.25rem;
+}
+
+.post-content img {
+  border-radius: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.post-content ul,
+.post-content ol {
+  padding-left: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.post-content li {
+  margin-bottom: 0.5rem;
+}
+
+/* Margin notes (Aside) */
+.aside-container {
+  position: relative;
+}
+
+@media (min-width: 1200px) {
+  .aside-note {
+    position: absolute;
+    right: -280px;
+    width: 240px;
+    font-size: 0.85rem;
+    color: #9ca3af;
+    line-height: 1.5;
+  }
+}
+
+@media (max-width: 1199px) {
+  .aside-note {
+    background: #1f2937;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+    font-size: 0.9rem;
+    color: #9ca3af;
+  }
+}
