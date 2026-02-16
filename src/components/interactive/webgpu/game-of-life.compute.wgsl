@@ -1,24 +1,21 @@
-@group(0) @binding(0) var<uniform> grid: vec2u;
-@group(0) @binding(1) var<storage, read> stateIn: array<u32>;
-@group(0) @binding(2) var<storage, read_write> stateOut: array<u32>;
+requires readonly_and_readwrite_storage_textures;
 
-fn idx(x: u32, y: u32) -> u32 {
-  return (y % grid.y) * grid.x + (x % grid.x);
-}
+@group(0) @binding(0) var state: texture_storage_2d<r32uint, read_write>;
 
-fn alive(x: u32, y: u32) -> u32 {
-  return stateIn[idx(x, y)];
+fn alive(pos: vec2i, size: vec2i) -> u32 {
+  return textureLoad(state, (pos % size + size) % size).x;
 }
 
 @compute @workgroup_size(8, 8)
 fn main(@builtin(global_invocation_id) id: vec3u) {
-  if (id.x >= grid.x || id.y >= grid.y) { return; }
+  let size = vec2i(textureDimensions(state));
+  let pos = vec2i(id.xy);
+  if (pos.x >= size.x || pos.y >= size.y) { return; }
 
-  let n = alive(id.x - 1u, id.y - 1u) + alive(id.x, id.y - 1u) + alive(id.x + 1u, id.y - 1u)
-        + alive(id.x - 1u, id.y)                                   + alive(id.x + 1u, id.y)
-        + alive(id.x - 1u, id.y + 1u) + alive(id.x, id.y + 1u) + alive(id.x + 1u, id.y + 1u);
+  let n = alive(pos + vec2i(-1,-1), size) + alive(pos + vec2i(0,-1), size) + alive(pos + vec2i(1,-1), size)
+        + alive(pos + vec2i(-1, 0), size)                                  + alive(pos + vec2i(1, 0), size)
+        + alive(pos + vec2i(-1, 1), size) + alive(pos + vec2i(0, 1), size) + alive(pos + vec2i(1, 1), size);
 
-  let i = idx(id.x, id.y);
-  // B3/S23: born at 3 neighbours, survive at 2 or 3
-  stateOut[i] = select(0u, 1u, n == 3u || (stateIn[i] == 1u && n == 2u));
+  let cur = textureLoad(state, pos).x;
+  textureStore(state, pos, vec4u(select(0u, 1u, n == 3u || (cur == 1u && n == 2u)), 0u, 0u, 0u));
 }

@@ -1,14 +1,21 @@
 /**
  * WebGPU Conway's Game of Life simulation.
  *
- * Reusable class: create an instance, call start(), and the simulation
- * runs autonomously on a <canvas>. Call stop() to halt. Designed to be
- * embedded in any page via an Astro wrapper component.
+ * Uses a single read_write storage texture instead of ping-pong buffers.
+ * Race conditions from in-place updates create interesting visual artifacts
+ * acceptable for a background effect. Designed as a reusable template for
+ * more complex GPU simulations.
  */
 
-import { initWebGPU, resizeCanvas } from "./utils";
+import {
+  initWebGPU,
+  resizeCanvas,
+  createShader,
+  fullscreenPass,
+} from "./utils";
 import computeSrc from "./game-of-life.compute.wgsl?raw";
 import renderSrc from "./game-of-life.render.wgsl?raw";
+import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
 
 export interface SimColors {
   alive: [number, number, number, number]; // RGBA 0-1
@@ -39,7 +46,6 @@ export class GameOfLife {
   private format!: GPUTextureFormat;
   private gw = 0;
   private gh = 0;
-  private step = 0;
   private raf: number | null = null;
   private last = 0;
   private resizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -47,11 +53,10 @@ export class GameOfLife {
   // Pipelines & resources
   private computePL!: GPUComputePipeline;
   private renderPL!: GPURenderPipeline;
-  private gridBuf!: GPUBuffer;
+  private stateTex!: GPUTexture;
   private colorBuf!: GPUBuffer;
-  private cellBufs!: [GPUBuffer, GPUBuffer];
-  private computeBGs!: [GPUBindGroup, GPUBindGroup];
-  private renderBGs!: [GPUBindGroup, GPUBindGroup];
+  private computeBG!: GPUBindGroup;
+  private renderBG!: GPUBindGroup;
 
   constructor(opts: GameOfLifeOptions) {
     this.canvas = opts.canvas;
@@ -74,9 +79,8 @@ export class GameOfLife {
     this.gw = Math.ceil(this.canvas.width / this.cellSize);
     this.gh = Math.ceil(this.canvas.height / this.cellSize);
 
-    this.buildPipelines(this.format);
-    this.buildBuffers();
-    this.buildBindGroups();
+    this.buildPipelines();
+    this.buildResources();
 
     this.renderFrame(); // show initial state immediately
     this.raf = requestAnimationFrame(this.loop);
@@ -91,9 +95,8 @@ export class GameOfLife {
     this.resizeTimer = null;
   }
 
-  /** Handle viewport resize: rebuild grid and buffers to maintain square cells. */
+  /** Handle viewport resize: rebuild grid and resources to maintain square cells. */
   handleResize(): void {
-    // Debounce — avoid rebuilding every frame during drag-resize
     if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => this.rebuild(), 150);
   }
@@ -108,10 +111,9 @@ export class GameOfLife {
 
     this.gw = Math.ceil(this.canvas.width / this.cellSize);
     this.gh = Math.ceil(this.canvas.height / this.cellSize);
-    this.step = 0;
 
-    this.buildBuffers();
-    this.buildBindGroups();
+    this.stateTex.destroy();
+    this.buildResources();
     this.renderFrame();
   }
 
@@ -129,42 +131,56 @@ export class GameOfLife {
 
   // ── Pipelines ──────────────────────────────────────────────
 
-  private buildPipelines(format: GPUTextureFormat): void {
-    const d = this.device;
+  private buildPipelines(): void {
+    const includes = { fullscreen_vertex: fullscreenVertex };
 
-    this.computePL = d.createComputePipeline({
+    this.computePL = this.device.createComputePipeline({
       layout: "auto",
       compute: {
-        module: d.createShaderModule({ code: computeSrc }),
+        module: createShader(this.device, computeSrc),
         entryPoint: "main",
       },
     });
 
-    const renderMod = d.createShaderModule({ code: renderSrc });
-    this.renderPL = d.createRenderPipeline({
+    const renderMod = createShader(this.device, renderSrc, includes);
+    this.renderPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: renderMod, entryPoint: "vert" },
       fragment: {
         module: renderMod,
         entryPoint: "frag",
-        targets: [{ format }],
+        targets: [{ format: this.format }],
       },
       primitive: { topology: "triangle-list" },
     });
   }
 
-  // ── Buffers ────────────────────────────────────────────────
+  // ── Resources ─────────────────────────────────────────────
 
-  private buildBuffers(): void {
+  private buildResources(): void {
     const d = this.device;
-    const n = this.gw * this.gh;
 
-    // Grid dimensions (vec2u = 8 bytes)
-    this.gridBuf = d.createBuffer({
-      size: 8,
-      usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+    // State texture (single read_write — no ping-pong needed)
+    this.stateTex = d.createTexture({
+      size: [this.gw, this.gh],
+      format: "r32uint",
+      usage:
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.TEXTURE_BINDING |
+        GPUTextureUsage.COPY_DST,
     });
-    d.queue.writeBuffer(this.gridBuf, 0, new Uint32Array([this.gw, this.gh]));
+
+    // Upload random initial state
+    const data = new Uint32Array(this.gw * this.gh);
+    for (let i = 0; i < data.length; i++) {
+      data[i] = Math.random() < this.density ? 1 : 0;
+    }
+    d.queue.writeTexture(
+      { texture: this.stateTex },
+      data,
+      { bytesPerRow: this.gw * 4 },
+      [this.gw, this.gh],
+    );
 
     // Alive / dead colours (2 × vec4f = 32 bytes)
     this.colorBuf = d.createBuffer({
@@ -177,50 +193,22 @@ export class GameOfLife {
       new Float32Array([...this.colors.alive, ...this.colors.dead]),
     );
 
-    // Cell state double-buffer (ping-pong)
-    const init = new Uint32Array(n);
-    for (let i = 0; i < n; i++) {
-      init[i] = Math.random() < this.density ? 1 : 0;
-    }
+    // Compute bind group: state texture as storage
+    this.computeBG = d.createBindGroup({
+      layout: this.computePL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.stateTex.createView() },
+      ],
+    });
 
-    this.cellBufs = [0, 1].map(() => {
-      const b = d.createBuffer({
-        size: n * 4,
-        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
-      });
-      d.queue.writeBuffer(b, 0, init);
-      return b;
-    }) as [GPUBuffer, GPUBuffer];
-  }
-
-  // ── Bind groups ────────────────────────────────────────────
-
-  private buildBindGroups(): void {
-    const d = this.device;
-
-    // Compute: read from [i], write to [1-i]
-    this.computeBGs = [0, 1].map((i) =>
-      d.createBindGroup({
-        layout: this.computePL.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: { buffer: this.gridBuf } },
-          { binding: 1, resource: { buffer: this.cellBufs[i] } },
-          { binding: 2, resource: { buffer: this.cellBufs[1 - i] } },
-        ],
-      }),
-    ) as [GPUBindGroup, GPUBindGroup];
-
-    // Render: read from [i]
-    this.renderBGs = [0, 1].map((i) =>
-      d.createBindGroup({
-        layout: this.renderPL.getBindGroupLayout(0),
-        entries: [
-          { binding: 0, resource: { buffer: this.gridBuf } },
-          { binding: 1, resource: { buffer: this.cellBufs[i] } },
-          { binding: 2, resource: { buffer: this.colorBuf } },
-        ],
-      }),
-    ) as [GPUBindGroup, GPUBindGroup];
+    // Render bind group: state as sampled texture + colours
+    this.renderBG = d.createBindGroup({
+      layout: this.renderPL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.stateTex.createView() },
+        { binding: 1, resource: { buffer: this.colorBuf } },
+      ],
+    });
   }
 
   // ── Frame loop ─────────────────────────────────────────────
@@ -239,29 +227,20 @@ export class GameOfLife {
     // Compute pass — advance simulation
     const cp = enc.beginComputePass();
     cp.setPipeline(this.computePL);
-    cp.setBindGroup(0, this.computeBGs[this.step % 2]);
+    cp.setBindGroup(0, this.computeBG);
     cp.dispatchWorkgroups(
       Math.ceil(this.gw / WG),
       Math.ceil(this.gh / WG),
     );
     cp.end();
-    this.step++;
 
     // Render pass — draw to canvas
-    const rp = enc.beginRenderPass({
-      colorAttachments: [
-        {
-          view: this.ctx.getCurrentTexture().createView(),
-          clearValue: { r: 0, g: 0, b: 0, a: 0 },
-          loadOp: "clear",
-          storeOp: "store",
-        },
-      ],
-    });
-    rp.setPipeline(this.renderPL);
-    rp.setBindGroup(0, this.renderBGs[this.step % 2]);
-    rp.draw(3);
-    rp.end();
+    fullscreenPass(
+      enc,
+      this.ctx.getCurrentTexture().createView(),
+      this.renderPL,
+      this.renderBG,
+    );
 
     this.device.queue.submit([enc.finish()]);
   }
@@ -269,20 +248,12 @@ export class GameOfLife {
   /** Render current state without advancing simulation. */
   private renderFrame(): void {
     const enc = this.device.createCommandEncoder();
-    const rp = enc.beginRenderPass({
-      colorAttachments: [
-        {
-          view: this.ctx.getCurrentTexture().createView(),
-          clearValue: { r: 0, g: 0, b: 0, a: 0 },
-          loadOp: "clear",
-          storeOp: "store",
-        },
-      ],
-    });
-    rp.setPipeline(this.renderPL);
-    rp.setBindGroup(0, this.renderBGs[0]);
-    rp.draw(3);
-    rp.end();
+    fullscreenPass(
+      enc,
+      this.ctx.getCurrentTexture().createView(),
+      this.renderPL,
+      this.renderBG,
+    );
     this.device.queue.submit([enc.finish()]);
   }
 }
