@@ -63,13 +63,13 @@ gszep.github.io/
 |   +-- layouts/
 |   |   +-- Base.astro               # HTML shell, meta, fonts, staging gate
 |   |   +-- Page.astro               # Generic page (Nav + Footer)
-|   |   +-- Post.astro               # Blog post layout (unused, kept for reference)
+|   |   +-- Post.astro               # Blog post layout (dark Distill theme)
 |   |
 |   +-- pages/
 |   |   +-- index.astro              # Homepage (Blog + Publications + Contact)
 |   |   +-- blog/
 |   |       +-- index.astro          # Blog listing
-|   |       +-- [...slug].astro      # Dynamic blog routes (inline layout)
+|   |       +-- [...slug].astro      # Dynamic blog routes (uses Post layout)
 |   |
 |   +-- styles/
 |   |   +-- post.css                 # Distill-inspired article typography
@@ -147,7 +147,7 @@ All animated content uses MP4 video instead of GIF:
 
 - **Base.astro**: HTML shell with meta tags, Google Fonts (Poppins), Tailwind, staging password gate
 - **Page.astro**: Wraps Base with Nav + Footer for generic pages
-- **Post.astro**: Distill-inspired blog layout (currently unused -- blog routes use inline layout in `[...slug].astro`)
+- **Post.astro**: Distill-inspired dark-theme blog layout with title, description, date, tags, and separator
 
 ### UI Components (`src/components/ui/`)
 
@@ -173,7 +173,7 @@ The blog layout implements Distill's content-width system in `src/styles/post.cs
 - **`.l-screen`**: Full viewport width for immersive content
 - **Margin notes**: Side annotations that collapse on mobile
 
-Currently, the dark-theme Distill styles (lines 1-153 of post.css) are unused. Blog posts render with the `.project-page` white-background theme (lines 155-281).
+Blog posts use the dark-theme Distill styles throughout. Figures without explicit width classes automatically break out to page width (900px) for visual rhythm. The `github-dark` Shiki theme provides syntax highlighting consistent with the dark background.
 
 ## Staging Password Gate
 

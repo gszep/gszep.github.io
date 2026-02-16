@@ -1,8 +1,5 @@
 ---
-import Base from '../../layouts/Base.astro';
-import Nav from '../../components/ui/Nav.astro';
-import Footer from '../../components/ui/Footer.astro';
-import '../../styles/post.css';
+import Post from '../../layouts/Post.astro';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -17,23 +14,11 @@ const { post } = Astro.props;
 const { Content } = await post.render();
 ---
 
-<Base title={post.data.title} description={post.data.description}>
-  <Nav />
-  <article class="project-page bg-white">
-    <!-- Header -->
-    <header class="l-body pt-32 pb-4">
-      <h1 class="project-title">{post.data.title}</h1>
-      <p class="project-description">{post.data.description}</p>
-    </header>
-
-    <!-- Body content -->
-    <div class="post-content l-body">
-      <Content />
-    </div>
-
-    <div class="l-body pb-16" style="padding-top: 3rem;">
-      <hr class="project-separator" />
-    </div>
-  </article>
-  <Footer />
-</Base>
+<Post
+  title={post.data.title}
+  date={post.data.date}
+  description={post.data.description}
+  tags={post.data.tags}
+>
+  <Content />
+</Post>

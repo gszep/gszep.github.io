@@ -7,12 +7,11 @@ import '../styles/post.css';
 interface Props {
   title: string;
   date: Date;
-  description: string;
+  description?: string;
   tags?: string[];
-  hero?: string;
 }
 
-const { title, date, description, tags = [], hero } = Astro.props;
+const { title, date, description, tags = [] } = Astro.props;
 const formattedDate = date.toLocaleDateString('en-US', {
   year: 'numeric',
   month: 'long',
@@ -23,14 +22,12 @@ const formattedDate = date.toLocaleDateString('en-US', {
 <Base title={title} description={description}>
   <Nav />
   <article class="post">
-    {hero && (
-      <div class="post-hero">
-        <img src={hero} alt={title} class="w-full h-64 object-cover" />
-      </div>
-    )}
-    <header class="l-body pt-24 pb-8">
-      <h1 class="text-4xl font-bold text-white mb-4">{title}</h1>
-      <div class="flex items-center gap-4 text-gray-400 text-sm">
+    <header class="l-body pt-32 pb-8">
+      <h1 class="text-4xl font-bold text-white mb-4 tracking-tight">{title}</h1>
+      {description && (
+        <p class="text-gray-400 text-lg leading-relaxed mb-4">{description}</p>
+      )}
+      <div class="flex items-center gap-4 text-gray-500 text-sm">
         <time datetime={date.toISOString()}>{formattedDate}</time>
         {tags.length > 0 && (
           <div class="flex gap-2">
@@ -43,6 +40,9 @@ const formattedDate = date.toLocaleDateString('en-US', {
     </header>
     <div class="post-content l-body">
       <slot />
+    </div>
+    <div class="l-body pb-16 pt-12">
+      <hr class="post-separator" />
     </div>
   </article>
   <Footer />
