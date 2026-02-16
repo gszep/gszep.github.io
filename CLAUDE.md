@@ -45,21 +45,16 @@ src/
       Footer.astro         # Footer / contact section
       ProjectCard.astro    # Blog post card (supports img and video)
       CitationCard.astro   # Publication card
-    blog/                  # Blog-specific components
-      Equation.astro       # KaTeX math blocks
-      Figure.astro         # Captioned figures (body/page/screen widths)
-      Aside.astro          # Margin notes (Distill-style)
-      CodeBlock.astro      # Syntax-highlighted code
     interactive/           # Client-side islands (future: WebGPU sims)
   layouts/
     Base.astro             # HTML shell, meta, fonts, staging password gate
     Page.astro             # Generic page (Nav + Footer)
-    Post.astro             # Blog post layout (currently unused)
+    Post.astro             # Blog post layout (Distill theme)
   pages/
     index.astro            # Homepage (Blog + Publications + Contact)
     blog/
       index.astro          # Blog listing
-      [...slug].astro      # Dynamic blog routes (inline layout)
+      [...slug].astro      # Dynamic blog routes (uses Post layout)
   styles/
     post.css               # Distill-inspired article typography
   data/

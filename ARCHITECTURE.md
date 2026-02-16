@@ -53,12 +53,7 @@ gszep.github.io/
 |   |   |   +-- Footer.astro
 |   |   |   +-- ProjectCard.astro    # Blog post card (img + video support)
 |   |   |   +-- CitationCard.astro
-|   |   +-- blog/                    # Blog-specific components
-|   |   |   +-- Figure.astro         # Captioned figures (body/page/screen widths)
-|   |   |   +-- Equation.astro       # KaTeX math blocks
-|   |   |   +-- Aside.astro          # Margin notes (Distill-style)
-|   |   |   +-- CodeBlock.astro      # Syntax-highlighted code
-|   |   +-- interactive/             # Client-side islands (future)
+|   |   +-- interactive/             # Client-side islands (future: WebGPU sims)
 |   |
 |   +-- layouts/
 |   |   +-- Base.astro               # HTML shell, meta, fonts, staging gate
@@ -157,13 +152,17 @@ All animated content uses MP4 video instead of GIF:
 - **ProjectCard.astro**: Blog post card with MP4/image support, hover scale effect
 - **CitationCard.astro**: Publication renderer with author abbreviation logic
 
-### Blog Components (`src/components/blog/`)
+### Blog Content Pattern
 
-Available for use in MDX posts:
-- **Figure.astro**: Supports `body`/`page`/`screen` widths via Distill classes
-- **Equation.astro**: KaTeX client-side rendering, block/inline modes
-- **Aside.astro**: Margin notes with responsive collapse
-- **CodeBlock.astro**: Optional title bar above code blocks
+Blog posts use **raw HTML** for figures, videos, and media. This is deliberate -- raw HTML tags (`<figure>`, `<img>`, `<video>`) are in every LLM's training corpus and require no import paths or component APIs to get right. Distill width classes can be applied directly:
+
+```html
+<figure class="l-body">...</figure>   <!-- 700px default -->
+<figure class="l-page">...</figure>   <!-- 900px wider -->
+<figure class="l-screen">...</figure> <!-- full viewport -->
+```
+
+If future posts need complex interactive behavior (KaTeX equations, margin notes), create focused components in `src/components/blog/` at that point with real requirements.
 
 ## Distill-Inspired Typography
 
