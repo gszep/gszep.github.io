@@ -24,6 +24,7 @@ Technical blueprint for gszep.com -- an AI-native personal website with Distill-
 | Math | KaTeX | LaTeX equations in blog posts |
 | Media | MP4 video | Autoplay/loop replaces GIF at ~96% smaller size |
 | Deployment | GitHub Pages | Static output via GitHub Actions |
+| Sitemap | @astrojs/sitemap | Auto-generated sitemap.xml for crawler discoverability |
 
 ### Framework Constraints
 
@@ -125,7 +126,7 @@ Markdown content here. Use standard HTML for figures:
 </figure>
 ```
 
-Frontmatter fields: title, description, date (required); image, tags, hero, order, draft (optional).
+Frontmatter fields: title, description, date (required); image, tags, order, draft (optional).
 
 Posts are sorted by `order` field (curated ordering, not chronological).
 
