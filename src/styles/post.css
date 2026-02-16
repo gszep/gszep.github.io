@@ -9,29 +9,29 @@
   --post-link: #2563eb;
   --post-link-hover: #1d4ed8;
   --post-code-bg: #f5f5f5;
-  --post-pre-bg: #f6f8fa;
-  --post-blockquote-border: #d1d5db;
-  --post-blockquote-text: #6b7280;
-  --post-caption: #6b7280;
-  --post-aside-bg: #f3f4f6;
-  --post-aside-text: #6b7280;
-  --post-separator: #e5e7eb;
+  --post-pre-bg: #f7f7f7;
+  --post-blockquote-border: #d4d4d4;
+  --post-blockquote-text: #737373;
+  --post-caption: #737373;
+  --post-aside-bg: #f5f5f5;
+  --post-aside-text: #737373;
+  --post-separator: #e5e5e5;
 }
 
 .dark {
-  --post-text: #d1d5db;
+  --post-text: #d4d4d4;
   --post-heading: white;
   --post-strong: white;
   --post-link: #93c5fd;
   --post-link-hover: #bfdbfe;
-  --post-code-bg: #1f2937;
-  --post-pre-bg: #111827;
-  --post-blockquote-border: #4b5563;
-  --post-blockquote-text: #9ca3af;
-  --post-caption: #9ca3af;
-  --post-aside-bg: #1f2937;
-  --post-aside-text: #9ca3af;
-  --post-separator: #374151;
+  --post-code-bg: #1c1c1c;
+  --post-pre-bg: #141414;
+  --post-blockquote-border: #525252;
+  --post-blockquote-text: #a3a3a3;
+  --post-caption: #a3a3a3;
+  --post-aside-bg: #1c1c1c;
+  --post-aside-text: #a3a3a3;
+  --post-separator: #404040;
 }
 
 /* ===================================
