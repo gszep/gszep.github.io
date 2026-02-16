@@ -57,25 +57,27 @@ import ThemeToggle from './ThemeToggle.astro';
     });
   });
 
-  // Active section highlighting on scroll
-  const sectionIds = ['hero', 'blog', 'publications', 'contact'];
-  const sections = sectionIds
-    .map((id) => document.getElementById(id))
-    .filter(Boolean) as HTMLElement[];
+  // Active nav link highlighting
+  const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
 
-  if (sections.length > 0) {
-    const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
+  function setActive(sectionId: string) {
+    navLinks.forEach((link) => {
+      const isActive = link.dataset.section === sectionId;
+      link.classList.toggle('text-gray-900', isActive);
+      link.classList.toggle('dark:text-white', isActive);
+      link.classList.toggle('text-gray-500', !isActive);
+      link.classList.toggle('dark:text-gray-400', !isActive);
+    });
+  }
 
-    function setActive(sectionId: string) {
-      navLinks.forEach((link) => {
-        const isActive = link.dataset.section === sectionId;
-        link.classList.toggle('text-gray-900', isActive);
-        link.classList.toggle('dark:text-white', isActive);
-        link.classList.toggle('text-gray-500', !isActive);
-        link.classList.toggle('dark:text-gray-400', !isActive);
-      });
-    }
+  // On homepage: scroll-based section highlighting
+  const isHomepage = window.location.pathname === '/';
+  const homeSections = ['hero', 'blog', 'publications', 'contact'];
+  const sections = isHomepage
+    ? homeSections.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
+    : [];
 
+  if (sections.length === homeSections.length) {
     function updateActiveSection() {
       const scrollY = window.scrollY + window.innerHeight * 0.35;
       let activeId = sections[0].id;
@@ -86,10 +88,21 @@ import ThemeToggle from './ThemeToggle.astro';
         }
       }
 
+      // At the very bottom of the page, activate contact
+      if (window.innerHeight + window.scrollY >= document.body.offsetHeight - 2) {
+        activeId = 'contact';
+      }
+
       setActive(activeId);
     }
 
     window.addEventListener('scroll', updateActiveSection, { passive: true });
     updateActiveSection();
+  } else {
+    // On non-homepage: highlight based on URL path
+    const path = window.location.pathname;
+    if (path.startsWith('/blog')) {
+      setActive('blog');
+    }
   }
 </script>
