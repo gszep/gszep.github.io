@@ -2,7 +2,7 @@
 import site from '../../data/site.json';
 ---
 
-<footer id="contact" style="background-color: #363636;">
+<footer id="contact" class="bg-gray-100 dark:bg-gray-800" style="scroll-margin-top: 4rem;">
   <div class="max-w-6xl mx-auto px-4 py-12">
     <div class="flex flex-col md:flex-row items-center md:items-start gap-6">
       <img
@@ -11,14 +11,14 @@ import site from '../../data/site.json';
         class="w-16 h-16 rounded-full object-cover"
       />
       <div class="text-center md:text-left">
-        <h3 class="text-gray-300 font-medium">{site.author.name}</h3>
+        <h3 class="text-gray-900 dark:text-gray-300 font-medium">{site.author.name}</h3>
         <p class="text-gray-500 text-sm mt-1 max-w-lg">{site.author.about}</p>
         <div class="flex gap-4 mt-3 justify-center md:justify-start">
           <a
             href="https://www.henkaku.center/en/people/grisha-szep/"
             target="_blank"
             rel="noopener noreferrer"
-            class="text-white hover:text-gray-300 text-sm"
+            class="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 text-sm"
           >
             Henkaku Center
           </a>
@@ -26,7 +26,7 @@ import site from '../../data/site.json';
             href={`https://github.com/${site.author.github}`}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-white hover:text-gray-300 text-sm"
+            class="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 text-sm"
           >
             GitHub
           </a>
@@ -34,7 +34,7 @@ import site from '../../data/site.json';
             href={`https://linkedin.com/in/${site.author.linkedin}`}
             target="_blank"
             rel="noopener noreferrer"
-            class="text-white hover:text-gray-300 text-sm"
+            class="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 text-sm"
           >
             LinkedIn
           </a>

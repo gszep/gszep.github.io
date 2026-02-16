@@ -32,11 +32,11 @@ const formattedAuthors = formatAuthors(authors);
 const searchUrl = `https://www.google.com/search?q=${encodeURIComponent(title)}`;
 ---
 
-<div class="text-gray-400 text-sm leading-relaxed">
+<div class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
   {formattedAuthors}
   ({year}).
-  <a href={searchUrl} class="text-white hover:underline" target="_blank" rel="noopener noreferrer">
+  <a href={searchUrl} class="text-gray-900 dark:text-white hover:underline" target="_blank" rel="noopener noreferrer">
     {title}
   </a>.
-  <em class="text-gray-300">{publication}</em>{volume && `, ${volume}`}{number && `(${number})`}{pages && `, ${pages}`}.
+  <em class="text-gray-700 dark:text-gray-300">{publication}</em>{volume && `, ${volume}`}{number && `(${number})`}{pages && `, ${pages}`}.
 </div>

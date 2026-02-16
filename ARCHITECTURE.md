@@ -145,14 +145,15 @@ All animated content uses MP4 video instead of GIF:
 
 ### Layout Components (`src/layouts/`)
 
-- **Base.astro**: HTML shell with meta tags, Google Fonts (Poppins), Tailwind, staging password gate
+- **Base.astro**: HTML shell with meta tags, Google Fonts (Poppins), Tailwind, theme detection script, staging password gate
 - **Page.astro**: Wraps Base with Nav + Footer for generic pages
-- **Post.astro**: Distill-inspired dark-theme blog layout with title, description, date, tags, and separator
+- **Post.astro**: Distill-inspired blog layout with title, description, date, tags, and separator
 
 ### UI Components (`src/components/ui/`)
 
-- **Nav.astro**: Fixed top nav, responsive with mobile hamburger menu
+- **Nav.astro**: Fixed top nav, responsive with mobile hamburger menu, theme toggle
 - **Footer.astro**: Contact section with headshot, about text, social links
+- **ThemeToggle.astro**: Sun/moon toggle for light/dark mode with localStorage persistence
 - **ProjectCard.astro**: Blog post card with MP4/image support, hover scale effect
 - **CitationCard.astro**: Publication renderer with author abbreviation logic
 
@@ -173,7 +174,17 @@ The blog layout implements Distill's content-width system in `src/styles/post.cs
 - **`.l-screen`**: Full viewport width for immersive content
 - **Margin notes**: Side annotations that collapse on mobile
 
-Blog posts use the dark-theme Distill styles throughout. Figures without explicit width classes automatically break out to page width (900px) for visual rhythm. The `github-dark` Shiki theme provides syntax highlighting consistent with the dark background.
+Post typography uses CSS custom properties (defined in `:root` and `.dark`) so all colors switch automatically with the theme. Figures without explicit width classes break out to page width (900px) for visual rhythm. Dual Shiki themes (`github-light`/`github-dark`) provide syntax highlighting that follows the active theme.
+
+## Light/Dark Theme
+
+The site supports light and dark modes with system preference detection:
+
+1. **Detection**: Inline `<script>` in `<head>` checks `localStorage` then `prefers-color-scheme` before any render (no flash)
+2. **Mechanism**: Tailwind `darkMode: 'class'` -- `.dark` class on `<html>` activates all `dark:` variants
+3. **Toggle**: `ThemeToggle.astro` in the nav bar (sun/moon icons) persists choice to `localStorage`
+4. **CSS custom properties**: `post.css` defines `--post-text`, `--post-heading`, `--post-link`, etc. with light defaults and `.dark` overrides
+5. **Code blocks**: Shiki dual themes generate both light and dark inline styles; `.dark .astro-code` CSS activates the dark variables
 
 ## Staging Password Gate
 
