@@ -1,9 +1,6 @@
 ---
 import site from '../../data/site.json';
 import ThemeToggle from './ThemeToggle.astro';
-
-const currentPath = Astro.url.pathname;
-const isHome = currentPath === '/';
 ---
 
 <nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation">
@@ -12,10 +9,10 @@ const isHome = currentPath === '/';
 
     <!-- Desktop nav -->
     <div class="hidden md:flex items-center gap-6 text-sm uppercase tracking-wide">
-      <a href="/" class:list={["hover:text-gray-900 dark:hover:text-gray-300", { 'text-gray-900 dark:text-white': isHome, 'text-gray-500 dark:text-gray-400': !isHome }]}>Home</a>
-      <a href="/#blog" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Blog</a>
-      <a href="/#publications" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Publications</a>
-      <a href="/#contact" class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Contact</a>
+      <a href="/" data-section="hero" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Home</a>
+      <a href="/#blog" data-section="blog" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Blog</a>
+      <a href="/#publications" data-section="publications" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Publications</a>
+      <a href="/#contact" data-section="contact" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Contact</a>
       <ThemeToggle />
     </div>
 
@@ -37,14 +34,15 @@ const isHome = currentPath === '/';
 
   <!-- Mobile menu -->
   <div class="hidden md:hidden bg-white dark:bg-black px-4 pb-4" id="nav-menu">
-    <a href="/" class="block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Home</a>
-    <a href="/#blog" class="block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Blog</a>
-    <a href="/#publications" class="block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Publications</a>
-    <a href="/#contact" class="block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Contact</a>
+    <a href="/" data-section="hero" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Home</a>
+    <a href="/#blog" data-section="blog" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Blog</a>
+    <a href="/#publications" data-section="publications" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Publications</a>
+    <a href="/#contact" data-section="contact" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Contact</a>
   </div>
 </nav>
 
 <script>
+  // Mobile menu toggle
   const burger = document.getElementById('nav-burger');
   const menu = document.getElementById('nav-menu');
   burger?.addEventListener('click', () => {
@@ -58,4 +56,40 @@ const isHome = currentPath === '/';
       burger?.setAttribute('aria-expanded', 'false');
     });
   });
+
+  // Active section highlighting on scroll
+  const sectionIds = ['hero', 'blog', 'publications', 'contact'];
+  const sections = sectionIds
+    .map((id) => document.getElementById(id))
+    .filter(Boolean) as HTMLElement[];
+
+  if (sections.length > 0) {
+    const navLinks = document.querySelectorAll<HTMLAnchorElement>('.nav-link');
+
+    function setActive(sectionId: string) {
+      navLinks.forEach((link) => {
+        const isActive = link.dataset.section === sectionId;
+        link.classList.toggle('text-gray-900', isActive);
+        link.classList.toggle('dark:text-white', isActive);
+        link.classList.toggle('text-gray-500', !isActive);
+        link.classList.toggle('dark:text-gray-400', !isActive);
+      });
+    }
+
+    function updateActiveSection() {
+      const scrollY = window.scrollY + window.innerHeight * 0.35;
+      let activeId = sections[0].id;
+
+      for (const section of sections) {
+        if (section.offsetTop <= scrollY) {
+          activeId = section.id;
+        }
+      }
+
+      setActive(activeId);
+    }
+
+    window.addEventListener('scroll', updateActiveSection, { passive: true });
+    updateActiveSection();
+  }
 </script>
