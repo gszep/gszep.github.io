@@ -4,6 +4,7 @@ import Nav from '../components/ui/Nav.astro';
 import Footer from '../components/ui/Footer.astro';
 import ProjectCard from '../components/ui/ProjectCard.astro';
 import CitationCard from '../components/ui/CitationCard.astro';
+import HeroSimulation from '../components/interactive/HeroSimulation.astro';
 import site from '../data/site.json';
 import citations from '../data/citations.json';
 import { getCollection } from 'astro:content';
@@ -21,7 +22,8 @@ posts.sort((a, b) => a.data.order - b.data.order);
     style={`background-image: url(${site.heroImage})`}
     id="hero"
   >
-    <div class="absolute inset-0 bg-white/80 dark:bg-black/75"></div>
+    <HeroSimulation />
+    <div id="hero-overlay" class="absolute inset-0 bg-white/80 dark:bg-black/75"></div>
     <div class="px-4 relative z-10">
       <h1 class="font-bold uppercase tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
         {site.title}

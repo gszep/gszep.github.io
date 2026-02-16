@@ -23,6 +23,7 @@
   "devDependencies": {
     "@types/katex": "^0.16.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "@webgpu/types": "^0.1.69"
   }
 }

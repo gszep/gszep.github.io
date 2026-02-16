@@ -1,0 +1,62 @@
+---
+/**
+ * WebGPU Game of Life overlay for the hero section.
+ * Silently does nothing when WebGPU is unsupported — the CSS
+ * overlay fallback in index.astro remains visible instead.
+ */
+---
+
+<canvas
+  id="hero-sim"
+  class="absolute inset-0 pointer-events-none"
+></canvas>
+
+<script>
+  import { GameOfLife } from "./webgpu/GameOfLife";
+  import type { SimColors } from "./webgpu/GameOfLife";
+
+  const LIGHT: SimColors = {
+    alive: [0.82, 0.84, 0.88, 0.55],
+    dead: [1.0, 1.0, 1.0, 0.82],
+  };
+
+  const DARK: SimColors = {
+    alive: [0.14, 0.16, 0.22, 0.45],
+    dead: [0.0, 0.0, 0.0, 0.78],
+  };
+
+  function isDark(): boolean {
+    return document.documentElement.classList.contains("dark");
+  }
+
+  const canvas = document.getElementById("hero-sim") as HTMLCanvasElement | null;
+
+  if (canvas) {
+    const sim = new GameOfLife({
+      canvas,
+      cellSize: 10,
+      updateInterval: 150,
+      initialDensity: 0.25,
+      colors: isDark() ? DARK : LIGHT,
+    });
+
+    sim.start().then((ok) => {
+      if (!ok) {
+        // WebGPU unavailable — remove canvas, CSS overlay stays
+        canvas.remove();
+        return;
+      }
+
+      // Hide the CSS overlay; the canvas now provides the overlay effect
+      document.getElementById("hero-overlay")?.classList.add("hidden");
+
+      // React to theme changes (light/dark toggle)
+      new MutationObserver(() => {
+        sim.updateColors(isDark() ? DARK : LIGHT);
+      }).observe(document.documentElement, {
+        attributes: true,
+        attributeFilter: ["class"],
+      });
+    });
+  }
+</script>

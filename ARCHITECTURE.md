@@ -54,7 +54,13 @@ gszep.github.io/
 |   |   |   +-- Footer.astro
 |   |   |   +-- ProjectCard.astro    # Blog post card (img + video support)
 |   |   |   +-- CitationCard.astro
-|   |   +-- interactive/             # Client-side islands (future: WebGPU sims)
+|   |   +-- interactive/             # Client-side islands (WebGPU sims)
+|   |   |   +-- HeroSimulation.astro # Game of Life hero overlay
+|   |   |   +-- webgpu/              # Shared WebGPU utilities + simulations
+|   |   |       +-- utils.ts
+|   |   |       +-- GameOfLife.ts
+|   |   |       +-- game-of-life.compute.wgsl
+|   |   |       +-- game-of-life.render.wgsl
 |   |
 |   +-- layouts/
 |   |   +-- Base.astro               # HTML shell, meta, fonts, staging gate
@@ -190,11 +196,44 @@ The site supports light and dark modes with system preference detection:
 
 The staging site has a client-side password gate (password: `preview`). Implemented in `Base.astro`, only active when hostname is `staging.gszep.com`. Production and localhost bypass it.
 
-## Future: Interactive Simulations
+## Interactive Simulations (WebGPU)
 
-Planned infrastructure for WebGPU simulations:
+The site supports WebGPU simulations embedded in pages. The first simulation is Conway's Game of Life running as an overlay on the homepage hero section.
+
+### Architecture
+
 - Each simulation: vanilla TypeScript class (logic) + Astro wrapper (DOM)
-- Shared utilities in `src/components/interactive/webgpu/`
-- WGSL shaders imported as raw strings via Vite's `?raw` suffix
-- Fallback for browsers without WebGPU support
-- Browser support: ~78% global (Chrome, Edge, Safari 26+)
+- Shared utilities in `src/components/interactive/webgpu/utils.ts`
+- WGSL shaders imported as raw strings via Vite's `?raw` suffix (declared in `src/wgsl.d.ts`)
+- WebGPU types via `@webgpu/types` dev dependency
+- Silent fallback: if WebGPU is unsupported, canvas is removed and CSS fallback stays
+
+### File Structure
+
+```
+src/components/interactive/
++-- webgpu/
+|   +-- utils.ts                    # Shared: device init, canvas resize
+|   +-- GameOfLife.ts               # Game of Life simulation class
+|   +-- game-of-life.compute.wgsl   # Compute shader (B3/S23 rules)
+|   +-- game-of-life.render.wgsl    # Render shader (fullscreen triangle)
++-- HeroSimulation.astro            # Astro wrapper for hero overlay
+```
+
+### How It Works
+
+1. `HeroSimulation.astro` renders a `<canvas>` in the hero section
+2. Client-side script initialises `GameOfLife` class on the canvas
+3. If WebGPU is available: canvas replaces the CSS overlay, simulation runs
+4. If WebGPU is unavailable: canvas is removed, original CSS overlay stays
+5. Theme changes (light/dark) update simulation colours live via `MutationObserver`
+
+### Adding New Simulations
+
+To add a new WebGPU simulation:
+1. Create a new TypeScript class in `src/components/interactive/webgpu/` importing from `utils.ts`
+2. Write WGSL shaders as `.wgsl` files, import with `?raw` suffix
+3. Create an Astro wrapper in `src/components/interactive/`
+4. Use the wrapper in any page or MDX blog post
+
+Browser support: ~78% global (Chrome, Edge, Safari 26+)
