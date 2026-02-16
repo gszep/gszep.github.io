@@ -50,6 +50,9 @@
       // Hide the CSS overlay; the canvas now provides the overlay effect
       document.getElementById("hero-overlay")?.classList.add("hidden");
 
+      // Rebuild grid on resize to keep cells square
+      new ResizeObserver(() => sim.handleResize()).observe(canvas);
+
       // React to theme changes (light/dark toggle)
       new MutationObserver(() => {
         sim.updateColors(isDark() ? DARK : LIGHT);

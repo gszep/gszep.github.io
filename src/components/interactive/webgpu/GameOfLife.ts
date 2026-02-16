@@ -36,11 +36,13 @@ export class GameOfLife {
   // GPU state
   private device!: GPUDevice;
   private ctx!: GPUCanvasContext;
+  private format!: GPUTextureFormat;
   private gw = 0;
   private gh = 0;
   private step = 0;
   private raf: number | null = null;
   private last = 0;
+  private resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Pipelines & resources
   private computePL!: GPUComputePipeline;
@@ -67,11 +69,12 @@ export class GameOfLife {
 
     this.device = gpu.device;
     this.ctx = gpu.context;
+    this.format = gpu.format;
 
     this.gw = Math.ceil(this.canvas.width / this.cellSize);
     this.gh = Math.ceil(this.canvas.height / this.cellSize);
 
-    this.buildPipelines(gpu.format);
+    this.buildPipelines(this.format);
     this.buildBuffers();
     this.buildBindGroups();
 
@@ -84,6 +87,32 @@ export class GameOfLife {
   stop(): void {
     if (this.raf !== null) cancelAnimationFrame(this.raf);
     this.raf = null;
+    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
+    this.resizeTimer = null;
+  }
+
+  /** Handle viewport resize: rebuild grid and buffers to maintain square cells. */
+  handleResize(): void {
+    // Debounce — avoid rebuilding every frame during drag-resize
+    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
+    this.resizeTimer = setTimeout(() => this.rebuild(), 150);
+  }
+
+  private rebuild(): void {
+    resizeCanvas(this.canvas);
+    this.ctx.configure({
+      device: this.device,
+      format: this.format,
+      alphaMode: "premultiplied",
+    });
+
+    this.gw = Math.ceil(this.canvas.width / this.cellSize);
+    this.gh = Math.ceil(this.canvas.height / this.cellSize);
+    this.step = 0;
+
+    this.buildBuffers();
+    this.buildBindGroups();
+    this.renderFrame();
   }
 
   /** Live-update colours (e.g. on theme toggle). */
