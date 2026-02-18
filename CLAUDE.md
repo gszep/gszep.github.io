@@ -144,6 +144,70 @@ npm run preview           # Preview production build
 - **Minimal Content Collections config** -- simple frontmatter schemas only
 - **`.astro` files for layout only** -- no complex logic
 
+## WebGPU Constraints
+
+- **read_write storage textures**: Only `r32float`, `r32sint`, and `r32uint` formats support `read_write` access. Multi-channel formats like `rgba32float` do NOT support `read_write`.
+- **Storage buffers for multi-channel state**: Use `var<storage, read_write> state: array<vec4f>` instead. No format restrictions on storage buffers.
+- **Shared utils**: `src/components/interactive/webgpu/utils.ts` provides `initWebGPU`, `resizeCanvas`, `createShader`, `fullscreenPass`.
+- **Shader includes**: Use `#import name` in WGSL + `processShaderIncludes()` for shared code (e.g., fullscreen vertex shader).
+- **WGSL raw imports**: Import `.wgsl` files with `?raw` suffix (declared in `src/wgsl.d.ts`).
+- **WGSL type strictness**: `vec2i(u32_scalar)` fails. Use abstract-int literals (`vec2i(1)`) or explicit casts (`vec2i(i32(x))`). Vector-to-vector conversions like `vec2i(vec2u_value)` work fine.
+- **Canvas alpha**: Use `alphaMode: "premultiplied"` on canvas context. Zero state = transparent canvas. Set the wrapper div `background` to control what shows through (white for clean slate, not black).
+
+## WebGPU Compute: Workgroup Cache with Halo (Go-To Pattern)
+
+This is our standard approach for GPU compute simulations that use stencil operations (laplacian, curl, finite differences). It eliminates inter-workgroup race conditions without ping-pong buffers or scratch+copy passes.
+
+### Why not alternatives?
+
+| Approach | Problem |
+|----------|---------|
+| **Single `read_write` buffer, no cache** | Visible block artifacts at 8x8 workgroup boundaries from inter-workgroup races |
+| **Ping-pong (two buffers, alternate read/write)** | Complicates TypeScript with dual bind groups, alternation state, and doubles memory |
+| **Scratch buffer + copyBufferToBuffer** | Extra buffer, extra copy per step, still two bind groups |
+| **Workgroup cache with halo** | Single buffer, race-free stencils, faster (shared memory reads), clean TypeScript |
+
+### How it works
+
+1. Each 8x8 workgroup loads a `CACHE x CACHE` (e.g. 16x16) tile from global memory into `var<workgroup>` shared memory, including a `HALO`-cell border overlap with neighboring workgroups
+2. `workgroupBarrier()` ensures all loads complete before any computation
+3. Stencil operations (laplacian, curl, Jacobi) read from the cached tile -- race-free because each workgroup has a self-consistent snapshot
+4. Operations that can exceed the cache (e.g. semi-Lagrangian advection with arbitrary displacement) fall back to global memory reads -- any residual races are smoothed by interpolation
+5. Results write directly back to the single global `read_write` buffer
+6. Only inner cells (excluding halo) are written; halo cells exist solely for neighbor lookups
+
+### Constants (tunable per simulation)
+
+```wgsl
+const WG: u32 = 8u;                    // workgroup size
+const TILE: u32 = 2u;                  // cells loaded per thread per axis
+const HALO: u32 = 1u;                  // halo width (match stencil radius)
+const CACHE: u32 = TILE * WG;          // 16 -- total cached tile size
+const INNER: u32 = CACHE - 2u * HALO;  // 14 -- active cells per workgroup
+```
+
+- `HALO` must be >= the stencil radius (1 for standard 5-point laplacian)
+- `TILE` controls how many cells each thread loads (2 is typical)
+- Workgroup shared memory: `CACHE * CACHE * sizeof(element)` must fit in 16KB limit
+
+### TypeScript dispatch
+
+```typescript
+const INNER = TILE * WG - 2 * HALO; // 14
+cp.dispatchWorkgroups(Math.ceil(gw / INNER), Math.ceil(gh / INNER));
+```
+
+Note: dispatch uses `INNER` (not `WG`) because each workgroup only writes `INNER x INNER` active cells.
+
+### Key constraint: `workgroupBarrier()` only synchronizes within a workgroup
+
+There is NO inter-workgroup synchronization within a single compute dispatch in WebGPU. The cache pattern works because each workgroup operates on its own consistent snapshot loaded before the barrier. Writes to global memory from different workgroups may interleave, but since each cell is written by exactly one workgroup (the one whose inner region contains it), there are no write conflicts.
+
+### Reference implementations
+
+- **Navier-Stokes**: `src/components/interactive/webgpu/navier-stokes.compute.wgsl` + `NavierStokes.ts`
+- **Lattice-Boltzmann** (external): `github.com/gszep/fluid-structure-interactive` -- `src/shaders/includes/cache.wgsl`
+
 ## Rules
 
 1. Always read files before editing -- understand structure first

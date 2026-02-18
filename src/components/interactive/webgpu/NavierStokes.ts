@@ -1,9 +1,9 @@
 /**
  * WebGPU Navier-Stokes fluid simulation.
  *
- * Vorticity-stream function formulation with a single read_write storage buffer.
- * Race conditions between workgroups produce the characteristic numerical
- * errors that make this art — no ping-pong needed.
+ * Vorticity-stream function formulation with a single read_write storage
+ * buffer. Race-free stencil operations via workgroup cache with halo.
+ * Advection reads from global memory (displacement can exceed cache).
  *
  * Discretization ported from public/art/3141.
  *
@@ -32,6 +32,9 @@ export interface NavierStokesOptions {
 }
 
 const WG = 8; // workgroup size (must match compute shader)
+const TILE = 2;
+const HALO = 1;
+const INNER = TILE * WG - 2 * HALO; // 14 — active cells per workgroup
 
 export class NavierStokes {
   // Config
@@ -249,8 +252,8 @@ export class NavierStokes {
       cp.setPipeline(this.computePL);
       cp.setBindGroup(0, this.computeBG);
       cp.dispatchWorkgroups(
-        Math.ceil(this.gw / WG),
-        Math.ceil(this.gh / WG),
+        Math.ceil(this.gw / INNER),
+        Math.ceil(this.gh / INNER),
       );
       cp.end();
     }
