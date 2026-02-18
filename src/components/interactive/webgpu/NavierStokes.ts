@@ -28,7 +28,7 @@ export interface NavierStokesOptions {
   cellSize?: number; // px per sim cell (default 4)
   updateInterval?: number; // ms between frames (default 16)
   stepsPerFrame?: number; // compute dispatches per render (default 1)
-  brushSize?: number; // radius of interaction brush (default 30)
+  brushSize?: number; // radius of interaction brush in px (default 1000)
 }
 
 const WG = 8; // workgroup size (must match compute shader)
@@ -72,7 +72,7 @@ export class NavierStokes {
     this.cellSize = opts.cellSize ?? 4;
     this.interval = opts.updateInterval ?? 16;
     this.stepsPerFrame = opts.stepsPerFrame ?? 1;
-    this.brushSize = opts.brushSize ?? 30;
+    this.brushSize = opts.brushSize ?? 1000;
   }
 
   /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
