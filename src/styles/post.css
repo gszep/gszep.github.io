@@ -54,11 +54,20 @@
   padding-right: 1rem;
 }
 
+.post {
+  overflow-x: hidden;
+}
+
 .l-screen {
   width: 100vw;
   position: relative;
   left: 50%;
   right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+.post-content figure.l-screen {
   margin-left: -50vw;
   margin-right: -50vw;
 }
