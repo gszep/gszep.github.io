@@ -18,6 +18,7 @@ import {
   resizeCanvas,
   createShader,
   fullscreenPass,
+  MouseTracker,
 } from "./utils";
 import computeSrc from "./navier-stokes.compute.wgsl?raw";
 import renderSrc from "./navier-stokes.render.wgsl?raw";
@@ -43,6 +44,9 @@ export class NavierStokes {
   private interval: number;
   private stepsPerFrame: number;
   private brushSize: number;
+
+  // Input
+  private mouse!: MouseTracker;
 
   // GPU state
   private device!: GPUDevice;
@@ -91,7 +95,7 @@ export class NavierStokes {
 
       this.buildPipelines();
       this.buildResources();
-      this.setupMouse();
+      this.mouse = new MouseTracker(this.canvas);
 
       this.renderFrame();
       this.raf = requestAnimationFrame(this.loop);
@@ -108,6 +112,7 @@ export class NavierStokes {
     this.raf = null;
     if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
     this.resizeTimer = null;
+    this.mouse?.destroy();
   }
 
   /** Handle viewport resize: rebuild grid and resources. */
@@ -205,32 +210,6 @@ export class NavierStokes {
     });
   }
 
-  // ── Mouse interaction ──────────────────────────────────
-
-  private setupMouse(): void {
-    this.canvas.addEventListener("mousemove", (e) => {
-      const rect = this.canvas.getBoundingClientRect();
-      this.paramsData[0] = ((e.clientX - rect.left) / rect.width) * this.gw;
-      this.paramsData[1] = ((e.clientY - rect.top) / rect.height) * this.gh;
-    });
-
-    this.canvas.addEventListener("mousedown", (e) => {
-      e.preventDefault();
-      // Left click: positive vorticity, right click: negative
-      this.paramsData[2] = e.button === 2 ? -this.brushSize : this.brushSize;
-    });
-
-    this.canvas.addEventListener("mouseup", () => {
-      this.paramsData[2] = NaN;
-    });
-
-    this.canvas.addEventListener("mouseleave", () => {
-      this.paramsData[2] = NaN;
-    });
-
-    this.canvas.addEventListener("contextmenu", (e) => e.preventDefault());
-  }
-
   // ── Frame loop ─────────────────────────────────────────
 
   private loop = (t: number): void => {
@@ -242,6 +221,17 @@ export class NavierStokes {
 
   /** Run compute steps + render. */
   private frame(): void {
+    // Map mouse state to params (convert px brush radius to grid coords)
+    const m = this.mouse.state;
+    this.paramsData[0] = m.x * this.gw;
+    this.paramsData[1] = m.y * this.gh;
+    if (m.active) {
+      const gridRadius = this.brushSize / this.cellSize;
+      this.paramsData[2] = m.button === 2 ? -gridRadius : gridRadius;
+    } else {
+      this.paramsData[2] = NaN;
+    }
+
     // Upload params
     this.device.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 

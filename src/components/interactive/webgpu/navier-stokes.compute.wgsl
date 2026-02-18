@@ -142,7 +142,7 @@ fn main(
       let distance = vec2f(global) - params.mouse.xy;
       let norm = dot(distance, distance);
       if (sqrt(norm) < abs(brush)) {
-        Fdt.w += 0.01 * sign(brush) * exp(-norm / abs(brush));
+        Fdt.w += 0.01 * sign(brush) * exp(-norm / (brush * brush));
       }
 
       state[gidx(global)] = Fdt;

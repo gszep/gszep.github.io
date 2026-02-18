@@ -72,6 +72,66 @@ export function createShader(
   return module;
 }
 
+// ── Mouse tracking ──────────────────────────────────────────────────────────
+
+/** Simulation-agnostic mouse state in normalized [0,1] canvas coordinates. */
+export interface MouseState {
+  /** X position in [0,1] relative to canvas width. */
+  x: number;
+  /** Y position in [0,1] relative to canvas height. */
+  y: number;
+  /** Whether a mouse button is currently pressed. */
+  active: boolean;
+  /** Which button was pressed: 0=left, 2=right. */
+  button: number;
+}
+
+/**
+ * Tracks mouse position and button state on a canvas element.
+ * Returns normalized [0,1] coordinates — simulations map these
+ * to their own coordinate systems (grid cells, world units, etc.).
+ */
+export class MouseTracker {
+  readonly state: MouseState = { x: 0, y: 0, active: false, button: 0 };
+  private cleanup: (() => void) | null = null;
+
+  constructor(canvas: HTMLCanvasElement) {
+    const onMove = (e: MouseEvent) => {
+      const rect = canvas.getBoundingClientRect();
+      this.state.x = (e.clientX - rect.left) / rect.width;
+      this.state.y = (e.clientY - rect.top) / rect.height;
+    };
+    const onDown = (e: MouseEvent) => {
+      e.preventDefault();
+      this.state.active = true;
+      this.state.button = e.button;
+    };
+    const onUp = () => { this.state.active = false; };
+    const onLeave = () => { this.state.active = false; };
+    const onContext = (e: Event) => e.preventDefault();
+
+    canvas.addEventListener("mousemove", onMove);
+    canvas.addEventListener("mousedown", onDown);
+    canvas.addEventListener("mouseup", onUp);
+    canvas.addEventListener("mouseleave", onLeave);
+    canvas.addEventListener("contextmenu", onContext);
+
+    this.cleanup = () => {
+      canvas.removeEventListener("mousemove", onMove);
+      canvas.removeEventListener("mousedown", onDown);
+      canvas.removeEventListener("mouseup", onUp);
+      canvas.removeEventListener("mouseleave", onLeave);
+      canvas.removeEventListener("contextmenu", onContext);
+    };
+  }
+
+  /** Remove all event listeners. */
+  destroy(): void {
+    this.cleanup?.();
+    this.cleanup = null;
+  }
+}
+
 // ── Render helpers ──────────────────────────────────────────────
 
 /** Execute a fullscreen render pass (3-vertex triangle, no vertex buffer). */
