@@ -8,7 +8,7 @@
 
 <div
   class="fluid-sim-wrapper"
-  style="position: relative; aspect-ratio: 16/9; background: #fff; overflow: hidden;"
+  style="position: relative; aspect-ratio: 16/9; overflow: hidden;"
 >
   <video
     id="fluid-sim-fallback"
@@ -44,6 +44,14 @@
 </div>
 
 <style>
+  .fluid-sim-wrapper {
+    background: #fff;
+  }
+
+  :global(.dark) .fluid-sim-wrapper {
+    background: #000;
+  }
+
   .hint-overlay {
     pointer-events: none;
     position: absolute;
@@ -65,6 +73,10 @@
     animation: hint-label-fade 3.5s ease-in-out infinite;
   }
 
+  :global(.dark) .hint-label {
+    color: rgba(255, 255, 255, 0.4);
+  }
+
   .hint-cursor {
     position: absolute;
     animation: hint-drag 3.5s ease-in-out infinite;
@@ -76,6 +88,15 @@
     z-index: 1;
   }
 
+  :global(.dark) .hint-cursor svg {
+    filter: drop-shadow(0 1px 2px rgba(255, 255, 255, 0.15));
+  }
+
+  :global(.dark) .hint-cursor svg path {
+    fill: #1a1a1a;
+    stroke: rgba(255, 255, 255, 0.7);
+  }
+
   .hint-ring {
     position: absolute;
     top: -6px;
@@ -85,6 +106,10 @@
     border: 2px solid rgba(0, 0, 0, 0.2);
     border-radius: 50%;
     animation: hint-ring-pulse 3.5s ease-in-out infinite;
+  }
+
+  :global(.dark) .hint-ring {
+    border-color: rgba(255, 255, 255, 0.2);
   }
 
   @keyframes hint-drag {
