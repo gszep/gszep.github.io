@@ -72,56 +72,92 @@ export function createShader(
   return module;
 }
 
-// ── Mouse tracking ──────────────────────────────────────────────────────────
+// ── Pointer tracking ───────────────────────────────────────────
 
-/** Simulation-agnostic mouse state in normalized [0,1] canvas coordinates. */
+/** Simulation-agnostic pointer state in normalized [0,1] canvas coordinates. */
 export interface MouseState {
   /** X position in [0,1] relative to canvas width. */
   x: number;
   /** Y position in [0,1] relative to canvas height. */
   y: number;
-  /** Whether a mouse button is currently pressed. */
+  /** Whether a pointer is currently active (mouse button or touch). */
   active: boolean;
-  /** Which button was pressed: 0=left, 2=right. */
+  /** Interaction type: 0=left-click / single touch, 2=right-click / multi-touch. */
   button: number;
 }
 
 /**
- * Tracks mouse position and button state on a canvas element.
+ * Tracks mouse and touch input on a canvas element.
  * Returns normalized [0,1] coordinates — simulations map these
  * to their own coordinate systems (grid cells, world units, etc.).
+ *
+ * Touch: single finger = left-click, two+ fingers = right-click.
  */
 export class MouseTracker {
   readonly state: MouseState = { x: 0, y: 0, active: false, button: 0 };
   private cleanup: (() => void) | null = null;
 
   constructor(canvas: HTMLCanvasElement) {
-    const onMove = (e: MouseEvent) => {
+    const updatePosition = (clientX: number, clientY: number) => {
       const rect = canvas.getBoundingClientRect();
-      this.state.x = (e.clientX - rect.left) / rect.width;
-      this.state.y = (e.clientY - rect.top) / rect.height;
+      this.state.x = (clientX - rect.left) / rect.width;
+      this.state.y = (clientY - rect.top) / rect.height;
     };
-    const onDown = (e: MouseEvent) => {
+
+    // ── Mouse ──
+    const onMouseMove = (e: MouseEvent) => updatePosition(e.clientX, e.clientY);
+    const onMouseDown = (e: MouseEvent) => {
       e.preventDefault();
       this.state.active = true;
       this.state.button = e.button;
     };
-    const onUp = () => { this.state.active = false; };
-    const onLeave = () => { this.state.active = false; };
+    const onMouseUp = () => { this.state.active = false; };
+    const onMouseLeave = () => { this.state.active = false; };
     const onContext = (e: Event) => e.preventDefault();
 
-    canvas.addEventListener("mousemove", onMove);
-    canvas.addEventListener("mousedown", onDown);
-    canvas.addEventListener("mouseup", onUp);
-    canvas.addEventListener("mouseleave", onLeave);
+    // ── Touch ──
+    const onTouchStart = (e: TouchEvent) => {
+      e.preventDefault();
+      this.state.active = true;
+      this.state.button = e.touches.length > 1 ? 2 : 0;
+      if (e.touches.length > 0) {
+        updatePosition(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      e.preventDefault();
+      if (e.touches.length > 0) {
+        updatePosition(e.touches[0].clientX, e.touches[0].clientY);
+      }
+    };
+    const onTouchEnd = (e: TouchEvent) => {
+      if (e.touches.length === 0) {
+        this.state.active = false;
+      } else {
+        this.state.button = e.touches.length > 1 ? 2 : 0;
+      }
+    };
+
+    canvas.addEventListener("mousemove", onMouseMove);
+    canvas.addEventListener("mousedown", onMouseDown);
+    canvas.addEventListener("mouseup", onMouseUp);
+    canvas.addEventListener("mouseleave", onMouseLeave);
     canvas.addEventListener("contextmenu", onContext);
+    canvas.addEventListener("touchstart", onTouchStart, { passive: false });
+    canvas.addEventListener("touchmove", onTouchMove, { passive: false });
+    canvas.addEventListener("touchend", onTouchEnd);
+    canvas.addEventListener("touchcancel", onTouchEnd);
 
     this.cleanup = () => {
-      canvas.removeEventListener("mousemove", onMove);
-      canvas.removeEventListener("mousedown", onDown);
-      canvas.removeEventListener("mouseup", onUp);
-      canvas.removeEventListener("mouseleave", onLeave);
+      canvas.removeEventListener("mousemove", onMouseMove);
+      canvas.removeEventListener("mousedown", onMouseDown);
+      canvas.removeEventListener("mouseup", onMouseUp);
+      canvas.removeEventListener("mouseleave", onMouseLeave);
       canvas.removeEventListener("contextmenu", onContext);
+      canvas.removeEventListener("touchstart", onTouchStart);
+      canvas.removeEventListener("touchmove", onTouchMove);
+      canvas.removeEventListener("touchend", onTouchEnd);
+      canvas.removeEventListener("touchcancel", onTouchEnd);
     };
   }
 
