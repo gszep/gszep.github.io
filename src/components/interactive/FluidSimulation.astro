@@ -1,0 +1,55 @@
+---
+/**
+ * Interactive WebGPU Navier-Stokes fluid simulation.
+ * Click and drag to inject vorticity. Right-click for opposite direction.
+ * Falls back to pre-rendered video when WebGPU is unsupported.
+ */
+---
+
+<div
+  class="fluid-sim-wrapper"
+  style="position: relative; aspect-ratio: 16/9; background: #fff; overflow: hidden;"
+>
+  <video
+    id="fluid-sim-fallback"
+    autoplay
+    loop
+    muted
+    playsinline
+    src="/images/fault-tolerance.mp4"
+    style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;"
+    aria-label="Navier-Brokes simulation errors"
+  ></video>
+  <canvas
+    id="fluid-sim"
+    style="position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair;"
+  ></canvas>
+</div>
+
+<script>
+  import { NavierStokes } from "./webgpu/NavierStokes";
+
+  const canvas = document.getElementById("fluid-sim") as HTMLCanvasElement | null;
+  const fallback = document.getElementById(
+    "fluid-sim-fallback",
+  ) as HTMLVideoElement | null;
+
+  if (canvas) {
+    const sim = new NavierStokes({
+      canvas,
+      cellSize: 1,
+      updateInterval: 16,
+      stepsPerFrame: 8,
+      brushSize: 30,
+    });
+
+    sim.start().then((ok) => {
+      if (ok) {
+        fallback?.remove();
+        new ResizeObserver(() => sim.handleResize()).observe(canvas);
+      } else {
+        canvas.remove();
+      }
+    });
+  }
+</script>

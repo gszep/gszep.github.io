@@ -21,3 +21,11 @@ If you are working in this repo via Amplifier, follow the same rules as in `CLAU
 - **Media**: `public/images/` -- use MP4 for animations, PNG/JPG for stills
 - **Site data**: `src/data/site.json` and `src/data/citations.json`
 - **Animated content**: `<video autoplay loop muted playsinline src="/images/file.mp4">`
+
+## WebGPU Constraints
+
+- **read_write storage textures**: Only `r32float`, `r32sint`, and `r32uint` formats support `read_write` access. Multi-channel formats like `rgba32float` do NOT support `read_write`.
+- **Storage buffers for multi-channel state**: Use `var<storage, read_write> state: array<vec4f>` instead. No format restrictions on storage buffers.
+- **Shared utils**: `src/components/interactive/webgpu/utils.ts` provides `initWebGPU`, `resizeCanvas`, `createShader`, `fullscreenPass`.
+- **Shader includes**: Use `#import name` in WGSL + `processShaderIncludes()` for shared code (e.g., fullscreen vertex shader).
+- **WGSL raw imports**: Import `.wgsl` files with `?raw` suffix (declared in `src/wgsl.d.ts`).

@@ -217,7 +217,11 @@ src/components/interactive/
 |   +-- GameOfLife.ts               # Game of Life simulation class
 |   +-- game-of-life.compute.wgsl   # Compute shader (B3/S23 rules)
 |   +-- game-of-life.render.wgsl    # Render shader (fullscreen triangle)
+|   +-- NavierStokes.ts             # Navier-Stokes fluid simulation class
+|   +-- navier-stokes.compute.wgsl  # Compute shader (fluid dynamics)
+|   +-- navier-stokes.render.wgsl   # Render shader (vorticity coloring)
 +-- HeroSimulation.astro            # Astro wrapper for hero overlay
++-- FluidSimulation.astro           # Astro wrapper for blog embed
 ```
 
 ### How It Works
@@ -235,5 +239,11 @@ To add a new WebGPU simulation:
 2. Write WGSL shaders as `.wgsl` files, import with `?raw` suffix
 3. Create an Astro wrapper in `src/components/interactive/`
 4. Use the wrapper in any page or MDX blog post
+
+### Constraints
+
+- **read_write storage textures** only support single-channel formats: `r32float`, `r32sint`, `r32uint`. Multi-channel formats (`rgba32float`, etc.) do NOT support `read_write` access.
+- **Multi-channel simulation state** must use storage buffers (`array<vec4f>`) instead of storage textures when `read_write` access is needed.
+- Ping-pong (two textures, read-only + write-only) is the alternative if textures are required.
 
 Browser support: ~78% global (Chrome, Edge, Safari 26+)
