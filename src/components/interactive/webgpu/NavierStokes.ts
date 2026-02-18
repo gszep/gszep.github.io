@@ -27,7 +27,7 @@ export interface NavierStokesOptions {
   canvas: HTMLCanvasElement;
   cellSize?: number; // px per sim cell (default 4)
   updateInterval?: number; // ms between frames (default 16)
-  stepsPerFrame?: number; // compute dispatches per render (default 8)
+  stepsPerFrame?: number; // compute dispatches per render (default 1)
   brushSize?: number; // radius of interaction brush (default 30)
 }
 
@@ -71,7 +71,7 @@ export class NavierStokes {
     this.canvas = opts.canvas;
     this.cellSize = opts.cellSize ?? 4;
     this.interval = opts.updateInterval ?? 16;
-    this.stepsPerFrame = opts.stepsPerFrame ?? 8;
+    this.stepsPerFrame = opts.stepsPerFrame ?? 1;
     this.brushSize = opts.brushSize ?? 30;
   }
 
