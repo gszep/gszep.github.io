@@ -24,7 +24,97 @@
     id="fluid-sim"
     style="position: absolute; inset: 0; width: 100%; height: 100%; cursor: crosshair;"
   ></canvas>
+
+  <!-- Interaction hint: animated click-drag loop, hidden on first interaction -->
+  <div id="fluid-sim-hint" class="hint-overlay">
+    <div class="hint-cursor">
+      <svg width="20" height="24" viewBox="0 0 20 24" fill="none">
+        <path
+          d="M1 1L17 10L9 12.5L5.5 21L1 1Z"
+          fill="white"
+          stroke="rgba(0,0,0,0.7)"
+          stroke-width="1.2"
+          stroke-linejoin="round"
+        />
+      </svg>
+      <div class="hint-ring"></div>
+    </div>
+    <span class="hint-label">click & drag</span>
+  </div>
 </div>
+
+<style>
+  .hint-overlay {
+    pointer-events: none;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    transition: opacity 0.4s ease-out;
+  }
+
+  .hint-label {
+    position: absolute;
+    top: 56%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 13px;
+    color: rgba(0, 0, 0, 0.4);
+    letter-spacing: 0.03em;
+    white-space: nowrap;
+    animation: hint-label-fade 3.5s ease-in-out infinite;
+  }
+
+  .hint-cursor {
+    position: absolute;
+    animation: hint-drag 3.5s ease-in-out infinite;
+  }
+
+  .hint-cursor svg {
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.2));
+    position: relative;
+    z-index: 1;
+  }
+
+  .hint-ring {
+    position: absolute;
+    top: -6px;
+    left: -6px;
+    width: 24px;
+    height: 24px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+    border-radius: 50%;
+    animation: hint-ring-pulse 3.5s ease-in-out infinite;
+  }
+
+  @keyframes hint-drag {
+    0%        { left: 34%; top: 44%; opacity: 0; }
+    10%       { left: 34%; top: 44%; opacity: 1; }
+    /* hold at press point */
+    20%       { left: 34%; top: 44%; opacity: 1; }
+    /* drag across */
+    64%       { left: 56%; top: 34%; opacity: 1; }
+    /* hold at release point */
+    74%       { left: 56%; top: 34%; opacity: 1; }
+    84%       { left: 56%; top: 34%; opacity: 0; }
+    100%      { left: 34%; top: 44%; opacity: 0; }
+  }
+
+  @keyframes hint-ring-pulse {
+    0%, 15%   { opacity: 0; transform: scale(0.3); }
+    22%       { opacity: 0.6; transform: scale(1); }
+    64%       { opacity: 0.4; transform: scale(1); }
+    74%       { opacity: 0; transform: scale(1.4); }
+    100%      { opacity: 0; }
+  }
+
+  @keyframes hint-label-fade {
+    0%, 8%    { opacity: 0; }
+    16%       { opacity: 1; }
+    76%       { opacity: 1; }
+    88%, 100% { opacity: 0; }
+  }
+</style>
 
 <script>
   import { NavierStokes } from "./webgpu/NavierStokes";
@@ -33,6 +123,17 @@
   const fallback = document.getElementById(
     "fluid-sim-fallback",
   ) as HTMLVideoElement | null;
+  const hint = document.getElementById("fluid-sim-hint");
+
+  // Hide hint on first interaction
+  if (canvas && hint) {
+    const hideHint = () => {
+      hint.style.opacity = "0";
+      setTimeout(() => hint.remove(), 400);
+      canvas.removeEventListener("pointerdown", hideHint);
+    };
+    canvas.addEventListener("pointerdown", hideHint);
+  }
 
   if (canvas) {
     const sim = new NavierStokes({
@@ -49,6 +150,7 @@
         new ResizeObserver(() => sim.handleResize()).observe(canvas);
       } else {
         canvas.remove();
+        hint?.remove();
       }
     });
   }
