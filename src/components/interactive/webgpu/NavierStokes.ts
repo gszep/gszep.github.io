@@ -56,6 +56,8 @@ export class NavierStokes {
   private gh = 0;
   private raf: number | null = null;
   private last = 0;
+  private readbackBuf!: GPUBuffer;
+  private nanCheckPending = false;
   private resizeTimer: ReturnType<typeof setTimeout> | null = null;
 
   // Pipelines
@@ -134,6 +136,8 @@ export class NavierStokes {
 
     this.buf.destroy();
     this.paramsBuf.destroy();
+    this.readbackBuf.destroy();
+    this.nanCheckPending = false;
     this.buildResources();
     this.renderFrame();
   }
@@ -174,11 +178,10 @@ export class NavierStokes {
     // Single state buffer (read_write in compute, read in render)
     this.buf = d.createBuffer({
       size: bufSize,
-      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
     });
 
-    // All zeros — matches original 3141 (Math.random() > 1 ? 1 : 0 ≡ 0)
-    d.queue.writeBuffer(this.buf, 0, new Float32Array(cellCount * 4));
+    this.resetState();
 
     // Params uniform buffer (32 bytes)
     this.paramsBuf = d.createBuffer({
@@ -190,6 +193,12 @@ export class NavierStokes {
     this.paramsData[4] = this.gw;
     this.paramsData[5] = this.gh;
     d.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
+
+    // Readback buffer for NaN corner detection (4 corners × 16 bytes)
+    this.readbackBuf = d.createBuffer({
+      size: 64,
+      usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
+    });
 
     // Compute bind group
     this.computeBG = d.createBindGroup({
@@ -208,6 +217,40 @@ export class NavierStokes {
         { binding: 1, resource: { buffer: this.paramsBuf } },
       ],
     });
+  }
+
+  /** Write initial vortex dipole state to the simulation buffer. */
+  private resetState(): void {
+    const cellCount = this.gw * this.gh;
+    const init = new Float32Array(cellCount * 4);
+    const scale = Math.min(this.gw, this.gh);
+    const blobs = [
+      { x: 0.22, y: 0.28, a: 0.8, s: 0.05 },
+      { x: 0.28, y: 0.33, a: -0.8, s: 0.05 },
+      { x: 0.55, y: 0.40, a: 0.4, s: 0.10 },
+      { x: 0.50, y: 0.55, a: -0.4, s: 0.10 },
+      { x: 0.72, y: 0.68, a: 1.0, s: 0.03 },
+      { x: 0.76, y: 0.72, a: -1.0, s: 0.03 },
+      { x: 0.82, y: 0.25, a: 0.6, s: 0.07 },
+      { x: 0.18, y: 0.72, a: -0.5, s: 0.04 },
+      { x: 0.30, y: 0.65, a: 0.5, s: 0.04 },
+    ];
+    for (let iy = 0; iy < this.gh; iy++) {
+      for (let ix = 0; ix < this.gw; ix++) {
+        let w = 0;
+        for (const b of blobs) {
+          const dx = ix - b.x * this.gw;
+          const dy = iy - b.y * this.gh;
+          const r2 = dx * dx + dy * dy;
+          const sig = b.s * scale;
+          w += b.a * Math.exp(-r2 / (2 * sig * sig));
+        }
+        const idx = (iy * this.gw + ix) * 4;
+        init[idx] = Math.abs(w) / (1 + w);
+        init[idx + 3] = w;
+      }
+    }
+    this.device.queue.writeBuffer(this.buf, 0, init);
   }
 
   // ── Frame loop ─────────────────────────────────────────
@@ -256,6 +299,35 @@ export class NavierStokes {
     );
 
     this.device.queue.submit([enc.finish()]);
+
+    // Async NaN detection: read 4 corners, reset if all NaN
+    if (!this.nanCheckPending) {
+      this.nanCheckPending = true;
+      const corners = [
+        0,
+        (this.gw - 1) * 16,
+        (this.gh - 1) * this.gw * 16,
+        ((this.gh - 1) * this.gw + this.gw - 1) * 16,
+      ];
+      const enc2 = this.device.createCommandEncoder();
+      for (let i = 0; i < 4; i++) {
+        enc2.copyBufferToBuffer(this.buf, corners[i], this.readbackBuf, i * 16, 16);
+      }
+      this.device.queue.submit([enc2.finish()]);
+      this.readbackBuf.mapAsync(GPUMapMode.READ).then(() => {
+        const data = new Float32Array(this.readbackBuf.getMappedRange());
+        const allNaN =
+          isNaN(data[3]) && isNaN(data[7]) && isNaN(data[11]) && isNaN(data[15]);
+        this.readbackBuf.unmap();
+        this.nanCheckPending = false;
+        if (allNaN) {
+          console.warn("[NavierStokes] NaN in all corners, resetting simulation");
+          this.resetState();
+        }
+      }).catch(() => {
+        this.nanCheckPending = false;
+      });
+    }
   }
 
   /** Render current state without advancing simulation. */
