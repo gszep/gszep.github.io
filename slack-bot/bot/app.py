@@ -216,7 +216,7 @@ async def handle_approve(ack, respond, command):
         if result.get("merged"):
             await respond(
                 f"Deployed to production: {result['pr_url']}\n"
-                f"Changes will be live at https://staging.gszep.com in ~2 minutes."
+                f"Changes will be live at https://gszep.com in ~2 minutes."
             )
         elif result.get("merge_error"):
             await respond(
