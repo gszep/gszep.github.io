@@ -32,17 +32,19 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   color.a = c.x;                     // error metric -> alpha
 
   // Stream function coloring (mode-dependent)
-  let stream = abs(c.z);
+  let raw_stream = abs(c.z);
   if (params.bg.r < 0.5) {
     // Dark mode: #DCED31 accent for stream function, fading to blue
-    // near vortex cores to preserve emergent magenta/cyan
+    // near vortex cores to preserve emergent magenta/cyan.
+    // Reinhard compress stream to [0,1) to prevent yellow clipping to white.
+    let stream = raw_stream / (1.0 + raw_stream);
     let vort = color.r + color.g;
     let t = clamp(vort, 0.0, 1.0);
     let accent = vec3f(0.863, 0.929, 0.192);
     let stream_col = mix(accent, vec3f(0.0, 0.0, 1.0), t);
     color = vec4f(color.rg + stream_col.rg * stream, stream_col.b * stream, color.a);
   } else {
-    color.b = stream;
+    color.b = raw_stream;
   }
 
   // Blend over background so dark/light mode both look correct
