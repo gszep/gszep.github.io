@@ -25,12 +25,27 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
   let c = load_at(pos, size);
 
-  // Exact color mapping from public/art/3141 fragment shader
+  // Vorticity -> red/green (unchanged in both modes)
   var color = vec4f(0.0);
   color.g = 5.0 * max(0.0, c.w);    // positive vorticity -> green
   color.r = 5.0 * max(0.0, -c.w);   // negative vorticity -> red
-  color.b = abs(c.z);                // stream function -> blue
   color.a = c.x;                     // error metric -> alpha
+
+  // Stream function coloring (mode-dependent)
+  let raw_stream = abs(c.z);
+  if (params.bg.r < 0.5) {
+    // Dark mode: #DCED31 accent for stream function, fading to blue
+    // near vortex cores to preserve emergent magenta/cyan.
+    // Reinhard compress stream to [0,1) to prevent yellow clipping to white.
+    let stream = raw_stream / (1.0 + raw_stream);
+    let vort = color.r + color.g;
+    let t = clamp(vort, 0.0, 1.0);
+    let accent = vec3f(0.863, 0.929, 0.192);
+    let stream_col = mix(accent, vec3f(0.0, 0.0, 1.0), t);
+    color = vec4f(color.rg + stream_col.rg * stream, stream_col.b * stream, color.a);
+  } else {
+    color.b = raw_stream;
+  }
 
   // Blend over background so dark/light mode both look correct
   let a = clamp(color.a, 0.0, 1.0);
