@@ -120,8 +120,7 @@ async def _merge_pr(
     """Merge a PR via the GitHub API."""
     url = f"https://api.github.com/repos/{repo}/pulls/{pr_number}/merge"
     payload = {
-        "merge_method": "merge",
-        "commit_title": f"Deploy: merge staging to main (#{pr_number})",
+        "merge_method": "rebase",
     }
 
     resp = await client.put(url, json=payload, headers=headers)
