@@ -1,0 +1,20 @@
+---
+import { t, type Locale } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+  switchPath: string;
+}
+
+const { lang = 'en', switchPath } = Astro.props;
+const label = lang === 'en' ? 'JP' : 'EN';
+const ariaLabel = lang === 'en' ? 'Switch to Japanese' : 'Switch to English';
+---
+
+<a
+  href={switchPath}
+  aria-label={ariaLabel}
+  class="p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
+>
+  <span class="block w-5 h-5 leading-5 text-center text-xs font-bold">{label}</span>
+</a>
