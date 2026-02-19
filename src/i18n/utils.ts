@@ -27,10 +27,10 @@ export function getSite(lang: Locale) {
     heroImage: site.heroImage,
     title: localized.title,
     description: localized.description,
-    tags: localized.tags,
     author: {
       ...site.author,
       name: localized.authorName,
+      intro: localized.authorIntro,
       about: localized.authorAbout,
     },
   };

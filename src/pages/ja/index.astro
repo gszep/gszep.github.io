@@ -27,33 +27,22 @@ posts.sort((a, b) => a.data.order - b.data.order);
     <HeroSimulation />
     <div id="hero-overlay" class="absolute inset-0 bg-white/80 dark:bg-black/75"></div>
     <div class="px-4 relative z-10">
-      <h1 class="font-bold uppercase tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
+      <h1 class="font-bold tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
         {site.title}
       </h1>
       <p class="text-gray-600 dark:text-gray-200 uppercase tracking-wide mt-4 text-lg">
         {site.description}
       </p>
       <hr class="border-gray-300 dark:border-white my-6 mx-auto" style="width: 90vw;" />
-      <div class="flex flex-wrap justify-center gap-2">
-        {site.tags.map((tag) => (
-          <span class="bg-gray-200 text-gray-700 dark:bg-gray-600 dark:text-white text-sm px-3 py-1 rounded">{tag}</span>
-        ))}
-      </div>
-      <a
-        href="#blog"
-        class="inline-block mt-8 border border-gray-900 text-gray-900 dark:border-white dark:text-white px-6 py-2 rounded-full uppercase text-sm hover:bg-gray-900 hover:text-white dark:hover:bg-white dark:hover:text-black transition-colors"
-      >
-        {t(lang, 'hero.cta')}
-      </a>
+      <p class="text-gray-500 dark:text-gray-400 max-w-xl mx-auto text-sm leading-relaxed">
+        {site.author.intro}
+      </p>
     </div>
   </section>
 
-  <!-- Blog -->
+  <!-- Posts -->
   <section class="bg-gray-100 dark:bg-gray-900 py-16" id="blog" style="scroll-margin-top: 4rem;">
     <div class="max-w-6xl mx-auto px-4">
-      <p class="text-center text-gray-500 uppercase font-medium mb-12" style="letter-spacing: 0.25rem; font-size: 1.25rem;">
-        {t(lang, 'section.blog')}
-      </p>
       <div class="flex flex-wrap justify-center gap-4">
         {posts.map((post) => (
           <ProjectCard
@@ -67,11 +56,11 @@ posts.sort((a, b) => a.data.order - b.data.order);
     </div>
   </section>
 
-  <!-- Publications -->
-  <section class="bg-white dark:bg-black py-16" id="publications" style="scroll-margin-top: 4rem;">
+  <!-- Papers -->
+  <section class="bg-white dark:bg-black py-8" id="publications" style="scroll-margin-top: 4rem;">
     <div class="max-w-4xl mx-auto px-4">
-      <p class="text-center text-gray-500 uppercase font-medium mb-12" style="letter-spacing: 0.25rem; font-size: 1.25rem;">
-        {t(lang, 'section.publications')}
+      <p class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider mb-6">
+        {t(lang, 'footer.papers')}
       </p>
       <div class="space-y-4">
         {citations.map((cite) => (

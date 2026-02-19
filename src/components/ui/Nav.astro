@@ -24,7 +24,6 @@ const homeHref = localizedPath(lang, '/');
     <div class="hidden md:flex items-center gap-6 text-sm uppercase tracking-wide">
       <a href={homeHref} data-section="hero" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.home')}</a>
       <a href={`${homeHref}#blog`} data-section="blog" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.blog')}</a>
-      <a href={`${homeHref}#publications`} data-section="publications" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.publications')}</a>
       <a href={`${homeHref}#contact`} data-section="contact" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.contact')}</a>
       <LangToggle lang={lang} switchPath={switchPath} />
       <ThemeToggle lang={lang} />
@@ -51,7 +50,6 @@ const homeHref = localizedPath(lang, '/');
   <div class="hidden md:hidden bg-white dark:bg-black px-4 pb-4" id="nav-menu">
     <a href={homeHref} data-section="hero" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.home')}</a>
     <a href={`${homeHref}#blog`} data-section="blog" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.blog')}</a>
-    <a href={`${homeHref}#publications`} data-section="publications" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.publications')}</a>
     <a href={`${homeHref}#contact`} data-section="contact" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.contact')}</a>
   </div>
 </nav>
@@ -88,7 +86,7 @@ const homeHref = localizedPath(lang, '/');
   // On homepage: scroll-based section highlighting
   const homePaths = ['/', '/ja/', '/ja'];
   const isHomepage = homePaths.includes(window.location.pathname);
-  const homeSections = ['hero', 'blog', 'publications', 'contact'];
+  const homeSections = ['hero', 'blog', 'contact'];
   const sections = isHomepage
     ? homeSections.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
     : [];

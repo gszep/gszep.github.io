@@ -1,13 +1,10 @@
 {
   "nav.home": "Home",
   "nav.blog": "Blog",
-  "nav.publications": "Publications",
   "nav.contact": "Contact",
   "nav.toggle": "Toggle navigation",
   "theme.toggle": "Toggle dark mode",
-  "hero.cta": "Scroll Down // Read More",
-  "section.blog": "Blog",
-  "section.publications": "Publications",
   "footer.henkaku": "Henkaku Center",
+  "footer.papers": "Papers",
   "blog.title": "Blog"
 }

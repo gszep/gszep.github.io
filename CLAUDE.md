@@ -1,6 +1,6 @@
-# Grisha Szep - Personal Portfolio
+# grisha.log
 
-Personal portfolio website. Astro 5 static site with MDX content, deployed to GitHub Pages.
+Personal blog / lab notebook of a creative technologist. Astro 5 static site with MDX content, deployed to GitHub Pages. The vibe is casual stream-of-consciousness -- ideas, half-finished projects, interesting artifacts -- not a portfolio or CV.
 
 ## Deployment Workflow (CRITICAL)
 
@@ -100,7 +100,7 @@ order: 1
 Your markdown content here.
 ```
 
-Frontmatter fields: title, description, date (required); image, tags, hero, order, draft (optional).
+Frontmatter fields: title, description, date (required); image, tags, hero, order, draft, locale (optional).
 
 No routing config or manifest changes needed.
 

@@ -8,17 +8,17 @@
     "linkedin": "gszep"
   },
   "en": {
-    "title": "Grisha // Portfolio",
+    "title": "grisha.log",
     "description": "First-generation cognitive cyberware for education, medicine, and art",
     "authorName": "Grisha Szep",
-    "authorAbout": "Researcher at the Henkaku Center, Chiba Institute of Technology. PhD via Microsoft Research Cambridge, with a decade spanning immunology, synthetic biology, quantum computing, and GPU-accelerated simulation. Now building cognitive cyberware for educators, clinicians, and creatives.",
-    "tags": ["Education", "Medicine", "Interactive Art"]
+    "authorIntro": "I'm Grisha \u2014 a researcher at Chiba Institute of Technology who builds things at the intersection of simulation, biology, and interactive art. Below is an unfiltered stream of whatever I'm thinking about and working on.",
+    "authorAbout": "Grisha Szep builds cognitive cyberware at Chiba Tech. Previously Microsoft Research Cambridge."
   },
   "ja": {
-    "title": "グリシャ // ポートフォリオ",
-    "description": "教育・医療・アートのための第一世代コグニティブサイバーウェア",
-    "authorName": "グリシャ・セップ",
-    "authorAbout": "千葉工業大学変革センター研究員。マイクロソフトリサーチ・ケンブリッジにて博士号取得。免疫学、合成生物学、量子コンピューティング、GPU高速シミュレーションの分野で10年以上の研究経験を持つ。現在、教育者・臨床医・クリエイターのためのコグニティブサイバーウェアを開発中。",
-    "tags": ["教育", "医療", "インタラクティブアート"]
+    "title": "grisha.log",
+    "description": "\u6559\u80b2\u30fb\u533b\u7642\u30fb\u30a2\u30fc\u30c8\u306e\u305f\u3081\u306e\u7b2c\u4e00\u4e16\u4ee3\u30b3\u30b0\u30cb\u30c6\u30a3\u30d6\u30b5\u30a4\u30d0\u30fc\u30a6\u30a7\u30a2",
+    "authorName": "\u30b0\u30ea\u30b7\u30e3\u30fb\u30bb\u30c3\u30d7",
+    "authorIntro": "\u5343\u8449\u5de5\u696d\u5927\u5b66\u306e\u7814\u7a76\u54e1\u3067\u3001\u30b7\u30df\u30e5\u30ec\u30fc\u30b7\u30e7\u30f3\u30fb\u751f\u7269\u5b66\u30fb\u30a4\u30f3\u30bf\u30e9\u30af\u30c6\u30a3\u30d6\u30a2\u30fc\u30c8\u306e\u4ea4\u5dee\u70b9\u3067\u3082\u306e\u3065\u304f\u308a\u3092\u3057\u3066\u3044\u307e\u3059\u3002\u4ee5\u4e0b\u306f\u3001\u8003\u3048\u3066\u3044\u308b\u3053\u3068\u30fb\u53d6\u308a\u7d44\u3093\u3067\u3044\u308b\u3053\u3068\u306e\u96d1\u591a\u306a\u8a18\u9332\u3067\u3059\u3002",
+    "authorAbout": "\u5343\u8449\u5de5\u696d\u5927\u5b66\u3067\u30b3\u30b0\u30cb\u30c6\u30a3\u30d6\u30b5\u30a4\u30d0\u30fc\u30a6\u30a7\u30a2\u3092\u958b\u767a\u4e2d\u3002\u30de\u30a4\u30af\u30ed\u30bd\u30d5\u30c8\u30ea\u30b5\u30fc\u30c1\u30fb\u30b1\u30f3\u30d6\u30ea\u30c3\u30b8\u306b\u3066\u535a\u58eb\u53f7\u53d6\u5f97\u3002"
   }
 }

@@ -1,13 +1,10 @@
 {
-  "nav.home": "ホーム",
-  "nav.blog": "ブログ",
-  "nav.publications": "論文",
-  "nav.contact": "連絡先",
-  "nav.toggle": "ナビゲーション切替",
-  "theme.toggle": "ダークモード切替",
-  "hero.cta": "スクロール // もっと読む",
-  "section.blog": "ブログ",
-  "section.publications": "論文",
-  "footer.henkaku": "変革センター",
-  "blog.title": "ブログ"
+  "nav.home": "\u30db\u30fc\u30e0",
+  "nav.blog": "\u30d6\u30ed\u30b0",
+  "nav.contact": "\u9023\u7d61\u5148",
+  "nav.toggle": "\u30ca\u30d3\u30b2\u30fc\u30b7\u30e7\u30f3\u5207\u66ff",
+  "theme.toggle": "\u30c0\u30fc\u30af\u30e2\u30fc\u30c9\u5207\u66ff",
+  "footer.henkaku": "\u5909\u9769\u30bb\u30f3\u30bf\u30fc",
+  "footer.papers": "\u8ad6\u6587",
+  "blog.title": "\u30d6\u30ed\u30b0"
 }
