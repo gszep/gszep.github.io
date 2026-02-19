@@ -1,10 +1,16 @@
 ---
-// Theme toggle: sun icon in dark mode, moon icon in light mode
+import { t, type Locale } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = 'en' } = Astro.props;
 ---
 
 <button
   type="button"
-  aria-label="Toggle dark mode"
+  aria-label={t(lang, 'theme.toggle')}
   class="theme-toggle p-2 rounded-md text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white"
 >
   <!-- Sun (shown in dark mode: click to go light) -->

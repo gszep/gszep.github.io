@@ -1,17 +1,17 @@
 ---
-import Base from '../layouts/Base.astro';
-import Nav from '../components/ui/Nav.astro';
-import Footer from '../components/ui/Footer.astro';
-import ProjectCard from '../components/ui/ProjectCard.astro';
-import CitationCard from '../components/ui/CitationCard.astro';
-import HeroSimulation from '../components/interactive/HeroSimulation.astro';
-import { t, getSite, localizedPath } from '../i18n/utils';
-import citations from '../data/citations.json';
+import Base from '../../layouts/Base.astro';
+import Nav from '../../components/ui/Nav.astro';
+import Footer from '../../components/ui/Footer.astro';
+import ProjectCard from '../../components/ui/ProjectCard.astro';
+import CitationCard from '../../components/ui/CitationCard.astro';
+import HeroSimulation from '../../components/interactive/HeroSimulation.astro';
+import { t, getSite, localizedPath } from '../../i18n/utils';
+import citations from '../../data/citations.json';
 import { getCollection } from 'astro:content';
 
-const lang = 'en';
+const lang = 'ja';
 const site = getSite(lang);
-const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'en');
+const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'ja');
 posts.sort((a, b) => a.data.order - b.data.order);
 ---
 
@@ -60,7 +60,7 @@ posts.sort((a, b) => a.data.order - b.data.order);
             title={post.data.title}
             description={post.data.description}
             image={post.data.image || ''}
-            href={localizedPath(lang, `/blog/${post.slug}/`)}
+            href={`/ja/blog/${post.slug.replace(/^ja\//, '')}/`}
           />
         ))}
       </div>

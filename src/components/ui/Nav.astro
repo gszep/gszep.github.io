@@ -1,28 +1,41 @@
 ---
-import site from '../../data/site.json';
 import ThemeToggle from './ThemeToggle.astro';
+import { t, getSite, localizedPath, type Locale } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = 'en' } = Astro.props;
+const site = getSite(lang);
+const currentPath = Astro.url.pathname;
+const switchPath = lang === 'en'
+  ? `/ja${currentPath}`
+  : currentPath.replace(/^\/ja/, '') || '/';
+const homeHref = localizedPath(lang, '/');
 ---
 
-<nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation">
+<nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
-    <a href="/" class="font-bold text-gray-900 dark:text-white text-lg">{site.title}</a>
+    <a href={homeHref} class="font-bold text-gray-900 dark:text-white text-lg">{site.title}</a>
 
     <!-- Desktop nav -->
     <div class="hidden md:flex items-center gap-6 text-sm uppercase tracking-wide">
-      <a href="/" data-section="hero" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Home</a>
-      <a href="/#blog" data-section="blog" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Blog</a>
-      <a href="/#publications" data-section="publications" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Publications</a>
-      <a href="/#contact" data-section="contact" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">Contact</a>
-      <ThemeToggle />
+      <a href={homeHref} data-section="hero" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.home')}</a>
+      <a href={`${homeHref}#blog`} data-section="blog" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.blog')}</a>
+      <a href={`${homeHref}#publications`} data-section="publications" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.publications')}</a>
+      <a href={`${homeHref}#contact`} data-section="contact" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.contact')}</a>
+      <a href={switchPath} class="text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{lang === 'en' ? '日本語' : 'English'}</a>
+      <ThemeToggle lang={lang} />
     </div>
 
     <!-- Mobile: toggle + burger -->
     <div class="flex items-center gap-2 md:hidden">
-      <ThemeToggle />
+      <ThemeToggle lang={lang} />
       <button
         class="text-gray-900 dark:text-white"
         id="nav-burger"
-        aria-label="Toggle navigation"
+        aria-label={t(lang, 'nav.toggle')}
         aria-expanded="false"
       >
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -34,10 +47,11 @@ import ThemeToggle from './ThemeToggle.astro';
 
   <!-- Mobile menu -->
   <div class="hidden md:hidden bg-white dark:bg-black px-4 pb-4" id="nav-menu">
-    <a href="/" data-section="hero" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Home</a>
-    <a href="/#blog" data-section="blog" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Blog</a>
-    <a href="/#publications" data-section="publications" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Publications</a>
-    <a href="/#contact" data-section="contact" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">Contact</a>
+    <a href={homeHref} data-section="hero" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.home')}</a>
+    <a href={`${homeHref}#blog`} data-section="blog" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.blog')}</a>
+    <a href={`${homeHref}#publications`} data-section="publications" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.publications')}</a>
+    <a href={`${homeHref}#contact`} data-section="contact" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.contact')}</a>
+    <a href={switchPath} class="block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{lang === 'en' ? '日本語' : 'English'}</a>
   </div>
 </nav>
 
@@ -71,7 +85,8 @@ import ThemeToggle from './ThemeToggle.astro';
   }
 
   // On homepage: scroll-based section highlighting
-  const isHomepage = window.location.pathname === '/';
+  const homePaths = ['/', '/ja/', '/ja'];
+  const isHomepage = homePaths.includes(window.location.pathname);
   const homeSections = ['hero', 'blog', 'publications', 'contact'];
   const sections = isHomepage
     ? homeSections.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]
@@ -101,7 +116,7 @@ import ThemeToggle from './ThemeToggle.astro';
   } else {
     // On non-homepage: highlight based on URL path
     const path = window.location.pathname;
-    if (path.startsWith('/blog')) {
+    if (path.includes('/blog')) {
       setActive('blog');
     }
   }

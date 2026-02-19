@@ -3,24 +3,27 @@ import Base from './Base.astro';
 import Nav from '../components/ui/Nav.astro';
 import Footer from '../components/ui/Footer.astro';
 import '../styles/post.css';
+import type { Locale } from '../i18n/utils';
 
 interface Props {
   title: string;
   date: Date;
   description?: string;
   tags?: string[];
+  lang?: Locale;
 }
 
-const { title, date, description, tags = [] } = Astro.props;
-const formattedDate = date.toLocaleDateString('en-US', {
+const { title, date, description, tags = [], lang = 'en' } = Astro.props;
+const dateLocale = lang === 'ja' ? 'ja-JP' : 'en-US';
+const formattedDate = date.toLocaleDateString(dateLocale, {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
 });
 ---
 
-<Base title={title} description={description}>
-  <Nav />
+<Base title={title} description={description} lang={lang}>
+  <Nav lang={lang} />
   <article class="post">
     <header class="l-body pt-32 pb-8">
       <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">{title}</h1>
@@ -45,5 +48,5 @@ const formattedDate = date.toLocaleDateString('en-US', {
       <hr class="post-separator" />
     </div>
   </article>
-  <Footer />
+  <Footer lang={lang} />
 </Base>

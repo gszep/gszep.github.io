@@ -1,5 +1,15 @@
 ---
-import site from '../../data/site.json';
+import { t, getSite, type Locale } from '../../i18n/utils';
+
+interface Props {
+  lang?: Locale;
+}
+
+const { lang = 'en' } = Astro.props;
+const site = getSite(lang);
+const henkakuUrl = lang === 'ja'
+  ? 'https://www.henkaku.center/ja/people/grisha-szep/'
+  : 'https://www.henkaku.center/en/people/grisha-szep/';
 ---
 
 <footer id="contact" class="bg-gray-100 dark:bg-gray-800" style="scroll-margin-top: 4rem;">
@@ -15,12 +25,12 @@ import site from '../../data/site.json';
         <p class="text-gray-500 text-sm mt-1 max-w-lg">{site.author.about}</p>
         <div class="flex gap-4 mt-3 justify-center md:justify-start">
           <a
-            href="https://www.henkaku.center/en/people/grisha-szep/"
+            href={henkakuUrl}
             target="_blank"
             rel="noopener noreferrer"
             class="text-gray-900 dark:text-white hover:text-gray-600 dark:hover:text-gray-300 text-sm"
           >
-            Henkaku Center
+            {t(lang, 'footer.henkaku')}
           </a>
           <a
             href={`https://github.com/${site.author.github}`}

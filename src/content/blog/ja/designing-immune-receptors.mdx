@@ -1,0 +1,56 @@
+---
+title: "免疫受容体の設計"
+description: "白血球の表面は、体外由来のタンパク質にのみ適合する三次元パズルピースのような受容体で覆われています。"
+date: 2023-11-01
+image: "/images/pMHC.png"
+tags: ["免疫学", "機械学習", "タンパク質設計", "Blender"]
+order: 2
+locale: "ja"
+---
+
+### がんのシグナルは腫瘍細胞の表面に現れることがある
+
+健康な細胞は、ペプチドと呼ばれるタンパク質の断片を表面に提示しています。これらのペプチドはMHCと呼ばれる分子によって保持されています。細胞が腫瘍細胞のように振る舞う変異を獲得すると、その変異がMHCによって提示される可能性があります。これが起こると、白血球はその表面の受容体で変異ペプチドを認識する機会を得ます。
+
+<figure>
+  <img src="/images/pmhc-2.png" width="128" alt="pMHCバリアント2" />
+  <img src="/images/pmhc-3.png" width="128" alt="pMHCバリアント3" />
+  <img src="/images/pmhc-4.png" width="128" alt="pMHCバリアント4" />
+  <img src="/images/pmhc-5.png" width="128" alt="pMHCバリアント5" />
+  <figcaption>変異（黒）がMHC分子（シアン）に提示されるペプチド（白）に現れる</figcaption>
+</figure>
+
+### がんシグナルに適合し、健康な細胞には適合しない受容体の設計は難しい
+
+変異ペプチドに結合し、健康なバリアントには結合しない白血球受容体を見つけることは困難です。なぜなら、健康なものとがん性のものの間にはアミノ酸1つの違いしかないことが多いからです。健康なバリアントに結合する細胞があると、健康な細胞を攻撃し、自己免疫反応を引き起こすリスクがあります。
+
+ここでAIを活用して白血球受容体配列の探索空間をナビゲートできます（<a href="https://openreview.net/forum?id=YOGss3XXp0">L. Cornwall, G. Szep et al. 2023</a>）。MHCの表面に最適なアミノ酸を予測するモデルを訓練することで、病気の細胞を認識する受容体のループ領域におけるアミノ酸配列の探索空間を絞り込むことができます。
+
+<figure>
+  <img src="/images/tcr-1.png" width="128" alt="TCRバリアント1" />
+  <img src="/images/tcr-2.png" width="128" alt="TCRバリアント2" />
+  <img src="/images/tcr-3.png" width="128" alt="TCRバリアント3" />
+  <img src="/images/tcr-4.png" width="128" alt="TCRバリアント4" />
+  <figcaption>AIの助けを借りて、MHC上に提示された変異ペプチドの形状に適合する白血球受容体（赤）を生成</figcaption>
+</figure>
+
+### Blenderを使った組合せ複雑性の可視化
+
+生成モデルは以下のような<a href="https://www.cgl.ucsf.edu/chimera/docs/UsersGuide/tutorials/pdbintro.html">PDBファイル</a>を出力します。
+
+```
+ATOM      1  N   GLY A   1     -17.507  12.508  39.735  1.00 56.47           N
+ATOM      2  CA  GLY A   1     -16.155  12.561  40.353  1.00 60.73           C
+ATOM      3  C   GLY A   1     -15.103  12.063  39.385  1.00 59.90           C
+ATOM      4  O   GLY A   1     -15.449  11.565  38.306  1.00 61.33           O
+ATOM      5  N   SER A   2     -13.833  12.192  39.769  1.00 56.73           N
+...
+```
+
+各行には原子の座標、原子種、そしてどの鎖とアミノ酸に属するかの情報が含まれています。<a href="https://bradyajohnston.github.io/MolecularNodes/">Molecular Nodes</a>アドオンを使用すると、これらのファイルをBlenderにインポートできます。このアドオンにより、PDBファイルで利用可能な情報を使って、Geometry Nodesで望みのプロパティをレンダリングできます。
+
+### 参考文献
+
+L. Cornwall, G. Szep et al. 2023. NeurIPS Generative AI & Biology Workshop. Fine-tuned protein language models capture T cell receptor stochasticity
+
+B.A. Johnston. 2024. MolecularNodes. zenodo.org/records/11483365

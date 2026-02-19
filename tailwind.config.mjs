@@ -5,7 +5,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'],
+        sans: ['Poppins', 'Noto Sans JP', 'sans-serif'],
       },
       maxWidth: {
         'body': '700px',

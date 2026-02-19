@@ -1,11 +1,11 @@
 ---
-import Page from '../../layouts/Page.astro';
-import ProjectCard from '../../components/ui/ProjectCard.astro';
-import { t } from '../../i18n/utils';
+import Page from '../../../layouts/Page.astro';
+import ProjectCard from '../../../components/ui/ProjectCard.astro';
+import { t } from '../../../i18n/utils';
 import { getCollection } from 'astro:content';
 
-const lang = 'en';
-const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'en');
+const lang = 'ja';
+const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'ja');
 posts.sort((a, b) => a.data.order - b.data.order);
 ---
 
@@ -18,7 +18,7 @@ posts.sort((a, b) => a.data.order - b.data.order);
           title={post.data.title}
           description={post.data.description}
           image={post.data.image || ''}
-          href={`/blog/${post.slug}/`}
+          href={`/ja/blog/${post.slug.replace(/^ja\//, '')}/`}
         />
       ))}
     </div>

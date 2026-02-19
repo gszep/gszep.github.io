@@ -1,15 +1,24 @@
 {
-  "title": "Grisha // Portfolio",
-  "description": "First-generation cognitive cyberware for education, medicine, and art",
   "url": "https://gszep.com",
+  "heroImage": "/images/background.png",
   "author": {
-    "name": "Grisha Szep",
     "email": "grisha.szep@gmail.com",
-    "about": "Researcher at the Henkaku Center, Chiba Institute of Technology. PhD via Microsoft Research Cambridge, with a decade spanning immunology, synthetic biology, quantum computing, and GPU-accelerated simulation. Now building cognitive cyberware for educators, clinicians, and creatives.",
     "image": "/images/headshot.jpg",
     "github": "gszep",
     "linkedin": "gszep"
   },
-  "heroImage": "/images/background.png",
-  "tags": ["Education", "Medicine", "Interactive Art"]
+  "en": {
+    "title": "Grisha // Portfolio",
+    "description": "First-generation cognitive cyberware for education, medicine, and art",
+    "authorName": "Grisha Szep",
+    "authorAbout": "Researcher at the Henkaku Center, Chiba Institute of Technology. PhD via Microsoft Research Cambridge, with a decade spanning immunology, synthetic biology, quantum computing, and GPU-accelerated simulation. Now building cognitive cyberware for educators, clinicians, and creatives.",
+    "tags": ["Education", "Medicine", "Interactive Art"]
+  },
+  "ja": {
+    "title": "グリシャ // ポートフォリオ",
+    "description": "教育・医療・アートのための第一世代コグニティブサイバーウェア",
+    "authorName": "グリシャ・セップ",
+    "authorAbout": "千葉工業大学変革センター研究員。マイクロソフトリサーチ・ケンブリッジにて博士号取得。免疫学、合成生物学、量子コンピューティング、GPU高速シミュレーションの分野で10年以上の研究経験を持つ。現在、教育者・臨床医・クリエイターのためのコグニティブサイバーウェアを開発中。",
+    "tags": ["教育", "医療", "インタラクティブアート"]
+  }
 }

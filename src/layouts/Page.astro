@@ -2,19 +2,21 @@
 import Base from './Base.astro';
 import Nav from '../components/ui/Nav.astro';
 import Footer from '../components/ui/Footer.astro';
+import type { Locale } from '../i18n/utils';
 
 interface Props {
   title?: string;
   description?: string;
+  lang?: Locale;
 }
 
-const { title, description } = Astro.props;
+const { title, description, lang = 'en' } = Astro.props;
 ---
 
-<Base title={title} description={description}>
-  <Nav />
+<Base title={title} description={description} lang={lang}>
+  <Nav lang={lang} />
   <main>
     <slot />
   </main>
-  <Footer />
+  <Footer lang={lang} />
 </Base>
