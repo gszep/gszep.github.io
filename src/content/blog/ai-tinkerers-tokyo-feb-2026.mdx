@@ -1,0 +1,29 @@
+---
+title: "AI Tinkerers Tokyo"
+description: "Constructive integer attention on 256KB, and a room full of people building weird things with AI."
+date: 2026-02-19
+tags: ["hardware", "ai", "meetup", "tokyo"]
+order: 1
+---
+
+### A room full of tinkerers
+
+Went to [AI Tinkerers Tokyo](https://www.meetup.com/ai-tinkerers-tokyo/) tonight. The format is loose -- people bring demos, share what they're building, and there's a lot of hallway conversations that end up being more interesting than the talks.
+
+<figure>
+  {/* group photo goes here */}
+</figure>
+
+### Integer attention on a microcontroller
+
+The standout demo was from Yuichi Suzuki of Bothsides Technology, who showed up -- fresh out of hospital, no less -- with a phone and a Raspberry Pi Pico.
+
+The pitch: a tiny transformer-style model that uses *only integer operations*. No floating-point math. No softmax. No exponentials. No division. Just integers, all the way down.
+
+The model is 51k parameters and runs on a Pico with 256KB of RAM. That's kilobytes, not megabytes. For reference, GPT-2 is about 500MB.
+
+The technique is called **constructive integer attention**. The key insight is that you can reformulate attention in a way that avoids all the expensive floating-point operations that normally make running transformers on microcontrollers impractical. Without a softmax and without needing an FPU, the energy footprint drops dramatically.
+
+The practical upshot: deploy it on batteries in a remote location and it runs for months. That opens up a completely different class of applications -- environmental sensors, edge inference in places with no power infrastructure, wearables that don't need to phone home.
+
+It's the kind of demo that makes you recalibrate what "small" means in machine learning.
