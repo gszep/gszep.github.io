@@ -14,12 +14,11 @@
  */
 
 import {
-  initWebGPU,
-  resizeCanvas,
   createShader,
   fullscreenPass,
   MouseTracker,
 } from "./utils";
+import { WebGPUSimulation } from "./WebGPUSimulation";
 import computeSrc from "./navier-stokes.compute.wgsl?raw";
 import renderSrc from "./navier-stokes.render.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
@@ -37,120 +36,45 @@ const TILE = 2;
 const HALO = 1;
 const INNER = TILE * WG - 2 * HALO; // 14 — active cells per workgroup
 
-export class NavierStokes {
-  // Config
-  private canvas: HTMLCanvasElement;
-  private cellSize: number;
-  private interval: number;
+export class NavierStokes extends WebGPUSimulation {
   private stepsPerFrame: number;
   private brushSize: number;
 
   // Input
   private mouse!: MouseTracker;
 
-  // GPU state
-  private device!: GPUDevice;
-  private ctx!: GPUCanvasContext;
-  private format!: GPUTextureFormat;
-  private gw = 0;
-  private gh = 0;
-  private raf: number | null = null;
-  private last = 0;
-  private readbackBuf!: GPUBuffer;
-  private nanCheckPending = false;
-  private resizeTimer: ReturnType<typeof setTimeout> | null = null;
-
-  // Pipelines
+  // Pipelines & resources
   private computePL!: GPUComputePipeline;
-  private renderPL!: GPURenderPipeline;
-
-  // Resources (single buffer, no ping-pong)
   private buf!: GPUBuffer;
   private paramsBuf!: GPUBuffer;
   private computeBG!: GPUBindGroup;
-  private renderBG!: GPUBindGroup;
+  private readbackBuf!: GPUBuffer;
+  private nanCheckPending = false;
 
   // Params: [mouse.x, mouse.y, brush_size, unused, grid_w, grid_h, pad, pad]
   private paramsData = new Float32Array(8);
 
   constructor(opts: NavierStokesOptions) {
-    this.canvas = opts.canvas;
-    this.cellSize = opts.cellSize ?? 4;
-    this.interval = opts.updateInterval ?? 16;
+    super({
+      canvas: opts.canvas,
+      cellSize: opts.cellSize ?? 4,
+      updateInterval: opts.updateInterval ?? 16,
+    });
     this.stepsPerFrame = opts.stepsPerFrame ?? 1;
     this.brushSize = opts.brushSize ?? 1000;
   }
 
-  /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
-  async start(): Promise<boolean> {
-    try {
-      resizeCanvas(this.canvas);
-      const gpu = await initWebGPU(this.canvas);
-      if (!gpu) return false;
-
-      this.device = gpu.device;
-      this.ctx = gpu.context;
-      this.format = gpu.format;
-
-      // Stop simulation gracefully if GPU device is lost (common on mobile)
-      this.device.lost.then((info) => {
-        console.warn(`[NavierStokes] Device lost (${info.reason}): ${info.message}`);
-        this.stop();
-      });
-
-      this.gw = Math.ceil(this.canvas.width / this.cellSize);
-      this.gh = Math.ceil(this.canvas.height / this.cellSize);
-
-      this.buildPipelines();
-      this.buildResources();
-      this.mouse = new MouseTracker(this.canvas);
-
-      this.renderFrame();
-      this.raf = requestAnimationFrame(this.loop);
-      return true;
-    } catch (e) {
-      console.warn("[NavierStokes] Init failed:", e);
-      return false;
-    }
+  protected onStart(): void {
+    this.mouse = new MouseTracker(this.canvas);
   }
 
-  /** Stop the simulation loop. */
-  stop(): void {
-    if (this.raf !== null) cancelAnimationFrame(this.raf);
-    this.raf = null;
-    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
-    this.resizeTimer = null;
+  protected onStop(): void {
     this.mouse?.destroy();
-  }
-
-  /** Handle viewport resize: rebuild grid and resources. */
-  handleResize(): void {
-    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
-    this.resizeTimer = setTimeout(() => this.rebuild(), 150);
-  }
-
-  private rebuild(): void {
-    resizeCanvas(this.canvas);
-    this.ctx.configure({
-      device: this.device,
-      format: this.format,
-      alphaMode: "premultiplied",
-    });
-
-    this.gw = Math.ceil(this.canvas.width / this.cellSize);
-    this.gh = Math.ceil(this.canvas.height / this.cellSize);
-
-    this.buf.destroy();
-    this.paramsBuf.destroy();
-    this.readbackBuf.destroy();
-    this.nanCheckPending = false;
-    this.buildResources();
-    this.renderFrame();
   }
 
   // ── Pipelines ──────────────────────────────────────────
 
-  private buildPipelines(): void {
+  protected buildPipelines(): void {
     const includes = { fullscreen_vertex: fullscreenVertex };
 
     this.computePL = this.device.createComputePipeline({
@@ -176,10 +100,10 @@ export class NavierStokes {
 
   // ── Resources ──────────────────────────────────────────
 
-  private buildResources(): void {
+  protected buildResources(): void {
     const d = this.device;
     const cellCount = this.gw * this.gh;
-    const bufSize = cellCount * 16; // 4 floats x 4 bytes per cell
+    const bufSize = cellCount * 16; // 4 floats × 4 bytes per cell
 
     // Single state buffer (read_write in compute, read in render)
     this.buf = d.createBuffer({
@@ -225,6 +149,13 @@ export class NavierStokes {
     });
   }
 
+  protected destroyResources(): void {
+    this.buf.destroy();
+    this.paramsBuf.destroy();
+    this.readbackBuf.destroy();
+    this.nanCheckPending = false;
+  }
+
   /** Write initial vortex dipole state to the simulation buffer. */
   private resetState(): void {
     const cellCount = this.gw * this.gh;
@@ -259,17 +190,9 @@ export class NavierStokes {
     this.device.queue.writeBuffer(this.buf, 0, init);
   }
 
-  // ── Frame loop ─────────────────────────────────────────
+  // ── Frame ─────────────────────────────────────────────
 
-  private loop = (t: number): void => {
-    this.raf = requestAnimationFrame(this.loop);
-    if (t - this.last < this.interval) return;
-    this.last = t;
-    this.frame();
-  };
-
-  /** Run compute steps + render. */
-  private frame(): void {
+  protected frame(): void {
     // Map mouse state to params (convert px brush radius to grid coords)
     const m = this.mouse.state;
     this.paramsData[0] = m.x * this.gw;
@@ -334,17 +257,5 @@ export class NavierStokes {
         this.nanCheckPending = false;
       });
     }
-  }
-
-  /** Render current state without advancing simulation. */
-  private renderFrame(): void {
-    const enc = this.device.createCommandEncoder();
-    fullscreenPass(
-      enc,
-      this.ctx.getCurrentTexture().createView(),
-      this.renderPL,
-      this.renderBG,
-    );
-    this.device.queue.submit([enc.finish()]);
   }
 }

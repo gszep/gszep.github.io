@@ -3,16 +3,11 @@
  *
  * Uses a single read_write storage texture instead of ping-pong buffers.
  * Race conditions from in-place updates create interesting visual artifacts
- * acceptable for a background effect. Designed as a reusable template for
- * more complex GPU simulations.
+ * acceptable for a background effect.
  */
 
-import {
-  initWebGPU,
-  resizeCanvas,
-  createShader,
-  fullscreenPass,
-} from "./utils";
+import { createShader, fullscreenPass } from "./utils";
+import { WebGPUSimulation } from "./WebGPUSimulation";
 import computeSrc from "./game-of-life.compute.wgsl?raw";
 import renderSrc from "./game-of-life.render.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
@@ -32,100 +27,24 @@ export interface GameOfLifeOptions {
 
 const WG = 8; // workgroup size (must match compute shader)
 
-export class GameOfLife {
-  // Config
-  private canvas: HTMLCanvasElement;
-  private cellSize: number;
-  private interval: number;
+export class GameOfLife extends WebGPUSimulation {
   private density: number;
   private colors: SimColors;
 
-  // GPU state
-  private device!: GPUDevice;
-  private ctx!: GPUCanvasContext;
-  private format!: GPUTextureFormat;
-  private gw = 0;
-  private gh = 0;
-  private raf: number | null = null;
-  private last = 0;
-  private resizeTimer: ReturnType<typeof setTimeout> | null = null;
-
   // Pipelines & resources
   private computePL!: GPUComputePipeline;
-  private renderPL!: GPURenderPipeline;
   private stateTex!: GPUTexture;
   private colorBuf!: GPUBuffer;
   private computeBG!: GPUBindGroup;
-  private renderBG!: GPUBindGroup;
 
   constructor(opts: GameOfLifeOptions) {
-    this.canvas = opts.canvas;
-    this.cellSize = opts.cellSize ?? 10;
-    this.interval = opts.updateInterval ?? 150;
+    super({
+      canvas: opts.canvas,
+      cellSize: opts.cellSize ?? 10,
+      updateInterval: opts.updateInterval ?? 150,
+    });
     this.density = opts.initialDensity ?? 0.25;
     this.colors = { ...opts.colors };
-  }
-
-  /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
-  async start(): Promise<boolean> {
-    try {
-      resizeCanvas(this.canvas);
-      const gpu = await initWebGPU(this.canvas);
-      if (!gpu) return false;
-
-      this.device = gpu.device;
-      this.ctx = gpu.context;
-      this.format = gpu.format;
-
-      // Stop simulation gracefully if GPU device is lost (common on mobile)
-      this.device.lost.then((info) => {
-        console.warn(`[GameOfLife] Device lost (${info.reason}): ${info.message}`);
-        this.stop();
-      });
-
-      this.gw = Math.ceil(this.canvas.width / this.cellSize);
-      this.gh = Math.ceil(this.canvas.height / this.cellSize);
-
-      this.buildPipelines();
-      this.buildResources();
-
-      this.renderFrame(); // show initial state immediately
-      this.raf = requestAnimationFrame(this.loop);
-      return true;
-    } catch (e) {
-      console.warn("[GameOfLife] Init failed:", e);
-      return false;
-    }
-  }
-
-  /** Stop the simulation loop. */
-  stop(): void {
-    if (this.raf !== null) cancelAnimationFrame(this.raf);
-    this.raf = null;
-    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
-    this.resizeTimer = null;
-  }
-
-  /** Handle viewport resize: rebuild grid and resources to maintain square cells. */
-  handleResize(): void {
-    if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
-    this.resizeTimer = setTimeout(() => this.rebuild(), 150);
-  }
-
-  private rebuild(): void {
-    resizeCanvas(this.canvas);
-    this.ctx.configure({
-      device: this.device,
-      format: this.format,
-      alphaMode: "premultiplied",
-    });
-
-    this.gw = Math.ceil(this.canvas.width / this.cellSize);
-    this.gh = Math.ceil(this.canvas.height / this.cellSize);
-
-    this.stateTex.destroy();
-    this.buildResources();
-    this.renderFrame();
   }
 
   /** Live-update colours (e.g. on theme toggle). */
@@ -142,7 +61,7 @@ export class GameOfLife {
 
   // ── Pipelines ──────────────────────────────────────────────
 
-  private buildPipelines(): void {
+  protected buildPipelines(): void {
     const includes = { fullscreen_vertex: fullscreenVertex };
 
     this.computePL = this.device.createComputePipeline({
@@ -168,7 +87,7 @@ export class GameOfLife {
 
   // ── Resources ─────────────────────────────────────────────
 
-  private buildResources(): void {
+  protected buildResources(): void {
     const d = this.device;
 
     // State texture (single read_write — no ping-pong needed)
@@ -222,17 +141,14 @@ export class GameOfLife {
     });
   }
 
-  // ── Frame loop ─────────────────────────────────────────────
+  protected destroyResources(): void {
+    this.stateTex.destroy();
+    this.colorBuf.destroy();
+  }
 
-  private loop = (t: number): void => {
-    this.raf = requestAnimationFrame(this.loop);
-    if (t - this.last < this.interval) return;
-    this.last = t;
-    this.frame();
-  };
+  // ── Frame ─────────────────────────────────────────────────
 
-  /** Run one compute step + render in a single command buffer. */
-  private frame(): void {
+  protected frame(): void {
     const enc = this.device.createCommandEncoder();
 
     // Compute pass — advance simulation
@@ -253,18 +169,6 @@ export class GameOfLife {
       this.renderBG,
     );
 
-    this.device.queue.submit([enc.finish()]);
-  }
-
-  /** Render current state without advancing simulation. */
-  private renderFrame(): void {
-    const enc = this.device.createCommandEncoder();
-    fullscreenPass(
-      enc,
-      this.ctx.getCurrentTexture().createView(),
-      this.renderPL,
-      this.renderBG,
-    );
     this.device.queue.submit([enc.finish()]);
   }
 }
