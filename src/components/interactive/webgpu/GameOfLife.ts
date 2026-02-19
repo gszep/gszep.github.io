@@ -68,23 +68,34 @@ export class GameOfLife {
 
   /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
   async start(): Promise<boolean> {
-    resizeCanvas(this.canvas);
-    const gpu = await initWebGPU(this.canvas);
-    if (!gpu) return false;
+    try {
+      resizeCanvas(this.canvas);
+      const gpu = await initWebGPU(this.canvas);
+      if (!gpu) return false;
 
-    this.device = gpu.device;
-    this.ctx = gpu.context;
-    this.format = gpu.format;
+      this.device = gpu.device;
+      this.ctx = gpu.context;
+      this.format = gpu.format;
 
-    this.gw = Math.ceil(this.canvas.width / this.cellSize);
-    this.gh = Math.ceil(this.canvas.height / this.cellSize);
+      // Stop simulation gracefully if GPU device is lost (common on mobile)
+      this.device.lost.then((info) => {
+        console.warn(`[GameOfLife] Device lost (${info.reason}): ${info.message}`);
+        this.stop();
+      });
 
-    this.buildPipelines();
-    this.buildResources();
+      this.gw = Math.ceil(this.canvas.width / this.cellSize);
+      this.gh = Math.ceil(this.canvas.height / this.cellSize);
 
-    this.renderFrame(); // show initial state immediately
-    this.raf = requestAnimationFrame(this.loop);
-    return true;
+      this.buildPipelines();
+      this.buildResources();
+
+      this.renderFrame(); // show initial state immediately
+      this.raf = requestAnimationFrame(this.loop);
+      return true;
+    } catch (e) {
+      console.warn("[GameOfLife] Init failed:", e);
+      return false;
+    }
   }
 
   /** Stop the simulation loop. */

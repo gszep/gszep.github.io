@@ -161,12 +161,13 @@
   }
 
   if (canvas) {
+    const isMobile = window.matchMedia("(pointer: coarse)").matches;
     const sim = new NavierStokes({
       canvas,
-      cellSize: 1,
+      cellSize: isMobile ? 4 : 1,
       updateInterval: 16,
-      stepsPerFrame: 8,
-      brushSize: 30,
+      stepsPerFrame: isMobile ? 2 : 8,
+      brushSize: isMobile ? 15 : 30,
     });
 
     sim.start().then((ok) => {

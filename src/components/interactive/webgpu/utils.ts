@@ -32,7 +32,7 @@ export async function initWebGPU(
 /** Resize canvas pixel dimensions to match its CSS display size. */
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
-  dpr = window.devicePixelRatio,
+  dpr = Math.min(window.devicePixelRatio, 2),
 ): void {
   const rect = canvas.getBoundingClientRect();
   canvas.width = Math.round(rect.width * dpr);

@@ -92,6 +92,12 @@ export class NavierStokes {
       this.ctx = gpu.context;
       this.format = gpu.format;
 
+      // Stop simulation gracefully if GPU device is lost (common on mobile)
+      this.device.lost.then((info) => {
+        console.warn(`[NavierStokes] Device lost (${info.reason}): ${info.message}`);
+        this.stop();
+      });
+
       this.gw = Math.ceil(this.canvas.width / this.cellSize);
       this.gh = Math.ceil(this.canvas.height / this.cellSize);
 
