@@ -164,9 +164,9 @@
     const isMobile = window.matchMedia("(pointer: coarse)").matches;
     const sim = new NavierStokes({
       canvas,
-      cellSize: isMobile ? 4 : 1,
+      cellSize: isMobile ? 2 : 1,
       updateInterval: 16,
-      stepsPerFrame: isMobile ? 2 : 8,
+      stepsPerFrame: isMobile ? 1 : 8,
       brushSize: isMobile ? 15 : 30,
     });
 
