@@ -23,12 +23,15 @@ import computeSrc from "./navier-stokes.compute.wgsl?raw";
 import renderSrc from "./navier-stokes.render.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
 
+export type BgColor = [number, number, number, number]; // RGBA 0-1
+
 export interface NavierStokesOptions {
   canvas: HTMLCanvasElement;
   cellSize?: number; // px per sim cell (default 4)
   updateInterval?: number; // ms between frames (default 16)
   stepsPerFrame?: number; // compute dispatches per render (default 1)
   brushSize?: number; // radius of interaction brush in px (default 1000)
+  bgColor?: BgColor; // background colour for compositing (default white)
 }
 
 const WG = 8; // workgroup size (must match compute shader)
@@ -39,6 +42,7 @@ const INNER = TILE * WG - 2 * HALO; // 14 — active cells per workgroup
 export class NavierStokes extends WebGPUSimulation {
   private stepsPerFrame: number;
   private brushSize: number;
+  private bgColor: BgColor;
 
   // Input
   private mouse!: MouseTracker;
@@ -51,8 +55,8 @@ export class NavierStokes extends WebGPUSimulation {
   private readbackBuf!: GPUBuffer;
   private nanCheckPending = false;
 
-  // Params: [mouse.x, mouse.y, brush_size, unused, grid_w, grid_h, pad, pad]
-  private paramsData = new Float32Array(8);
+  // Params: [mouse.x, mouse.y, brush_size, unused, grid_w, grid_h, pad, pad, bg_r, bg_g, bg_b, bg_a]
+  private paramsData = new Float32Array(12);
 
   constructor(opts: NavierStokesOptions) {
     super({
@@ -62,6 +66,19 @@ export class NavierStokes extends WebGPUSimulation {
     });
     this.stepsPerFrame = opts.stepsPerFrame ?? 1;
     this.brushSize = opts.brushSize ?? 1000;
+    this.bgColor = opts.bgColor ?? [1.0, 1.0, 1.0, 1.0];
+  }
+
+  /** Live-update background colour (e.g. on theme toggle). */
+  updateBackground(bg: BgColor): void {
+    this.bgColor = bg;
+    if (this.paramsBuf) {
+      this.device.queue.writeBuffer(
+        this.paramsBuf,
+        32, // offset of bg field in Params struct
+        new Float32Array(bg),
+      );
+    }
   }
 
   protected onStart(): void {
@@ -113,15 +130,20 @@ export class NavierStokes extends WebGPUSimulation {
 
     this.resetState();
 
-    // Params uniform buffer (32 bytes)
+    // Params uniform buffer (48 bytes: mouse vec4f + size vec2f + pad vec2f + bg vec4f)
     this.paramsBuf = d.createBuffer({
-      size: 32,
+      size: 48,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.paramsData.fill(0);
     this.paramsData[2] = NaN; // brush inactive
     this.paramsData[4] = this.gw;
     this.paramsData[5] = this.gh;
+    // bg colour at offset 8 (struct offset 32)
+    this.paramsData[8] = this.bgColor[0];
+    this.paramsData[9] = this.bgColor[1];
+    this.paramsData[10] = this.bgColor[2];
+    this.paramsData[11] = this.bgColor[3];
     d.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 
     // Readback buffer for NaN corner detection (4 corners × 16 bytes)

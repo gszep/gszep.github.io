@@ -143,6 +143,14 @@
 
 <script>
   import { NavierStokes } from "./webgpu/NavierStokes";
+  import type { BgColor } from "./webgpu/NavierStokes";
+
+  const LIGHT_BG: BgColor = [1.0, 1.0, 1.0, 1.0];
+  const DARK_BG: BgColor = [0.0, 0.0, 0.0, 1.0];
+
+  function isDark(): boolean {
+    return document.documentElement.classList.contains("dark");
+  }
 
   const canvas = document.getElementById("fluid-sim") as HTMLCanvasElement | null;
   const fallback = document.getElementById(
@@ -168,12 +176,21 @@
       updateInterval: 16,
       stepsPerFrame: 1,
       brushSize: isMobile ? 15 : 30,
+      bgColor: isDark() ? DARK_BG : LIGHT_BG,
     });
 
     sim.start().then((ok) => {
       if (ok) {
         fallback?.remove();
         new ResizeObserver(() => sim.handleResize()).observe(canvas);
+
+        // React to theme changes (light/dark toggle)
+        new MutationObserver(() => {
+          sim.updateBackground(isDark() ? DARK_BG : LIGHT_BG);
+        }).observe(document.documentElement, {
+          attributes: true,
+          attributeFilter: ["class"],
+        });
       } else {
         canvas.remove();
         hint?.remove();

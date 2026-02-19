@@ -8,6 +8,8 @@
 struct Params {
   mouse: vec4f,   // xy=position, z=brush_size (NaN=idle), w=unused
   size: vec2f,
+  _pad: vec2f,
+  bg: vec4f,      // background colour (used by render only)
 };
 
 const WG: u32 = 8u;

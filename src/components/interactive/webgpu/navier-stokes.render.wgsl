@@ -3,6 +3,8 @@
 struct Params {
   mouse: vec4f,
   size: vec2f,
+  _pad: vec2f,
+  bg: vec4f,
 };
 
 @group(0) @binding(0) var<storage, read> state: array<vec4f>;
@@ -30,5 +32,8 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   color.b = abs(c.z);                // stream function -> blue
   color.a = c.x;                     // error metric -> alpha
 
-  return color;
+  // Blend over background so dark/light mode both look correct
+  let a = clamp(color.a, 0.0, 1.0);
+  let blended = mix(params.bg.rgb, color.rgb, a);
+  return vec4f(blended, 1.0);
 }
