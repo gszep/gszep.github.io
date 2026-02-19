@@ -72,13 +72,10 @@ export class NavierStokes extends WebGPUSimulation {
   /** Live-update background colour (e.g. on theme toggle). */
   updateBackground(bg: BgColor): void {
     this.bgColor = bg;
-    if (this.paramsBuf) {
-      this.device.queue.writeBuffer(
-        this.paramsBuf,
-        32, // offset of bg field in Params struct
-        new Float32Array(bg),
-      );
-    }
+    this.paramsData[8] = bg[0];
+    this.paramsData[9] = bg[1];
+    this.paramsData[10] = bg[2];
+    this.paramsData[11] = bg[3];
   }
 
   protected onStart(): void {
