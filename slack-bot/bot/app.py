@@ -21,6 +21,10 @@ log = logging.getLogger(__name__)
 config = Config.from_env()
 bot_user_id: str = ""
 
+# Track timestamps of messages the bot has posted, so we can detect
+# thread replies to the bot without requiring an @-mention.
+bot_message_timestamps: set[str] = set()
+
 app = AsyncApp(token=config.slack_bot_token)
 
 session = ClaudeSession(
@@ -56,6 +60,29 @@ def truncate(text: str, limit: int = 3000) -> str:
     if len(text) <= limit:
         return text
     return text[:limit] + "\n_... (truncated)_"
+
+
+async def resolve_file_info(client, file_obj: dict) -> dict:
+    """Resolve full file metadata from Slack.
+
+    Newer Slack API sends minimal 'tombstone' file objects in events
+    with file_access='check_file_info'. We must call files.info to
+    get the actual name, URL, and other metadata.
+    """
+    if file_obj.get("file_access") == "check_file_info" or not file_obj.get(
+        "url_private_download"
+    ):
+        file_id = file_obj.get("id")
+        if not file_id:
+            log.warning("File object has no id: %s", file_obj)
+            return file_obj
+        try:
+            resp = await client.files_info(file=file_id)
+            return resp["file"]
+        except Exception:
+            log.exception("Failed to fetch files.info for %s", file_id)
+            return file_obj
+    return file_obj
 
 
 async def download_slack_file(url: str, filename: str) -> str:
@@ -112,11 +139,17 @@ async def handle_message(event, client, say):
 
     text = (event.get("text") or "").strip()
     files = event.get("files", [])
+    thread_ts = event.get("thread_ts")  # set if this is a thread reply
+
     if not text and not files:
         return
 
-    # Only respond when the bot is explicitly @-mentioned
-    if bot_user_id and f"<@{bot_user_id}>" not in text:
+    # Determine if the bot should respond:
+    # (a) Message contains an explicit @-mention of the bot
+    # (b) Message is a thread reply to one of the bot's messages
+    has_mention = bot_user_id and f"<@{bot_user_id}>" in text
+    is_reply_to_bot = thread_ts is not None and thread_ts in bot_message_timestamps
+    if not has_mention and not is_reply_to_bot:
         return
 
     # Strip the @-mention from text before forwarding to Claude
@@ -127,12 +160,17 @@ async def handle_message(event, client, say):
     channel = event["channel"]
     ts = event["ts"]
 
+    # If the message is in a thread, respond in the thread.
+    # Otherwise respond at the channel top level.
+    reply_ts = thread_ts  # None for top-level messages
+
     # If Claude is already working, let the user know
     if session.busy:
         await react(client, channel, ts, "hourglass")
         await say(
             text="I'm working on another request right now. I'll get to yours next.",
             channel=channel,
+            thread_ts=reply_ts,
         )
         # Queue: the lock in session.send() will serialise this
 
@@ -142,15 +180,20 @@ async def handle_message(event, client, say):
         # Download any uploaded files
         file_paths = []
         for f in files:
+            # Resolve full metadata (Slack may send tombstone references)
+            f = await resolve_file_info(client, f)
             url = f.get("url_private_download") or f.get("url_private")
+            fname = f.get("name") or f.get("title") or f"file_{f.get('id', 'unknown')}"
             if url:
-                path = await download_slack_file(url, f["name"])
+                path = await download_slack_file(url, fname)
                 file_paths.append(path)
-                log.info("Downloaded %s -> %s", f["name"], path)
+                log.info("Downloaded %s -> %s", fname, path)
+            else:
+                log.warning("No download URL for file %s: %s", f.get("id"), f)
 
         # Build the message for Claude
-        name = await get_display_name(client, user_id)
-        message = f"{name}: {text}" if text else f"{name}:"
+        display = await get_display_name(client, user_id)
+        message = f"{display}: {text}" if text else f"{display}:"
         if file_paths:
             message += "\n\nUploaded files saved to repo:\n"
             message += "\n".join(f"- {p}" for p in file_paths)
@@ -159,9 +202,15 @@ async def handle_message(event, client, say):
         result = await session.send(message)
         response = result.get("result", "_(no response)_")
 
-        # Format and post
+        # Format and post -- respond in thread if applicable
         formatted = truncate(to_slack_mrkdwn(response))
-        await say(text=formatted, channel=channel)
+        resp = await client.chat_postMessage(
+            channel=channel, text=formatted, thread_ts=reply_ts
+        )
+
+        # Track the bot's response so thread replies are recognised
+        if resp and resp.get("ts"):
+            bot_message_timestamps.add(resp["ts"])
 
         await react(
             client, channel, ts, "white_check_mark", remove="hourglass_flowing_sand"
@@ -169,7 +218,11 @@ async def handle_message(event, client, say):
 
     except Exception:
         log.exception("Error handling message")
-        await say(text="Something went wrong. Check the bot logs.", channel=channel)
+        await client.chat_postMessage(
+            channel=channel,
+            text="Something went wrong. Check the bot logs.",
+            thread_ts=reply_ts,
+        )
         await react(client, channel, ts, "x", remove="hourglass_flowing_sand")
 
 
