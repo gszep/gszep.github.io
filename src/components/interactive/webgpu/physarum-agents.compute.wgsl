@@ -1,6 +1,6 @@
-// Physarum agent step: sense trail + branch mask → turn → move → deposit.
-// Agents self-organize into filamentary structures along tree branches,
-// creating emergent calligraphic brush strokes.
+// Physarum agent step: sense trail + attraction field → turn → move → deposit.
+// Agents self-organize into filamentary structures along regions of high
+// attraction (dark green branches in the plum blossom video).
 
 requires readonly_and_readwrite_storage_textures;
 
@@ -20,9 +20,8 @@ struct Params {
 
 @group(0) @binding(0) var<storage, read_write> agents: array<vec4f>;
 @group(0) @binding(1) var trail: texture_storage_2d<r32float, read_write>;
-@group(0) @binding(2) var mask_orig: texture_2d<f32>;
-@group(0) @binding(3) var mask_blur: texture_2d<f32>;
-@group(0) @binding(4) var<uniform> params: Params;
+@group(0) @binding(2) var attract: texture_2d<f32>;   // dark green attraction field
+@group(0) @binding(3) var<uniform> params: Params;
 
 fn hash(p: vec2f) -> f32 {
   var p3 = fract(p.xyx * vec3f(0.1031, 0.1030, 0.0973));
@@ -37,12 +36,9 @@ fn sense(pos: vec2f, angle: f32) -> f32 {
   let coord = clamp(vec2i(sp), vec2i(0), sz - 1);
 
   let trail_val = textureLoad(trail, coord).r;
-  let orig = textureLoad(mask_orig, coord, 0).r;
-  let eroded = textureLoad(mask_blur, coord, 0).r;
+  let attract_val = textureLoad(attract, coord, 0).r;
 
-  // Attract to branches: high original mask AND low erosion (not blossom)
-  let branch = orig * (1.0 - step(0.5, eroded));
-  return trail_val + params.mask_weight * branch;
+  return trail_val + params.mask_weight * attract_val;
 }
 
 @compute @workgroup_size(256)

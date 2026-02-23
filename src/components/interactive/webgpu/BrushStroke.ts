@@ -18,6 +18,7 @@ import { WebGPUSimulation } from "./WebGPUSimulation";
 import renderSrc from "./brush-stroke.render.wgsl?raw";
 import extractSrc from "./erosion-extract.render.wgsl?raw";
 import blurSrc from "./erosion-blur.compute.wgsl?raw";
+import attractSrc from "./attract-extract.render.wgsl?raw";
 import agentsSrc from "./physarum-agents.compute.wgsl?raw";
 import diffuseSrc from "./physarum-diffuse.compute.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
@@ -75,6 +76,11 @@ export class BrushStroke extends WebGPUSimulation {
   private extractParamsBuf!: GPUBuffer;
   private extractParamsData = new Float32Array(4); // size(2) + threshold + pad
   private blurBG!: GPUBindGroup;
+
+  // Attraction field (dark green detection from video)
+  private attractPL!: GPURenderPipeline;
+  private attractTex!: GPUTexture;
+  private attractView!: GPUTextureView;
 
   // Physarum resources
   private agentsPL!: GPUComputePipeline;
@@ -156,6 +162,19 @@ export class BrushStroke extends WebGPUSimulation {
       compute: { module: blurMod, entryPoint: "blur" },
     });
 
+    // Attraction field extraction (dark green from video → r32float)
+    const attractMod = createShader(this.device, attractSrc, includes);
+    this.attractPL = this.device.createRenderPipeline({
+      layout: "auto",
+      vertex: { module: attractMod, entryPoint: "vert" },
+      fragment: {
+        module: attractMod,
+        entryPoint: "frag",
+        targets: [{ format: "r32float" }],
+      },
+      primitive: { topology: "triangle-list" },
+    });
+
     // Physarum agent step compute pipeline
     const agentsMod = createShader(this.device, agentsSrc);
     this.agentsPL = this.device.createComputePipeline({
@@ -221,6 +240,16 @@ export class BrushStroke extends WebGPUSimulation {
       entries: [{ binding: 0, resource: this.maskBlurView }],
     });
 
+    // Attraction field: dark green detection (render target, sampled by agents)
+    this.attractTex = d.createTexture({
+      size: [this.gw, this.gh],
+      format: "r32float",
+      usage:
+        GPUTextureUsage.RENDER_ATTACHMENT |
+        GPUTextureUsage.TEXTURE_BINDING,
+    });
+    this.attractView = this.attractTex.createView();
+
     // ── Physarum resources ──
 
     // Agent count: ~1 agent per 8 pixels, capped at 500k
@@ -268,9 +297,8 @@ export class BrushStroke extends WebGPUSimulation {
       entries: [
         { binding: 0, resource: { buffer: this.agentsBuf } },
         { binding: 1, resource: this.trailView },
-        { binding: 2, resource: this.maskOrigView },
-        { binding: 3, resource: this.maskBlurView },
-        { binding: 4, resource: { buffer: this.physarumParamsBuf } },
+        { binding: 2, resource: this.attractView },
+        { binding: 3, resource: { buffer: this.physarumParamsBuf } },
       ],
     });
 
@@ -289,6 +317,7 @@ export class BrushStroke extends WebGPUSimulation {
     this.extractParamsBuf.destroy();
     this.maskOrigTex.destroy();
     this.maskBlurTex.destroy();
+    this.attractTex.destroy();
     this.agentsBuf.destroy();
     this.trailTex.destroy();
     this.physarumParamsBuf.destroy();
@@ -360,6 +389,15 @@ export class BrushStroke extends WebGPUSimulation {
       ],
     });
 
+    const attractBG = this.device.createBindGroup({
+      layout: this.attractPL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: ext },
+        { binding: 1, resource: this.sampler },
+        { binding: 2, resource: { buffer: this.extractParamsBuf } },
+      ],
+    });
+
     const renderBG = this.device.createBindGroup({
       layout: this.renderPL.getBindGroupLayout(0),
       entries: [
@@ -374,8 +412,11 @@ export class BrushStroke extends WebGPUSimulation {
 
     const enc = this.device.createCommandEncoder();
 
-    // Pass 1: Extract tree mask from video → sharp original texture
+    // Pass 1a: Extract tree mask from video → sharp original texture
     fullscreenPass(enc, this.maskOrigView, this.extractPL, extractBG);
+
+    // Pass 1b: Extract dark green attraction field from video
+    fullscreenPass(enc, this.attractView, this.attractPL, attractBG);
 
     // Copy original → blur texture (preserves original for sharp detail)
     enc.copyTextureToTexture(
