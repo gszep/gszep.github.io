@@ -32,8 +32,6 @@ export interface BrushStrokeOptions {
 /** Tunable parameters exposed to lil-gui. */
 export interface SumieTuning {
   // NPR segmentation
-  branchLum: number;      // luminance threshold for branch detection
-  branchEdge: number;     // contrast threshold for branch detection
   branchInk: number;      // branch stroke opacity
   skyInk: number;         // sky wash opacity
   paperTone: number;      // paper brightness
@@ -68,7 +66,7 @@ export class BrushStroke extends WebGPUSimulation {
   private video: HTMLVideoElement;
   private sampler!: GPUSampler;
   private paramsBuf!: GPUBuffer;
-  private paramsData = new Float32Array(12); // 9 used + 3 padding
+  private paramsData = new Float32Array(8); // 6 used + 2 padding
 
   // Erosion pipeline resources
   private extractPL!: GPURenderPipeline;
@@ -100,8 +98,6 @@ export class BrushStroke extends WebGPUSimulation {
 
   /** Live-tunable parameters — mutate directly, changes apply next frame. */
   readonly tuning: SumieTuning = {
-    branchLum: 0.14,
-    branchEdge: 0.30,
     branchInk: 1.00,
     skyInk: 0.30,
     paperTone: 1.00,
@@ -217,9 +213,9 @@ export class BrushStroke extends WebGPUSimulation {
   protected buildResources(): void {
     const d = this.device;
 
-    // Render params: 12 x f32 = 48 bytes
+    // Render params: 8 x f32 = 32 bytes
     this.paramsBuf = d.createBuffer({
-      size: 48,
+      size: 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -329,6 +325,17 @@ export class BrushStroke extends WebGPUSimulation {
         { binding: 2, resource: this.maskOrigView },
       ],
     });
+
+    // Render composite bind group (stable — no external texture dependency)
+    this.renderBG = d.createBindGroup({
+      layout: this.renderPL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: this.paramsBuf } },
+        { binding: 1, resource: this.maskBlurView },
+        { binding: 2, resource: this.maskOrigView },
+        { binding: 3, resource: this.trailView },
+      ],
+    });
   }
 
   protected destroyResources(): void {
@@ -377,13 +384,10 @@ export class BrushStroke extends WebGPUSimulation {
     // Upload render params
     this.paramsData[0] = this.gw;
     this.paramsData[1] = this.gh;
-    this.paramsData[2] = performance.now() / 1000.0;
-    this.paramsData[3] = t.branchLum;
-    this.paramsData[4] = t.branchEdge;
-    this.paramsData[5] = t.branchInk;
-    this.paramsData[6] = t.skyInk;
-    this.paramsData[7] = t.paperTone;
-    this.paramsData[8] = t.blossomInk;
+    this.paramsData[2] = t.branchInk;
+    this.paramsData[3] = t.skyInk;
+    this.paramsData[4] = t.paperTone;
+    this.paramsData[5] = t.blossomInk;
     this.device.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 
     // Upload physarum params
@@ -421,18 +425,6 @@ export class BrushStroke extends WebGPUSimulation {
         { binding: 1, resource: this.sampler },
         { binding: 2, resource: { buffer: this.extractParamsBuf } },
         { binding: 3, resource: this.maskOrigView },
-      ],
-    });
-
-    const renderBG = this.device.createBindGroup({
-      layout: this.renderPL.getBindGroupLayout(0),
-      entries: [
-        { binding: 0, resource: ext },
-        { binding: 1, resource: this.sampler },
-        { binding: 2, resource: { buffer: this.paramsBuf } },
-        { binding: 3, resource: this.maskBlurView },   // eroded classification
-        { binding: 4, resource: this.maskOrigView },    // sharp original
-        { binding: 5, resource: this.trailView },       // physarum trail
       ],
     });
 
@@ -490,7 +482,7 @@ export class BrushStroke extends WebGPUSimulation {
       enc,
       this.ctx.getCurrentTexture().createView(),
       this.renderPL,
-      renderBG,
+      this.renderBG,
     );
 
     this.device.queue.submit([enc.finish()]);
