@@ -131,6 +131,16 @@ export class BrushStroke extends WebGPUSimulation {
     this.video = opts.video;
   }
 
+  /** Size canvas to video native resolution; CSS object-fit handles display crop. */
+  protected override sizeCanvas(): void {
+    if (this.video.videoWidth > 0) {
+      this.canvas.width = this.video.videoWidth;
+      this.canvas.height = this.video.videoHeight;
+    } else {
+      super.sizeCanvas();
+    }
+  }
+
   // ── Pipelines ──────────────────────────────────────────────
 
   protected buildPipelines(): void {

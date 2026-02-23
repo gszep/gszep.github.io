@@ -41,10 +41,15 @@ export abstract class WebGPUSimulation {
     this.interval = opts.updateInterval;
   }
 
+  /** Size the canvas pixel buffer. Override to use custom dimensions (e.g. video native res). */
+  protected sizeCanvas(): void {
+    resizeCanvas(this.canvas);
+  }
+
   /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
   async start(): Promise<boolean> {
     try {
-      resizeCanvas(this.canvas);
+      this.sizeCanvas();
       const gpu = await initWebGPU(this.canvas);
       if (!gpu) return false;
 
@@ -91,7 +96,7 @@ export abstract class WebGPUSimulation {
   }
 
   private rebuild(): void {
-    resizeCanvas(this.canvas);
+    this.sizeCanvas();
     this.ctx.configure({
       device: this.device,
       format: this.format,
