@@ -5,6 +5,8 @@
  * source for the NPR shader. When WebGPU is available the canvas
  * overlays the video with an ink wash rendering; when not, the raw
  * video remains visible.
+ *
+ * Includes a lil-gui panel for real-time parameter tuning.
  */
 ---
 
@@ -45,6 +47,7 @@
 
 <script>
   import { BrushStroke } from "./webgpu/BrushStroke";
+  import GUI from "lil-gui";
 
   const canvas = document.getElementById("plum-sumi") as HTMLCanvasElement | null;
   const video = document.getElementById("plum-video") as HTMLVideoElement | null;
@@ -55,6 +58,17 @@
     sim.start().then((ok) => {
       if (ok) {
         new ResizeObserver(() => sim.handleResize()).observe(canvas);
+
+        // Tuning GUI
+        const gui = new GUI({ title: "Sumi-e" });
+
+        const branch = gui.addFolder("Branch");
+        branch.add(sim.tuning, "branchLum", 0, 0.5, 0.01).name("luminance");
+        branch.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
+        branch.add(sim.tuning, "branchInk", 0, 1, 0.01).name("ink opacity");
+
+        gui.add(sim.tuning, "skyInk", 0, 0.3, 0.005).name("Sky wash");
+        gui.add(sim.tuning, "paperTone", 0.85, 1, 0.005).name("Paper tone");
       } else {
         // WebGPU unavailable — remove canvas, raw video stays visible
         canvas.remove();

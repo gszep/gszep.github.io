@@ -18,11 +18,29 @@ export interface BrushStrokeOptions {
   updateInterval?: number; // ms between frames (default 33 ≈ 30fps)
 }
 
+/** Tunable parameters exposed to lil-gui. */
+export interface SumieTuning {
+  branchLum: number;   // luminance threshold for branch detection
+  branchEdge: number;  // contrast threshold for branch detection
+  branchInk: number;   // branch stroke opacity
+  skyInk: number;      // sky wash opacity
+  paperTone: number;   // paper brightness
+}
+
 export class BrushStroke extends WebGPUSimulation {
   private video: HTMLVideoElement;
   private sampler!: GPUSampler;
   private paramsBuf!: GPUBuffer;
-  private paramsData = new Float32Array(4); // [size.x, size.y, time, pad]
+  private paramsData = new Float32Array(8);
+
+  /** Live-tunable parameters — mutate directly, changes apply next frame. */
+  readonly tuning: SumieTuning = {
+    branchLum: 0.21,
+    branchEdge: 0.08,
+    branchInk: 0.92,
+    skyInk: 0.08,
+    paperTone: 0.96,
+  };
 
   constructor(opts: BrushStrokeOptions) {
     super({
@@ -60,12 +78,9 @@ export class BrushStroke extends WebGPUSimulation {
 
   protected buildResources(): void {
     this.paramsBuf = this.device.createBuffer({
-      size: 16, // 4 × f32
+      size: 32, // 8 × f32
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
-    this.paramsData[0] = this.gw;
-    this.paramsData[1] = this.gh;
-    this.device.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
   }
 
   protected destroyResources(): void {
@@ -86,10 +101,16 @@ export class BrushStroke extends WebGPUSimulation {
       return; // frame not available yet
     }
 
-    // Update uniforms
+    // Upload uniforms (size + time + tuning knobs)
+    const t = this.tuning;
     this.paramsData[0] = this.gw;
     this.paramsData[1] = this.gh;
     this.paramsData[2] = performance.now() / 1000.0;
+    this.paramsData[3] = t.branchLum;
+    this.paramsData[4] = t.branchEdge;
+    this.paramsData[5] = t.branchInk;
+    this.paramsData[6] = t.skyInk;
+    this.paramsData[7] = t.paperTone;
     this.device.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 
     // Bind group must be recreated each frame (external texture expires)

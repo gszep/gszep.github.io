@@ -7,7 +7,11 @@
 struct Params {
   size: vec2f,
   time: f32,
-  _pad: f32,
+  branch_lum: f32,     // luminance threshold for branch detection
+  branch_edge: f32,    // contrast threshold for branch detection
+  branch_ink: f32,     // branch stroke opacity
+  sky_ink: f32,        // sky wash opacity
+  paper_tone: f32,     // paper brightness
 };
 
 @group(0) @binding(0) var video: texture_external;
@@ -83,14 +87,19 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
   // ── Paper ─────────────────────────────────────────────────
   let grain = fbm(px * 0.35) * 0.03 + fbm(px * 0.08) * 0.015;
-  let paper = vec3f(0.96, 0.95, 0.93) - grain;
+  let pt = params.paper_tone;
+  let paper = vec3f(pt, pt - 0.01, pt - 0.03) - grain;
 
   // ── Segmentation ──────────────────────────────────────────
   // Branch: dark pixels with high local contrast (thin dark structures)
-  let branch = smoothstep(0.30, 0.12, l0) * smoothstep(0.04, 0.12, edge);
+  let bl = params.branch_lum;
+  let be = params.branch_edge;
+  let branch = smoothstep(bl + 0.09, bl - 0.09, l0)
+             * smoothstep(be - 0.04, be + 0.04, edge);
 
   // Sky: dark-ish pixels with low contrast (uniform dark areas)
-  let sky = smoothstep(0.45, 0.20, l0) * (1.0 - smoothstep(0.02, 0.08, edge));
+  let sky = smoothstep(bl + 0.24, bl - 0.01, l0)
+          * (1.0 - smoothstep(be * 0.25, be, edge));
 
   // ── Brush texture (for branch stroke variation) ───────────
   let sdir  = edge_a + 1.5708;                         // along contour
@@ -105,8 +114,8 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let btex = b1 * 0.7 + b2 * 0.3;
 
   // ── Composite ─────────────────────────────────────────────
-  let branch_ink = branch * 0.92 * mix(0.85, 1.0, btex);
-  let sky_ink    = sky * 0.08;
+  let branch_ink = branch * params.branch_ink * mix(0.85, 1.0, btex);
+  let sky_ink    = sky * params.sky_ink;
   let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
   let total_ink  = clamp(branch_ink + sky_ink, 0.0, 1.0);
   let out        = mix(paper, ink_col, total_ink);
