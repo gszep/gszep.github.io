@@ -98,15 +98,15 @@ export class BrushStroke extends WebGPUSimulation {
     maskThreshold: 0.34,
     erosionSteps: 100,
     blossomInk: 0.60,
-    sensorDist: 15,
-    sensorAngle: 0.39,
-    turnSpeed: 0.3,
-    deposit: 0.3,
+    sensorDist: 2,
+    sensorAngle: 0.43,
+    turnSpeed: 0.54,
+    deposit: 0.19,
     trailSpeed: 1.0,
-    maskWeight: 3.0,
-    trailDecay: 0.97,
-    diffuseWeight: 0.3,
-    physarumSteps: 4,
+    maskWeight: 10.0,
+    trailDecay: 0.9,
+    diffuseWeight: 0,
+    physarumSteps: 16,
   };
 
   constructor(opts: BrushStrokeOptions) {
