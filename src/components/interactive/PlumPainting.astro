@@ -45,6 +45,13 @@
     height: 100%;
     pointer-events: none;
   }
+
+  .plum-painting :global(.lil-gui) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+  }
 </style>
 
 <script>
@@ -61,8 +68,10 @@
       if (ok) {
         new ResizeObserver(() => sim.handleResize()).observe(canvas);
 
-        // Tuning GUI
-        const gui = new GUI({ title: "Sumi-e" });
+        // Tuning GUI (collapsed, top-left corner of simulation)
+        const container = canvas.parentElement!;
+        const gui = new GUI({ title: "Sumi-e", container });
+        gui.close();
 
         const physarum = gui.addFolder("Physarum");
         physarum.add(sim.tuning, "sensorDist", 1, 40, 0.5).name("sensor dist");
