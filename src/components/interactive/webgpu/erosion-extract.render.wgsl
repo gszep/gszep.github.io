@@ -18,6 +18,6 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let c  = textureSampleBaseClampToEdge(video, samp, uv).rgb;
   let l  = dot(c, vec3f(0.299, 0.587, 0.114));
   let t  = params.threshold;
-  let mask = smoothstep(t + 0.15, t - 0.15, l);
+  let mask = 1.0 - smoothstep(t + 0.15, t - 0.15, l);
   return vec4f(mask, 0.0, 0.0, 1.0);
 }

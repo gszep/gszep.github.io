@@ -49,6 +49,7 @@ posts.sort((a, b) => a.data.order - b.data.order);
             title={post.data.title}
             description={post.data.description}
             image={post.data.image || ''}
+            imagePosition={post.data.imagePosition}
             href={`/ja/blog/${post.slug.replace(/^ja\//, '')}/`}
           />
         ))}

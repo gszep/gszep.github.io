@@ -101,8 +101,6 @@
         ink.add(sim.tuning, "paperTone", 0.85, 1, 0.005).name("paper tone");
 
         const segment = gui.addFolder("Segmentation");
-        segment.add(sim.tuning, "branchLum", 0, 1, 0.01).name("luminance");
-        segment.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
         segment.add(sim.tuning, "maskThreshold", 0, 1, 0.01).name("mask cutoff");
         segment.add(sim.tuning, "erosionSteps", 0, 200, 1).name("erosion steps");
         segment.addColor(sim.tuning, "attractColor").name("attract color");
@@ -111,35 +109,6 @@
 
         const blossom = gui.addFolder("Blossom");
         blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");
-        // Spacebar: copy current parameters to clipboard
-        document.addEventListener("keydown", (e) => {
-          if (e.code !== "Space" || e.target !== document.body) return;
-          e.preventDefault();
-          const t = sim.tuning;
-          const text = [
-            `sensor dist ${t.sensorDist}`,
-            `angle ${t.sensorAngle}`,
-            `turn speed ${t.turnSpeed}`,
-            `deposit ${t.deposit}`,
-            `speed ${t.trailSpeed}`,
-            `mask attract ${t.maskWeight}`,
-            `decay ${t.trailDecay}`,
-            `diffuse ${t.diffuseWeight}`,
-            `steps ${t.physarumSteps}`,
-            `attract color ${t.attractColor.replace("#", "")}`,
-            `tolerance ${t.colorTolerance}`,
-            `erosion steps ${t.erosionSteps}`,
-            `mask cutoff ${t.maskThreshold}`,
-            `contrast ${t.branchEdge}`,
-            `luminance ${t.branchLum}`,
-            `agent mask ${t.agentThreshold}`,
-            `pink strength ${t.blossomInk}`,
-            `sky wash ${t.skyInk}`,
-            `paper tone ${t.paperTone}`,
-          ].join(", ");
-          navigator.clipboard.writeText(text);
-          console.log("[params copied]", text);
-        });
       } else {
         // WebGPU unavailable — show fallback image instead of video
         canvas.remove();
