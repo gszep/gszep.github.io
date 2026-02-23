@@ -276,7 +276,7 @@ export class BrushStroke extends WebGPUSimulation {
     for (let i = 0; i < this.numAgents; i++) {
       const idx = i * 4;
       agents[idx + 0] = Math.random() * this.gw;
-      agents[idx + 1] = Math.random() * this.gh;
+      agents[idx + 1] = Math.random() * this.gh * 0.5 + this.gh * 0.5;
       agents[idx + 2] = Math.random() * Math.PI * 2;
       agents[idx + 3] = 0;
     }
