@@ -48,9 +48,13 @@ const pageDescription = description || site.description;
     (function() {
       var STAGING_HOST = 'staging.gszep.com';
       var SESSION_KEY = 'staging-auth';
-      var PASSWORD = 'preview';
+      var PASSWORD_HASH = '5975cf1bba432391c94667f5886225f69377c0aa8b9fa21fddfb21c89bcf9092';
       if (window.location.hostname !== STAGING_HOST) return;
       if (sessionStorage.getItem(SESSION_KEY) === 'ok') return;
+      async function sha256(str) {
+        var buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+        return Array.from(new Uint8Array(buf)).map(function(b) { return b.toString(16).padStart(2, '0'); }).join('');
+      }
       document.documentElement.style.visibility = 'hidden';
       document.addEventListener('DOMContentLoaded', function() {
         var overlay = document.createElement('div');
@@ -66,10 +70,11 @@ const pageDescription = description || site.description;
           '</form>';
         document.body.appendChild(overlay);
         document.documentElement.style.visibility = 'visible';
-        document.getElementById('gate-form').addEventListener('submit', function(e) {
+        document.getElementById('gate-form').addEventListener('submit', async function(e) {
           e.preventDefault();
           var input = document.getElementById('gate-password');
-          if (input.value === PASSWORD) {
+          var hash = await sha256(input.value);
+          if (hash === PASSWORD_HASH) {
             sessionStorage.setItem(SESSION_KEY, 'ok');
             overlay.remove();
             window.location.reload();
