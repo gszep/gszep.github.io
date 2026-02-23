@@ -106,7 +106,7 @@ export class BrushStroke extends WebGPUSimulation {
     paperTone: 1.00,
     maskThreshold: 0.42,
     erosionSteps: 89,
-    blossomInk: 0.60,
+    blossomInk: 1.00,
     attractColor: "#6c896f",
     colorTolerance: 1.0,
     sensorDist: 13,
