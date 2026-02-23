@@ -105,7 +105,7 @@ export class BrushStroke extends WebGPUSimulation {
     branchInk: 1.00,
     skyInk: 0.30,
     paperTone: 1.00,
-    maskThreshold: 0.42,
+    maskThreshold: 0.52,
     erosionSteps: 70,
     blossomInk: 1.00,
     attractColor: "#6c896f",
@@ -129,6 +129,16 @@ export class BrushStroke extends WebGPUSimulation {
       updateInterval: opts.updateInterval ?? 33,
     });
     this.video = opts.video;
+  }
+
+  /** Size canvas to video native resolution; CSS object-fit handles display crop. */
+  protected override sizeCanvas(): void {
+    if (this.video.videoWidth > 0) {
+      this.canvas.width = this.video.videoWidth;
+      this.canvas.height = this.video.videoHeight;
+    } else {
+      super.sizeCanvas();
+    }
   }
 
   // ── Pipelines ──────────────────────────────────────────────
