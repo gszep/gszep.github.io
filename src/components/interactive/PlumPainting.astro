@@ -63,7 +63,7 @@
         const gui = new GUI({ title: "Sumi-e" });
 
         const branch = gui.addFolder("Branch");
-        branch.add(sim.tuning, "branchLum", 0, 0.5, 0.01).name("luminance");
+        branch.add(sim.tuning, "branchLum", 0, 1, 0.01).name("luminance");
         branch.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
         branch.add(sim.tuning, "branchInk", 0, 1, 0.01).name("ink opacity");
 

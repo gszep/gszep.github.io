@@ -35,11 +35,11 @@ export class BrushStroke extends WebGPUSimulation {
 
   /** Live-tunable parameters — mutate directly, changes apply next frame. */
   readonly tuning: SumieTuning = {
-    branchLum: 0.21,
-    branchEdge: 0.08,
-    branchInk: 0.92,
-    skyInk: 0.08,
-    paperTone: 0.96,
+    branchLum: 0.50,
+    branchEdge: 0.00,
+    branchInk: 1.00,
+    skyInk: 0.00,
+    paperTone: 1.00,
   };
 
   constructor(opts: BrushStrokeOptions) {

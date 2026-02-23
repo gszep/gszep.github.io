@@ -114,7 +114,10 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let btex = b1 * 0.7 + b2 * 0.3;
 
   // ── Composite ─────────────────────────────────────────────
-  let branch_ink = branch * params.branch_ink * mix(0.85, 1.0, btex);
+  // Brush texture only where edges exist (smooth ink in uniform areas like sky)
+  let btex_mask = smoothstep(0.03, 0.10, edge);
+  let brush_mod = mix(1.0, mix(0.85, 1.0, btex), btex_mask);
+  let branch_ink = branch * params.branch_ink * brush_mod;
   let sky_ink    = sky * params.sky_ink;
   let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
   let total_ink  = clamp(branch_ink + sky_ink, 0.0, 1.0);
