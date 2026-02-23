@@ -92,14 +92,14 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
   // ── Segmentation ──────────────────────────────────────────
   // Branch: dark pixels with high local contrast (thin dark structures)
-  let bl = params.branch_lum;
-  let be = params.branch_edge;
-  let branch = smoothstep(bl + 0.09, bl - 0.09, l0)
-             * smoothstep(be - 0.04, be + 0.04, edge);
+  let blum = params.branch_lum;
+  let bedg = params.branch_edge;
+  let branch = smoothstep(blum + 0.09, blum - 0.09, l0)
+             * smoothstep(bedg - 0.04, bedg + 0.04, edge);
 
   // Sky: dark-ish pixels with low contrast (uniform dark areas)
-  let sky = smoothstep(bl + 0.24, bl - 0.01, l0)
-          * (1.0 - smoothstep(be * 0.25, be, edge));
+  let sky = smoothstep(blum + 0.24, blum - 0.01, l0)
+          * (1.0 - smoothstep(bedg * 0.25, bedg, edge));
 
   // ── Brush texture (for branch stroke variation) ───────────
   let sdir  = edge_a + 1.5708;                         // along contour
