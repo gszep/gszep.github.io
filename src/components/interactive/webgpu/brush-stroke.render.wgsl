@@ -85,13 +85,14 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let grain = fbm(px * 0.35) * 0.03 + fbm(px * 0.08) * 0.015;
   let paper = vec3f(0.96, 0.95, 0.93) - grain;
 
-  // ── Ink wash ──────────────────────────────────────────────
-  let raw  = 1.0 - l0;                                // bright → no ink
-  let wash = smoothstep(0.10, 0.80, raw);              // soft tonal map
-  let wvar = fbm(px * 0.012 + t * 0.008);              // absorption noise
-  let wink = wash * mix(0.80, 1.0, wvar) * 0.12;  // light wash only
+  // ── Segmentation ──────────────────────────────────────────
+  // Branch: dark pixels with high local contrast (thin dark structures)
+  let branch = smoothstep(0.30, 0.12, l0) * smoothstep(0.04, 0.12, edge);
 
-  // ── Brush texture ─────────────────────────────────────────
+  // Sky: dark-ish pixels with low contrast (uniform dark areas)
+  let sky = smoothstep(0.45, 0.20, l0) * (1.0 - smoothstep(0.02, 0.08, edge));
+
+  // ── Brush texture (for branch stroke variation) ───────────
   let sdir  = edge_a + 1.5708;                         // along contour
   let angle = mix(0.5, sdir, smoothstep(0.03, 0.10, edge));
   let ca = cos(angle); let sa = sin(angle);
@@ -103,21 +104,12 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let b2   = sin((rot.y * 2.3 + wob * 1.4) * 0.45) * 0.5 + 0.5;
   let btex = b1 * 0.7 + b2 * 0.3;
 
-  // Brush texture applied to contours below (wash too light for visible texture)
-
-  // ── Contour strokes ───────────────────────────────────────
-  let wnz   = vnoise(px * 0.015 + t * 0.01);
-  let cthrs = mix(0.10, 0.22, wnz);
-  let cont  = smoothstep(cthrs * 0.4, cthrs, edge);
-
-  // ── Wash pooling ──────────────────────────────────────────
-  let avg  = (l_tl + l_tc + l_tr + l_ml + l_mr + l_bl + l_bc + l_br) / 8.0;
-  let pool = smoothstep(0.012, 0.05, abs(l0 - avg)) * 0.10;
-
   // ── Composite ─────────────────────────────────────────────
-  let ink_total = clamp(wink + cont * 0.90 * mix(0.85, 1.0, btex) + pool, 0.0, 1.0);
-  let ink_col   = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
-  let out       = mix(paper, ink_col, ink_total);
+  let branch_ink = branch * 0.92 * mix(0.85, 1.0, btex);
+  let sky_ink    = sky * 0.08;
+  let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
+  let total_ink  = clamp(branch_ink + sky_ink, 0.0, 1.0);
+  let out        = mix(paper, ink_col, total_ink);
 
   return vec4f(out, 1.0);
 }
