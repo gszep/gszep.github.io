@@ -1,0 +1,64 @@
+---
+/**
+ * WebGPU sumi-e ink wash rendering of the plum blossom video.
+ * The video plays normally as both the visual fallback and the texture
+ * source for the NPR shader. When WebGPU is available the canvas
+ * overlays the video with an ink wash rendering; when not, the raw
+ * video remains visible.
+ */
+---
+
+<div class="plum-painting">
+  <video
+    id="plum-video"
+    autoplay
+    loop
+    muted
+    playsinline
+    src="/images/mito-plum-festival.mp4"
+  ></video>
+  <canvas id="plum-sumi"></canvas>
+</div>
+
+<style>
+  .plum-painting {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .plum-painting video {
+    width: 100%;
+    max-height: 80vh;
+    object-fit: cover;
+    object-position: 50% 20%;
+    display: block;
+  }
+
+  .plum-painting canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+</style>
+
+<script>
+  import { BrushStroke } from "./webgpu/BrushStroke";
+
+  const canvas = document.getElementById("plum-sumi") as HTMLCanvasElement | null;
+  const video = document.getElementById("plum-video") as HTMLVideoElement | null;
+
+  if (canvas && video) {
+    const sim = new BrushStroke({ canvas, video });
+
+    sim.start().then((ok) => {
+      if (ok) {
+        new ResizeObserver(() => sim.handleResize()).observe(canvas);
+      } else {
+        // WebGPU unavailable — remove canvas, raw video stays visible
+        canvas.remove();
+      }
+    });
+  }
+</script>
