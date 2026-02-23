@@ -23,8 +23,8 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let c  = textureSampleBaseClampToEdge(video, samp, uv).rgb;
 
   // Color proximity: how close is this pixel to the target color?
-  let target = vec3f(params.target_r, params.target_g, params.target_b);
-  let dist = distance(c, target);
+  let tgt = vec3f(params.target_r, params.target_g, params.target_b);
+  let dist = distance(c, tgt);
   let attract = smoothstep(params.tolerance, 0.0, dist);
 
   return vec4f(attract, 0.0, 0.0, 1.0);
