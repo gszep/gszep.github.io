@@ -69,9 +69,9 @@
         new ResizeObserver(() => sim.handleResize()).observe(canvas);
 
         // Tuning GUI (collapsed, top-left corner of simulation)
-        const container = canvas.parentElement!;
-        const gui = new GUI({ title: "Sumi-e", container });
+        const gui = new GUI({ title: "Sumi-e", autoPlace: false });
         gui.close();
+        canvas.parentElement!.appendChild(gui.domElement);
 
         const physarum = gui.addFolder("Physarum");
         physarum.add(sim.tuning, "sensorDist", 1, 40, 0.5).name("sensor dist");
