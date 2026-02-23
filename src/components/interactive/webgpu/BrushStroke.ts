@@ -99,10 +99,10 @@ export class BrushStroke extends WebGPUSimulation {
 
   /** Live-tunable parameters — mutate directly, changes apply next frame. */
   readonly tuning: SumieTuning = {
-    branchLum: 0.24,
+    branchLum: 0.14,
     branchEdge: 0.30,
     branchInk: 1.00,
-    skyInk: 0.00,
+    skyInk: 0.30,
     paperTone: 1.00,
     maskThreshold: 0.42,
     erosionSteps: 89,
@@ -112,10 +112,10 @@ export class BrushStroke extends WebGPUSimulation {
     sensorDist: 13,
     sensorAngle: 0.9,
     turnSpeed: 0.44,
-    deposit: 0.17,
-    trailSpeed: 0.4,
+    deposit: 1.78,
+    trailSpeed: 1.5,
     maskWeight: 10.0,
-    trailDecay: 0.964,
+    trailDecay: 0.986,
     diffuseWeight: 0,
     physarumSteps: 16,
   };
