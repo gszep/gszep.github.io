@@ -106,11 +106,11 @@ export class BrushStroke extends WebGPUSimulation {
     skyInk: 0.30,
     paperTone: 1.00,
     maskThreshold: 0.42,
-    erosionSteps: 89,
+    erosionSteps: 70,
     blossomInk: 1.00,
     attractColor: "#6c896f",
-    colorTolerance: 1.0,
-    sensorDist: 13,
+    colorTolerance: 0.32,
+    sensorDist: 9.5,
     sensorAngle: 0.9,
     turnSpeed: 0.44,
     deposit: 1.78,
@@ -119,7 +119,7 @@ export class BrushStroke extends WebGPUSimulation {
     trailDecay: 0.986,
     diffuseWeight: 0,
     physarumSteps: 16,
-    agentThreshold: 0.5,
+    agentThreshold: 0,
   };
 
   constructor(opts: BrushStrokeOptions) {
