@@ -16,6 +16,7 @@ struct Params {
   mask_weight: f32,
   decay: f32,
   diffuse_weight: f32,
+  agent_threshold: f32,
 };
 
 @group(0) @binding(0) var<storage, read_write> agents: array<vec4f>;
@@ -62,7 +63,8 @@ fn agents_step(@builtin(global_invocation_id) id: vec3u) {
 
   // Boost turn speed outside tree mask (agents return to branches faster)
   let mc = clamp(vec2i(pos), vec2i(0), vec2i(params.size) - 1);
-  let tree = textureLoad(mask, mc, 0).r;
+  let raw_mask = textureLoad(mask, mc, 0).r;
+  let tree = smoothstep(params.agent_threshold - 0.15, params.agent_threshold + 0.15, raw_mask);
   let ts = params.turn_speed * mix(4.0, 1.0, tree);  // 4x turn speed in sky
 
   // Turn decision

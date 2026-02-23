@@ -87,6 +87,7 @@
         segment.add(sim.tuning, "erosionSteps", 0, 200, 1).name("erosion steps");
         segment.addColor(sim.tuning, "attractColor").name("attract color");
         segment.add(sim.tuning, "colorTolerance", 0.01, 1.0, 0.01).name("tolerance");
+        segment.add(sim.tuning, "agentThreshold", 0, 1, 0.01).name("agent mask");
 
         const blossom = gui.addFolder("Blossom");
         blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");
@@ -111,6 +112,7 @@
             `mask cutoff ${t.maskThreshold}`,
             `contrast ${t.branchEdge}`,
             `luminance ${t.branchLum}`,
+            `agent mask ${t.agentThreshold}`,
             `pink strength ${t.blossomInk}`,
             `sky wash ${t.skyInk}`,
             `paper tone ${t.paperTone}`,

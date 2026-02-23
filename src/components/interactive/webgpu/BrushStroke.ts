@@ -54,6 +54,7 @@ export interface SumieTuning {
   trailDecay: number;     // multiplicative decay per diffusion step
   diffuseWeight: number;  // blend factor: 0=no blur, 1=full blur
   physarumSteps: number;  // agent+diffuse iterations per frame
+  agentThreshold: number; // luminance threshold for agent tree/sky boundary
 }
 
 /** Blur dispatch uses INNER = CACHE - 2*HALO = 16 - 4 = 12. */
@@ -92,7 +93,7 @@ export class BrushStroke extends WebGPUSimulation {
   private trailTex!: GPUTexture;
   private trailView!: GPUTextureView;
   private physarumParamsBuf!: GPUBuffer;
-  private physarumParamsData = new Float32Array(12);
+  private physarumParamsData = new Float32Array(16);
   private agentsBG!: GPUBindGroup;
   private diffuseBG!: GPUBindGroup;
   private numAgents = 0;
@@ -118,6 +119,7 @@ export class BrushStroke extends WebGPUSimulation {
     trailDecay: 0.986,
     diffuseWeight: 0,
     physarumSteps: 16,
+    agentThreshold: 0.5,
   };
 
   constructor(opts: BrushStrokeOptions) {
@@ -290,9 +292,9 @@ export class BrushStroke extends WebGPUSimulation {
     });
     this.trailView = this.trailTex.createView();
 
-    // Physarum params: 12 x f32 = 48 bytes
+    // Physarum params: 16 x f32 = 64 bytes
     this.physarumParamsBuf = d.createBuffer({
-      size: 48,
+      size: 64,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -387,6 +389,7 @@ export class BrushStroke extends WebGPUSimulation {
     this.physarumParamsData[9] = t.maskWeight;
     this.physarumParamsData[10] = t.trailDecay;
     this.physarumParamsData[11] = t.diffuseWeight;
+    this.physarumParamsData[12] = t.agentThreshold;
     this.device.queue.writeBuffer(
       this.physarumParamsBuf, 0, this.physarumParamsData,
     );

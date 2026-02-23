@@ -24,6 +24,7 @@ struct Params {
   mask_weight: f32,
   decay: f32,
   diffuse_weight: f32,
+  agent_threshold: f32,
 };
 
 @group(0) @binding(0) var trail: texture_storage_2d<r32float, read_write>;
@@ -69,7 +70,8 @@ fn diffuse(@builtin(local_invocation_id) lid: vec3u,
       let diffused = mix(center, blurred, params.diffuse_weight);
 
       // Faster decay outside tree mask (trails fade quickly in sky)
-      let tree = textureLoad(mask, gi, 0).r;
+      let raw_mask = textureLoad(mask, gi, 0).r;
+      let tree = smoothstep(params.agent_threshold - 0.15, params.agent_threshold + 0.15, raw_mask);
       let decay = mix(params.decay * 0.5, params.decay, tree);
       textureStore(trail, gi, vec4f(diffused * decay, 0.0, 0.0, 0.0));
     }
