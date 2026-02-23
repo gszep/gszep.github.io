@@ -90,6 +90,34 @@
 
         const blossom = gui.addFolder("Blossom");
         blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");
+        // Spacebar: copy current parameters to clipboard
+        document.addEventListener("keydown", (e) => {
+          if (e.code !== "Space" || e.target !== document.body) return;
+          e.preventDefault();
+          const t = sim.tuning;
+          const text = [
+            `sensor dist ${t.sensorDist}`,
+            `angle ${t.sensorAngle}`,
+            `turn speed ${t.turnSpeed}`,
+            `deposit ${t.deposit}`,
+            `speed ${t.trailSpeed}`,
+            `mask attract ${t.maskWeight}`,
+            `decay ${t.trailDecay}`,
+            `diffuse ${t.diffuseWeight}`,
+            `steps ${t.physarumSteps}`,
+            `attract color ${t.attractColor.replace("#", "")}`,
+            `tolerance ${t.colorTolerance}`,
+            `erosion steps ${t.erosionSteps}`,
+            `mask cutoff ${t.maskThreshold}`,
+            `contrast ${t.branchEdge}`,
+            `luminance ${t.branchLum}`,
+            `pink strength ${t.blossomInk}`,
+            `sky wash ${t.skyInk}`,
+            `paper tone ${t.paperTone}`,
+          ].join(", ");
+          navigator.clipboard.writeText(text);
+          console.log("[params copied]", text);
+        });
       } else {
         // WebGPU unavailable — remove canvas, raw video stays visible
         canvas.remove();
