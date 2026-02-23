@@ -124,7 +124,7 @@ Blog posts use a Distill.pub-inspired editorial layout (inline in `[...slug].ast
 ## Staging Password Gate
 
 The staging site at staging.gszep.com has a client-side password gate.
-The password is `preview`. Production (gszep.com) and localhost are not affected.
+Production (gszep.com) and localhost are not affected.
 The gate is implemented in `src/layouts/Base.astro`.
 
 ## Development Commands
