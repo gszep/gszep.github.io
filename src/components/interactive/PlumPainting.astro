@@ -1,10 +1,12 @@
 ---
 /**
- * WebGPU sumi-e ink wash rendering of the plum blossom video.
+ * WebGPU sumi-e ink wash rendering of the plum blossom video
+ * with physarum-inspired calligraphic brush strokes.
+ *
  * The video plays normally as both the visual fallback and the texture
  * source for the NPR shader. When WebGPU is available the canvas
- * overlays the video with an ink wash rendering; when not, the raw
- * video remains visible.
+ * overlays the video with ink wash rendering driven by physarum agents;
+ * when not, the raw video remains visible.
  *
  * Includes a lil-gui panel for real-time parameter tuning.
  */
@@ -62,17 +64,29 @@
         // Tuning GUI
         const gui = new GUI({ title: "Sumi-e" });
 
-        const branch = gui.addFolder("Branch");
-        branch.add(sim.tuning, "branchLum", 0, 1, 0.01).name("luminance");
-        branch.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
-        branch.add(sim.tuning, "branchInk", 0, 1, 0.01).name("ink opacity");
+        const physarum = gui.addFolder("Physarum");
+        physarum.add(sim.tuning, "sensorDist", 1, 40, 0.5).name("sensor dist");
+        physarum.add(sim.tuning, "sensorAngle", 0.05, 1.57, 0.01).name("sensor angle");
+        physarum.add(sim.tuning, "turnSpeed", 0.01, 1.0, 0.01).name("turn speed");
+        physarum.add(sim.tuning, "deposit", 0.01, 2.0, 0.01).name("deposit");
+        physarum.add(sim.tuning, "trailSpeed", 0.1, 5.0, 0.1).name("speed");
+        physarum.add(sim.tuning, "maskWeight", 0, 10, 0.1).name("mask attract");
+        physarum.add(sim.tuning, "trailDecay", 0.9, 1.0, 0.001).name("decay");
+        physarum.add(sim.tuning, "diffuseWeight", 0, 1, 0.01).name("diffuse");
+        physarum.add(sim.tuning, "physarumSteps", 1, 16, 1).name("steps/frame");
 
-        gui.add(sim.tuning, "skyInk", 0, 0.3, 0.005).name("Sky wash");
-        gui.add(sim.tuning, "paperTone", 0.85, 1, 0.005).name("Paper tone");
+        const ink = gui.addFolder("Ink");
+        ink.add(sim.tuning, "branchInk", 0, 1, 0.01).name("branch opacity");
+        ink.add(sim.tuning, "skyInk", 0, 0.3, 0.005).name("sky wash");
+        ink.add(sim.tuning, "paperTone", 0.85, 1, 0.005).name("paper tone");
+
+        const segment = gui.addFolder("Segmentation");
+        segment.add(sim.tuning, "branchLum", 0, 1, 0.01).name("luminance");
+        segment.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
+        segment.add(sim.tuning, "maskThreshold", 0, 1, 0.01).name("mask cutoff");
+        segment.add(sim.tuning, "erosionSteps", 0, 200, 1).name("erosion steps");
 
         const blossom = gui.addFolder("Blossom");
-        blossom.add(sim.tuning, "maskThreshold", 0, 1, 0.01).name("mask cutoff");
-        blossom.add(sim.tuning, "erosionSteps", 0, 100, 1).name("erosion steps");
         blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");
       } else {
         // WebGPU unavailable — remove canvas, raw video stays visible

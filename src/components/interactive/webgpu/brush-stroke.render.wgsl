@@ -1,6 +1,6 @@
-// Sumi-e ink wash NPR rendering of video input.
-// Samples video via texture_external, computes Sobel edges inline,
-// composites: washi paper + ink wash + brush texture + contours + pooling.
+// Sumi-e ink wash NPR rendering with physarum-generated brush strokes.
+// Agents deposit trail that forms the branch ink; blossom overlay from erosion.
+// Composites: washi paper + physarum trail ink + sky wash + blossom pink.
 
 #import fullscreen_vertex
 
@@ -18,7 +18,9 @@ struct Params {
 @group(0) @binding(0) var video: texture_external;
 @group(0) @binding(1) var samp: sampler;
 @group(0) @binding(2) var<uniform> params: Params;
-@group(0) @binding(3) var eroded: texture_2d<f32>;
+@group(0) @binding(3) var eroded: texture_2d<f32>;    // blurred classification
+@group(0) @binding(4) var original: texture_2d<f32>;   // sharp original mask
+@group(0) @binding(5) var trail_tex: texture_2d<f32>;  // physarum trail
 
 // ── Noise primitives ──────────────────────────────────────────
 
@@ -85,53 +87,39 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let gx = (l_tr + 2.0 * l_mr + l_br) - (l_tl + 2.0 * l_ml + l_bl);
   let gy = (l_bl + 2.0 * l_bc + l_br) - (l_tl + 2.0 * l_tc + l_tr);
   let edge = sqrt(gx * gx + gy * gy);
-  let edge_a = atan2(gy, gx);
 
   // ── Paper ─────────────────────────────────────────────────
   let grain = fbm(px * 0.35) * 0.03 + fbm(px * 0.08) * 0.015;
   let pt = params.paper_tone;
   let paper = vec3f(pt, pt - 0.01, pt - 0.03) - grain;
 
-  // ── Segmentation ──────────────────────────────────────────
-  // Branch: dark pixels with high local contrast (thin dark structures)
+  // ── Sky detection (uniform dark areas with low contrast) ──
   let blum = params.branch_lum;
   let bedg = params.branch_edge;
-  let branch = smoothstep(blum + 0.09, blum - 0.09, l0)
-             * smoothstep(bedg - 0.04, bedg + 0.04, edge);
-
-  // Sky: dark-ish pixels with low contrast (uniform dark areas)
   let sky = smoothstep(blum + 0.24, blum - 0.01, l0)
           * (1.0 - smoothstep(bedg * 0.25, bedg, edge));
 
-  // ── Brush texture (for branch stroke variation) ───────────
-  let sdir  = edge_a + 1.5708;                         // along contour
-  let angle = mix(0.5, sdir, smoothstep(0.03, 0.10, edge));
-  let ca = cos(angle); let sa = sin(angle);
-  let rot = vec2f(ca * px.x + sa * px.y,
-                  -sa * px.x + ca * px.y);
-
-  let wob  = vnoise(px * 0.006 + t * 0.02) * 10.0;
-  let b1   = sin((rot.y + wob) * 0.45) * 0.5 + 0.5;
-  let b2   = sin((rot.y * 2.3 + wob * 1.4) * 0.45) * 0.5 + 0.5;
-  let btex = b1 * 0.7 + b2 * 0.3;
-
-  // ── Composite ─────────────────────────────────────────────
-  // Brush texture only where edges exist (smooth ink in uniform areas like sky)
-  let btex_mask = smoothstep(0.03, 0.10, edge);
-  let brush_mod = mix(1.0, mix(0.85, 1.0, btex), btex_mask);
-  let branch_ink = branch * params.branch_ink * brush_mod;
-  let sky_ink    = sky * params.sky_ink;
-  let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
-  let total_ink  = clamp(branch_ink + sky_ink, 0.0, 1.0);
-  let base       = mix(paper, ink_col, total_ink);
-
-  // ── Blossom overlay from eroded mask ──────────────────────
+  // ── Texture coordinate for mask/trail lookups ─────────────
   let sz = vec2i(params.size);
   let mask_coord = clamp(
     vec2i(vec2f(in.uv.x, 1.0 - in.uv.y) * params.size),
     vec2i(0), sz - 1
   );
-  let blossom  = textureLoad(eroded, mask_coord, 0).r;
+
+  // ── Physarum trail → branch ink ───────────────────────────
+  let trail_val = textureLoad(trail_tex, mask_coord, 0).r;
+  let trail_ink = smoothstep(0.0, 1.5, trail_val) * params.branch_ink;
+
+  // ── Composite ─────────────────────────────────────────────
+  let sky_ink    = sky * params.sky_ink;
+  let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
+  let total_ink  = clamp(trail_ink + sky_ink, 0.0, 1.0);
+  let base       = mix(paper, ink_col, total_ink);
+
+  // ── Blossom overlay from eroded mask ──────────────────────
+  let classify = step(0.5, textureLoad(eroded, mask_coord, 0).r);
+  let sharp    = textureLoad(original, mask_coord, 0).r;
+  let blossom  = sharp * classify;  // sharp detail, only in blossom regions
   let pink     = vec3f(0.85, 0.50, 0.55);
   let out      = mix(base, pink, blossom * params.blossom_ink);
 
