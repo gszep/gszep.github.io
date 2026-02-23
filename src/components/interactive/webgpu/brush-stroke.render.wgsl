@@ -103,8 +103,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let b2   = sin((rot.y * 2.3 + wob * 1.4) * 0.45) * 0.5 + 0.5;
   let btex = b1 * 0.7 + b2 * 0.3;
 
-  let dry  = smoothstep(0.15, 0.55, 1.0 - wink);
-  let bmod = mix(1.0, btex, dry * 0.6);
+  // Brush texture applied to contours below (wash too light for visible texture)
 
   // ── Contour strokes ───────────────────────────────────────
   let wnz   = vnoise(px * 0.015 + t * 0.01);
@@ -116,7 +115,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let pool = smoothstep(0.012, 0.05, abs(l0 - avg)) * 0.10;
 
   // ── Composite ─────────────────────────────────────────────
-  let ink_total = clamp(wink * bmod + cont * 0.90 + pool, 0.0, 1.0);
+  let ink_total = clamp(wink + cont * 0.90 * mix(0.85, 1.0, btex) + pool, 0.0, 1.0);
   let ink_col   = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
   let out       = mix(paper, ink_col, ink_total);
 
