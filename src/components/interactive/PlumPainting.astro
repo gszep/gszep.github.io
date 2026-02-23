@@ -85,6 +85,8 @@
         segment.add(sim.tuning, "branchEdge", 0, 0.3, 0.005).name("contrast");
         segment.add(sim.tuning, "maskThreshold", 0, 1, 0.01).name("mask cutoff");
         segment.add(sim.tuning, "erosionSteps", 0, 200, 1).name("erosion steps");
+        segment.add(sim.tuning, "colorLow", -0.2, 0.2, 0.005).name("color low");
+        segment.add(sim.tuning, "colorHigh", -0.1, 0.3, 0.005).name("color high");
 
         const blossom = gui.addFolder("Blossom");
         blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");

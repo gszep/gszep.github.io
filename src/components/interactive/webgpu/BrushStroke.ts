@@ -41,6 +41,9 @@ export interface SumieTuning {
   maskThreshold: number;  // luminance cutoff for tree mask extraction
   erosionSteps: number;   // blur iterations (more = stronger erosion)
   blossomInk: number;     // pink blossom overlay strength
+  // Color attraction
+  colorLow: number;       // smoothstep lower edge for green excess
+  colorHigh: number;      // smoothstep upper edge for green excess
   // Physarum
   sensorDist: number;     // agent sensor distance in pixels
   sensorAngle: number;    // sensor spread angle in radians
@@ -74,7 +77,7 @@ export class BrushStroke extends WebGPUSimulation {
   private maskBlurTex!: GPUTexture;   // blurred copy for classification
   private maskBlurView!: GPUTextureView;
   private extractParamsBuf!: GPUBuffer;
-  private extractParamsData = new Float32Array(4); // size(2) + threshold + pad
+  private extractParamsData = new Float32Array(8); // size(2) + threshold + pad + colorLow + colorHigh + pad
   private blurBG!: GPUBindGroup;
 
   // Attraction field (dark green detection from video)
@@ -104,6 +107,8 @@ export class BrushStroke extends WebGPUSimulation {
     maskThreshold: 0.34,
     erosionSteps: 100,
     blossomInk: 0.60,
+    colorLow: -0.02,
+    colorHigh: 0.05,
     sensorDist: 2,
     sensorAngle: 0.43,
     turnSpeed: 0.54,
@@ -206,9 +211,9 @@ export class BrushStroke extends WebGPUSimulation {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Extract params: 4 x f32 = 16 bytes
+    // Extract params: 8 x f32 = 32 bytes (shared by erosion + attract shaders)
     this.extractParamsBuf = d.createBuffer({
-      size: 16,
+      size: 32,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
@@ -346,6 +351,8 @@ export class BrushStroke extends WebGPUSimulation {
     this.extractParamsData[1] = this.gh;
     this.extractParamsData[2] = t.maskThreshold;
     this.extractParamsData[3] = 0;
+    this.extractParamsData[4] = t.colorLow;
+    this.extractParamsData[5] = t.colorHigh;
     this.device.queue.writeBuffer(
       this.extractParamsBuf, 0, this.extractParamsData,
     );

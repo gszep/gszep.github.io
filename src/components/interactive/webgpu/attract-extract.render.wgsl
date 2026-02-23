@@ -7,6 +7,8 @@
 struct Params {
   size: vec2f,
   threshold: f32,
+  color_low: f32,     // smoothstep lower edge for green excess
+  color_high: f32,    // smoothstep upper edge for green excess
 };
 
 @group(0) @binding(0) var video: texture_external;
@@ -24,7 +26,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
   // Green dominance: green channel exceeds both red and blue
   let green_excess = c.g - max(c.r, c.b);
-  let green = smoothstep(-0.02, 0.05, green_excess);
+  let green = smoothstep(params.color_low, params.color_high, green_excess);
 
   return vec4f(dark * green, 0.0, 0.0, 1.0);
 }
