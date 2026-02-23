@@ -27,12 +27,10 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let dist = distance(c, tgt);
   let attract = smoothstep(params.tolerance, 0.0, dist);
 
-  // Sky repulsion: bright + desaturated = grey sky → negative field
+  // Sky repulsion: dark blue nighttime sky → negative field
+  let blue_excess = c.b - max(c.r, c.g);
   let lum = dot(c, vec3f(0.299, 0.587, 0.114));
-  let max_c = max(c.r, max(c.g, c.b));
-  let min_c = min(c.r, min(c.g, c.b));
-  let sat = select(0.0, (max_c - min_c) / max_c, max_c > 0.001);
-  let sky = smoothstep(0.4, 0.7, lum) * smoothstep(0.3, 0.05, sat);
+  let sky = smoothstep(0.0, 0.15, blue_excess) * smoothstep(0.5, 0.2, lum);
 
   return vec4f(attract - sky, 0.0, 0.0, 1.0);
 }
