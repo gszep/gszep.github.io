@@ -89,7 +89,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let raw  = 1.0 - l0;                                // bright → no ink
   let wash = smoothstep(0.10, 0.80, raw);              // soft tonal map
   let wvar = fbm(px * 0.012 + t * 0.008);              // absorption noise
-  let wink = wash * mix(0.80, 1.0, wvar);
+  let wink = wash * mix(0.80, 1.0, wvar) * 0.12;  // light wash only
 
   // ── Brush texture ─────────────────────────────────────────
   let sdir  = edge_a + 1.5708;                         // along contour
@@ -113,10 +113,10 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
   // ── Wash pooling ──────────────────────────────────────────
   let avg  = (l_tl + l_tc + l_tr + l_ml + l_mr + l_bl + l_bc + l_br) / 8.0;
-  let pool = smoothstep(0.012, 0.05, abs(l0 - avg)) * 0.25;
+  let pool = smoothstep(0.012, 0.05, abs(l0 - avg)) * 0.10;
 
   // ── Composite ─────────────────────────────────────────────
-  let ink_total = clamp(wink * bmod + cont * 0.80 + pool, 0.0, 1.0);
+  let ink_total = clamp(wink * bmod + cont * 0.90 + pool, 0.0, 1.0);
   let ink_col   = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
   let out       = mix(paper, ink_col, ink_total);
 
