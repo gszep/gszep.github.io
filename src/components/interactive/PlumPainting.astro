@@ -69,6 +69,11 @@
 
         gui.add(sim.tuning, "skyInk", 0, 0.3, 0.005).name("Sky wash");
         gui.add(sim.tuning, "paperTone", 0.85, 1, 0.005).name("Paper tone");
+
+        const blossom = gui.addFolder("Blossom");
+        blossom.add(sim.tuning, "maskThreshold", 0, 1, 0.01).name("mask cutoff");
+        blossom.add(sim.tuning, "erosionSteps", 0, 100, 1).name("erosion steps");
+        blossom.add(sim.tuning, "blossomInk", 0, 1, 0.01).name("pink strength");
       } else {
         // WebGPU unavailable — remove canvas, raw video stays visible
         canvas.remove();

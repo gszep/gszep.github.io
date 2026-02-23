@@ -12,11 +12,13 @@ struct Params {
   branch_ink: f32,     // branch stroke opacity
   sky_ink: f32,        // sky wash opacity
   paper_tone: f32,     // paper brightness
+  blossom_ink: f32,    // pink blossom overlay strength
 };
 
 @group(0) @binding(0) var video: texture_external;
 @group(0) @binding(1) var samp: sampler;
 @group(0) @binding(2) var<uniform> params: Params;
+@group(0) @binding(3) var eroded: texture_2d<f32>;
 
 // ── Noise primitives ──────────────────────────────────────────
 
@@ -121,7 +123,17 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let sky_ink    = sky * params.sky_ink;
   let ink_col    = vec3f(0.06, 0.05, 0.08);             // sumi blue-black
   let total_ink  = clamp(branch_ink + sky_ink, 0.0, 1.0);
-  let out        = mix(paper, ink_col, total_ink);
+  let base       = mix(paper, ink_col, total_ink);
+
+  // ── Blossom overlay from eroded mask ──────────────────────
+  let sz = vec2i(params.size);
+  let mask_coord = clamp(
+    vec2i(vec2f(in.uv.x, 1.0 - in.uv.y) * params.size),
+    vec2i(0), sz - 1
+  );
+  let blossom  = textureLoad(eroded, mask_coord, 0).r;
+  let pink     = vec3f(0.85, 0.50, 0.55);
+  let out      = mix(base, pink, blossom * params.blossom_ink);
 
   return vec4f(out, 1.0);
 }
