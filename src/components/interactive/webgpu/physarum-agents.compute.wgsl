@@ -22,6 +22,7 @@ struct Params {
 @group(0) @binding(1) var trail: texture_storage_2d<r32float, read_write>;
 @group(0) @binding(2) var attract: texture_2d<f32>;   // dark green attraction field
 @group(0) @binding(3) var<uniform> params: Params;
+@group(0) @binding(4) var mask: texture_2d<f32>;       // tree=1, sky=0
 
 fn hash(p: vec2f) -> f32 {
   var p3 = fract(p.xyx * vec3f(0.1031, 0.1030, 0.0973));
@@ -59,6 +60,11 @@ fn agents_step(@builtin(global_invocation_id) id: vec3u) {
   // Stochastic element
   let rng = hash(pos * 0.1 + vec2f(params.time * 13.7, f32(idx) * 0.01));
 
+  // Boost turn speed outside tree mask (agents return to branches faster)
+  let mc = clamp(vec2i(pos), vec2i(0), vec2i(params.size) - 1);
+  let tree = textureLoad(mask, mc, 0).r;
+  let ts = params.turn_speed * mix(4.0, 1.0, tree);  // 4x turn speed in sky
+
   // Turn decision
   var h = heading;
   if (center > left && center > right) {
@@ -66,11 +72,11 @@ fn agents_step(@builtin(global_invocation_id) id: vec3u) {
     h += (rng - 0.5) * 0.1;
   } else if (center < left && center < right) {
     // Both sides better → random turn
-    h += (rng - 0.5) * 2.0 * params.turn_speed;
+    h += (rng - 0.5) * 2.0 * ts;
   } else if (left > right) {
-    h -= params.turn_speed;
+    h -= ts;
   } else {
-    h += params.turn_speed;
+    h += ts;
   }
 
   // Move

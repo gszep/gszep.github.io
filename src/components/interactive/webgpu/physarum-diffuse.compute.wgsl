@@ -28,6 +28,7 @@ struct Params {
 
 @group(0) @binding(0) var trail: texture_storage_2d<r32float, read_write>;
 @group(0) @binding(1) var<uniform> params: Params;
+@group(0) @binding(2) var mask: texture_2d<f32>;  // tree=1, sky=0
 
 @compute @workgroup_size(WG, WG)
 fn diffuse(@builtin(local_invocation_id) lid: vec3u,
@@ -66,7 +67,11 @@ fn diffuse(@builtin(local_invocation_id) lid: vec3u,
       let blurred = sum / 9.0;
       let center = tile[li.y][li.x];
       let diffused = mix(center, blurred, params.diffuse_weight);
-      textureStore(trail, gi, vec4f(diffused * params.decay, 0.0, 0.0, 0.0));
+
+      // Faster decay outside tree mask (trails fade quickly in sky)
+      let tree = textureLoad(mask, gi, 0).r;
+      let decay = mix(params.decay * 0.5, params.decay, tree);
+      textureStore(trail, gi, vec4f(diffused * decay, 0.0, 0.0, 0.0));
     }
   }
 }

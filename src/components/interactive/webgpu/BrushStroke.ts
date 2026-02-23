@@ -304,6 +304,7 @@ export class BrushStroke extends WebGPUSimulation {
         { binding: 1, resource: this.trailView },
         { binding: 2, resource: this.attractView },
         { binding: 3, resource: { buffer: this.physarumParamsBuf } },
+        { binding: 4, resource: this.maskOrigView },
       ],
     });
 
@@ -313,6 +314,7 @@ export class BrushStroke extends WebGPUSimulation {
       entries: [
         { binding: 0, resource: this.trailView },
         { binding: 1, resource: { buffer: this.physarumParamsBuf } },
+        { binding: 2, resource: this.maskOrigView },
       ],
     });
   }
