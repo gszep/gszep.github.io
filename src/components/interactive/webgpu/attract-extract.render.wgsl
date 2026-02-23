@@ -16,6 +16,7 @@ struct Params {
 @group(0) @binding(0) var video: texture_external;
 @group(0) @binding(1) var samp: sampler;
 @group(0) @binding(2) var<uniform> params: Params;
+@group(0) @binding(3) var mask: texture_2d<f32>;  // tree=1, sky=0
 
 @fragment
 fn frag(in: VSOut) -> @location(0) vec4f {
@@ -27,10 +28,10 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   let dist = distance(c, tgt);
   let attract = smoothstep(params.tolerance, 0.0, dist);
 
-  // Sky repulsion: dark blue nighttime sky → negative field
-  let blue_excess = c.b - max(c.r, c.g);
-  let lum = dot(c, vec3f(0.299, 0.587, 0.114));
-  let sky = smoothstep(0.0, 0.15, blue_excess) * smoothstep(0.5, 0.2, lum);
+  // Sky repulsion: reuse the tree/sky mask (0=sky → strong repulsion)
+  let coord = vec2i(uv * params.size);
+  let tree = textureLoad(mask, coord, 0).r;
+  let sky = (1.0 - tree) * 2.0;  // doubled repulsion strength
 
   return vec4f(attract - sky, 0.0, 0.0, 1.0);
 }

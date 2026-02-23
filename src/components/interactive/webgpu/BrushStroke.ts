@@ -405,6 +405,7 @@ export class BrushStroke extends WebGPUSimulation {
         { binding: 0, resource: ext },
         { binding: 1, resource: this.sampler },
         { binding: 2, resource: { buffer: this.extractParamsBuf } },
+        { binding: 3, resource: this.maskOrigView },
       ],
     });
 
