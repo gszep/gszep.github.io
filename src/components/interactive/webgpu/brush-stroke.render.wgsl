@@ -106,9 +106,10 @@ fn frag(in: VSOut) -> @location(0) vec4f {
     vec2i(0), sz - 1
   );
 
-  // ── Physarum trail → branch ink ───────────────────────────
+  // ── Physarum trail → branch ink (masked to tree regions only) ──
   let trail_val = textureLoad(trail_tex, mask_coord, 0).r;
-  let trail_ink = smoothstep(0.0, 1.5, trail_val) * params.branch_ink;
+  let orig_mask = textureLoad(original, mask_coord, 0).r;
+  let trail_ink = smoothstep(0.0, 1.5, trail_val) * params.branch_ink * orig_mask;
 
   // ── Composite ─────────────────────────────────────────────
   let sky_ink    = sky * params.sky_ink;

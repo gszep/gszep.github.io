@@ -102,7 +102,7 @@ export class BrushStroke extends WebGPUSimulation {
     branchLum: 0.24,
     branchEdge: 0.30,
     branchInk: 1.00,
-    skyInk: 0.25,
+    skyInk: 0.00,
     paperTone: 1.00,
     maskThreshold: 0.42,
     erosionSteps: 89,
