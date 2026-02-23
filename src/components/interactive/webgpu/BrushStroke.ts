@@ -42,8 +42,8 @@ export interface SumieTuning {
   erosionSteps: number;   // blur iterations (more = stronger erosion)
   blossomInk: number;     // pink blossom overlay strength
   // Color attraction
-  colorLow: number;       // smoothstep lower edge for green excess
-  colorHigh: number;      // smoothstep upper edge for green excess
+  attractColor: string;   // hex color that agents are attracted to
+  colorTolerance: number; // color distance radius (smaller = stricter match)
   // Physarum
   sensorDist: number;     // agent sensor distance in pixels
   sensorAngle: number;    // sensor spread angle in radians
@@ -107,8 +107,8 @@ export class BrushStroke extends WebGPUSimulation {
     maskThreshold: 0.34,
     erosionSteps: 100,
     blossomInk: 0.60,
-    colorLow: -0.02,
-    colorHigh: 0.05,
+    attractColor: "#2d3a1a",
+    colorTolerance: 0.3,
     sensorDist: 2,
     sensorAngle: 0.43,
     turnSpeed: 0.54,
@@ -350,9 +350,12 @@ export class BrushStroke extends WebGPUSimulation {
     this.extractParamsData[0] = this.gw;
     this.extractParamsData[1] = this.gh;
     this.extractParamsData[2] = t.maskThreshold;
-    this.extractParamsData[3] = 0;
-    this.extractParamsData[4] = t.colorLow;
-    this.extractParamsData[5] = t.colorHigh;
+    // Parse hex color to RGB floats for attraction shader
+    const hex = t.attractColor;
+    this.extractParamsData[3] = t.colorTolerance;
+    this.extractParamsData[4] = parseInt(hex.slice(1, 3), 16) / 255;
+    this.extractParamsData[5] = parseInt(hex.slice(3, 5), 16) / 255;
+    this.extractParamsData[6] = parseInt(hex.slice(5, 7), 16) / 255;
     this.device.queue.writeBuffer(
       this.extractParamsBuf, 0, this.extractParamsData,
     );
