@@ -4,32 +4,14 @@
 
 requires readonly_and_readwrite_storage_textures;
 
-struct Params {
-  size: vec2f,
-  num_agents: f32,
-  time: f32,
-  sensor_dist: f32,
-  sensor_angle: f32,
-  turn_speed: f32,
-  deposit: f32,
-  speed: f32,
-  mask_weight: f32,
-  decay: f32,
-  diffuse_weight: f32,
-  agent_threshold: f32,
-};
+#import physarum_params
+#import hash21
 
 @group(0) @binding(0) var<storage, read_write> agents: array<vec4f>;
 @group(0) @binding(1) var trail: texture_storage_2d<r32float, read_write>;
 @group(0) @binding(2) var attract: texture_2d<f32>;   // dark green attraction field
 @group(0) @binding(3) var<uniform> params: Params;
 @group(0) @binding(4) var mask: texture_2d<f32>;       // tree=1, sky=0
-
-fn hash(p: vec2f) -> f32 {
-  var p3 = fract(p.xyx * vec3f(0.1031, 0.1030, 0.0973));
-  p3 += dot(p3, p3.yzx + 33.33);
-  return fract((p3.x + p3.y) * p3.z);
-}
 
 fn sense(pos: vec2f, angle: f32) -> f32 {
   let dir = vec2f(cos(angle), sin(angle));
@@ -59,7 +41,7 @@ fn agents_step(@builtin(global_invocation_id) id: vec3u) {
   let right  = sense(pos, heading + params.sensor_angle);
 
   // Stochastic element
-  let rng = hash(pos * 0.1 + vec2f(params.time * 13.7, f32(idx) * 0.01));
+  let rng = hash21(pos * 0.1 + vec2f(params.time * 13.7, f32(idx) * 0.01));
 
   // Boost turn speed outside tree mask (agents return to branches faster)
   let mc = clamp(vec2i(pos), vec2i(0), vec2i(params.size) - 1);

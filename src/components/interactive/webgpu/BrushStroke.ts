@@ -4,7 +4,7 @@
  *
  * Pipeline per frame:
  *   1. Extract tree mask from video → maskOrigTex
- *   2. Copy → maskBlurTex, iterative blur (erosion separates branches/blossoms)
+ *   2. Downsample mask 4x → maskSmallTex, blur in-place, upsample → maskBlurTex
  *   3. Physarum agent step × N (agents sense trail + branch mask, move, deposit)
  *   4. Trail diffusion + decay × N (3×3 blur with workgroup cache)
  *   5. Composite: washi paper + physarum trail ink + sky wash + blossom overlay
@@ -22,6 +22,10 @@ import attractSrc from "./attract-extract.render.wgsl?raw";
 import agentsSrc from "./physarum-agents.compute.wgsl?raw";
 import diffuseSrc from "./physarum-diffuse.compute.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
+import hashSrc from "./hash.wgsl?raw";
+import physarumParamsSrc from "./physarum-params.wgsl?raw";
+import downsampleSrc from "./downsample.compute.wgsl?raw";
+import upsampleSrc from "./upsample.compute.wgsl?raw";
 
 export interface BrushStrokeOptions {
   canvas: HTMLCanvasElement;
@@ -61,6 +65,10 @@ const BLUR_INNER = 12;
 const DIFFUSE_INNER = 14;
 /** Workgroup size for 1D agent dispatch. */
 const AGENT_WG = 256;
+/** Downsample factor: blur runs on 1/DOWNSAMPLE resolution. */
+const DOWNSAMPLE = 2;
+/** Workgroup size for downsample/upsample compute shaders. */
+const DS_WG = 8;
 
 export class BrushStroke extends WebGPUSimulation {
   private video: HTMLVideoElement;
@@ -73,11 +81,21 @@ export class BrushStroke extends WebGPUSimulation {
   private blurPL!: GPUComputePipeline;
   private maskOrigTex!: GPUTexture;   // sharp original mask
   private maskOrigView!: GPUTextureView;
-  private maskBlurTex!: GPUTexture;   // blurred copy for classification
+  private maskBlurTex!: GPUTexture;   // upsampled blurred classification
   private maskBlurView!: GPUTextureView;
   private extractParamsBuf!: GPUBuffer;
-  private extractParamsData = new Float32Array(8); // size(2) + threshold + pad + colorLow + colorHigh + pad
+  private extractParamsData = new Float32Array(8);
   private blurBG!: GPUBindGroup;
+
+  // Downsample/upsample resources
+  private downsamplePL!: GPUComputePipeline;
+  private upsamplePL!: GPUComputePipeline;
+  private maskSmallTex!: GPUTexture;   // 1/4 resolution blur target
+  private maskSmallView!: GPUTextureView;
+  private downsampleBG!: GPUBindGroup;
+  private upsampleBG!: GPUBindGroup;
+  private smallW = 0;
+  private smallH = 0;
 
   // Attraction field (dark green detection from video)
   private attractPL!: GPURenderPipeline;
@@ -140,10 +158,12 @@ export class BrushStroke extends WebGPUSimulation {
   // ── Pipelines ──────────────────────────────────────────────
 
   protected buildPipelines(): void {
-    const includes = { fullscreen_vertex: fullscreenVertex };
+    const vertexIncludes = { fullscreen_vertex: fullscreenVertex };
+    const hashIncludes = { hash21: hashSrc };
+    const physarumIncludes = { physarum_params: physarumParamsSrc, hash21: hashSrc };
 
     // Main render pipeline (canvas output)
-    const renderMod = createShader(this.device, renderSrc, includes);
+    const renderMod = createShader(this.device, renderSrc, { ...vertexIncludes, ...hashIncludes });
     this.renderPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: renderMod, entryPoint: "vert" },
@@ -156,7 +176,7 @@ export class BrushStroke extends WebGPUSimulation {
     });
 
     // Mask extraction render pipeline (r32float output)
-    const extractMod = createShader(this.device, extractSrc, includes);
+    const extractMod = createShader(this.device, extractSrc, vertexIncludes);
     this.extractPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: extractMod, entryPoint: "vert" },
@@ -168,15 +188,29 @@ export class BrushStroke extends WebGPUSimulation {
       primitive: { topology: "triangle-list" },
     });
 
-    // Erosion blur compute pipeline
+    // Erosion blur compute pipeline (same shader, runs on small texture)
     const blurMod = createShader(this.device, blurSrc);
     this.blurPL = this.device.createComputePipeline({
       layout: "auto",
       compute: { module: blurMod, entryPoint: "blur" },
     });
 
+    // Downsample compute pipeline (full → small)
+    const downsampleMod = createShader(this.device, downsampleSrc);
+    this.downsamplePL = this.device.createComputePipeline({
+      layout: "auto",
+      compute: { module: downsampleMod, entryPoint: "downsample" },
+    });
+
+    // Upsample compute pipeline (small → full)
+    const upsampleMod = createShader(this.device, upsampleSrc);
+    this.upsamplePL = this.device.createComputePipeline({
+      layout: "auto",
+      compute: { module: upsampleMod, entryPoint: "upsample" },
+    });
+
     // Attraction field extraction (dark green from video → r32float)
-    const attractMod = createShader(this.device, attractSrc, includes);
+    const attractMod = createShader(this.device, attractSrc, vertexIncludes);
     this.attractPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: attractMod, entryPoint: "vert" },
@@ -189,14 +223,14 @@ export class BrushStroke extends WebGPUSimulation {
     });
 
     // Physarum agent step compute pipeline
-    const agentsMod = createShader(this.device, agentsSrc);
+    const agentsMod = createShader(this.device, agentsSrc, physarumIncludes);
     this.agentsPL = this.device.createComputePipeline({
       layout: "auto",
       compute: { module: agentsMod, entryPoint: "agents_step" },
     });
 
     // Physarum trail diffusion compute pipeline
-    const diffuseMod = createShader(this.device, diffuseSrc);
+    const diffuseMod = createShader(this.device, diffuseSrc, { physarum_params: physarumParamsSrc });
     this.diffusePL = this.device.createComputePipeline({
       layout: "auto",
       compute: { module: diffuseMod, entryPoint: "diffuse" },
@@ -225,32 +259,60 @@ export class BrushStroke extends WebGPUSimulation {
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
 
-    // Original mask: sharp detail (render target, copy source, sampled)
+    // Original mask: sharp detail (render target, sampled by agents/render/downsample)
     this.maskOrigTex = d.createTexture({
       size: [this.gw, this.gh],
       format: "r32float",
       usage:
         GPUTextureUsage.RENDER_ATTACHMENT |
-        GPUTextureUsage.COPY_SRC |
         GPUTextureUsage.TEXTURE_BINDING,
     });
     this.maskOrigView = this.maskOrigTex.createView();
 
-    // Blur mask: copy of original that gets blurred in-place
+    // Small mask: 1/4 resolution for fast blur (downsample target, blur in-place, upsample source)
+    this.smallW = Math.max(1, Math.ceil(this.gw / DOWNSAMPLE));
+    this.smallH = Math.max(1, Math.ceil(this.gh / DOWNSAMPLE));
+    this.maskSmallTex = d.createTexture({
+      size: [this.smallW, this.smallH],
+      format: "r32float",
+      usage:
+        GPUTextureUsage.STORAGE_BINDING |
+        GPUTextureUsage.TEXTURE_BINDING,
+    });
+    this.maskSmallView = this.maskSmallTex.createView();
+
+    // Upsampled blurred mask (written by upsample, read by composite render)
     this.maskBlurTex = d.createTexture({
       size: [this.gw, this.gh],
       format: "r32float",
       usage:
-        GPUTextureUsage.COPY_DST |
         GPUTextureUsage.STORAGE_BINDING |
         GPUTextureUsage.TEXTURE_BINDING,
     });
     this.maskBlurView = this.maskBlurTex.createView();
 
-    // Blur bind group (stable, no external texture)
+    // Blur bind group (operates on small texture in-place)
     this.blurBG = d.createBindGroup({
       layout: this.blurPL.getBindGroupLayout(0),
-      entries: [{ binding: 0, resource: this.maskBlurView }],
+      entries: [{ binding: 0, resource: this.maskSmallView }],
+    });
+
+    // Downsample bind group: full mask → small mask
+    this.downsampleBG = d.createBindGroup({
+      layout: this.downsamplePL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.maskOrigView },
+        { binding: 1, resource: this.maskSmallView },
+      ],
+    });
+
+    // Upsample bind group: small blurred mask → full mask
+    this.upsampleBG = d.createBindGroup({
+      layout: this.upsamplePL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: this.maskSmallView },
+        { binding: 1, resource: this.maskBlurView },
+      ],
     });
 
     // Attraction field: dark green detection (render target, sampled by agents)
@@ -342,6 +404,7 @@ export class BrushStroke extends WebGPUSimulation {
     this.paramsBuf.destroy();
     this.extractParamsBuf.destroy();
     this.maskOrigTex.destroy();
+    this.maskSmallTex.destroy();
     this.maskBlurTex.destroy();
     this.attractTex.destroy();
     this.agentsBuf.destroy();
@@ -353,7 +416,7 @@ export class BrushStroke extends WebGPUSimulation {
 
   /**
    * Render one frame:
-   *   extract mask → copy → erosion blur → physarum (agents + diffuse) → composite
+   *   extract mask → downsample → blur (small) → upsample → physarum → composite
    */
   private renderNPR(): void {
     if (this.video.readyState < 2) return;
@@ -436,22 +499,40 @@ export class BrushStroke extends WebGPUSimulation {
     // Pass 1b: Extract dark green attraction field from video
     fullscreenPass(enc, this.attractView, this.attractPL, attractBG);
 
-    // Copy original → blur texture (preserves original for sharp detail)
-    enc.copyTextureToTexture(
-      { texture: this.maskOrigTex },
-      { texture: this.maskBlurTex },
-      [this.gw, this.gh],
-    );
+    // Pass 2: Downsample → blur at reduced resolution → upsample
+    // 2a: Downsample full mask to 1/4 resolution
+    {
+      const cp = enc.beginComputePass();
+      cp.setPipeline(this.downsamplePL);
+      cp.setBindGroup(0, this.downsampleBG);
+      cp.dispatchWorkgroups(
+        Math.ceil(this.smallW / DS_WG),
+        Math.ceil(this.smallH / DS_WG),
+      );
+      cp.end();
+    }
 
-    // Pass 2: Iterative blur on the COPY (erodes thin structures)
-    const erosionSteps = Math.max(0, Math.round(t.erosionSteps));
+    // 2b: Iterative blur on the small texture (same shader, 16x fewer pixels)
+    const erosionSteps = Math.max(0, Math.round(t.erosionSteps / DOWNSAMPLE));
     for (let i = 0; i < erosionSteps; i++) {
       const cp = enc.beginComputePass();
       cp.setPipeline(this.blurPL);
       cp.setBindGroup(0, this.blurBG);
       cp.dispatchWorkgroups(
-        Math.ceil(this.gw / BLUR_INNER),
-        Math.ceil(this.gh / BLUR_INNER),
+        Math.ceil(this.smallW / BLUR_INNER),
+        Math.ceil(this.smallH / BLUR_INNER),
+      );
+      cp.end();
+    }
+
+    // 2c: Upsample blurred small mask back to full resolution
+    {
+      const cp = enc.beginComputePass();
+      cp.setPipeline(this.upsamplePL);
+      cp.setBindGroup(0, this.upsampleBG);
+      cp.dispatchWorkgroups(
+        Math.ceil(this.gw / DS_WG),
+        Math.ceil(this.gh / DS_WG),
       );
       cp.end();
     }
