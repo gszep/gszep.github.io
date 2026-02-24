@@ -4,6 +4,8 @@
 
 requires readonly_and_readwrite_storage_textures;
 
+#import physarum_params
+
 const WG: u32 = 8u;
 const TILE: u32 = 2u;
 const HALO: u32 = 1u;
@@ -11,21 +13,6 @@ const CACHE: u32 = TILE * WG;           // 16
 const INNER: u32 = CACHE - 2u * HALO;   // 14
 
 var<workgroup> tile: array<array<f32, CACHE>, CACHE>;
-
-struct Params {
-  size: vec2f,
-  num_agents: f32,
-  time: f32,
-  sensor_dist: f32,
-  sensor_angle: f32,
-  turn_speed: f32,
-  deposit: f32,
-  speed: f32,
-  mask_weight: f32,
-  decay: f32,
-  diffuse_weight: f32,
-  agent_threshold: f32,
-};
 
 @group(0) @binding(0) var trail: texture_storage_2d<r32float, read_write>;
 @group(0) @binding(1) var<uniform> params: Params;

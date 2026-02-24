@@ -22,6 +22,8 @@ import attractSrc from "./attract-extract.render.wgsl?raw";
 import agentsSrc from "./physarum-agents.compute.wgsl?raw";
 import diffuseSrc from "./physarum-diffuse.compute.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
+import hashSrc from "./hash.wgsl?raw";
+import physarumParamsSrc from "./physarum-params.wgsl?raw";
 
 export interface BrushStrokeOptions {
   canvas: HTMLCanvasElement;
@@ -140,10 +142,12 @@ export class BrushStroke extends WebGPUSimulation {
   // ── Pipelines ──────────────────────────────────────────────
 
   protected buildPipelines(): void {
-    const includes = { fullscreen_vertex: fullscreenVertex };
+    const vertexIncludes = { fullscreen_vertex: fullscreenVertex };
+    const hashIncludes = { hash21: hashSrc };
+    const physarumIncludes = { physarum_params: physarumParamsSrc, hash21: hashSrc };
 
     // Main render pipeline (canvas output)
-    const renderMod = createShader(this.device, renderSrc, includes);
+    const renderMod = createShader(this.device, renderSrc, { ...vertexIncludes, ...hashIncludes });
     this.renderPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: renderMod, entryPoint: "vert" },
@@ -156,7 +160,7 @@ export class BrushStroke extends WebGPUSimulation {
     });
 
     // Mask extraction render pipeline (r32float output)
-    const extractMod = createShader(this.device, extractSrc, includes);
+    const extractMod = createShader(this.device, extractSrc, vertexIncludes);
     this.extractPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: extractMod, entryPoint: "vert" },
@@ -176,7 +180,7 @@ export class BrushStroke extends WebGPUSimulation {
     });
 
     // Attraction field extraction (dark green from video → r32float)
-    const attractMod = createShader(this.device, attractSrc, includes);
+    const attractMod = createShader(this.device, attractSrc, vertexIncludes);
     this.attractPL = this.device.createRenderPipeline({
       layout: "auto",
       vertex: { module: attractMod, entryPoint: "vert" },
@@ -189,14 +193,14 @@ export class BrushStroke extends WebGPUSimulation {
     });
 
     // Physarum agent step compute pipeline
-    const agentsMod = createShader(this.device, agentsSrc);
+    const agentsMod = createShader(this.device, agentsSrc, physarumIncludes);
     this.agentsPL = this.device.createComputePipeline({
       layout: "auto",
       compute: { module: agentsMod, entryPoint: "agents_step" },
     });
 
     // Physarum trail diffusion compute pipeline
-    const diffuseMod = createShader(this.device, diffuseSrc);
+    const diffuseMod = createShader(this.device, diffuseSrc, { physarum_params: physarumParamsSrc });
     this.diffusePL = this.device.createComputePipeline({
       layout: "auto",
       compute: { module: diffuseMod, entryPoint: "diffuse" },

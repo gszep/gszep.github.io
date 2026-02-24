@@ -14,6 +14,7 @@
 <script>
   import { GameOfLife } from "./webgpu/GameOfLife";
   import type { SimColors } from "./webgpu/GameOfLife";
+  import { isDark, observeTheme, isMobile } from "./webgpu/utils";
 
   const LIGHT: SimColors = {
     alive: [0.82, 0.84, 0.88, 0.55],
@@ -25,16 +26,12 @@
     dead: [0.0, 0.0, 0.0, 0.78],
   };
 
-  function isDark(): boolean {
-    return document.documentElement.classList.contains("dark");
-  }
-
   const canvas = document.getElementById("hero-sim") as HTMLCanvasElement | null;
 
   if (canvas) {
     const sim = new GameOfLife({
       canvas,
-      cellSize: 10,
+      cellSize: isMobile() ? 16 : 10,
       updateInterval: 150,
       initialDensity: 0.25,
       colors: isDark() ? DARK : LIGHT,
@@ -42,24 +39,13 @@
 
     sim.start().then((ok) => {
       if (!ok) {
-        // WebGPU unavailable — remove canvas, CSS overlay stays
         canvas.remove();
         return;
       }
 
-      // Hide the CSS overlay; the canvas now provides the overlay effect
       document.getElementById("hero-overlay")?.classList.add("hidden");
-
-      // Rebuild grid on resize to keep cells square
       new ResizeObserver(() => sim.handleResize()).observe(canvas);
-
-      // React to theme changes (light/dark toggle)
-      new MutationObserver(() => {
-        sim.updateColors(isDark() ? DARK : LIGHT);
-      }).observe(document.documentElement, {
-        attributes: true,
-        attributeFilter: ["class"],
-      });
+      observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
     });
   }
 </script>

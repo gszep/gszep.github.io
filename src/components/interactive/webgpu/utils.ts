@@ -16,10 +16,18 @@ export async function initWebGPU(
 ): Promise<WebGPUContext | null> {
   if (!navigator.gpu) return null;
 
-  const adapter = await navigator.gpu.requestAdapter();
+  const adapter = await navigator.gpu.requestAdapter({
+    powerPreference: "high-performance",
+  });
   if (!adapter) return null;
 
-  const device = await adapter.requestDevice();
+  // Request optional features the shaders may need
+  const requiredFeatures: GPUFeatureName[] = [];
+  if (adapter.features.has("readonly_and_readwrite_storage_textures" as GPUFeatureName)) {
+    requiredFeatures.push("readonly_and_readwrite_storage_textures" as GPUFeatureName);
+  }
+
+  const device = await adapter.requestDevice({ requiredFeatures });
   const context = canvas.getContext("webgpu");
   if (!context) return null;
 
@@ -166,6 +174,33 @@ export class MouseTracker {
     this.cleanup?.();
     this.cleanup = null;
   }
+}
+
+// ── Theme & device detection ────────────────────────────────────────────────
+
+/** Whether the page is in dark mode (checks `<html class="dark">`). */
+export function isDark(): boolean {
+  return document.documentElement.classList.contains("dark");
+}
+
+/**
+ * Observe dark/light theme changes and call `onChange` when they occur.
+ * Returns the MutationObserver for cleanup if needed.
+ */
+export function observeTheme(
+  onChange: (dark: boolean) => void,
+): MutationObserver {
+  const obs = new MutationObserver(() => onChange(isDark()));
+  obs.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
+  return obs;
+}
+
+/** Whether the device has a coarse pointer (touch screen). */
+export function isMobile(): boolean {
+  return window.matchMedia("(pointer: coarse)").matches;
 }
 
 // ── Render helpers ──────────────────────────────────────────────
