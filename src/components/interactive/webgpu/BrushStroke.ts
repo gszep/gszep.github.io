@@ -66,7 +66,7 @@ const DIFFUSE_INNER = 14;
 /** Workgroup size for 1D agent dispatch. */
 const AGENT_WG = 256;
 /** Downsample factor: blur runs on 1/DOWNSAMPLE resolution. */
-const DOWNSAMPLE = 4;
+const DOWNSAMPLE = 2;
 /** Workgroup size for downsample/upsample compute shaders. */
 const DS_WG = 8;
 

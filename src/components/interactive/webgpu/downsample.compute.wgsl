@@ -1,7 +1,7 @@
 // 4x downsample with box-filter average.
 // Each output pixel averages a 4x4 block from the source texture.
 
-const SCALE: u32 = 4u;
+const SCALE: u32 = 2u;
 const WG: u32 = 8u;
 
 @group(0) @binding(0) var src: texture_2d<f32>;
