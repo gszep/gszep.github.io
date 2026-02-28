@@ -1,6 +1,7 @@
 ---
 /**
- * WebGPU Game of Life overlay for the hero section.
+ * WebGPU 3D flame simulation overlay for the hero section.
+ * Uses Lattice Boltzmann D3Q19 with volumetric ray marching.
  * Silently does nothing when WebGPU is unsupported — the CSS
  * overlay fallback in index.astro remains visible instead.
  */
@@ -12,9 +13,9 @@
 ></canvas>
 
 <script>
-  import { GameOfLife } from "./webgpu/GameOfLife";
-  import type { SimColors } from "./webgpu/GameOfLife";
-  import { isDark, observeTheme, isMobile } from "./webgpu/utils";
+  import { FlameSimulation } from "./webgpu/FlameSimulation";
+  import type { SimColors } from "./webgpu/FlameSimulation";
+  import { isDark, observeTheme } from "./webgpu/utils";
 
   const LIGHT: SimColors = {
     alive: [0.0, 0.0, 0.0, 1.0],
@@ -29,11 +30,8 @@
   const canvas = document.getElementById("hero-sim") as HTMLCanvasElement | null;
 
   if (canvas) {
-    const sim = new GameOfLife({
+    const sim = new FlameSimulation({
       canvas,
-      cellSize: isMobile() ? 16 : 10,
-      updateInterval: 150,
-      initialDensity: 0.25,
       colors: isDark() ? DARK : LIGHT,
     });
 
