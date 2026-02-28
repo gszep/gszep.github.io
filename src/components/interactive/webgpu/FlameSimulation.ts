@@ -23,6 +23,20 @@ export interface SimColors {
   dead: [number, number, number, number];
 }
 
+/** Tunable parameters exposed to lil-gui. */
+export interface FlameTuning {
+  // Flow (affect turbulence)
+  tau: number;          // relaxation time: viscosity = (tau - 0.5)/3
+  buoyancy: number;     // thermal buoyancy strength
+  // Heat source
+  heatRate: number;     // fuel injection rate per step
+  cooling: number;      // multiplicative temperature decay per step
+  sourceRadius: number; // heat source radius (fraction of grid)
+  sourceJitter: number; // source position flicker (fraction of grid)
+  // Rendering
+  densityScale: number; // volumetric ray march opacity multiplier
+}
+
 // ── Minimal mat4 utilities (column-major Float32Array) ────────────────
 
 function perspective(fov: number, aspect: number, near: number, far: number): Float32Array {
@@ -135,14 +149,18 @@ export class FlameSimulation extends WebGPUSimulation {
 
   // Simulation constants
   private simTime = 0;
-  private tau = 0.6;
-  private buoyancy = 0.06;
-  private heatRate = 0.5;
-  private cooling = 0.98;
-  private sourceRadius = 0.1;
-  private sourceJitter = 0.02;
-  private densityScale = 8.0;
   private marchSteps: number;
+
+  /** Live-tunable parameters (bind to lil-gui). */
+  tuning: FlameTuning = {
+    tau: 0.6,
+    buoyancy: 0.06,
+    heatRate: 0.5,
+    cooling: 0.98,
+    sourceRadius: 0.1,
+    sourceJitter: 0.02,
+    densityScale: 8.0,
+  };
 
   constructor(config: { canvas: HTMLCanvasElement; gridSize?: number; colors: SimColors }) {
     super({
@@ -313,19 +331,21 @@ export class FlameSimulation extends WebGPUSimulation {
     const buf = new ArrayBuffer(32);
     const u = new Uint32Array(buf);
     const f = new Float32Array(buf);
+    const t = this.tuning;
     u[0] = this.gridN;
-    f[1] = this.tau;
-    f[2] = this.buoyancy;
-    f[3] = this.heatRate;
-    f[4] = this.cooling;
-    f[5] = this.sourceRadius;
-    f[6] = this.sourceJitter;
+    f[1] = t.tau;
+    f[2] = t.buoyancy;
+    f[3] = t.heatRate;
+    f[4] = t.cooling;
+    f[5] = t.sourceRadius;
+    f[6] = t.sourceJitter;
     f[7] = this.simTime;
     this.device.queue.writeBuffer(this.simParamsBuf!, 0, buf);
   }
 
   private writeRenderParams(): void {
-    const { canvas, gridN, colors, marchSteps, densityScale, theta, phi, radius, target } = this;
+    const { canvas, gridN, colors, marchSteps, theta, phi, radius, target } = this;
+    const densityScale = this.tuning.densityScale;
     const aspect = canvas.width / canvas.height;
 
     // Camera position from spherical coordinates

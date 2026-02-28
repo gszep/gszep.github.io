@@ -7,15 +7,27 @@
  */
 ---
 
-<canvas
-  id="hero-sim"
-  class="absolute inset-0 w-full h-full pointer-events-none"
-></canvas>
+<div id="hero-sim-wrap" class="absolute inset-0 w-full h-full">
+  <canvas
+    id="hero-sim"
+    class="absolute inset-0 w-full h-full pointer-events-none"
+  ></canvas>
+</div>
+
+<style>
+  #hero-sim-wrap > :global(.lil-gui) {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10;
+  }
+</style>
 
 <script>
   import { FlameSimulation } from "./webgpu/FlameSimulation";
   import type { SimColors } from "./webgpu/FlameSimulation";
   import { isDark, observeTheme } from "./webgpu/utils";
+  import GUI from "lil-gui";
 
   const LIGHT: SimColors = {
     alive: [0.0, 0.0, 0.0, 1.0],
@@ -44,6 +56,24 @@
       document.getElementById("hero-overlay")?.classList.add("hidden");
       new ResizeObserver(() => sim.handleResize()).observe(canvas);
       observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
+
+      // Tuning GUI (collapsed, top-left corner)
+      const gui = new GUI({ title: "Flame", autoPlace: false });
+      gui.close();
+      document.getElementById("hero-sim-wrap")!.appendChild(gui.domElement);
+
+      const flow = gui.addFolder("Flow");
+      flow.add(sim.tuning, "tau", 0.51, 1.0, 0.01).name("viscosity (tau)");
+      flow.add(sim.tuning, "buoyancy", 0.01, 0.15, 0.005).name("buoyancy");
+
+      const heat = gui.addFolder("Heat");
+      heat.add(sim.tuning, "heatRate", 0.05, 2.0, 0.05).name("fuel rate");
+      heat.add(sim.tuning, "cooling", 0.95, 0.999, 0.001).name("cooling");
+      heat.add(sim.tuning, "sourceRadius", 0.02, 0.3, 0.01).name("source size");
+      heat.add(sim.tuning, "sourceJitter", 0.0, 0.1, 0.005).name("flicker");
+
+      const render = gui.addFolder("Render");
+      render.add(sim.tuning, "densityScale", 1.0, 20.0, 0.5).name("density");
     });
   }
 </script>
