@@ -17,13 +17,13 @@
   import { isDark, observeTheme, isMobile } from "./webgpu/utils";
 
   const LIGHT: SimColors = {
-    alive: [0.82, 0.84, 0.88, 0.55],
-    dead: [1.0, 1.0, 1.0, 0.82],
+    alive: [0.0, 0.0, 0.0, 1.0],
+    dead: [1.0, 1.0, 1.0, 1.0],
   };
 
   const DARK: SimColors = {
-    alive: [0.05, 0.06, 0.09, 0.62],
-    dead: [0.0, 0.0, 0.0, 0.78],
+    alive: [1.0, 1.0, 1.0, 1.0],
+    dead: [0.0, 0.0, 0.0, 1.0],
   };
 
   const canvas = document.getElementById("hero-sim") as HTMLCanvasElement | null;
