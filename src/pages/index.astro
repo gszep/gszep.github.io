@@ -5,7 +5,7 @@ import Footer from '../components/ui/Footer.astro';
 import ProjectCard from '../components/ui/ProjectCard.astro';
 import CitationCard from '../components/ui/CitationCard.astro';
 import HeroSimulation from '../components/interactive/HeroSimulation.astro';
-import { t, getSite, localizedPath } from '../i18n/utils';
+import { t, getSite } from '../i18n/utils';
 import citations from '../data/citations.json';
 import { getPostsByLocale, stripLocalePrefix } from '../lib/posts';
 
@@ -48,7 +48,7 @@ const posts = await getPostsByLocale(lang);
             description={post.data.description}
             image={post.data.image || ''}
             imagePosition={post.data.imagePosition}
-            href={localizedPath(lang, `/blog/${stripLocalePrefix(post.slug)}/`)}
+            href={`/blog/${stripLocalePrefix(post.slug)}/`}
           />
         ))}
       </div>

@@ -150,6 +150,14 @@ This site uses folder-per-language i18n. Locale is derived from folder structure
 6. Run `npm run check-i18n` to validate sync before committing
 7. The build (`npm run build`) runs the i18n check automatically
 
+**Page template pairs that must stay in sync:**
+These page files are near-identical between EN and JA, differing only in `const lang` value and import path depth. When changing layout or structure in one, mirror the change to its counterpart:
+- `src/pages/index.astro` <-> `src/pages/ja/index.astro`
+- `src/pages/blog/index.astro` <-> `src/pages/ja/blog/index.astro`
+- `src/pages/blog/[...slug].astro` <-> `src/pages/ja/blog/[...slug].astro`
+
+Note: `check-i18n` only validates blog content pairs, NOT page templates. Template desync must be caught by reviewing both files.
+
 **When editing a post:** Always edit BOTH `en/` and `ja/` versions. If changing a shared field (date, image, order), change it in both files.
 
 **When creating a new post:** Create both `en/` and `ja/` files simultaneously. The build will fail if one is missing.

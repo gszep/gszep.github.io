@@ -88,6 +88,32 @@ for (const file of allFiles) {
     console.warn(`TAGS MISMATCH: ${file} -- en: ${enTags} vs ja: ${jaTags}`);
     warnings++;
   }
+
+  // Check 3: Structural parity in body content
+  const enContent = readFileSync(join(CONTENT_DIR, 'en', file), 'utf-8');
+  const jaContent = readFileSync(join(CONTENT_DIR, 'ja', file), 'utf-8');
+
+  // Extract body (after frontmatter)
+  const getBody = (s) => s.replace(/^---[\s\S]*?\n---\n?/, '');
+  const enBody = getBody(enContent);
+  const jaBody = getBody(jaContent);
+
+  const structureChecks = [
+    ['import', (s) => (s.match(/^import\s/gm) || []).length],
+    ['<figure>', (s) => (s.match(/<figure/g) || []).length],
+    ['<video>', (s) => (s.match(/<video/g) || []).length],
+    ['<img>', (s) => (s.match(/<img/g) || []).length],
+    ['---', (s) => (s.match(/^---$/gm) || []).length],
+  ];
+
+  for (const [label, counter] of structureChecks) {
+    const enCount = counter(enBody);
+    const jaCount = counter(jaBody);
+    if (enCount !== jaCount) {
+      console.warn(`STRUCTURE: ${file} ${label} count differs -- en: ${enCount} vs ja: ${jaCount}`);
+      warnings++;
+    }
+  }
 }
 
 // Summary
