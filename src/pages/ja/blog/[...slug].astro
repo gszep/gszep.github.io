@@ -1,11 +1,11 @@
 ---
 import Post from '../../../layouts/Post.astro';
-import { getCollection } from 'astro:content';
+import { getPostsByLocale, stripLocalePrefix } from '../../../lib/posts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => data.locale === 'ja');
+  const posts = await getPostsByLocale('ja');
   return posts.map((post) => ({
-    params: { slug: post.slug.replace(/^ja\//, '') },
+    params: { slug: stripLocalePrefix(post.slug) },
     props: { post },
   }));
 }

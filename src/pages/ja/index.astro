@@ -7,12 +7,11 @@ import CitationCard from '../../components/ui/CitationCard.astro';
 import HeroSimulation from '../../components/interactive/HeroSimulation.astro';
 import { t, getSite, localizedPath } from '../../i18n/utils';
 import citations from '../../data/citations.json';
-import { getCollection } from 'astro:content';
+import { getPostsByLocale, stripLocalePrefix } from '../../lib/posts';
 
 const lang = 'ja';
 const site = getSite(lang);
-const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'ja');
-posts.sort((a, b) => a.data.order - b.data.order);
+const posts = await getPostsByLocale(lang);
 ---
 
 <Base lang={lang}>
@@ -20,12 +19,11 @@ posts.sort((a, b) => a.data.order - b.data.order);
 
   <!-- Hero -->
   <section
-    class="min-h-screen flex items-center justify-center text-center bg-cover bg-center relative"
-    style={`background-image: url(${site.heroImage})`}
+    class="min-h-screen flex items-center justify-center text-center relative"
     id="hero"
   >
     <HeroSimulation />
-    <div id="hero-overlay" class="absolute inset-0 bg-white/80 dark:bg-black/75"></div>
+    <div id="hero-overlay" class="absolute inset-0 bg-white dark:bg-black"></div>
     <div class="px-4 relative z-10">
       <h1 class="font-bold tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
         {site.title}
@@ -50,7 +48,7 @@ posts.sort((a, b) => a.data.order - b.data.order);
             description={post.data.description}
             image={post.data.image || ''}
             imagePosition={post.data.imagePosition}
-            href={`/ja/blog/${post.slug.replace(/^ja\//, '')}/`}
+            href={`/ja/blog/${stripLocalePrefix(post.slug)}/`}
           />
         ))}
       </div>

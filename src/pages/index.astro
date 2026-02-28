@@ -7,12 +7,11 @@ import CitationCard from '../components/ui/CitationCard.astro';
 import HeroSimulation from '../components/interactive/HeroSimulation.astro';
 import { t, getSite, localizedPath } from '../i18n/utils';
 import citations from '../data/citations.json';
-import { getCollection } from 'astro:content';
+import { getPostsByLocale, stripLocalePrefix } from '../lib/posts';
 
 const lang = 'en';
 const site = getSite(lang);
-const posts = await getCollection('blog', ({ data }) => !data.draft && data.locale === 'en');
-posts.sort((a, b) => a.data.order - b.data.order);
+const posts = await getPostsByLocale(lang);
 ---
 
 <Base lang={lang}>
@@ -49,7 +48,7 @@ posts.sort((a, b) => a.data.order - b.data.order);
             description={post.data.description}
             image={post.data.image || ''}
             imagePosition={post.data.imagePosition}
-            href={localizedPath(lang, `/blog/${post.slug}/`)}
+            href={localizedPath(lang, `/blog/${stripLocalePrefix(post.slug)}/`)}
           />
         ))}
       </div>

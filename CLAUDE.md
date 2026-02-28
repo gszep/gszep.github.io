@@ -37,8 +37,12 @@ Personal blog / lab notebook of a creative technologist. Astro 5 static site wit
 ```
 src/
   content/
-    blog/                  # All content as MDX files (unified collection)
+    blog/
+      en/                  # English MDX posts
+      ja/                  # Japanese MDX posts (matching filenames)
     config.ts              # Content collection schema
+  lib/
+    posts.ts               # Shared post query helpers
   components/
     ui/                    # Static layout components (.astro)
       Nav.astro            # Navigation bar
@@ -51,15 +55,26 @@ src/
     Page.astro             # Generic page (Nav + Footer)
     Post.astro             # Blog post layout (Distill theme)
   pages/
-    index.astro            # Homepage (Blog + Publications + Contact)
+    index.astro            # EN Homepage (Blog + Publications + Contact)
+    ja/
+      index.astro          # JA Homepage
+      blog/
+        index.astro        # JA Blog listing
+        [...slug].astro    # JA blog routes
     blog/
-      index.astro          # Blog listing
-      [...slug].astro      # Dynamic blog routes (uses Post layout)
+      index.astro          # EN Blog listing
+      [...slug].astro      # EN blog routes
   styles/
     post.css               # Distill-inspired article typography
   data/
     site.json              # Site metadata
     citations.json         # Publications data
+  i18n/
+    utils.ts               # t(), getLangFromUrl(), localizedPath(), getSite()
+    en.json                # English UI strings
+    ja.json                # Japanese UI strings
+scripts/
+  check-i18n.mjs           # Build-time i18n validation
 public/
   images/                  # Static assets (MP4, PNG, JPG)
 astro.config.mjs           # Astro config
@@ -74,20 +89,22 @@ Most requests are content updates. Key files:
 
 | File | What it controls |
 |------|-----------------|
-| `src/content/blog/*.mdx` | Blog posts (unified -- art, science, projects) |
+| `src/content/blog/en/*.mdx` | English blog posts |
+| `src/content/blog/ja/*.mdx` | Japanese blog posts (matching filenames) |
 | `src/data/citations.json` | Publications list |
-| `src/data/site.json` | Site title, author info, social links |
-| `src/pages/index.astro` | Homepage layout |
-| `src/components/ui/Nav.astro` | Navigation bar |
-| `src/components/ui/Footer.astro` | Footer content |
+| `src/data/site.json` | Site title, author info, social links (has en/ja keys) |
+| `src/i18n/en.json` / `ja.json` | UI string translations |
+| `src/pages/index.astro` | EN Homepage layout |
+| `src/pages/ja/index.astro` | JA Homepage layout |
 
 Images and videos go in `public/images/` and are referenced as `/images/filename.ext`.
 
 ## Adding a Blog Post
 
-Create a single MDX file in `src/content/blog/`:
+Create TWO MDX files with the same filename in `en/` and `ja/`:
 
 ```mdx
+<!-- src/content/blog/en/my-post.mdx -->
 ---
 title: "My Post Title"
 date: 2026-02-20
@@ -97,12 +114,45 @@ tags: ["tag1", "tag2"]
 order: 1
 ---
 
-Your markdown content here.
+English content here.
 ```
 
-Frontmatter fields: title, description, date (required); image, tags, hero, order, draft, locale (optional).
+```mdx
+<!-- src/content/blog/ja/my-post.mdx -->
+---
+title: "記事タイトル"
+date: 2026-02-20
+description: "短い説明"
+image: "/images/thumbnail.mp4"
+tags: ["tag1", "tag2"]
+order: 1
+---
 
-No routing config or manifest changes needed.
+Japanese content here.
+```
+
+Frontmatter fields: title, description, date (required); image, imagePosition, tags, order, draft (optional).
+
+No routing config or manifest changes needed. The build-time check (`npm run check-i18n`) will catch missing translations or mismatched shared fields.
+
+## i18n Content Rules (CRITICAL)
+
+This site uses folder-per-language i18n. Locale is derived from folder structure, NOT frontmatter.
+
+**Structure**: `src/content/blog/en/` and `src/content/blog/ja/` with matching filenames.
+
+**Rules for content changes:**
+1. Every EN post MUST have a JA counterpart with the same filename (and vice versa)
+2. Shared fields MUST be identical across pairs: `date`, `image`, `imagePosition`, `order`, `draft`
+3. Tags use English canonical keys in BOTH languages (e.g., `["art", "science"]`, not `["アート", "サイエンス"]`)
+4. Only `title`, `description`, and body content are translated
+5. Component imports in MDX use `../../../components/` (three levels up from `en/` or `ja/`)
+6. Run `npm run check-i18n` to validate sync before committing
+7. The build (`npm run build`) runs the i18n check automatically
+
+**When editing a post:** Always edit BOTH `en/` and `ja/` versions. If changing a shared field (date, image, order), change it in both files.
+
+**When creating a new post:** Create both `en/` and `ja/` files simultaneously. The build will fail if one is missing.
 
 ## Media Format
 
