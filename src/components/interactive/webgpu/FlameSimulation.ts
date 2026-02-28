@@ -156,15 +156,15 @@ export class FlameSimulation extends WebGPUSimulation {
 
   /** Live-tunable parameters (bind to lil-gui). */
   tuning: FlameTuning = {
-    tau: 0.6,
-    buoyancy: 0.06,
-    heatRate: 0.5,
-    cooling: 0.98,
-    sourceRadius: 0.1,
-    sourceJitter: 0.02,
-    turbulence: 0.1,
-    substeps: 3,
-    densityScale: 8.0,
+    tau: 0.54,
+    buoyancy: 0.03,
+    heatRate: 0.8,
+    cooling: 0.995,
+    sourceRadius: 0.02,
+    sourceJitter: 0.005,
+    turbulence: 0.05,
+    substeps: 4,
+    densityScale: 12.0,
   };
 
   constructor(config: { canvas: HTMLCanvasElement; gridSize?: number; colors: SimColors }) {
