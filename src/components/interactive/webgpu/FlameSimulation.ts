@@ -162,7 +162,7 @@ export class FlameSimulation extends WebGPUSimulation {
     cooling: 0.995,
     sourceRadius: 0.02,
     sourceJitter: 0.005,
-    turbulence: 0.05,
+    turbulence: 0.03,
     substeps: 4,
     densityScale: 12.0,
   };

@@ -42,15 +42,16 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let t = temp[idx];
   vel.y += params.buoyancy * t;
 
-  // --- Turbulence: sub-grid noise forcing in hot regions ---
-  // Hash-based pseudo-random perturbation, scaled by local temperature
+  // --- Ambient turbulence: background wind / vorticity ---
+  // Applies everywhere (not just hot regions) so ambient drafts
+  // perturb the plume from outside, triggering laminar→turbulent transition
   let seed = vec3f(id) * 0.1031 + params.time * 7.13;
   let h = fract(sin(vec3f(
     dot(seed, vec3f(127.1, 311.7, 74.7)),
     dot(seed, vec3f(269.5, 183.3, 246.1)),
     dot(seed, vec3f(113.5, 271.9, 124.6))
   )) * 43758.5453) * 2.0 - 1.0;
-  vel += params.turbulence * t * h;
+  vel += params.turbulence * h;
 
   // --- Velocity clamp: ensure LBM stability (Mach < 0.15) ---
   let speed = length(vel);
