@@ -135,13 +135,13 @@ export class FlameSimulation extends WebGPUSimulation {
 
   // Simulation constants
   private simTime = 0;
-  private tau = 0.55;
-  private buoyancy = 0.012;
-  private heatRate = 0.8;
-  private cooling = 0.99;
+  private tau = 0.6;
+  private buoyancy = 0.06;
+  private heatRate = 0.5;
+  private cooling = 0.98;
   private sourceRadius = 0.1;
   private sourceJitter = 0.02;
-  private densityScale = 3.0;
+  private densityScale = 8.0;
   private marchSteps: number;
 
   constructor(config: { canvas: HTMLCanvasElement; gridSize?: number; colors: SimColors }) {

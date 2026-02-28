@@ -42,6 +42,12 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let t = temp[idx];
   vel.y += params.buoyancy * t;
 
+  // --- Velocity clamp: ensure LBM stability (Mach < 0.15) ---
+  let speed = length(vel);
+  if (speed > 0.15) {
+    vel = vel * (0.15 / speed);
+  }
+
   // --- BGK collision: relax toward equilibrium ---
   for (var q = 0u; q < 19u; q++) {
     let feq = equilibrium(q, rho, vel);

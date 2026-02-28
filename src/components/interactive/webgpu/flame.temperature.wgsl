@@ -59,5 +59,5 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let heat_y  = smoothstep(radius * 0.5, 0.0, f32(id.y));  // fade above ground
   t += params.heat_rate * heat_xz * heat_y;
 
-  temp[idx] = t;
+  temp[idx] = clamp(t, 0.0, 1.0);
 }
