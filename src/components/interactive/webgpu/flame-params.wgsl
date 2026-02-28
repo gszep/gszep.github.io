@@ -9,4 +9,5 @@ struct SimParams {
   source_radius: f32,  // heat source radius (fraction of N)
   source_jitter: f32,  // injection center noise amplitude (fraction of N)
   time: f32,           // accumulated time for injection noise
+  turbulence: f32,     // noise-based velocity perturbation strength
 }

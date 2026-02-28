@@ -19,7 +19,7 @@
     position: absolute;
     top: 0;
     left: 0;
-    z-index: 10;
+    z-index: 50;
   }
 </style>
 
@@ -71,6 +71,10 @@
       heat.add(sim.tuning, "cooling", 0.95, 0.999, 0.001).name("cooling");
       heat.add(sim.tuning, "sourceRadius", 0.02, 0.3, 0.01).name("source size");
       heat.add(sim.tuning, "sourceJitter", 0.0, 0.1, 0.005).name("flicker");
+
+      const turb = gui.addFolder("Turbulence");
+      turb.add(sim.tuning, "turbulence", 0.0, 0.3, 0.005).name("noise strength");
+      turb.add(sim.tuning, "substeps", 1, 8, 1).name("substeps/frame");
 
       const render = gui.addFolder("Render");
       render.add(sim.tuning, "densityScale", 1.0, 20.0, 0.5).name("density");

@@ -33,6 +33,9 @@ export interface FlameTuning {
   cooling: number;      // multiplicative temperature decay per step
   sourceRadius: number; // heat source radius (fraction of grid)
   sourceJitter: number; // source position flicker (fraction of grid)
+  // Turbulence
+  turbulence: number;   // noise-based velocity perturbation strength
+  substeps: number;     // LBM iterations per frame (more = faster flow)
   // Rendering
   densityScale: number; // volumetric ray march opacity multiplier
 }
@@ -159,6 +162,8 @@ export class FlameSimulation extends WebGPUSimulation {
     cooling: 0.98,
     sourceRadius: 0.1,
     sourceJitter: 0.02,
+    turbulence: 0.1,
+    substeps: 3,
     densityScale: 8.0,
   };
 
@@ -227,7 +232,7 @@ export class FlameSimulation extends WebGPUSimulation {
         usage: GPUBufferUsage.STORAGE,
       });
       this.simParamsBuf = this.device.createBuffer({
-        size: 32,
+        size: 48,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
 
@@ -292,27 +297,32 @@ export class FlameSimulation extends WebGPUSimulation {
   // ── Frame loop ────────────────────────────────────────────────────
 
   frame(): void {
-    this.simTime += 0.016;
-    this.writeSimParams();
-    this.writeRenderParams();
-
     const N = this.gridN;
     const wg = Math.ceil(N / 4);
+    const steps = Math.max(1, Math.round(this.tuning.substeps));
     const enc = this.device.createCommandEncoder();
 
-    // Compute pass 1: LBM collide + stream + buoyancy
-    const cp1 = enc.beginComputePass();
-    cp1.setPipeline(this.lbmPL);
-    cp1.setBindGroup(0, this.lbmBG);
-    cp1.dispatchWorkgroups(wg, wg, wg);
-    cp1.end();
+    // Run multiple LBM + temperature substeps per frame
+    for (let s = 0; s < steps; s++) {
+      this.simTime += 0.016 / steps;
+      this.writeSimParams();
 
-    // Compute pass 2: temperature advection + cooling + injection
-    const cp2 = enc.beginComputePass();
-    cp2.setPipeline(this.tempPL);
-    cp2.setBindGroup(0, this.tempBG);
-    cp2.dispatchWorkgroups(wg, wg, wg);
-    cp2.end();
+      // Compute pass 1: LBM collide + stream + buoyancy + turbulence
+      const cp1 = enc.beginComputePass();
+      cp1.setPipeline(this.lbmPL);
+      cp1.setBindGroup(0, this.lbmBG);
+      cp1.dispatchWorkgroups(wg, wg, wg);
+      cp1.end();
+
+      // Compute pass 2: temperature advection + cooling + injection
+      const cp2 = enc.beginComputePass();
+      cp2.setPipeline(this.tempPL);
+      cp2.setBindGroup(0, this.tempBG);
+      cp2.dispatchWorkgroups(wg, wg, wg);
+      cp2.end();
+    }
+
+    this.writeRenderParams();
 
     // Render pass: volumetric ray march
     fullscreenPass(
@@ -328,7 +338,7 @@ export class FlameSimulation extends WebGPUSimulation {
   // ── Uniform writes ────────────────────────────────────────────────
 
   private writeSimParams(): void {
-    const buf = new ArrayBuffer(32);
+    const buf = new ArrayBuffer(48);
     const u = new Uint32Array(buf);
     const f = new Float32Array(buf);
     const t = this.tuning;
@@ -340,6 +350,7 @@ export class FlameSimulation extends WebGPUSimulation {
     f[5] = t.sourceRadius;
     f[6] = t.sourceJitter;
     f[7] = this.simTime;
+    f[8] = t.turbulence;
     this.device.queue.writeBuffer(this.simParamsBuf!, 0, buf);
   }
 
