@@ -1,9 +1,3 @@
-/**
- * 3D Lattice Boltzmann flame simulation with volumetric ray marching.
- * D3Q19 model, single read_write buffers (race conditions accepted),
- * thermal buoyancy, and orbit camera controls.
- */
-
 import { WebGPUSimulation } from './WebGPUSimulation';
 import { createShader, fullscreenPass, isMobile } from './utils';
 
@@ -16,31 +10,22 @@ import lbmSrc from './flame.lbm.wgsl?raw';
 import temperatureSrc from './flame.temperature.wgsl?raw';
 import renderSrc from './flame.render.wgsl?raw';
 
-// ── Types ──────────────────────────────────────────────────────────────
-
 export interface SimColors {
   alive: [number, number, number, number];
   dead: [number, number, number, number];
 }
 
-/** Tunable parameters exposed to lil-gui. */
 export interface FlameTuning {
-  // Flow (affect turbulence)
-  tau: number;          // relaxation time: viscosity = (tau - 0.5)/3
-  buoyancy: number;     // thermal buoyancy strength
-  // Heat source
-  heatRate: number;     // fuel injection rate per step
-  cooling: number;      // multiplicative temperature decay per step
-  sourceRadius: number; // heat source radius (fraction of grid)
-  sourceJitter: number; // source position flicker (fraction of grid)
-  // Turbulence
-  turbulence: number;   // noise-based velocity perturbation strength
-  substeps: number;     // LBM iterations per frame (more = faster flow)
-  // Rendering
-  densityScale: number; // volumetric ray march opacity multiplier
+  tau: number;
+  buoyancy: number;
+  heatRate: number;
+  cooling: number;
+  sourceRadius: number;
+  sourceJitter: number;
+  turbulence: number;
+  substeps: number;
+  densityScale: number;
 }
-
-// ── Minimal mat4 utilities (column-major Float32Array) ────────────────
 
 function perspective(fov: number, aspect: number, near: number, far: number): Float32Array {
   const f = 1 / Math.tan(fov / 2);
@@ -115,46 +100,35 @@ function invertPerspective(p: Float32Array): Float32Array {
   return o;
 }
 
-// ── FlameSimulation ───────────────────────────────────────────────────
-
 export class FlameSimulation extends WebGPUSimulation {
   private gridN: number;
   private colors: SimColors;
 
-  // GPU resources (sim — persist across resize)
   private distBuf: GPUBuffer | null = null;
   private macroBuf: GPUBuffer | null = null;
   private tempBuf: GPUBuffer | null = null;
   private simParamsBuf: GPUBuffer | null = null;
-
-  // GPU resources (render — recreated on resize)
   private renderParamsBuf: GPUBuffer | null = null;
 
-  // Pipelines
   private initPL!: GPUComputePipeline;
   private lbmPL!: GPUComputePipeline;
   private tempPL!: GPUComputePipeline;
 
-  // Bind groups
   private initBG!: GPUBindGroup;
   private lbmBG!: GPUBindGroup;
   private tempBG!: GPUBindGroup;
 
-  // Camera (orbit)
   private theta = 0;
   private phi = 0.3;
   private radius = 2.5;
   private target = [0.5, 0.3, 0.5];
 
-  // Pointer tracking
   private pointers = new Map<number, { x: number; y: number }>();
   private lastPinchDist = 0;
 
-  // Simulation constants
   private simTime = 0;
   private marchSteps: number;
 
-  /** Live-tunable parameters (bind to lil-gui). */
   tuning: FlameTuning = {
     tau: 0.54,
     buoyancy: 0.03,
@@ -177,8 +151,6 @@ export class FlameSimulation extends WebGPUSimulation {
     this.colors = config.colors;
     this.marchSteps = isMobile() ? 32 : 48;
   }
-
-  // ── Pipelines (created once) ──────────────────────────────────────
 
   buildPipelines(): void {
     const includes = {
@@ -211,8 +183,6 @@ export class FlameSimulation extends WebGPUSimulation {
     });
   }
 
-  // ── Resources ─────────────────────────────────────────────────────
-
   buildResources(): void {
     const N = this.gridN;
     const total = N * N * N;
@@ -236,7 +206,6 @@ export class FlameSimulation extends WebGPUSimulation {
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
 
-      // Bind groups for compute pipelines (init & LBM share layout)
       const simEntries = [
         { binding: 0, resource: { buffer: this.distBuf } },
         { binding: 1, resource: { buffer: this.macroBuf } },
@@ -260,7 +229,6 @@ export class FlameSimulation extends WebGPUSimulation {
         ],
       });
 
-      // Initialize simulation state
       this.writeSimParams();
       const wg = Math.ceil(N / 4);
       const enc = this.device.createCommandEncoder();
@@ -272,7 +240,6 @@ export class FlameSimulation extends WebGPUSimulation {
       this.device.queue.submit([enc.finish()]);
     }
 
-    // (Re)create render uniform + bind group on every build (resolution may change)
     this.renderParamsBuf?.destroy();
     this.renderParamsBuf = this.device.createBuffer({
       size: 128,
@@ -289,12 +256,9 @@ export class FlameSimulation extends WebGPUSimulation {
   }
 
   destroyResources(): void {
-    // Only destroy render buffer; sim buffers persist across resize
     this.renderParamsBuf?.destroy();
     this.renderParamsBuf = null;
   }
-
-  // ── Frame loop ────────────────────────────────────────────────────
 
   frame(): void {
     const N = this.gridN;
@@ -302,19 +266,16 @@ export class FlameSimulation extends WebGPUSimulation {
     const steps = Math.max(1, Math.round(this.tuning.substeps));
     const enc = this.device.createCommandEncoder();
 
-    // Run multiple LBM + temperature substeps per frame
     for (let s = 0; s < steps; s++) {
       this.simTime += 0.016 / steps;
       this.writeSimParams();
 
-      // Compute pass 1: LBM collide + stream + buoyancy + turbulence
       const cp1 = enc.beginComputePass();
       cp1.setPipeline(this.lbmPL);
       cp1.setBindGroup(0, this.lbmBG);
       cp1.dispatchWorkgroups(wg, wg, wg);
       cp1.end();
 
-      // Compute pass 2: temperature advection + cooling + injection
       const cp2 = enc.beginComputePass();
       cp2.setPipeline(this.tempPL);
       cp2.setBindGroup(0, this.tempBG);
@@ -324,7 +285,6 @@ export class FlameSimulation extends WebGPUSimulation {
 
     this.writeRenderParams();
 
-    // Render pass: volumetric ray march
     fullscreenPass(
       enc,
       this.ctx.getCurrentTexture().createView(),
@@ -334,8 +294,6 @@ export class FlameSimulation extends WebGPUSimulation {
 
     this.device.queue.submit([enc.finish()]);
   }
-
-  // ── Uniform writes ────────────────────────────────────────────────
 
   private writeSimParams(): void {
     const buf = new ArrayBuffer(48);
@@ -359,7 +317,6 @@ export class FlameSimulation extends WebGPUSimulation {
     const densityScale = this.tuning.densityScale;
     const aspect = canvas.width / canvas.height;
 
-    // Camera position from spherical coordinates
     const eye = [
       target[0] + radius * Math.cos(phi) * Math.sin(theta),
       target[1] + radius * Math.sin(phi),
@@ -371,27 +328,23 @@ export class FlameSimulation extends WebGPUSimulation {
     const invVP = mat4Mul(invertView(view), invertPerspective(proj));
 
     const d = new Float32Array(32);
-    d.set(invVP, 0);                                         // [0-15]  inv_view_proj
-    d[16] = eye[0]; d[17] = eye[1]; d[18] = eye[2];          // [16-18] camera_pos xyz
-    d[19] = gridN;                                            // [19]    camera_pos.w = grid_size
-    d[20] = colors.alive[0]; d[21] = colors.alive[1];        // [20-23] alive
+    d.set(invVP, 0);
+    d[16] = eye[0]; d[17] = eye[1]; d[18] = eye[2];
+    d[19] = gridN;
+    d[20] = colors.alive[0]; d[21] = colors.alive[1];
     d[22] = colors.alive[2]; d[23] = colors.alive[3];
-    d[24] = colors.dead[0]; d[25] = colors.dead[1];          // [24-27] dead
+    d[24] = colors.dead[0]; d[25] = colors.dead[1];
     d[26] = colors.dead[2]; d[27] = colors.dead[3];
-    d[28] = canvas.width; d[29] = canvas.height;             // [28-29] resolution
-    d[30] = densityScale;                                     // [30]    density_scale
-    d[31] = marchSteps;                                       // [31]    march_steps
+    d[28] = canvas.width; d[29] = canvas.height;
+    d[30] = densityScale;
+    d[31] = marchSteps;
 
     this.device.queue.writeBuffer(this.renderParamsBuf!, 0, d);
   }
 
-  // ── Public API ────────────────────────────────────────────────────
-
   updateColors(c: SimColors): void {
     this.colors = c;
   }
-
-  // ── Pointer / orbit controls ─────────────────────────────────────
 
   onStart(): void {
     this.canvas.style.pointerEvents = 'auto';
@@ -428,14 +381,12 @@ export class FlameSimulation extends WebGPUSimulation {
     if (!prev) return;
 
     if (this.pointers.size === 1) {
-      // Rotate
       this.theta += (e.clientX - prev.x) * 0.005;
       this.phi = Math.max(
         -Math.PI / 2 + 0.1,
         Math.min(Math.PI / 2 - 0.1, this.phi - (e.clientY - prev.y) * 0.005),
       );
     } else if (this.pointers.size >= 2) {
-      // Pinch zoom
       this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const dist = this.pinchDist();
       if (this.lastPinchDist > 0) {

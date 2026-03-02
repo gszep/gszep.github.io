@@ -1,18 +1,3 @@
-/**
- * WebGPU Navier-Stokes fluid simulation.
- *
- * Vorticity-stream function formulation with a single read_write storage
- * buffer. Race-free stencil operations via workgroup cache with halo.
- * Advection reads from global memory (displacement can exceed cache).
- *
- * Discretization ported from public/art/3141.
- *
- * Channels: x=error, y=unused, z=stream_function, w=vorticity
- *
- * Idle:   Jacobi relaxation converges stream function to match vorticity.
- * Active: Semi-Lagrangian advection + vorticity diffusion + brush forcing.
- */
-
 import {
   createShader,
   fullscreenPass,
@@ -23,31 +8,29 @@ import computeSrc from "./navier-stokes.compute.wgsl?raw";
 import renderSrc from "./navier-stokes.render.wgsl?raw";
 import fullscreenVertex from "./fullscreen.vertex.wgsl?raw";
 
-export type BgColor = [number, number, number, number]; // RGBA 0-1
+export type BgColor = [number, number, number, number];
 
 export interface NavierStokesOptions {
   canvas: HTMLCanvasElement;
-  cellSize?: number; // px per sim cell (default 4)
-  updateInterval?: number; // ms between frames (default 16)
-  stepsPerFrame?: number; // compute dispatches per render (default 1)
-  brushSize?: number; // radius of interaction brush in px (default 1000)
-  bgColor?: BgColor; // background colour for compositing (default white)
+  cellSize?: number;
+  updateInterval?: number;
+  stepsPerFrame?: number;
+  brushSize?: number;
+  bgColor?: BgColor;
 }
 
-const WG = 8; // workgroup size (must match compute shader)
+const WG = 8; // must match compute shader
 const TILE = 2;
 const HALO = 1;
-const INNER = TILE * WG - 2 * HALO; // 14 — active cells per workgroup
+const INNER = TILE * WG - 2 * HALO;
 
 export class NavierStokes extends WebGPUSimulation {
   private stepsPerFrame: number;
   private brushSize: number;
   private bgColor: BgColor;
 
-  // Input
   private mouse!: MouseTracker;
 
-  // Pipelines & resources
   private computePL!: GPUComputePipeline;
   private buf!: GPUBuffer;
   private paramsBuf!: GPUBuffer;
@@ -55,7 +38,6 @@ export class NavierStokes extends WebGPUSimulation {
   private readbackBuf!: GPUBuffer;
   private nanCheckPending = false;
 
-  // Params: [mouse.x, mouse.y, brush_size, unused, grid_w, grid_h, pad, pad, bg_r, bg_g, bg_b, bg_a]
   private paramsData = new Float32Array(12);
 
   constructor(opts: NavierStokesOptions) {
@@ -69,7 +51,6 @@ export class NavierStokes extends WebGPUSimulation {
     this.bgColor = opts.bgColor ?? [1.0, 1.0, 1.0, 1.0];
   }
 
-  /** Live-update background colour (e.g. on theme toggle). */
   updateBackground(bg: BgColor): void {
     this.bgColor = bg;
     this.paramsData[8] = bg[0];
@@ -85,8 +66,6 @@ export class NavierStokes extends WebGPUSimulation {
   protected onStop(): void {
     this.mouse?.destroy();
   }
-
-  // ── Pipelines ──────────────────────────────────────────
 
   protected buildPipelines(): void {
     const includes = { fullscreen_vertex: fullscreenVertex };
@@ -112,14 +91,11 @@ export class NavierStokes extends WebGPUSimulation {
     });
   }
 
-  // ── Resources ──────────────────────────────────────────
-
   protected buildResources(): void {
     const d = this.device;
     const cellCount = this.gw * this.gh;
-    const bufSize = cellCount * 16; // 4 floats × 4 bytes per cell
+    const bufSize = cellCount * 16; // 4 floats × 4 bytes
 
-    // Single state buffer (read_write in compute, read in render)
     this.buf = d.createBuffer({
       size: bufSize,
       usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST | GPUBufferUsage.COPY_SRC,
@@ -127,29 +103,25 @@ export class NavierStokes extends WebGPUSimulation {
 
     this.resetState();
 
-    // Params uniform buffer (48 bytes: mouse vec4f + size vec2f + pad vec2f + bg vec4f)
     this.paramsBuf = d.createBuffer({
       size: 48,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.paramsData.fill(0);
-    this.paramsData[2] = NaN; // brush inactive
+    this.paramsData[2] = NaN;
     this.paramsData[4] = this.gw;
     this.paramsData[5] = this.gh;
-    // bg colour at offset 8 (struct offset 32)
     this.paramsData[8] = this.bgColor[0];
     this.paramsData[9] = this.bgColor[1];
     this.paramsData[10] = this.bgColor[2];
     this.paramsData[11] = this.bgColor[3];
     d.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 
-    // Readback buffer for NaN corner detection (4 corners × 16 bytes)
     this.readbackBuf = d.createBuffer({
       size: 64,
       usage: GPUBufferUsage.MAP_READ | GPUBufferUsage.COPY_DST,
     });
 
-    // Compute bind group
     this.computeBG = d.createBindGroup({
       layout: this.computePL.getBindGroupLayout(0),
       entries: [
@@ -158,7 +130,6 @@ export class NavierStokes extends WebGPUSimulation {
       ],
     });
 
-    // Render bind group
     this.renderBG = d.createBindGroup({
       layout: this.renderPL.getBindGroupLayout(0),
       entries: [
@@ -175,7 +146,6 @@ export class NavierStokes extends WebGPUSimulation {
     this.nanCheckPending = false;
   }
 
-  /** Write initial vortex dipole state to the simulation buffer. */
   private resetState(): void {
     const cellCount = this.gw * this.gh;
     const init = new Float32Array(cellCount * 4);
@@ -209,10 +179,7 @@ export class NavierStokes extends WebGPUSimulation {
     this.device.queue.writeBuffer(this.buf, 0, init);
   }
 
-  // ── Frame ─────────────────────────────────────────────
-
   protected frame(): void {
-    // Map mouse state to params (convert px brush radius to grid coords)
     const m = this.mouse.state;
     this.paramsData[0] = m.x * this.gw;
     this.paramsData[1] = m.y * this.gh;
@@ -223,7 +190,6 @@ export class NavierStokes extends WebGPUSimulation {
       this.paramsData[2] = NaN;
     }
 
-    // Upload params
     this.device.queue.writeBuffer(this.paramsBuf, 0, this.paramsData);
 
     const enc = this.device.createCommandEncoder();

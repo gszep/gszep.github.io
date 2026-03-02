@@ -1,213 +1,127 @@
 # grisha.log
 
-Personal blog / lab notebook of a creative technologist. Astro 5 static site with MDX content, deployed to GitHub Pages. The vibe is casual stream-of-consciousness -- ideas, half-finished projects, interesting artifacts -- not a portfolio or CV.
+Personal blog / lab notebook. Astro 5 static site with MDX, deployed to GitHub Pages.
 
-## Deployment Workflow (CRITICAL)
+## Deployment
 
-**All work happens on the `staging` branch. Never push directly to `main`.**
+All work happens on `staging`. Never push directly to `main`.
 
-1. Switch to `staging` branch before making changes
+1. Switch to `staging` branch
 2. Make changes, run `npm run build` to verify
-3. Commit and push to `staging`
-4. Changes deploy to staging.gszep.com automatically (~2 minutes)
-5. **ONLY merge `staging` to `main` when the user gives explicit approval**
-6. Merging to `main` triggers production deploy to gszep.com
-
-**Rules:**
-- Always commit and push to `staging` after finishing edits
-- Never leave uncommitted work
-- Never merge to `main` without explicit user approval
-- Never push directly to `main`
-- If the build fails, fix it before moving on
+3. Commit and push to `staging` (deploys to staging.gszep.com)
+4. Only merge to `main` with explicit user approval (deploys to gszep.com)
 
 ## Tech Stack
 
 | Layer | Technology |
 |-------|------------|
-| Framework | Astro 5.x (pinned) |
-| Content | MDX (Markdown + components) |
+| Framework | Astro 5.x |
+| Content | MDX |
 | Styling | Tailwind CSS |
 | Math | KaTeX |
-| Media | MP4 video with autoplay/loop/muted (not GIF) |
+| Media | MP4 video (not GIF) |
 | Deploy | GitHub Pages via GitHub Actions |
-| Domains | staging.gszep.com (staging), gszep.com (production) |
+| Domains | staging.gszep.com / gszep.com |
 
 ## Project Structure
 
 ```
 src/
-  content/
-    blog/
-      en/                  # English MDX posts
-      ja/                  # Japanese MDX posts (matching filenames)
-    config.ts              # Content collection schema
-  lib/
-    posts.ts               # Shared post query helpers
+  content/blog/{en,ja}/    # MDX posts (matching filenames per locale)
+  content/config.ts
+  lib/posts.ts
   components/
-    ui/                    # Static layout components (.astro)
-      Nav.astro            # Navigation bar
-      Footer.astro         # Footer / contact section
-      ProjectCard.astro    # Blog post card (supports img and video)
-      CitationCard.astro   # Publication card
-    interactive/           # Client-side islands (future: WebGPU sims)
+    ui/                    # Layout components (.astro)
+    interactive/           # WebGPU simulations
   layouts/
-    Base.astro             # HTML shell, meta, fonts, staging password gate
-    Page.astro             # Generic page (Nav + Footer)
-    Post.astro             # Blog post layout (Distill theme)
+    Base.astro             # HTML shell, staging password gate
+    Page.astro
+    Post.astro             # Distill-inspired blog layout
   pages/
-    index.astro            # EN Homepage (Blog + Publications + Contact)
-    ja/
-      index.astro          # JA Homepage
-      blog/
-        index.astro        # JA Blog listing
-        [...slug].astro    # JA blog routes
-    blog/
-      index.astro          # EN Blog listing
-      [...slug].astro      # EN blog routes
-  styles/
-    post.css               # Distill-inspired article typography
-  data/
-    site.json              # Site metadata
-    citations.json         # Publications data
-  i18n/
-    utils.ts               # t(), getLangFromUrl(), localizedPath(), getSite()
-    en.json                # English UI strings
-    ja.json                # Japanese UI strings
-scripts/
-  check-i18n.mjs           # Build-time i18n validation
-public/
-  images/                  # Static assets (MP4, PNG, JPG)
-astro.config.mjs           # Astro config
-tailwind.config.mjs        # Tailwind config
-tsconfig.json              # TypeScript config
-package.json               # Node dependencies
+    index.astro
+    ja/{index,blog/}.astro
+    blog/{index,[...slug]}.astro
+  styles/post.css
+  data/{site,citations}.json
+  i18n/{utils.ts,en.json,ja.json}
+scripts/check-i18n.mjs
+public/images/
 ```
 
 ## Content Editing
 
-Most requests are content updates. Key files:
-
-| File | What it controls |
-|------|-----------------|
+| File | Controls |
+|------|----------|
 | `src/content/blog/en/*.mdx` | English blog posts |
-| `src/content/blog/ja/*.mdx` | Japanese blog posts (matching filenames) |
-| `src/data/citations.json` | Publications list |
-| `src/data/site.json` | Site title, author info, social links (has en/ja keys) |
-| `src/i18n/en.json` / `ja.json` | UI string translations |
-| `src/pages/index.astro` | EN Homepage layout |
-| `src/pages/ja/index.astro` | JA Homepage layout |
+| `src/content/blog/ja/*.mdx` | Japanese blog posts |
+| `src/data/citations.json` | Publications |
+| `src/data/site.json` | Site metadata (en/ja keys) |
+| `src/i18n/{en,ja}.json` | UI strings |
+| `src/pages/index.astro` | EN homepage |
+| `src/pages/ja/index.astro` | JA homepage |
 
-Images and videos go in `public/images/` and are referenced as `/images/filename.ext`.
+Assets go in `public/images/`, referenced as `/images/filename.ext`.
 
 ## Adding a Blog Post
 
-Create TWO MDX files with the same filename in `en/` and `ja/`:
+Create matching files in `en/` and `ja/`:
 
 ```mdx
-<!-- src/content/blog/en/my-post.mdx -->
 ---
-title: "My Post Title"
+title: "Post Title"
 date: 2026-02-20
-description: "A short description"
+description: "Short description"
 image: "/images/thumbnail.mp4"
 tags: ["tag1", "tag2"]
 order: 1
 ---
-
-English content here.
 ```
 
-```mdx
-<!-- src/content/blog/ja/my-post.mdx -->
----
-title: "記事タイトル"
-date: 2026-02-20
-description: "短い説明"
-image: "/images/thumbnail.mp4"
-tags: ["tag1", "tag2"]
-order: 1
----
+Required fields: title, description, date. Optional: image, imagePosition, tags, order, draft.
 
-Japanese content here.
-```
+## i18n Rules
 
-Frontmatter fields: title, description, date (required); image, imagePosition, tags, order, draft (optional).
+Folder-per-language: `en/` and `ja/` with matching filenames. Locale derived from folder structure.
 
-No routing config or manifest changes needed. The build-time check (`npm run check-i18n`) will catch missing translations or mismatched shared fields.
+1. Every post must have a counterpart in the other locale
+2. Shared fields identical across pairs: `date`, `image`, `imagePosition`, `order`, `draft`
+3. Tags use English keys in both languages
+4. Only `title`, `description`, and body content differ
+5. Component imports: `../../../components/` (three levels up)
+6. `npm run build` validates i18n automatically
 
-## i18n Content Rules (CRITICAL)
-
-This site uses folder-per-language i18n. Locale is derived from folder structure, NOT frontmatter.
-
-**Structure**: `src/content/blog/en/` and `src/content/blog/ja/` with matching filenames.
-
-**Rules for content changes:**
-1. Every EN post MUST have a JA counterpart with the same filename (and vice versa)
-2. Shared fields MUST be identical across pairs: `date`, `image`, `imagePosition`, `order`, `draft`
-3. Tags use English canonical keys in BOTH languages (e.g., `["art", "science"]`, not `["アート", "サイエンス"]`)
-4. Only `title`, `description`, and body content are translated
-5. Component imports in MDX use `../../../components/` (three levels up from `en/` or `ja/`)
-6. Run `npm run check-i18n` to validate sync before committing
-7. The build (`npm run build`) runs the i18n check automatically
-
-**Page template pairs that must stay in sync:**
-These page files are near-identical between EN and JA, differing only in `const lang` value and import path depth. When changing layout or structure in one, mirror the change to its counterpart:
+Page template pairs (differ only in `const lang` and import depth):
 - `src/pages/index.astro` <-> `src/pages/ja/index.astro`
 - `src/pages/blog/index.astro` <-> `src/pages/ja/blog/index.astro`
 - `src/pages/blog/[...slug].astro` <-> `src/pages/ja/blog/[...slug].astro`
 
-Note: `check-i18n` only validates blog content pairs, NOT page templates. Template desync must be caught by reviewing both files.
+## Media
 
-**When editing a post:** Always edit BOTH `en/` and `ja/` versions. If changing a shared field (date, image, order), change it in both files.
-
-**When creating a new post:** Create both `en/` and `ja/` files simultaneously. The build will fail if one is missing.
-
-## Media Format
-
-Animated content uses MP4 video, not GIF. This reduces file sizes by ~96%.
-
-- **In blog posts**: Use `<video autoplay loop muted playsinline src="/images/file.mp4"></video>`
-- **In frontmatter**: Set `image: "/images/thumbnail.mp4"` -- ProjectCard auto-detects MP4 and renders `<video>`
-- **Static images**: Use standard `<img>` tags with PNG/JPG
+MP4 for animation, not GIF.
+- Blog posts: `<video autoplay loop muted playsinline src="/images/file.mp4"></video>`
+- Frontmatter: `image: "/images/thumbnail.mp4"` (ProjectCard auto-detects)
 
 ## Blog Post Layout
 
-Blog posts use a Distill.pub-inspired editorial layout (inline in `[...slug].astro`):
-- White background with dark text
-- 700px text column for optimal readability
-- Figures break wider than text (up to 900px)
-- Centered figcaptions with muted color
-- `github-light` syntax highlighting for code blocks
+Distill.pub-inspired: white background, 700px text column, figures break to 900px, `github-light` syntax highlighting.
 
 ## Staging Password Gate
 
-The staging site at staging.gszep.com has a client-side password gate.
-Production (gszep.com) and localhost are not affected.
-The gate is implemented in `src/layouts/Base.astro`.
+staging.gszep.com has a client-side password gate (in `Base.astro`). Production and localhost unaffected.
 
-## Development Commands
+## Development
 
 ```bash
-npm install               # Install dependencies
-npm run dev               # Dev server at http://localhost:4321
-npm run build             # Production build (output to dist/)
-npm run preview           # Preview production build
+npm run dev       # localhost:4321
+npm run build     # Production build (validates i18n)
+npm run preview   # Preview build
 ```
 
-## Framework Constraints
+## Constraints
 
-- **Pin Astro to 5.x** -- do not upgrade to v6 until it stabilizes
-- **No Svelte** -- LLMs mix Svelte 4 and 5 syntax
-- **No exotic Astro features** -- no middleware, no SSR, no view transitions
-- **Minimal Content Collections config** -- simple frontmatter schemas only
-- **`.astro` files for layout only** -- no complex logic
-
-## Rules
-
-1. Always read files before editing -- understand structure first
-2. Run `npm run build` to validate before committing
-3. Commit frequently with small, atomic changes
-4. Always push to the `staging` branch
-5. **Never merge to `main` without explicit user approval**
-6. Images/videos go in `public/images/` -- referenced as `/images/filename.ext`
-7. Use MP4 for animated content, not GIF
+- Pin Astro 5.x, no Svelte
+- No middleware, SSR, or view transitions
+- `.astro` for layout only
+- Read files before editing
+- Build before committing
+- Push to `staging`, never directly to `main`

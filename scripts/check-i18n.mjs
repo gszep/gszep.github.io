@@ -1,15 +1,3 @@
-/**
- * Build-time i18n validation script.
- * Ensures EN/JA content stays in sync.
- *
- * Checks:
- * 1. Every EN post has a JA counterpart (and vice versa)
- * 2. Shared fields (date, image, imagePosition, order) match between pairs
- * 3. Reports orphaned translations
- *
- * Usage: node scripts/check-i18n.mjs
- */
-
 import { readdirSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -38,7 +26,6 @@ function parseFrontmatter(filePath) {
 let errors = 0;
 let warnings = 0;
 
-// Collect files per locale
 const filesByLocale = {};
 for (const locale of LOCALES) {
   const dir = join(CONTENT_DIR, locale);
@@ -50,7 +37,6 @@ for (const locale of LOCALES) {
   }
 }
 
-// Check 1: Every file in each locale has a counterpart
 const allFiles = new Set([...filesByLocale.en, ...filesByLocale.ja]);
 
 for (const file of allFiles) {
@@ -62,7 +48,6 @@ for (const file of allFiles) {
   }
 }
 
-// Check 2: Shared fields match between pairs
 for (const file of allFiles) {
   if (!filesByLocale.en.has(file) || !filesByLocale.ja.has(file)) continue;
 
@@ -81,7 +66,6 @@ for (const file of allFiles) {
     }
   }
 
-  // Check tags match (canonical EN keys in both)
   const enTags = enFm.tags;
   const jaTags = jaFm.tags;
   if (String(enTags) !== String(jaTags)) {
@@ -89,11 +73,9 @@ for (const file of allFiles) {
     warnings++;
   }
 
-  // Check 3: Structural parity in body content
   const enContent = readFileSync(join(CONTENT_DIR, 'en', file), 'utf-8');
   const jaContent = readFileSync(join(CONTENT_DIR, 'ja', file), 'utf-8');
 
-  // Extract body (after frontmatter)
   const getBody = (s) => s.replace(/^---[\s\S]*?\n---\n?/, '');
   const enBody = getBody(enContent);
   const jaBody = getBody(jaContent);
@@ -116,7 +98,6 @@ for (const file of allFiles) {
   }
 }
 
-// Summary
 console.log(`i18n check: ${allFiles.size} posts, ${errors} errors, ${warnings} warnings`);
 
 if (errors > 0) {
