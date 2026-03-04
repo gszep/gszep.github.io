@@ -1,11 +1,3 @@
-/**
- * Abstract base class for WebGPU simulations.
- *
- * Handles the common lifecycle: device init, resize, animation loop,
- * and fullscreen rendering. Subclasses implement GPU pipeline setup,
- * resource allocation, and per-frame compute logic.
- */
-
 import { initWebGPU, resizeCanvas, fullscreenPass } from "./utils";
 
 export interface SimulationOptions {
@@ -19,18 +11,15 @@ export abstract class WebGPUSimulation {
   protected cellSize: number;
   protected interval: number;
 
-  // GPU state
   protected device!: GPUDevice;
   protected ctx!: GPUCanvasContext;
   protected format!: GPUTextureFormat;
   protected gw = 0;
   protected gh = 0;
 
-  // Rendering (subclass must set in buildPipelines/buildResources)
   protected renderPL!: GPURenderPipeline;
   protected renderBG!: GPUBindGroup;
 
-  // Animation
   private raf: number | null = null;
   private last = 0;
   private resizeTimer: ReturnType<typeof setTimeout> | null = null;
@@ -41,12 +30,10 @@ export abstract class WebGPUSimulation {
     this.interval = opts.updateInterval;
   }
 
-  /** Size the canvas pixel buffer. Override to use custom dimensions (e.g. video native res). */
   protected sizeCanvas(): void {
     resizeCanvas(this.canvas);
   }
 
-  /** Initialise WebGPU and begin the simulation loop. Returns false if unsupported. */
   async start(): Promise<boolean> {
     try {
       this.sizeCanvas();
@@ -80,7 +67,6 @@ export abstract class WebGPUSimulation {
     }
   }
 
-  /** Stop the simulation loop. */
   stop(): void {
     if (this.raf !== null) cancelAnimationFrame(this.raf);
     this.raf = null;
@@ -89,7 +75,6 @@ export abstract class WebGPUSimulation {
     this.onStop();
   }
 
-  /** Handle viewport resize: rebuild grid and resources after debounce. */
   handleResize(): void {
     if (this.resizeTimer !== null) clearTimeout(this.resizeTimer);
     this.resizeTimer = setTimeout(() => this.rebuild(), 150);
@@ -111,7 +96,6 @@ export abstract class WebGPUSimulation {
     this.renderFrame();
   }
 
-  /** Render current state without advancing simulation. */
   protected renderFrame(): void {
     const enc = this.device.createCommandEncoder();
     fullscreenPass(
@@ -130,23 +114,10 @@ export abstract class WebGPUSimulation {
     this.frame();
   };
 
-  // ── Subclass hooks ────────────────────────────────────────
-
-  /** Create compute and render pipelines. Called once during start(). */
   protected abstract buildPipelines(): void;
-
-  /** Allocate GPU resources (buffers, textures, bind groups). Called on start and resize. */
   protected abstract buildResources(): void;
-
-  /** Release GPU resources before rebuild. Called on resize before buildResources(). */
   protected abstract destroyResources(): void;
-
-  /** Run one simulation step + render. Called each frame at the configured interval. */
   protected abstract frame(): void;
-
-  /** Optional hook called after buildResources during start(). */
   protected onStart(): void {}
-
-  /** Optional hook called during stop() for cleanup. */
   protected onStop(): void {}
 }

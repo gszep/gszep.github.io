@@ -21,17 +21,11 @@ log = logging.getLogger(__name__)
 config = Config.from_env()
 bot_user_id: str = ""
 
-# Track timestamps of messages the bot has posted, so we can detect
-# thread replies to the bot without requiring an @-mention.
-bot_message_timestamps: set[str] = set()
-
 app = AsyncApp(token=config.slack_bot_token)
 
-session = ClaudeSession(
-    repo_dir=config.repo_dir,
-    model=config.claude_model,
-    staging_url=config.staging_url,
-)
+# Map from Slack thread_ts to Claude session.
+# Each thread gets its own independent session.
+sessions: dict[str, ClaudeSession] = {}
 
 
 # -- Helpers ------------------------------------------------------------------
@@ -140,16 +134,28 @@ async def handle_message(event, client, say):
     text = (event.get("text") or "").strip()
     files = event.get("files", [])
     thread_ts = event.get("thread_ts")  # set if this is a thread reply
+    ts = event["ts"]
 
     if not text and not files:
         return
 
-    # Determine if the bot should respond:
-    # (a) Message contains an explicit @-mention of the bot
-    # (b) Message is a thread reply to one of the bot's messages
     has_mention = bot_user_id and f"<@{bot_user_id}>" in text
-    is_reply_to_bot = thread_ts is not None and thread_ts in bot_message_timestamps
-    if not has_mention and not is_reply_to_bot:
+
+    # Route to the correct session:
+    # 1. Reply in a tracked bot thread -> continue that session
+    # 2. @-mention (main chat or untracked thread) -> start new session
+    if thread_ts and thread_ts in sessions:
+        thread_key = thread_ts
+        session = sessions[thread_key]
+    elif has_mention:
+        thread_key = thread_ts or ts
+        session = ClaudeSession(
+            repo_dir=config.repo_dir,
+            model=config.claude_model,
+            staging_url=config.staging_url,
+        )
+        sessions[thread_key] = session
+    else:
         return
 
     # Strip the @-mention from text before forwarding to Claude
@@ -158,13 +164,11 @@ async def handle_message(event, client, say):
 
     user_id = event.get("user", "unknown")
     channel = event["channel"]
-    ts = event["ts"]
 
-    # If the message is in a thread, respond in the thread.
-    # Otherwise respond at the channel top level.
-    reply_ts = thread_ts  # None for top-level messages
+    # Always reply in the session's thread
+    reply_ts = thread_key
 
-    # If Claude is already working, let the user know
+    # If this session is busy, let the user know
     if session.busy:
         await react(client, channel, ts, "hourglass")
         await say(
@@ -204,13 +208,9 @@ async def handle_message(event, client, say):
 
         # Format and post -- respond in thread if applicable
         formatted = truncate(to_slack_mrkdwn(response))
-        resp = await client.chat_postMessage(
+        await client.chat_postMessage(
             channel=channel, text=formatted, thread_ts=reply_ts
         )
-
-        # Track the bot's response so thread replies are recognised
-        if resp and resp.get("ts"):
-            bot_message_timestamps.add(resp["ts"])
 
         await react(
             client, channel, ts, "white_check_mark", remove="hourglass_flowing_sand"
@@ -232,11 +232,16 @@ async def handle_message(event, client, say):
 @app.command("/new")
 async def handle_new(ack, respond):
     await ack()
-    old_id = session.reset()
-    if old_id:
-        await respond(f"Session ended (`{old_id[:8]}...`). Starting fresh.")
+    count = len(sessions)
+    sessions.clear()
+    if count:
+        await respond(
+            f"Cleared {count} session(s). Start a new conversation by @-mentioning me."
+        )
     else:
-        await respond("No active session. Ready for a new conversation.")
+        await respond(
+            "No active sessions. Start a new conversation by @-mentioning me."
+        )
 
 
 @app.command("/approve")
@@ -289,15 +294,17 @@ async def handle_approve(ack, respond, command):
 @app.command("/current")
 async def handle_current(ack, respond):
     await ack()
-    sid = session.session_id
-    busy = "(busy)" if session.busy else "(idle)"
-    if sid:
+    count = len(sessions)
+    busy = sum(1 for s in sessions.values() if s.busy)
+    if count:
         await respond(
-            f"Active session: `{sid[:12]}...` {busy}\nStaging: {config.staging_url}"
+            f"{count} active session(s), {busy} busy.\n"
+            f"Each thread has its own session. @-mention me to start a new one.\n"
+            f"Staging: {config.staging_url}"
         )
     else:
         await respond(
-            f"No active session. Send a message to start one.\n"
+            f"No active sessions. @-mention me to start a conversation.\n"
             f"Staging: {config.staging_url}"
         )
 

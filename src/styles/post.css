@@ -1,7 +1,3 @@
-/* ===================================
-   Theme color definitions
-   =================================== */
-
 :root {
   --post-text: #353535;
   --post-heading: #1a1a1a;
@@ -33,10 +29,6 @@
   --post-aside-text: #a3a3a3;
   --post-separator: #404040;
 }
-
-/* ===================================
-   Distill-inspired content width system
-   =================================== */
 
 .l-body {
   max-width: 700px;
@@ -71,10 +63,6 @@
   margin-left: -50vw;
   margin-right: -50vw;
 }
-
-/* ===================================
-   Post typography
-   =================================== */
 
 .post-content {
   color: var(--post-text);
@@ -117,10 +105,6 @@
   color: var(--post-link-hover);
 }
 
-/* ===================================
-   Code
-   =================================== */
-
 .post-content code {
   background: var(--post-code-bg);
   padding: 0.15rem 0.4rem;
@@ -141,16 +125,11 @@
   padding: 0;
 }
 
-/* Shiki dual theme: activate dark colors via class toggle */
 .dark .astro-code,
 .dark .astro-code span {
   color: var(--shiki-dark) !important;
   background-color: var(--shiki-dark-bg) !important;
 }
-
-/* ===================================
-   Blockquotes
-   =================================== */
 
 .post-content blockquote {
   border-left: 3px solid var(--post-blockquote-border);
@@ -158,10 +137,6 @@
   color: var(--post-blockquote-text);
   margin-bottom: 1.25rem;
 }
-
-/* ===================================
-   Lists
-   =================================== */
 
 .post-content ul,
 .post-content ol {
@@ -173,10 +148,6 @@
   margin-bottom: 0.5rem;
 }
 
-/* ===================================
-   Images and figures
-   =================================== */
-
 .post-content img {
   border-radius: 0.25rem;
 }
@@ -186,7 +157,6 @@
   text-align: center;
 }
 
-/* Figures without explicit Distill width class break out to page width */
 .post-content figure:not(.l-body):not(.l-page):not(.l-screen) {
   max-width: 900px;
   position: relative;
@@ -220,16 +190,11 @@
   margin: 0 auto;
 }
 
-/* Standalone images (not in figures) */
 .post-content > p > img {
   display: block;
   margin: 2rem auto;
   max-width: 100%;
 }
-
-/* ===================================
-   Margin notes (Aside component)
-   =================================== */
 
 .aside-container {
   position: relative;
@@ -257,17 +222,9 @@
   }
 }
 
-/* ===================================
-   KaTeX math rendering
-   =================================== */
-
 .post-content .katex {
   color: inherit;
 }
-
-/* ===================================
-   Post separator
-   =================================== */
 
 .post-separator {
   border: none;

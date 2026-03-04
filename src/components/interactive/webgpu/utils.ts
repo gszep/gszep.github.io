@@ -1,16 +1,9 @@
-/**
- * Shared WebGPU utilities for all simulations.
- * Provides device initialization, canvas setup, shader preprocessing,
- * and common render pass helpers.
- */
-
 export interface WebGPUContext {
   device: GPUDevice;
   context: GPUCanvasContext;
   format: GPUTextureFormat;
 }
 
-/** Initialize WebGPU on a canvas. Returns null if unsupported. */
 export async function initWebGPU(
   canvas: HTMLCanvasElement,
 ): Promise<WebGPUContext | null> {
@@ -21,7 +14,6 @@ export async function initWebGPU(
   });
   if (!adapter) return null;
 
-  // Request optional features the shaders may need
   const requiredFeatures: GPUFeatureName[] = [];
   if (adapter.features.has("readonly_and_readwrite_storage_textures" as GPUFeatureName)) {
     requiredFeatures.push("readonly_and_readwrite_storage_textures" as GPUFeatureName);
@@ -37,7 +29,6 @@ export async function initWebGPU(
   return { device, context, format };
 }
 
-/** Resize canvas pixel dimensions to match its CSS display size. */
 export function resizeCanvas(
   canvas: HTMLCanvasElement,
   dpr = Math.min(window.devicePixelRatio, 2),
@@ -47,9 +38,6 @@ export function resizeCanvas(
   canvas.height = Math.round(rect.height * dpr);
 }
 
-// ── Shader preprocessing ────────────────────────────────────────
-
-/** Process #import directives: replaces `#import name` with corresponding include string. */
 export function processShaderIncludes(
   code: string,
   includes: Record<string, string>,
@@ -61,7 +49,6 @@ export function processShaderIncludes(
   });
 }
 
-/** Create shader module with optional #import preprocessing and error logging. */
 export function createShader(
   device: GPUDevice,
   code: string,
@@ -80,27 +67,13 @@ export function createShader(
   return module;
 }
 
-// ── Pointer tracking ───────────────────────────────────────────
-
-/** Simulation-agnostic pointer state in normalized [0,1] canvas coordinates. */
 export interface MouseState {
-  /** X position in [0,1] relative to canvas width. */
   x: number;
-  /** Y position in [0,1] relative to canvas height. */
   y: number;
-  /** Whether a pointer is currently active (mouse button or touch). */
   active: boolean;
-  /** Interaction type: 0=left-click / single touch, 2=right-click / multi-touch. */
   button: number;
 }
 
-/**
- * Tracks mouse and touch input on a canvas element.
- * Returns normalized [0,1] coordinates — simulations map these
- * to their own coordinate systems (grid cells, world units, etc.).
- *
- * Touch: single finger = left-click, two+ fingers = right-click.
- */
 export class MouseTracker {
   readonly state: MouseState = { x: 0, y: 0, active: false, button: 0 };
   private cleanup: (() => void) | null = null;
@@ -112,7 +85,6 @@ export class MouseTracker {
       this.state.y = (clientY - rect.top) / rect.height;
     };
 
-    // ── Mouse ──
     const onMouseMove = (e: MouseEvent) => updatePosition(e.clientX, e.clientY);
     const onMouseDown = (e: MouseEvent) => {
       e.preventDefault();
@@ -123,7 +95,6 @@ export class MouseTracker {
     const onMouseLeave = () => { this.state.active = false; };
     const onContext = (e: Event) => e.preventDefault();
 
-    // ── Touch ──
     const onTouchStart = (e: TouchEvent) => {
       e.preventDefault();
       this.state.active = true;
@@ -169,24 +140,16 @@ export class MouseTracker {
     };
   }
 
-  /** Remove all event listeners. */
   destroy(): void {
     this.cleanup?.();
     this.cleanup = null;
   }
 }
 
-// ── Theme & device detection ────────────────────────────────────────────────
-
-/** Whether the page is in dark mode (checks `<html class="dark">`). */
 export function isDark(): boolean {
   return document.documentElement.classList.contains("dark");
 }
 
-/**
- * Observe dark/light theme changes and call `onChange` when they occur.
- * Returns the MutationObserver for cleanup if needed.
- */
 export function observeTheme(
   onChange: (dark: boolean) => void,
 ): MutationObserver {
@@ -198,14 +161,10 @@ export function observeTheme(
   return obs;
 }
 
-/** Whether the device has a coarse pointer (touch screen). */
 export function isMobile(): boolean {
   return window.matchMedia("(pointer: coarse)").matches;
 }
 
-// ── Render helpers ──────────────────────────────────────────────
-
-/** Execute a fullscreen render pass (3-vertex triangle, no vertex buffer). */
 export function fullscreenPass(
   encoder: GPUCommandEncoder,
   view: GPUTextureView,
