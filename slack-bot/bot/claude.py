@@ -3,6 +3,7 @@
 import asyncio
 import json
 import logging
+import os
 
 log = logging.getLogger(__name__)
 
@@ -79,11 +80,13 @@ class ClaudeSession:
             message[:120],
         )
 
+        env = {k: v for k, v in os.environ.items() if k != "CLAUDECODE"}
         proc = await asyncio.create_subprocess_exec(
             *cmd,
             cwd=self.repo_dir,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
+            env=env,
         )
         stdout, stderr = await proc.communicate()
 
