@@ -8,6 +8,15 @@
   ></canvas>
 </div>
 
+<!-- Fallback for devices without WebGPU -->
+<div id="hero-sim-fallback" class="absolute inset-0 flex items-center justify-center pointer-events-none">
+  <video
+    autoplay loop muted playsinline
+    class="w-full h-full object-cover dark:invert-0 invert"
+    src="/images/hero-fallback.mp4"
+  ></video>
+</div>
+
 <script>
   import { FlameSimulation } from "./webgpu/FlameSimulation";
   import type { SimColors } from "./webgpu/FlameSimulation";
@@ -167,7 +176,7 @@
         return;
       }
 
-      document.getElementById("hero-overlay")?.classList.add("hidden");
+      document.getElementById("hero-sim-fallback")?.remove();
       sizeToTitle();
       new ResizeObserver(() => sizeToTitle()).observe(document.getElementById("hero")!);
       observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
