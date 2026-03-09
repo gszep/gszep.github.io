@@ -99,6 +99,14 @@
       mouseDeciding = false;
     });
 
+    // --- Trackpad: horizontal two-finger scroll rotates ---
+    canvas.addEventListener("wheel", (e: WheelEvent) => {
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        e.preventDefault();
+        sim.theta += e.deltaX * SENSITIVITY * 0.5;
+      }
+    }, { passive: false });
+
     // --- Touch: two-finger horizontal drag rotates ---
     let touchLastMidX = 0;
     let touchRotating = false;
