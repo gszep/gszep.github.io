@@ -8,20 +8,10 @@
   ></canvas>
 </div>
 
-<style>
-  #hero-sim-wrap > :global(.lil-gui) {
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: 50;
-  }
-</style>
-
 <script>
   import { FlameSimulation } from "./webgpu/FlameSimulation";
   import type { SimColors } from "./webgpu/FlameSimulation";
   import { isDark, observeTheme } from "./webgpu/utils";
-  import GUI from "lil-gui";
 
   const LIGHT: SimColors = {
     alive: [0.0, 0.0, 0.0, 1.0],
@@ -63,35 +53,6 @@
       sizeToTitle();
       new ResizeObserver(() => sizeToTitle()).observe(document.getElementById("hero")!);
       observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
-
-      // Tuning GUI (collapsed, top-left corner)
-      const gui = new GUI({ title: "Flame", autoPlace: false });
-      gui.close();
-      document.getElementById("hero-sim-wrap")!.appendChild(gui.domElement);
-
-      gui.add(sim.tuning, "detail", 16, 96, 8).name("detail");
-      gui.add(sim.tuning, "buoyancy", 0.01, 0.15, 0.005).name("buoyancy");
-      gui.add(sim.tuning, "heatRate", 0.05, 4.0, 0.05).name("heat rate");
-      gui.add(sim.tuning, "sourceRadius", 0.02, 0.3, 0.01).name("source size");
-      gui.add(sim.tuning, "turbulence", 0.0, 1.0, 0.01).name("turbulence");
-      gui.add(sim.tuning, "densityScale", 1.0, 40.0, 0.5).name("density");
-
-      const gol = gui.addFolder("Game of Life");
-      gol.add(sim.tuning, "golThreshold", 0.0, 0.5, 0.01).name("threshold");
-      gol.add(sim.tuning, "golTickRate", 0.1, 2.0, 0.1).name("tick rate");
-      gol.add(sim.tuning, "golPixelScaleMax", 1.0, 8.0, 0.5).name("pixel scale");
-
-      // Space bar copies current tuning values to clipboard
-      window.addEventListener("keydown", (e) => {
-        if (e.code === "Space" && !e.repeat) {
-          e.preventDefault();
-          const snapshot = JSON.stringify(sim.tuning, null, 2);
-          navigator.clipboard.writeText(snapshot).then(() => {
-            gui.title("Copied!");
-            setTimeout(() => gui.title("Flame"), 800);
-          });
-        }
-      });
     });
   }
 </script>

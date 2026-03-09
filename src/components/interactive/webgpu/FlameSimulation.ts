@@ -147,7 +147,7 @@ export class FlameSimulation extends WebGPUSimulation {
     heatRate: 2.1,
     sourceRadius: 0.02,
     turbulence: 0,
-    densityScale: 40,
+    densityScale: 10,
     golThreshold: 0.05,
     golTransition: 0,
     golTickRate: 0.1,
@@ -236,8 +236,22 @@ export class FlameSimulation extends WebGPUSimulation {
       });
       this.golBuf = this.device.createBuffer({
         size: this.golN * this.golN * 4,
-        usage: GPUBufferUsage.STORAGE,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
       });
+
+      // Seed GoL with random alive cells near the flame source (center)
+      const golData = new Uint32Array(this.golN * this.golN);
+      const cx = this.golN / 2;
+      const seedR = this.golN * 0.15;
+      for (let z = 0; z < this.golN; z++) {
+        for (let x = 0; x < this.golN; x++) {
+          const dx = x - cx, dz = z - cx;
+          if (dx * dx + dz * dz < seedR * seedR && Math.random() < 0.07) {
+            golData[z * this.golN + x] = 1;
+          }
+        }
+      }
+      this.device.queue.writeBuffer(this.golBuf, 0, golData);
 
       const simEntries = [
         { binding: 0, resource: { buffer: this.distBuf } },
@@ -332,7 +346,7 @@ export class FlameSimulation extends WebGPUSimulation {
     const NY = N * 2;
     const wg = Math.ceil(N / 4);
     const wgY = Math.ceil(NY / 4);
-    const steps = 8;
+    const steps = 4;
     const enc = this.device.createCommandEncoder();
 
     for (let s = 0; s < steps; s++) {
