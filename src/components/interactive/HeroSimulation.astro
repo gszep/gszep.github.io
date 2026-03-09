@@ -4,7 +4,6 @@
 <div id="hero-sim-wrap" class="absolute inset-0 flex items-center justify-center">
   <canvas
     id="hero-sim"
-    class="touch-none"
   ></canvas>
 </div>
 
@@ -43,30 +42,56 @@
       sim.handleResize();
     }
 
-    // Drag-to-rotate (vertical axis only)
-    let dragging = false;
+    // Horizontal drag rotates the camera; vertical movement scrolls the page.
+    // On touch, we wait for a small movement to decide direction. If the gesture
+    // is mostly horizontal we capture the pointer and rotate; otherwise we let
+    // the browser handle scrolling.
+    let rotating = false;
+    let deciding = false;
+    let startX = 0;
+    let startY = 0;
     let lastX = 0;
     const SENSITIVITY = 0.004;
+    const THRESHOLD = 5; // px before we commit to rotate vs scroll
 
     canvas.addEventListener("pointerdown", (e: PointerEvent) => {
-      dragging = true;
+      deciding = true;
+      rotating = false;
+      startX = e.clientX;
+      startY = e.clientY;
       lastX = e.clientX;
-      canvas.setPointerCapture(e.pointerId);
     });
 
     canvas.addEventListener("pointermove", (e: PointerEvent) => {
-      if (!dragging) return;
+      if (!deciding && !rotating) return;
+
+      if (deciding) {
+        const dx = Math.abs(e.clientX - startX);
+        const dy = Math.abs(e.clientY - startY);
+        if (dx < THRESHOLD && dy < THRESHOLD) return;
+        if (dx > dy) {
+          rotating = true;
+          deciding = false;
+          canvas.setPointerCapture(e.pointerId);
+        } else {
+          deciding = false;
+          return;
+        }
+      }
+
       sim.theta += (e.clientX - lastX) * SENSITIVITY;
       lastX = e.clientX;
     });
 
     canvas.addEventListener("pointerup", (e: PointerEvent) => {
-      dragging = false;
-      canvas.releasePointerCapture(e.pointerId);
+      if (rotating) canvas.releasePointerCapture(e.pointerId);
+      rotating = false;
+      deciding = false;
     });
 
-    canvas.addEventListener("pointercancel", (e: PointerEvent) => {
-      dragging = false;
+    canvas.addEventListener("pointercancel", () => {
+      rotating = false;
+      deciding = false;
     });
 
     sim.start().then((ok) => {
