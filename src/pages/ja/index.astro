@@ -25,9 +25,24 @@ const posts = await getPostsByLocale(lang);
     <HeroSimulation />
     <div class="px-4 relative z-10">
       <h1 id="hero-title" class="font-bold tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
-        {site.title}
+        <span id="hero-left" class="inline-block transition-transform duration-[12000ms] ease-linear">grisha</span><span id="hero-right" class="inline-block transition-transform duration-[12000ms] ease-linear">.log</span>
       </h1>
     </div>
+    <script>
+      setTimeout(() => {
+        const left = document.getElementById('hero-left');
+        const right = document.getElementById('hero-right');
+        if (!left || !right) return;
+        const isMobile = window.innerWidth < 768;
+        if (isMobile) {
+          left.style.transform = 'translateY(-30vh)';
+          right.style.transform = 'translateY(40vh)';
+        } else {
+          left.style.transform = 'translateX(-20vw)';
+          right.style.transform = 'translateX(20vw)';
+        }
+      }, window.innerWidth < 768 ? 10000 : 30000);
+    </script>
   </section>
 
   <!-- Posts -->
