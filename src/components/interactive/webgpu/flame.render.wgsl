@@ -120,18 +120,26 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   var color = mix(rp.dead.rgb, rp.alive.rgb, smoke_alpha);
 
   // 2D GoL overlay on top half — alive cells opaque, dead cells transparent
+  // Use square pixels: row count from y, column count derived from aspect ratio
   if (in.uv.y > 0.5 && gol_n > 0u) {
     let gol_uv = vec2f(in.uv.x, (in.uv.y - 0.5) * 2.0);
-    let coarse_n = f32(gol_n) * 0.25;
-    let qx = floor(gol_uv.x * coarse_n) / coarse_n;
-    let qz = floor(gol_uv.y * coarse_n) / coarse_n;
+    let res = rp.params.xy;
+    let aspect = res.x / (res.y * 0.5); // aspect ratio of top half
+    let rows = f32(gol_n) * 0.25;
+    let cols = rows * aspect;
+
+    let cx = u32(floor(gol_uv.x * cols));
+    let cz = u32(floor(gol_uv.y * rows));
+    let cn_x = u32(cols);
+    let cn_z = u32(rows);
+
+    // Map coarse cell back to gol grid indices
+    let qx = floor(gol_uv.x * cols) / cols;
+    let qz = floor(gol_uv.y * rows) / rows;
     let gx = u32(clamp(qx * f32(gol_n), 0.0, f32(gol_n) - 1.0));
     let gz = u32(clamp(qz * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-    // Edge of the GoL region — first/last row or column of coarse pixels
-    let cx = u32(floor(gol_uv.x * coarse_n));
-    let cz = u32(floor(gol_uv.y * coarse_n));
-    let cn = u32(coarse_n);
-    let on_border = cx == 0u || cx >= cn - 1u || cz == 0u || cz >= cn - 1u;
+
+    let on_border = cx == 0u || cx >= cn_x - 1u || cz == 0u || cz >= cn_z - 1u;
 
     let cell = gol[gz * gol_n + gx];
     if (cell == 1u) {
