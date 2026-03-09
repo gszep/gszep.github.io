@@ -122,8 +122,9 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   // 2D GoL overlay on top half — alive cells opaque, dead cells transparent
   if (in.uv.y > 0.5 && gol_n > 0u) {
     let gol_uv = vec2f(in.uv.x, (in.uv.y - 0.5) * 2.0);
-    let gx = u32(clamp(gol_uv.x * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-    let gz = u32(clamp(gol_uv.y * f32(gol_n), 0.0, f32(gol_n) - 1.0));
+    let effective_n = f32(gol_n) * 0.25;
+    let gx = u32(clamp(gol_uv.x * effective_n, 0.0, effective_n - 1.0));
+    let gz = u32(clamp(gol_uv.y * effective_n, 0.0, effective_n - 1.0));
     let cell = gol[gz * gol_n + gx];
     if (cell == 1u) {
       color = rp.alive.rgb;
