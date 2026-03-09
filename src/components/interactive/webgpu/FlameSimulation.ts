@@ -11,6 +11,7 @@ import temperatureSrc from './flame.temperature.wgsl?raw';
 import renderSrc from './flame.render.wgsl?raw';
 import smokeSrc from './flame.smoke.wgsl?raw';
 import golSrc from './flame.gol.wgsl?raw';
+import gol2dSrc from './flame.gol2d.wgsl?raw';
 
 export interface SimColors {
   alive: [number, number, number, number];
@@ -25,9 +26,11 @@ export interface FlameTuning {
   turbulence: number;
   densityScale: number;
   golThreshold: number;
+  golThreshold2D: number;
   golTransition: number;
   golTickRate: number;
   golPixelScaleMax: number;
+  gol2dTickRate: number;
 }
 
 function perspective(fov: number, aspect: number, near: number, far: number): Float32Array {
@@ -115,18 +118,21 @@ export class FlameSimulation extends WebGPUSimulation {
   private renderParamsBuf: GPUBuffer | null = null;
   private swirlBuf: GPUBuffer | null = null;
   private golBuf: GPUBuffer | null = null;
+  private gol2dBuf: GPUBuffer | null = null;
 
   private initPL!: GPUComputePipeline;
   private lbmPL!: GPUComputePipeline;
   private tempPL!: GPUComputePipeline;
   private smokePL!: GPUComputePipeline;
   private golPL!: GPUComputePipeline;
+  private gol2dPL!: GPUComputePipeline;
 
   private initBG!: GPUBindGroup;
   private lbmBG!: GPUBindGroup;
   private tempBG!: GPUBindGroup;
   private smokeBG!: GPUBindGroup;
   private golBG!: GPUBindGroup;
+  private gol2dBG!: GPUBindGroup;
 
   theta = 0;
   private phi = 0.3;
@@ -139,7 +145,10 @@ export class FlameSimulation extends WebGPUSimulation {
   private swirlCPU = new Float32Array(64 * 8);
 
   private golN = 256;
+  private gol2dN = 256;
+  private gol2dMaxCols: number;
   private golTickAccum = 0;
+  private gol2dTickAccum = 0;
 
   tuning: FlameTuning = {
     detail: 72,
@@ -149,8 +158,10 @@ export class FlameSimulation extends WebGPUSimulation {
     turbulence: 0,
     densityScale: 10,
     golThreshold: 0.05,
+    golThreshold2D: 0.8,
     golTransition: 0,
     golTickRate: 0.1,
+    gol2dTickRate: 0.5,
     golPixelScaleMax: 1,
   };
 
@@ -164,8 +175,10 @@ export class FlameSimulation extends WebGPUSimulation {
     if (isMobile()) {
       this.tuning.detail = Math.min(this.tuning.detail, 48);
       this.golN = 128;
+      this.gol2dN = 128;
     }
     this.gridN = this.tuning.detail;
+    this.gol2dMaxCols = this.gol2dN * 4;
     this.colors = config.colors;
     this.marchSteps = this.gridN;
   }
@@ -189,6 +202,7 @@ export class FlameSimulation extends WebGPUSimulation {
     this.tempPL = compute(temperatureSrc);
     this.smokePL = compute(smokeSrc);
     this.golPL = compute(golSrc);
+    this.gol2dPL = compute(gol2dSrc);
 
     const renderModule = createShader(this.device, renderSrc, includes)!;
     this.renderPL = this.device.createRenderPipeline({
@@ -253,6 +267,11 @@ export class FlameSimulation extends WebGPUSimulation {
       }
       this.device.queue.writeBuffer(this.golBuf, 0, golData);
 
+      this.gol2dBuf = this.device.createBuffer({
+        size: this.gol2dMaxCols * this.gol2dN * 4,
+        usage: GPUBufferUsage.STORAGE,
+      });
+
       const simEntries = [
         { binding: 0, resource: { buffer: this.distBuf } },
         { binding: 1, resource: { buffer: this.macroBuf } },
@@ -294,7 +313,6 @@ export class FlameSimulation extends WebGPUSimulation {
           { binding: 2, resource: { buffer: this.simParamsBuf } },
         ],
       });
-
       this.writeSimParams();
       const wg = Math.ceil(N / 4);
       const wgY = Math.ceil(NY / 4);
@@ -318,6 +336,17 @@ export class FlameSimulation extends WebGPUSimulation {
         { binding: 0, resource: { buffer: this.smokeBuf! } },
         { binding: 1, resource: { buffer: this.renderParamsBuf } },
         { binding: 2, resource: { buffer: this.golBuf! } },
+        { binding: 3, resource: { buffer: this.gol2dBuf! } },
+      ],
+    });
+    this.gol2dBG = this.device.createBindGroup({
+      layout: this.gol2dPL.getBindGroupLayout(0),
+      entries: [
+        { binding: 0, resource: { buffer: this.gol2dBuf! } },
+        { binding: 1, resource: { buffer: this.smokeBuf! } },
+        { binding: 2, resource: { buffer: this.simParamsBuf! } },
+        { binding: 3, resource: { buffer: this.renderParamsBuf } },
+        { binding: 4, resource: { buffer: this.golBuf! } },
       ],
     });
     this.writeRenderParams();
@@ -372,6 +401,8 @@ export class FlameSimulation extends WebGPUSimulation {
       cp3.end();
     }
 
+    this.writeRenderParams();
+
     this.golTickAccum += this.tuning.golTickRate;
     while (this.golTickAccum >= 1.0) {
       this.golTickAccum -= 1.0;
@@ -383,7 +414,17 @@ export class FlameSimulation extends WebGPUSimulation {
       golPass.end();
     }
 
-    this.writeRenderParams();
+    this.gol2dTickAccum += this.tuning.gol2dTickRate;
+    while (this.gol2dTickAccum >= 1.0) {
+      this.gol2dTickAccum -= 1.0;
+      const gol2dWgX = Math.ceil(this.gol2dCols / 8);
+      const gol2dWgY = Math.ceil(this.gol2dN / 8);
+      const gol2dPass = enc.beginComputePass();
+      gol2dPass.setPipeline(this.gol2dPL);
+      gol2dPass.setBindGroup(0, this.gol2dBG);
+      gol2dPass.dispatchWorkgroups(gol2dWgX, gol2dWgY);
+      gol2dPass.end();
+    }
 
     fullscreenPass(
       enc,
@@ -412,6 +453,9 @@ export class FlameSimulation extends WebGPUSimulation {
     u[10] = this.golN;
     f[11] = this.tuning.golThreshold;
     f[12] = this.tuning.golTransition;
+    f[13] = this.tuning.golThreshold2D;
+    u[14] = this.gol2dN;
+    u[15] = this.gol2dCols;
     this.device.queue.writeBuffer(this.simParamsBuf!, 0, buf);
   }
 
@@ -449,10 +493,10 @@ export class FlameSimulation extends WebGPUSimulation {
     d[33] = this.tuning.golPixelScaleMax;
     d[34] = volumeH;
     d[35] = NY;
-    d[36] = this.tuning.golThreshold;  // threshold for binarization
-    d[37] = 0;
-    d[38] = 0;
-    d[39] = 0;
+    d[36] = this.tuning.golThreshold;  // threshold for 3D volumetric binarization
+    d[37] = this.tuning.golThreshold2D;  // threshold for 2D screen overlay
+    d[38] = this.gol2dN;
+    d[39] = this.gol2dCols;
 
     this.device.queue.writeBuffer(this.renderParamsBuf!, 0, d);
   }
@@ -509,8 +553,15 @@ export class FlameSimulation extends WebGPUSimulation {
     this.simParamsBuf?.destroy(); this.simParamsBuf = null;
     this.swirlBuf?.destroy(); this.swirlBuf = null;
     this.golBuf?.destroy(); this.golBuf = null;
+    this.gol2dBuf?.destroy(); this.gol2dBuf = null;
     this.swirlCount = 0;
     this.simTime = 0;
+  }
+
+  private get gol2dCols(): number {
+    if (this.canvas.height === 0) return this.gol2dN;
+    const blockPx = this.canvas.height / this.gol2dN;
+    return Math.min(Math.ceil(this.canvas.width / blockPx), this.gol2dMaxCols);
   }
 
   updateColors(c: SimColors): void {

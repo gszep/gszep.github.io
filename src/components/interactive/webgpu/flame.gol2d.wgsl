@@ -1,22 +1,23 @@
-// Volumetric ray marching through the 3D smoke density field,
-// with screen-space Game of Life overlay above transition height.
+// 2D Game of Life for screen-space overlay.
+// Seeded from the same quantized ray march used by the low-res overlay.
 
-#import fullscreen_vertex
+#import flame_params
 
 struct RenderParams {
   inv_view_proj: mat4x4f,
-  camera_pos: vec4f,   // xyz = position, w = f32(grid_size)
+  camera_pos: vec4f,
   alive: vec4f,
   dead: vec4f,
-  params: vec4f,       // xy = resolution, z = density_scale, w = f32(march_steps)
-  gol_params: vec4f,   // x = f32(gol_n), y = pixel_scale_max, z = volume_h, w = f32(grid_ny)
-  gol_rect: vec4f,     // x = threshold_3d, y = threshold_2d, z = f32(gol2d_rows), w = f32(gol2d_cols)
+  params: vec4f,
+  gol_params: vec4f,
+  gol_rect: vec4f,
 }
 
-@group(0) @binding(0) var<storage, read> smoke: array<f32>;
-@group(0) @binding(1) var<uniform> rp: RenderParams;
-@group(0) @binding(2) var<storage, read> gol: array<u32>;
-@group(0) @binding(3) var<storage, read> gol2d: array<u32>;
+@group(0) @binding(0) var<storage, read_write> gol2d: array<u32>;
+@group(0) @binding(1) var<storage, read> smoke: array<f32>;
+@group(0) @binding(2) var<uniform> sp: SimParams;
+@group(0) @binding(3) var<uniform> rp: RenderParams;
+@group(0) @binding(4) var<storage, read> gol: array<u32>;
 
 fn idx3(x: u32, y: u32, z: u32, nx: u32, ny: u32) -> u32 {
   return z * nx * ny + y * nx + x;
@@ -56,11 +57,16 @@ fn intersect_aabb(origin: vec3f, dir: vec3f, bmin: vec3f, bmax: vec3f) -> vec2f 
   return vec2f(max(tmin, 0.0), tmax);
 }
 
-// Ray march with volumetric GoL binarization, returning smoke alpha.
-fn march(uv: vec2f, grid_n: u32, grid_ny: u32, gol_n: u32,
-         density_scale: f32, steps: u32, volume_h: f32, threshold: f32) -> f32 {
+fn march(uv: vec2f) -> f32 {
+  let grid_n = u32(rp.camera_pos.w);
+  let grid_ny = u32(rp.gol_params.w);
+  let density_scale = rp.params.z;
+  let steps = u32(rp.params.w);
+  let gol_n = u32(rp.gol_params.x);
+  let volume_h = rp.gol_params.z;
+  let threshold = rp.gol_rect.x;
   let nf = f32(grid_n);
-  let nyf = f32(grid_ny);
+  let gol_block = nf / f32(gol_n);
 
   let ndc = vec2f(uv.x * 2.0 - 1.0, uv.y * 2.0 - 1.0);
   let clip = rp.inv_view_proj * vec4f(ndc, 1.0, 1.0);
@@ -69,7 +75,6 @@ fn march(uv: vec2f, grid_n: u32, grid_ny: u32, gol_n: u32,
   let ray_dir = normalize(world_pt - ray_origin);
 
   let hit = intersect_aabb(ray_origin, ray_dir, vec3f(0.0), vec3f(1.0, volume_h, 1.0));
-  let gol_block = nf / f32(gol_n);
 
   var smoke_alpha = 0.0;
   if (hit.x < hit.y) {
@@ -78,7 +83,7 @@ fn march(uv: vec2f, grid_n: u32, grid_ny: u32, gol_n: u32,
     for (var i = 0u; i < steps; i++) {
       if (t >= hit.y) { break; }
       let pos = ray_origin + ray_dir * t;
-      let grid_pos = vec3f(pos.x * nf, pos.y / volume_h * nyf, pos.z * nf);
+      let grid_pos = vec3f(pos.x * nf, pos.y / volume_h * f32(grid_ny), pos.z * nf);
 
       var smoke_val = max(sample_smoke(grid_pos, grid_n, grid_ny), 0.0);
 
@@ -95,40 +100,54 @@ fn march(uv: vec2f, grid_n: u32, grid_ny: u32, gol_n: u32,
       if (smoke_alpha > 0.99) { break; }
       t += step_size;
     }
-    smoke_alpha = clamp(smoke_alpha, 0.0, 1.0);
   }
-  return smoke_alpha;
+  return clamp(smoke_alpha, 0.0, 1.0);
 }
 
-@fragment
-fn frag(in: VSOut) -> @location(0) vec4f {
-  let grid_n = u32(rp.camera_pos.w);
-  let grid_ny = u32(rp.gol_params.w);
-  let density_scale = rp.params.z;
-  let steps = u32(rp.params.w);
-  let gol_n = u32(rp.gol_params.x);
-  let volume_h = rp.gol_params.z;
-  let threshold = rp.gol_rect.x;
+@compute @workgroup_size(8, 8)
+fn main(@builtin(global_invocation_id) gid: vec3u) {
+  let id = gid.xy;
+  let cols = sp.gol2d_cols;
+  let rows = sp.gol2d_n;
+  if (id.x >= cols || id.y >= rows) { return; }
 
-  // 1. High-res smoke + volumetric GoL (background)
-  let smooth_alpha = march(in.uv, grid_n, grid_ny, gol_n,
-                           density_scale, steps, volume_h, threshold);
-  let smooth_color = mix(rp.dead.rgb, rp.alive.rgb, smooth_alpha);
+  let ri = i32(rows);
+  let ci = i32(cols);
 
-  // 2. 2D GoL screen overlay
-  let gol2d_rows = u32(rp.gol_rect.z);
-  let gol2d_cols = u32(rp.gol_rect.w);
-  if (gol2d_rows > 0u) {
-    let res = rp.params.xy;
-    let block_px = res.y / f32(gol2d_rows);
-    let pixel = in.uv * res;
-    let cx = u32(floor(pixel.x / block_px));
-    let cy = u32(floor(pixel.y / block_px));
-    if (cx < gol2d_cols && cy < gol2d_rows) {
-      if (gol2d[cy * gol2d_cols + cx] == 1u) {
-        return vec4f(rp.alive.rgb, 1.0);
-      }
+  // Advect: read from 1 cell below to push pattern upward (no Y wrap)
+  let src_y = i32(id.y) - 1;
+  var state = 0u;
+  if (src_y >= 0) {
+    state = gol2d[u32(src_y) * cols + id.x];
+  }
+
+  // Count neighbors around source position (Y clamped at top, X wraps)
+  var neighbors = 0u;
+  for (var dy = -1; dy <= 1; dy++) {
+    for (var dx = -1; dx <= 1; dx++) {
+      if (dx == 0 && dy == 0) { continue; }
+      let ny_idx = src_y + dy;
+      if (ny_idx < 0 || ny_idx >= ri) { continue; }
+      let nx_idx = (i32(id.x) + dx + ci) % ci;
+      neighbors += gol2d[u32(ny_idx) * cols + u32(nx_idx)];
     }
   }
-  return vec4f(smooth_color, 1.0);
+
+  // B3/S23 rules — top row absorbs (no wrapping)
+  var alive = (state == 1u && (neighbors == 2u || neighbors == 3u))
+           || (state == 0u && neighbors == 3u);
+  if (id.y == rows - 1u) { alive = false; }
+
+  // Seed from screen-space quantized march
+  let res = rp.params.xy;
+  let block_px = res.y / f32(rows);
+  let block_uv = vec2f(block_px / res.x, block_px / res.y);
+  let uv = (vec2f(f32(id.x), f32(id.y)) + 0.5) * block_uv;
+
+  let alpha = march(uv);
+  if (alpha > sp.gol_threshold_2d) {
+    alive = true;
+  }
+
+  gol2d[id.y * cols + id.x] = select(0u, 1u, alive);
 }

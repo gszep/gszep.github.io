@@ -14,4 +14,7 @@ struct SimParams {
   gol_n: u32,          // Game of Life grid size
   gol_threshold: f32,  // smoke density threshold for GoL cell birth
   gol_transition: f32, // height fraction where smoke→GoL transition begins
+  gol_threshold_2d: f32, // smoke threshold for 2D overlay GoL seeding
+  gol2d_n: u32,        // 2D overlay GoL grid rows (height)
+  gol2d_cols: u32,     // 2D overlay GoL grid columns (width)
 }

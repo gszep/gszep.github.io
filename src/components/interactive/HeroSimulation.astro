@@ -31,12 +31,11 @@
       colors: isDark() ? DARK : LIGHT,
     });
 
-    // Size canvas to title width x hero height
+    // Size canvas to hero section
     function sizeToTitle() {
-      const title = document.getElementById("hero-title");
       const hero = document.getElementById("hero");
-      if (!title || !hero) return;
-      const w = title.offsetWidth;
+      if (!hero) return;
+      const w = hero.offsetWidth;
       const h = hero.offsetHeight;
       canvas.style.width = w + "px";
       canvas.style.height = h + "px";
