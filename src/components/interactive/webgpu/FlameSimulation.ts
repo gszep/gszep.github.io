@@ -167,7 +167,7 @@ export class FlameSimulation extends WebGPUSimulation {
     }
     this.gridN = this.tuning.detail;
     this.colors = config.colors;
-    this.marchSteps = this.gridN * 2;
+    this.marchSteps = this.gridN;
   }
 
   buildPipelines(): void {
@@ -332,7 +332,7 @@ export class FlameSimulation extends WebGPUSimulation {
     const targetN = Math.round(this.tuning.detail);
     if (targetN !== this.gridN) {
       this.gridN = targetN;
-      this.marchSteps = targetN * 2;
+      this.marchSteps = targetN;
       this.destroySimBuffers();
       this.buildResources();
     }
