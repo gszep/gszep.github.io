@@ -9,6 +9,8 @@ import initSrc from './flame.init.wgsl?raw';
 import lbmSrc from './flame.lbm.wgsl?raw';
 import temperatureSrc from './flame.temperature.wgsl?raw';
 import renderSrc from './flame.render.wgsl?raw';
+import smokeSrc from './flame.smoke.wgsl?raw';
+import golSrc from './flame.gol.wgsl?raw';
 
 export interface SimColors {
   alive: [number, number, number, number];
@@ -16,15 +18,16 @@ export interface SimColors {
 }
 
 export interface FlameTuning {
-  tau: number;
+  detail: number;
   buoyancy: number;
   heatRate: number;
-  cooling: number;
   sourceRadius: number;
-  sourceJitter: number;
   turbulence: number;
-  substeps: number;
   densityScale: number;
+  golThreshold: number;
+  golTransition: number;
+  golTickRate: number;
+  golPixelScaleMax: number;
 }
 
 function perspective(fov: number, aspect: number, near: number, far: number): Float32Array {
@@ -107,38 +110,48 @@ export class FlameSimulation extends WebGPUSimulation {
   private distBuf: GPUBuffer | null = null;
   private macroBuf: GPUBuffer | null = null;
   private tempBuf: GPUBuffer | null = null;
+  private smokeBuf: GPUBuffer | null = null;
   private simParamsBuf: GPUBuffer | null = null;
   private renderParamsBuf: GPUBuffer | null = null;
+  private swirlBuf: GPUBuffer | null = null;
+  private golBuf: GPUBuffer | null = null;
 
   private initPL!: GPUComputePipeline;
   private lbmPL!: GPUComputePipeline;
   private tempPL!: GPUComputePipeline;
+  private smokePL!: GPUComputePipeline;
+  private golPL!: GPUComputePipeline;
 
   private initBG!: GPUBindGroup;
   private lbmBG!: GPUBindGroup;
   private tempBG!: GPUBindGroup;
+  private smokeBG!: GPUBindGroup;
+  private golBG!: GPUBindGroup;
 
   private theta = 0;
   private phi = 0.3;
   private radius = 2.5;
-  private target = [0.5, 0.3, 0.5];
-
-  private pointers = new Map<number, { x: number; y: number }>();
-  private lastPinchDist = 0;
 
   private simTime = 0;
   private marchSteps: number;
 
+  private swirlCount = 0;
+  private swirlCPU = new Float32Array(64 * 8);
+
+  private golN = 256;
+  private golTickAccum = 0;
+
   tuning: FlameTuning = {
-    tau: 0.54,
-    buoyancy: 0.03,
-    heatRate: 0.8,
-    cooling: 0.995,
+    detail: 72,
+    buoyancy: 0.105,
+    heatRate: 2.1,
     sourceRadius: 0.02,
-    sourceJitter: 0.005,
-    turbulence: 0.03,
-    substeps: 4,
-    densityScale: 12.0,
+    turbulence: 0,
+    densityScale: 40,
+    golThreshold: 0.05,
+    golTransition: 0,
+    golTickRate: 0.1,
+    golPixelScaleMax: 1,
   };
 
   constructor(config: { canvas: HTMLCanvasElement; gridSize?: number; colors: SimColors }) {
@@ -147,9 +160,14 @@ export class FlameSimulation extends WebGPUSimulation {
       cellSize: 1,
       updateInterval: 0,
     } as any);
-    this.gridN = config.gridSize ?? (isMobile() ? 32 : 48);
+    if (config.gridSize) this.tuning.detail = config.gridSize;
+    if (isMobile()) {
+      this.tuning.detail = Math.min(this.tuning.detail, 48);
+      this.golN = 128;
+    }
+    this.gridN = this.tuning.detail;
     this.colors = config.colors;
-    this.marchSteps = isMobile() ? 32 : 48;
+    this.marchSteps = this.gridN * 2;
   }
 
   buildPipelines(): void {
@@ -169,6 +187,8 @@ export class FlameSimulation extends WebGPUSimulation {
     this.initPL = compute(initSrc);
     this.lbmPL = compute(lbmSrc);
     this.tempPL = compute(temperatureSrc);
+    this.smokePL = compute(smokeSrc);
+    this.golPL = compute(golSrc);
 
     const renderModule = createShader(this.device, renderSrc, includes)!;
     this.renderPL = this.device.createRenderPipeline({
@@ -185,7 +205,8 @@ export class FlameSimulation extends WebGPUSimulation {
 
   buildResources(): void {
     const N = this.gridN;
-    const total = N * N * N;
+    const NY = N * 2;
+    const total = N * NY * N;
     const firstBuild = !this.distBuf;
 
     if (firstBuild) {
@@ -201,9 +222,21 @@ export class FlameSimulation extends WebGPUSimulation {
         size: total * 4,
         usage: GPUBufferUsage.STORAGE,
       });
+      this.smokeBuf = this.device.createBuffer({
+        size: total * 4,
+        usage: GPUBufferUsage.STORAGE,
+      });
       this.simParamsBuf = this.device.createBuffer({
-        size: 48,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+      this.swirlBuf = this.device.createBuffer({
+        size: 64 * 32,
+        usage: GPUBufferUsage.STORAGE | GPUBufferUsage.COPY_DST,
+      });
+      this.golBuf = this.device.createBuffer({
+        size: this.golN * this.golN * 4,
+        usage: GPUBufferUsage.STORAGE,
       });
 
       const simEntries = [
@@ -218,7 +251,10 @@ export class FlameSimulation extends WebGPUSimulation {
       });
       this.lbmBG = this.device.createBindGroup({
         layout: this.lbmPL.getBindGroupLayout(0),
-        entries: simEntries,
+        entries: [
+          ...simEntries,
+          { binding: 4, resource: { buffer: this.swirlBuf! } },
+        ],
       });
       this.tempBG = this.device.createBindGroup({
         layout: this.tempPL.getBindGroupLayout(0),
@@ -228,28 +264,46 @@ export class FlameSimulation extends WebGPUSimulation {
           { binding: 2, resource: { buffer: this.simParamsBuf } },
         ],
       });
+      this.smokeBG = this.device.createBindGroup({
+        layout: this.smokePL.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: this.smokeBuf } },
+          { binding: 1, resource: { buffer: this.macroBuf } },
+          { binding: 2, resource: { buffer: this.simParamsBuf } },
+        ],
+      });
+      this.golBG = this.device.createBindGroup({
+        layout: this.golPL.getBindGroupLayout(0),
+        entries: [
+          { binding: 0, resource: { buffer: this.golBuf! } },
+          { binding: 1, resource: { buffer: this.smokeBuf } },
+          { binding: 2, resource: { buffer: this.simParamsBuf } },
+        ],
+      });
 
       this.writeSimParams();
       const wg = Math.ceil(N / 4);
+      const wgY = Math.ceil(NY / 4);
       const enc = this.device.createCommandEncoder();
       const pass = enc.beginComputePass();
       pass.setPipeline(this.initPL);
       pass.setBindGroup(0, this.initBG);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wg, wgY, wg);
       pass.end();
       this.device.queue.submit([enc.finish()]);
     }
 
     this.renderParamsBuf?.destroy();
     this.renderParamsBuf = this.device.createBuffer({
-      size: 128,
+      size: 160,
       usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
     });
     this.renderBG = this.device.createBindGroup({
       layout: (this.renderPL as GPURenderPipeline).getBindGroupLayout(0),
       entries: [
-        { binding: 0, resource: { buffer: this.tempBuf! } },
+        { binding: 0, resource: { buffer: this.smokeBuf! } },
         { binding: 1, resource: { buffer: this.renderParamsBuf } },
+        { binding: 2, resource: { buffer: this.golBuf! } },
       ],
     });
     this.writeRenderParams();
@@ -261,9 +315,24 @@ export class FlameSimulation extends WebGPUSimulation {
   }
 
   frame(): void {
+    const targetN = Math.round(this.tuning.detail);
+    if (targetN !== this.gridN) {
+      this.gridN = targetN;
+      this.marchSteps = targetN * 2;
+      this.destroySimBuffers();
+      this.buildResources();
+    }
+
+    this.updateSwirls(0.016);
+    if (this.swirlCount > 0) {
+      this.device.queue.writeBuffer(this.swirlBuf!, 0, this.swirlCPU, 0, this.swirlCount * 8);
+    }
+
     const N = this.gridN;
+    const NY = N * 2;
     const wg = Math.ceil(N / 4);
-    const steps = Math.max(1, Math.round(this.tuning.substeps));
+    const wgY = Math.ceil(NY / 4);
+    const steps = 8;
     const enc = this.device.createCommandEncoder();
 
     for (let s = 0; s < steps; s++) {
@@ -273,14 +342,31 @@ export class FlameSimulation extends WebGPUSimulation {
       const cp1 = enc.beginComputePass();
       cp1.setPipeline(this.lbmPL);
       cp1.setBindGroup(0, this.lbmBG);
-      cp1.dispatchWorkgroups(wg, wg, wg);
+      cp1.dispatchWorkgroups(wg, wgY, wg);
       cp1.end();
 
       const cp2 = enc.beginComputePass();
       cp2.setPipeline(this.tempPL);
       cp2.setBindGroup(0, this.tempBG);
-      cp2.dispatchWorkgroups(wg, wg, wg);
+      cp2.dispatchWorkgroups(wg, wgY, wg);
       cp2.end();
+
+      const cp3 = enc.beginComputePass();
+      cp3.setPipeline(this.smokePL);
+      cp3.setBindGroup(0, this.smokeBG);
+      cp3.dispatchWorkgroups(wg, wgY, wg);
+      cp3.end();
+    }
+
+    this.golTickAccum += this.tuning.golTickRate;
+    while (this.golTickAccum >= 1.0) {
+      this.golTickAccum -= 1.0;
+      const golWg = Math.ceil(this.golN / 8);
+      const golPass = enc.beginComputePass();
+      golPass.setPipeline(this.golPL);
+      golPass.setBindGroup(0, this.golBG);
+      golPass.dispatchWorkgroups(golWg, golWg);
+      golPass.end();
     }
 
     this.writeRenderParams();
@@ -296,26 +382,33 @@ export class FlameSimulation extends WebGPUSimulation {
   }
 
   private writeSimParams(): void {
-    const buf = new ArrayBuffer(48);
+    const buf = new ArrayBuffer(64);
     const u = new Uint32Array(buf);
     const f = new Float32Array(buf);
-    const t = this.tuning;
     u[0] = this.gridN;
-    f[1] = t.tau;
-    f[2] = t.buoyancy;
-    f[3] = t.heatRate;
-    f[4] = t.cooling;
-    f[5] = t.sourceRadius;
-    f[6] = t.sourceJitter;
-    f[7] = this.simTime;
-    f[8] = t.turbulence;
+    u[1] = this.gridN * 2;             // ny (height = 2x width)
+    f[2] = 0.51;                       // tau (BGK relaxation)
+    f[3] = this.tuning.buoyancy;
+    f[4] = this.tuning.heatRate;
+    f[5] = 0.95;                       // cooling
+    f[6] = this.tuning.sourceRadius;
+    f[7] = 0.095;                      // source jitter
+    f[8] = this.simTime;
+    u[9] = this.swirlCount;
+    u[10] = this.golN;
+    f[11] = this.tuning.golThreshold;
+    f[12] = this.tuning.golTransition;
     this.device.queue.writeBuffer(this.simParamsBuf!, 0, buf);
   }
 
   private writeRenderParams(): void {
-    const { canvas, gridN, colors, marchSteps, theta, phi, radius, target } = this;
+    const { canvas, gridN, colors, marchSteps, theta, phi, radius } = this;
     const densityScale = this.tuning.densityScale;
     const aspect = canvas.width / canvas.height;
+    // Volume is 1:2 ratio (N wide, 2N tall)
+    const volumeH = 2.0;
+    const NY = gridN * 2;
+    const target = [0.5, volumeH * 0.5, 0.5];
 
     const eye = [
       target[0] + radius * Math.cos(phi) * Math.sin(theta),
@@ -327,7 +420,7 @@ export class FlameSimulation extends WebGPUSimulation {
     const proj = perspective(Math.PI / 3, aspect, 0.01, 10);
     const invVP = mat4Mul(invertView(view), invertPerspective(proj));
 
-    const d = new Float32Array(32);
+    const d = new Float32Array(40);
     d.set(invVP, 0);
     d[16] = eye[0]; d[17] = eye[1]; d[18] = eye[2];
     d[19] = gridN;
@@ -338,81 +431,79 @@ export class FlameSimulation extends WebGPUSimulation {
     d[28] = canvas.width; d[29] = canvas.height;
     d[30] = densityScale;
     d[31] = marchSteps;
+    d[32] = this.golN;
+    d[33] = this.tuning.golPixelScaleMax;
+    d[34] = volumeH;
+    d[35] = NY;
+    d[36] = this.tuning.golThreshold;  // threshold for binarization
+    d[37] = 0;
+    d[38] = 0;
+    d[39] = 0;
 
     this.device.queue.writeBuffer(this.renderParamsBuf!, 0, d);
+  }
+
+  private updateSwirls(dt: number): void {
+    const N = this.gridN;
+    const t = this.tuning;
+
+    // Age, advect, and compact surviving swirls
+    let alive = 0;
+    for (let i = 0; i < this.swirlCount; i++) {
+      const b = i * 8;
+      this.swirlCPU[b + 5] -= dt;
+      if (this.swirlCPU[b + 5] > 0) {
+        // Drift upward with buoyancy + lateral wander
+        this.swirlCPU[b + 1] += t.buoyancy * N * 0.3 * dt;
+        this.swirlCPU[b + 0] += (Math.random() - 0.5) * 0.2;
+        this.swirlCPU[b + 2] += (Math.random() - 0.5) * 0.2;
+        if (alive !== i) {
+          for (let j = 0; j < 8; j++) {
+            this.swirlCPU[alive * 8 + j] = this.swirlCPU[i * 8 + j];
+          }
+        }
+        alive++;
+      }
+    }
+    this.swirlCount = alive;
+
+    // Spawn new swirls on the ring source
+    const rate = t.turbulence * 10;
+    const omega = t.turbulence * 0.04;
+    let toSpawn = Math.floor(rate) + (Math.random() < rate % 1 ? 1 : 0);
+    for (let k = 0; k < toSpawn && this.swirlCount < 64; k++) {
+      const angle = Math.random() * 2 * Math.PI;
+      const ringR = t.sourceRadius * N;
+      const b = this.swirlCount * 8;
+      this.swirlCPU[b + 0] = N * 0.5 + Math.cos(angle) * ringR;
+      this.swirlCPU[b + 1] = 1.0;
+      this.swirlCPU[b + 2] = N * 0.5 + Math.sin(angle) * ringR;
+      this.swirlCPU[b + 3] = (Math.random() < 0.5 ? -1 : 1) * omega;
+      this.swirlCPU[b + 4] = N * 0.12;
+      this.swirlCPU[b + 5] = 0.8 + Math.random() * 0.4;
+      this.swirlCPU[b + 6] = 0;
+      this.swirlCPU[b + 7] = 0;
+      this.swirlCount++;
+    }
+  }
+
+  private destroySimBuffers(): void {
+    this.distBuf?.destroy(); this.distBuf = null;
+    this.macroBuf?.destroy(); this.macroBuf = null;
+    this.tempBuf?.destroy(); this.tempBuf = null;
+    this.smokeBuf?.destroy(); this.smokeBuf = null;
+    this.simParamsBuf?.destroy(); this.simParamsBuf = null;
+    this.swirlBuf?.destroy(); this.swirlBuf = null;
+    this.golBuf?.destroy(); this.golBuf = null;
+    this.swirlCount = 0;
+    this.simTime = 0;
   }
 
   updateColors(c: SimColors): void {
     this.colors = c;
   }
 
-  onStart(): void {
-    this.canvas.style.pointerEvents = 'auto';
-    this.canvas.style.touchAction = 'none';
-    this.canvas.addEventListener('pointerdown', this.onPointerDown);
-    this.canvas.addEventListener('pointermove', this.onPointerMove);
-    this.canvas.addEventListener('pointerup', this.onPointerUp);
-    this.canvas.addEventListener('pointercancel', this.onPointerUp);
-    this.canvas.addEventListener('pointerleave', this.onPointerUp);
-    this.canvas.addEventListener('wheel', this.onWheel, { passive: true });
-  }
+  onStart(): void {}
+  onStop(): void {}
 
-  onStop(): void {
-    this.canvas.style.pointerEvents = '';
-    this.canvas.style.touchAction = '';
-    this.canvas.removeEventListener('pointerdown', this.onPointerDown);
-    this.canvas.removeEventListener('pointermove', this.onPointerMove);
-    this.canvas.removeEventListener('pointerup', this.onPointerUp);
-    this.canvas.removeEventListener('pointercancel', this.onPointerUp);
-    this.canvas.removeEventListener('pointerleave', this.onPointerUp);
-    this.canvas.removeEventListener('wheel', this.onWheel);
-  }
-
-  private onPointerDown = (e: PointerEvent): void => {
-    this.canvas.setPointerCapture(e.pointerId);
-    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-    if (this.pointers.size === 2) {
-      this.lastPinchDist = this.pinchDist();
-    }
-  };
-
-  private onPointerMove = (e: PointerEvent): void => {
-    const prev = this.pointers.get(e.pointerId);
-    if (!prev) return;
-
-    if (this.pointers.size === 1) {
-      this.theta += (e.clientX - prev.x) * 0.005;
-      this.phi = Math.max(
-        -Math.PI / 2 + 0.1,
-        Math.min(Math.PI / 2 - 0.1, this.phi - (e.clientY - prev.y) * 0.005),
-      );
-    } else if (this.pointers.size >= 2) {
-      this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      const dist = this.pinchDist();
-      if (this.lastPinchDist > 0) {
-        this.radius = Math.max(1, Math.min(5, this.radius * (this.lastPinchDist / dist)));
-      }
-      this.lastPinchDist = dist;
-      return;
-    }
-
-    this.pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  };
-
-  private onPointerUp = (e: PointerEvent): void => {
-    this.pointers.delete(e.pointerId);
-    this.lastPinchDist = 0;
-  };
-
-  private onWheel = (e: WheelEvent): void => {
-    this.radius = Math.max(1, Math.min(5, this.radius * (1 + e.deltaY * 0.001)));
-  };
-
-  private pinchDist(): number {
-    const pts = Array.from(this.pointers.values());
-    if (pts.length < 2) return 0;
-    const dx = pts[1].x - pts[0].x;
-    const dy = pts[1].y - pts[0].y;
-    return Math.sqrt(dx * dx + dy * dy);
-  }
 }

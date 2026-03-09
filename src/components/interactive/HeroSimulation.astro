@@ -1,10 +1,10 @@
 ---
 ---
 
-<div id="hero-sim-wrap" class="absolute inset-0 w-full h-full">
+<div id="hero-sim-wrap" class="absolute inset-0 flex items-center justify-center">
   <canvas
     id="hero-sim"
-    class="absolute inset-0 w-full h-full pointer-events-none"
+    class="pointer-events-none"
   ></canvas>
 </div>
 
@@ -41,6 +41,18 @@
       colors: isDark() ? DARK : LIGHT,
     });
 
+    // Size canvas to title width x hero height
+    function sizeToTitle() {
+      const title = document.getElementById("hero-title");
+      const hero = document.getElementById("hero");
+      if (!title || !hero) return;
+      const w = title.offsetWidth;
+      const h = hero.offsetHeight;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      sim.handleResize();
+    }
+
     sim.start().then((ok) => {
       if (!ok) {
         canvas.remove();
@@ -48,7 +60,8 @@
       }
 
       document.getElementById("hero-overlay")?.classList.add("hidden");
-      new ResizeObserver(() => sim.handleResize()).observe(canvas);
+      sizeToTitle();
+      new ResizeObserver(() => sizeToTitle()).observe(document.getElementById("hero")!);
       observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
 
       // Tuning GUI (collapsed, top-left corner)
@@ -56,22 +69,29 @@
       gui.close();
       document.getElementById("hero-sim-wrap")!.appendChild(gui.domElement);
 
-      const flow = gui.addFolder("Flow");
-      flow.add(sim.tuning, "tau", 0.51, 1.0, 0.01).name("viscosity (tau)");
-      flow.add(sim.tuning, "buoyancy", 0.01, 0.15, 0.005).name("buoyancy");
+      gui.add(sim.tuning, "detail", 16, 96, 8).name("detail");
+      gui.add(sim.tuning, "buoyancy", 0.01, 0.15, 0.005).name("buoyancy");
+      gui.add(sim.tuning, "heatRate", 0.05, 4.0, 0.05).name("heat rate");
+      gui.add(sim.tuning, "sourceRadius", 0.02, 0.3, 0.01).name("source size");
+      gui.add(sim.tuning, "turbulence", 0.0, 1.0, 0.01).name("turbulence");
+      gui.add(sim.tuning, "densityScale", 1.0, 40.0, 0.5).name("density");
 
-      const heat = gui.addFolder("Heat");
-      heat.add(sim.tuning, "heatRate", 0.05, 2.0, 0.05).name("fuel rate");
-      heat.add(sim.tuning, "cooling", 0.95, 0.999, 0.001).name("cooling");
-      heat.add(sim.tuning, "sourceRadius", 0.02, 0.3, 0.01).name("source size");
-      heat.add(sim.tuning, "sourceJitter", 0.0, 0.1, 0.005).name("flicker");
+      const gol = gui.addFolder("Game of Life");
+      gol.add(sim.tuning, "golThreshold", 0.0, 0.5, 0.01).name("threshold");
+      gol.add(sim.tuning, "golTickRate", 0.1, 2.0, 0.1).name("tick rate");
+      gol.add(sim.tuning, "golPixelScaleMax", 1.0, 8.0, 0.5).name("pixel scale");
 
-      const turb = gui.addFolder("Turbulence");
-      turb.add(sim.tuning, "turbulence", 0.0, 0.3, 0.005).name("noise strength");
-      turb.add(sim.tuning, "substeps", 1, 8, 1).name("substeps/frame");
-
-      const render = gui.addFolder("Render");
-      render.add(sim.tuning, "densityScale", 1.0, 20.0, 0.5).name("density");
+      // Space bar copies current tuning values to clipboard
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "Space" && !e.repeat) {
+          e.preventDefault();
+          const snapshot = JSON.stringify(sim.tuning, null, 2);
+          navigator.clipboard.writeText(snapshot).then(() => {
+            gui.title("Copied!");
+            setTimeout(() => gui.title("Flame"), 800);
+          });
+        }
+      });
     });
   }
 </script>

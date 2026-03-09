@@ -9,23 +9,26 @@
 @group(0) @binding(1) var<storage, read_write> macro_field: array<vec4f>;
 @group(0) @binding(2) var<storage, read_write> temp: array<f32>;
 @group(0) @binding(3) var<uniform> params: SimParams;
+@group(0) @binding(4) var<storage, read> swirls: array<vec4f>;
 
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) id: vec3u) {
   let n = params.n;
-  if (id.x >= n || id.y >= n || id.z >= n) { return; }
+  let ny = params.ny;
+  if (id.x >= n || id.y >= ny || id.z >= n) { return; }
 
-  let idx = id.z * n * n + id.y * n + id.x;
-  let N = n * n * n;
+  let idx = id.z * n * ny + id.y * n + id.x;
+  let N = n * ny * n;
   let ni = i32(n);
+  let niy = i32(ny);
 
   // --- PULL: gather distributions from upstream neighbors ---
   // For direction q, the distribution arriving here was at (x - e_q)
   // before streaming. Toroidal wrapping on all boundaries.
   var f: array<f32, 19>;
   for (var q = 0u; q < 19u; q++) {
-    let src = (vec3i(id) - E[q] + vec3i(ni)) % vec3i(ni);
-    let src_idx = u32(src.z) * n * n + u32(src.y) * n + u32(src.x);
+    let src = (vec3i(id) - E[q] + vec3i(ni, niy, ni)) % vec3i(ni, niy, ni);
+    let src_idx = u32(src.z) * n * ny + u32(src.y) * n + u32(src.x);
     f[q] = dist[q * N + src_idx];
   }
 
@@ -42,16 +45,27 @@ fn main(@builtin(global_invocation_id) id: vec3u) {
   let t = temp[idx];
   vel.y += params.buoyancy * t;
 
-  // --- Ambient turbulence: background wind / vorticity ---
-  // Applies everywhere (not just hot regions) so ambient drafts
-  // perturb the plume from outside, triggering laminar→turbulent transition
-  let seed = vec3f(id) * 0.1031 + params.time * 7.13;
-  let h = fract(sin(vec3f(
-    dot(seed, vec3f(127.1, 311.7, 74.7)),
-    dot(seed, vec3f(269.5, 183.3, 246.1)),
-    dot(seed, vec3f(113.5, 271.9, 124.6))
-  )) * 43758.5453) * 2.0 - 1.0;
-  vel += params.turbulence * h;
+  // --- Swirl vortices: coherent rotational disturbances ---
+  // Discrete vortex particles spawned at the heat source and advected
+  // by buoyancy. Each imposes solid-body rotation on nearby cells.
+  let pos = vec3f(f32(id.x), f32(id.y), f32(id.z));
+  for (var s = 0u; s < params.num_swirls; s++) {
+    let sp = swirls[s * 2u];       // xyz = position, w = omega
+    let sr = swirls[s * 2u + 1u];  // x = radius
+
+    let dx = pos.x - sp.x;
+    let dz = pos.z - sp.z;
+    let r_xz = sqrt(dx * dx + dz * dz);
+    let dy = abs(pos.y - sp.y);
+
+    let radial = smoothstep(sr.x, 0.0, r_xz);
+    let vertical = smoothstep(sr.x, 0.0, dy);
+    let strength = sp.w * radial * vertical;
+
+    // Solid-body rotation: v_tangential = omega * r
+    vel.x += -dz * strength;
+    vel.z += dx * strength;
+  }
 
   // --- Velocity clamp: ensure LBM stability (Mach < 0.15) ---
   let speed = length(vel);

@@ -11,10 +11,11 @@
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) id: vec3u) {
   let n = params.n;
-  if (id.x >= n || id.y >= n || id.z >= n) { return; }
+  let ny = params.ny;
+  if (id.x >= n || id.y >= ny || id.z >= n) { return; }
 
-  let idx = id.z * n * n + id.y * n + id.x;
-  let N = n * n * n;
+  let idx = id.z * n * ny + id.y * n + id.x;
+  let N = n * ny * n;
 
   // Equilibrium at rest: rho = 1, u = (0, 0, 0)
   for (var q = 0u; q < 19u; q++) {
