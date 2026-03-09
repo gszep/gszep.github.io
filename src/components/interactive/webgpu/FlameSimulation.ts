@@ -450,7 +450,7 @@ export class FlameSimulation extends WebGPUSimulation {
     d[34] = volumeH;
     d[35] = NY;
     d[36] = this.tuning.golThreshold;  // threshold for binarization
-    d[37] = theta;
+    d[37] = 0;
     d[38] = 0;
     d[39] = 0;
 
