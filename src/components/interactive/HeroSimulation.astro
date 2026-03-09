@@ -43,57 +43,84 @@
       sim.handleResize();
     }
 
-    // Horizontal drag rotates the camera; vertical movement scrolls the page.
-    // On touch, we wait for a small movement to decide direction. If the gesture
-    // is mostly horizontal we capture the pointer and rotate; otherwise we let
-    // the browser handle scrolling.
-    let rotating = false;
-    let deciding = false;
-    let startX = 0;
-    let startY = 0;
-    let lastX = 0;
+    // Mouse: horizontal drag rotates camera (with directional threshold).
+    // Touch: two-finger horizontal drag rotates; single finger scrolls normally.
     const SENSITIVITY = 0.004;
-    const THRESHOLD = 5; // px before we commit to rotate vs scroll
+    const THRESHOLD = 5;
+
+    // --- Mouse (pointer events, ignore touch) ---
+    let mouseRotating = false;
+    let mouseDeciding = false;
+    let mouseStartX = 0;
+    let mouseStartY = 0;
+    let mouseLastX = 0;
 
     canvas.addEventListener("pointerdown", (e: PointerEvent) => {
-      deciding = true;
-      rotating = false;
-      startX = e.clientX;
-      startY = e.clientY;
-      lastX = e.clientX;
+      if (e.pointerType === "touch") return;
+      mouseDeciding = true;
+      mouseRotating = false;
+      mouseStartX = e.clientX;
+      mouseStartY = e.clientY;
+      mouseLastX = e.clientX;
     });
 
     canvas.addEventListener("pointermove", (e: PointerEvent) => {
-      if (!deciding && !rotating) return;
+      if (e.pointerType === "touch") return;
+      if (!mouseDeciding && !mouseRotating) return;
 
-      if (deciding) {
-        const dx = Math.abs(e.clientX - startX);
-        const dy = Math.abs(e.clientY - startY);
+      if (mouseDeciding) {
+        const dx = Math.abs(e.clientX - mouseStartX);
+        const dy = Math.abs(e.clientY - mouseStartY);
         if (dx < THRESHOLD && dy < THRESHOLD) return;
         if (dx > dy) {
-          rotating = true;
-          deciding = false;
+          mouseRotating = true;
+          mouseDeciding = false;
           canvas.setPointerCapture(e.pointerId);
         } else {
-          deciding = false;
+          mouseDeciding = false;
           return;
         }
       }
 
-      sim.theta += (e.clientX - lastX) * SENSITIVITY;
-      lastX = e.clientX;
+      sim.theta += (e.clientX - mouseLastX) * SENSITIVITY;
+      mouseLastX = e.clientX;
     });
 
     canvas.addEventListener("pointerup", (e: PointerEvent) => {
-      if (rotating) canvas.releasePointerCapture(e.pointerId);
-      rotating = false;
-      deciding = false;
+      if (e.pointerType === "touch") return;
+      if (mouseRotating) canvas.releasePointerCapture(e.pointerId);
+      mouseRotating = false;
+      mouseDeciding = false;
     });
 
-    canvas.addEventListener("pointercancel", () => {
-      rotating = false;
-      deciding = false;
+    canvas.addEventListener("pointercancel", (e: PointerEvent) => {
+      if (e.pointerType === "touch") return;
+      mouseRotating = false;
+      mouseDeciding = false;
     });
+
+    // --- Touch: two-finger horizontal drag rotates ---
+    let touchLastMidX = 0;
+    let touchRotating = false;
+
+    canvas.addEventListener("touchstart", (e: TouchEvent) => {
+      if (e.touches.length === 2) {
+        touchRotating = true;
+        touchLastMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      }
+    }, { passive: true });
+
+    canvas.addEventListener("touchmove", (e: TouchEvent) => {
+      if (e.touches.length === 2 && touchRotating) {
+        e.preventDefault();
+        const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        sim.theta += (midX - touchLastMidX) * SENSITIVITY;
+        touchLastMidX = midX;
+      }
+    }, { passive: false });
+
+    canvas.addEventListener("touchend", () => { touchRotating = false; });
+    canvas.addEventListener("touchcancel", () => { touchRotating = false; });
 
     sim.start().then((ok) => {
       if (!ok) {
