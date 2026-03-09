@@ -107,14 +107,24 @@
       }
     }, { passive: false });
 
-    // --- Touch: two-finger horizontal drag rotates ---
-    let touchLastMidX = 0;
+    // --- Touch: one-finger horizontal or two-finger horizontal drag rotates ---
+    let touchLastX = 0;
     let touchRotating = false;
+    let touchDeciding = false;
+    let touchStartX = 0;
+    let touchStartY = 0;
 
     canvas.addEventListener("touchstart", (e: TouchEvent) => {
       if (e.touches.length === 2) {
         touchRotating = true;
-        touchLastMidX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+        touchDeciding = false;
+        touchLastX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      } else if (e.touches.length === 1) {
+        touchDeciding = true;
+        touchRotating = false;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+        touchLastX = e.touches[0].clientX;
       }
     }, { passive: true });
 
@@ -122,13 +132,35 @@
       if (e.touches.length === 2 && touchRotating) {
         e.preventDefault();
         const midX = (e.touches[0].clientX + e.touches[1].clientX) / 2;
-        sim.theta += (midX - touchLastMidX) * SENSITIVITY * 3;
-        touchLastMidX = midX;
+        sim.theta += (midX - touchLastX) * SENSITIVITY * 3;
+        touchLastX = midX;
+      } else if (e.touches.length === 1 && (touchDeciding || touchRotating)) {
+        const x = e.touches[0].clientX;
+        if (touchDeciding) {
+          const dx = Math.abs(x - touchStartX);
+          const dy = Math.abs(e.touches[0].clientY - touchStartY);
+          if (dx < THRESHOLD && dy < THRESHOLD) return;
+          if (dx > dy) {
+            touchRotating = true;
+            touchDeciding = false;
+          } else {
+            touchDeciding = false;
+            return;
+          }
+        }
+        sim.theta += (x - touchLastX) * SENSITIVITY * 3;
+        touchLastX = x;
       }
     }, { passive: false });
 
-    canvas.addEventListener("touchend", () => { touchRotating = false; });
-    canvas.addEventListener("touchcancel", () => { touchRotating = false; });
+    canvas.addEventListener("touchend", () => {
+      touchRotating = false;
+      touchDeciding = false;
+    });
+    canvas.addEventListener("touchcancel", () => {
+      touchRotating = false;
+      touchDeciding = false;
+    });
 
     sim.start().then((ok) => {
       if (!ok) {
