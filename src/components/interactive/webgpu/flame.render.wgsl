@@ -132,7 +132,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
     let cx_f = gol_uv.x - 0.5;
     let cz_f = gol_uv.y - 0.5;
     let vol_x = cx_f * ct - cz_f * st + 0.5;
-    let vol_z = -(cx_f * st + cz_f * ct) + 0.5;
+    let vol_z = (cx_f * st + cz_f * ct) + 0.5;
 
     // Skip if rotated coords fall outside the GoL grid
     if (vol_x >= 0.0 && vol_x <= 1.0 && vol_z >= 0.0 && vol_z <= 1.0) {
@@ -152,7 +152,7 @@ fn frag(in: VSOut) -> @location(0) vec4f {
       let qcx = qx_uv - 0.5;
       let qcz = qz_uv - 0.5;
       let qvol_x = qcx * ct - qcz * st + 0.5;
-      let qvol_z = -(qcx * st + qcz * ct) + 0.5;
+      let qvol_z = (qcx * st + qcz * ct) + 0.5;
 
       let gx = u32(clamp(qvol_x * f32(gol_n), 0.0, f32(gol_n) - 1.0));
       let gz = u32(clamp(qvol_z * f32(gol_n), 0.0, f32(gol_n) - 1.0));
