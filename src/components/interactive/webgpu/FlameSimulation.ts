@@ -128,7 +128,7 @@ export class FlameSimulation extends WebGPUSimulation {
   private smokeBG!: GPUBindGroup;
   private golBG!: GPUBindGroup;
 
-  private theta = 0;
+  theta = 0;
   private phi = 0.3;
   private radius = 2.5;
 

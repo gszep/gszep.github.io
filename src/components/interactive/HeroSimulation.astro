@@ -4,7 +4,7 @@
 <div id="hero-sim-wrap" class="absolute inset-0 flex items-center justify-center">
   <canvas
     id="hero-sim"
-    class="pointer-events-none"
+    class="touch-none"
   ></canvas>
 </div>
 
@@ -42,6 +42,32 @@
       canvas.style.height = h + "px";
       sim.handleResize();
     }
+
+    // Drag-to-rotate (vertical axis only)
+    let dragging = false;
+    let lastX = 0;
+    const SENSITIVITY = 0.004;
+
+    canvas.addEventListener("pointerdown", (e: PointerEvent) => {
+      dragging = true;
+      lastX = e.clientX;
+      canvas.setPointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointermove", (e: PointerEvent) => {
+      if (!dragging) return;
+      sim.theta += (e.clientX - lastX) * SENSITIVITY;
+      lastX = e.clientX;
+    });
+
+    canvas.addEventListener("pointerup", (e: PointerEvent) => {
+      dragging = false;
+      canvas.releasePointerCapture(e.pointerId);
+    });
+
+    canvas.addEventListener("pointercancel", (e: PointerEvent) => {
+      dragging = false;
+    });
 
     sim.start().then((ok) => {
       if (!ok) {
