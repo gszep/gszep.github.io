@@ -16,10 +16,8 @@ const switchPath = lang === 'en'
 const homeHref = localizedPath(lang, '/');
 ---
 
-<nav class="fixed top-0 w-full bg-transparent z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
-  <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
-    <a href={homeHref} class="font-bold text-gray-900 dark:text-white text-lg">{site.title}</a>
-
+<nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
+  <div class="max-w-6xl mx-auto px-4 flex items-center justify-end h-16">
     <!-- Desktop nav -->
     <div class="hidden md:flex items-center gap-6 text-sm uppercase tracking-wide">
       <a href={homeHref} data-section="hero" class="nav-link text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300">{t(lang, 'nav.home')}</a>
