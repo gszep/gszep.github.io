@@ -141,8 +141,14 @@ fn frag(in: VSOut) -> @location(0) vec4f {
 
     let on_border = cx == 0u || cx >= cn_x - 1u || cz == 0u || cz >= cn_z - 1u;
 
+    // Only generate alive pixels where smoke has reached the bottom of the GoL region
+    let smoke_x = (f32(gx) + 0.5) / f32(gol_n) * nf;
+    let smoke_z = (f32(gz) + 0.5) / f32(gol_n) * nf;
+    let smoke_y = nyf * 0.5; // bottom of GoL region = volume midpoint
+    let smoke_here = sample_smoke(vec3f(smoke_x, smoke_y, smoke_z), grid_n, grid_ny);
+
     let cell = gol[gz * gol_n + gx];
-    if (cell == 1u) {
+    if (cell == 1u && smoke_here > threshold) {
       color = select(rp.alive.rgb, vec3f(0.2, 0.4, 1.0), on_border);
     } else if (on_border) {
       color = vec3f(0.2, 0.4, 1.0);
