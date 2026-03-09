@@ -127,30 +127,17 @@ fn frag(in: VSOut) -> @location(0) vec4f {
     let qz = floor(gol_uv.y * coarse_n) / coarse_n;
     let gx = u32(clamp(qx * f32(gol_n), 0.0, f32(gol_n) - 1.0));
     let gz = u32(clamp(qz * f32(gol_n), 0.0, f32(gol_n) - 1.0));
+    // Edge of the GoL region — first/last row or column of coarse pixels
+    let cx = u32(floor(gol_uv.x * coarse_n));
+    let cz = u32(floor(gol_uv.y * coarse_n));
+    let cn = u32(coarse_n);
+    let on_border = cx == 0u || cx >= cn - 1u || cz == 0u || cz >= cn - 1u;
+
     let cell = gol[gz * gol_n + gx];
     if (cell == 1u) {
-      // Check if any neighbor is dead — makes this an edge pixel
-      let pixel_size = 1.0 / coarse_n;
-      let fx = fract(gol_uv.x * coarse_n);
-      let fz = fract(gol_uv.y * coarse_n);
-      let edge_w = 0.15; // fraction of pixel that counts as edge
-      let on_edge = fx < edge_w || fx > (1.0 - edge_w) || fz < edge_w || fz > (1.0 - edge_w);
-
-      // Sample 4 cardinal neighbors in the GoL grid
-      let gx_l = u32(clamp((qx - pixel_size) * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-      let gx_r = u32(clamp((qx + pixel_size) * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-      let gz_u = u32(clamp((qz - pixel_size) * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-      let gz_d = u32(clamp((qz + pixel_size) * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-      let has_dead_neighbor = gol[gz * gol_n + gx_l] == 0u
-                           || gol[gz * gol_n + gx_r] == 0u
-                           || gol[gz_u * gol_n + gx] == 0u
-                           || gol[gz_d * gol_n + gx] == 0u;
-
-      if (on_edge && has_dead_neighbor) {
-        color = vec3f(0.2, 0.4, 1.0);
-      } else {
-        color = rp.alive.rgb;
-      }
+      color = select(rp.alive.rgb, vec3f(0.2, 0.4, 1.0), on_border);
+    } else if (on_border) {
+      color = vec3f(0.2, 0.4, 1.0);
     }
   }
 
