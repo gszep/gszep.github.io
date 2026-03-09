@@ -16,7 +16,7 @@ const switchPath = lang === 'en'
 const homeHref = localizedPath(lang, '/');
 ---
 
-<nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
+<nav class="fixed top-0 w-full bg-transparent z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
   <div class="max-w-6xl mx-auto px-4 flex items-center justify-between h-16">
     <a href={homeHref} class="font-bold text-gray-900 dark:text-white text-lg">{site.title}</a>
 
@@ -47,7 +47,7 @@ const homeHref = localizedPath(lang, '/');
   </div>
 
   <!-- Mobile menu -->
-  <div class="hidden md:hidden bg-white dark:bg-black px-4 pb-4" id="nav-menu">
+  <div class="hidden md:hidden bg-white/90 dark:bg-black/90 backdrop-blur px-4 pb-4" id="nav-menu">
     <a href={homeHref} data-section="hero" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.home')}</a>
     <a href={`${homeHref}#blog`} data-section="blog" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.blog')}</a>
     <a href={`${homeHref}#contact`} data-section="contact" class="nav-link block py-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white uppercase text-sm">{t(lang, 'nav.contact')}</a>

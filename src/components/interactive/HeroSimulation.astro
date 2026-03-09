@@ -1,0 +1,58 @@
+---
+---
+
+<div id="hero-sim-wrap" class="absolute inset-0 flex items-center justify-center">
+  <canvas
+    id="hero-sim"
+    class="pointer-events-none"
+  ></canvas>
+</div>
+
+<script>
+  import { FlameSimulation } from "./webgpu/FlameSimulation";
+  import type { SimColors } from "./webgpu/FlameSimulation";
+  import { isDark, observeTheme } from "./webgpu/utils";
+
+  const LIGHT: SimColors = {
+    alive: [0.0, 0.0, 0.0, 1.0],
+    dead: [1.0, 1.0, 1.0, 1.0],
+  };
+
+  const DARK: SimColors = {
+    alive: [1.0, 1.0, 1.0, 1.0],
+    dead: [0.0, 0.0, 0.0, 1.0],
+  };
+
+  const canvas = document.getElementById("hero-sim") as HTMLCanvasElement | null;
+
+  if (canvas) {
+    const sim = new FlameSimulation({
+      canvas,
+      colors: isDark() ? DARK : LIGHT,
+    });
+
+    // Size canvas to title width x hero height
+    function sizeToTitle() {
+      const title = document.getElementById("hero-title");
+      const hero = document.getElementById("hero");
+      if (!title || !hero) return;
+      const w = title.offsetWidth;
+      const h = hero.offsetHeight;
+      canvas.style.width = w + "px";
+      canvas.style.height = h + "px";
+      sim.handleResize();
+    }
+
+    sim.start().then((ok) => {
+      if (!ok) {
+        canvas.remove();
+        return;
+      }
+
+      document.getElementById("hero-overlay")?.classList.add("hidden");
+      sizeToTitle();
+      new ResizeObserver(() => sizeToTitle()).observe(document.getElementById("hero")!);
+      observeTheme(() => sim.updateColors(isDark() ? DARK : LIGHT));
+    });
+  }
+</script>
