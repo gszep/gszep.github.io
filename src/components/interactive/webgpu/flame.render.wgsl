@@ -10,7 +10,7 @@ struct RenderParams {
   dead: vec4f,
   params: vec4f,       // xy = resolution, z = density_scale, w = f32(march_steps)
   gol_params: vec4f,   // x = f32(gol_n), y = pixel_scale_max, z = volume_h, w = f32(grid_ny)
-  gol_rect: vec4f,     // x = threshold, y = unused, z = unused, w = unused
+  gol_rect: vec4f,     // x = threshold, y = theta, z = unused, w = unused
 }
 
 @group(0) @binding(0) var<storage, read> smoke: array<f32>;
@@ -120,38 +120,57 @@ fn frag(in: VSOut) -> @location(0) vec4f {
   var color = mix(rp.dead.rgb, rp.alive.rgb, smoke_alpha);
 
   // 2D GoL overlay on top half — alive cells opaque, dead cells transparent
-  // Use square pixels: row count from y, column count derived from aspect ratio
+  // Rotate UV mapping by camera theta to align with the 3D smoke view.
+  // Screen right → camera right in XZ, screen up → depth away from camera.
   if (in.uv.y > 0.5 && gol_n > 0u) {
     let gol_uv = vec2f(in.uv.x, (in.uv.y - 0.5) * 2.0);
-    let res = rp.params.xy;
-    let aspect = res.x / (res.y * 0.5); // aspect ratio of top half
-    let rows = f32(gol_n) * 0.25;
-    let cols = rows * aspect;
+    let theta = rp.gol_rect.y;
+    let ct = cos(theta);
+    let st = sin(theta);
 
-    let cx = u32(floor(gol_uv.x * cols));
-    let cz = u32(floor(gol_uv.y * rows));
-    let cn_x = u32(cols);
-    let cn_z = u32(rows);
+    // Map screen-space UV to volume XZ via camera rotation
+    let cx_f = gol_uv.x - 0.5;
+    let cz_f = gol_uv.y - 0.5;
+    let vol_x = cx_f * ct - cz_f * st + 0.5;
+    let vol_z = -(cx_f * st + cz_f * ct) + 0.5;
 
-    // Map coarse cell back to gol grid indices
-    let qx = floor(gol_uv.x * cols) / cols;
-    let qz = floor(gol_uv.y * rows) / rows;
-    let gx = u32(clamp(qx * f32(gol_n), 0.0, f32(gol_n) - 1.0));
-    let gz = u32(clamp(qz * f32(gol_n), 0.0, f32(gol_n) - 1.0));
+    // Skip if rotated coords fall outside the GoL grid
+    if (vol_x >= 0.0 && vol_x <= 1.0 && vol_z >= 0.0 && vol_z <= 1.0) {
+      let res = rp.params.xy;
+      let aspect = res.x / (res.y * 0.5);
+      let rows = f32(gol_n) * 0.25;
+      let cols = rows * aspect;
 
-    let on_border = cx == 0u || cx >= cn_x - 1u || cz == 0u || cz >= cn_z - 1u;
+      let cx = u32(floor(gol_uv.x * cols));
+      let cz = u32(floor(gol_uv.y * rows));
+      let cn_x = u32(cols);
+      let cn_z = u32(rows);
 
-    // Only generate alive pixels where smoke has reached the bottom of the GoL region
-    let smoke_x = (f32(gx) + 0.5) / f32(gol_n) * nf;
-    let smoke_z = (f32(gz) + 0.5) / f32(gol_n) * nf;
-    let smoke_y = nyf * 0.5; // bottom of GoL region = volume midpoint
-    let smoke_here = sample_smoke(vec3f(smoke_x, smoke_y, smoke_z), grid_n, grid_ny);
+      // Quantize to coarse pixels, then map to gol grid via rotated coords
+      let qx_uv = floor(gol_uv.x * cols) / cols;
+      let qz_uv = floor(gol_uv.y * rows) / rows;
+      let qcx = qx_uv - 0.5;
+      let qcz = qz_uv - 0.5;
+      let qvol_x = qcx * ct - qcz * st + 0.5;
+      let qvol_z = -(qcx * st + qcz * ct) + 0.5;
 
-    let cell = gol[gz * gol_n + gx];
-    if (cell == 1u && smoke_here > threshold) {
-      color = select(rp.alive.rgb, vec3f(0.2, 0.4, 1.0), on_border);
-    } else if (on_border) {
-      color = vec3f(0.2, 0.4, 1.0);
+      let gx = u32(clamp(qvol_x * f32(gol_n), 0.0, f32(gol_n) - 1.0));
+      let gz = u32(clamp(qvol_z * f32(gol_n), 0.0, f32(gol_n) - 1.0));
+
+      let on_border = cx == 0u || cx >= cn_x - 1u || cz == 0u || cz >= cn_z - 1u;
+
+      // Only generate alive pixels where smoke has reached the bottom of the GoL region
+      let smoke_sx = (f32(gx) + 0.5) / f32(gol_n) * nf;
+      let smoke_sz = (f32(gz) + 0.5) / f32(gol_n) * nf;
+      let smoke_sy = nyf * 0.5;
+      let smoke_here = sample_smoke(vec3f(smoke_sx, smoke_sy, smoke_sz), grid_n, grid_ny);
+
+      let cell = gol[gz * gol_n + gx];
+      if (cell == 1u && smoke_here > threshold) {
+        color = select(rp.alive.rgb, vec3f(0.2, 0.4, 1.0), on_border);
+      } else if (on_border) {
+        color = vec3f(0.2, 0.4, 1.0);
+      }
     }
   }
 
