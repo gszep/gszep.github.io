@@ -1,6 +1,6 @@
 ---
-import Post from '../../layouts/Post.astro';
-import { getPostsByLocale, stripLocalePrefix } from '../../lib/posts';
+import Post from '../../../layouts/Post.astro';
+import { getPostsByLocale, stripLocalePrefix } from '../../../lib/posts';
 
 export async function getStaticPaths() {
   const posts = await getPostsByLocale('en');

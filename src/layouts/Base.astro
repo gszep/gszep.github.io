@@ -1,5 +1,6 @@
 ---
-import { getSite, canonicalUrl, alternateUrl, type Locale } from '../i18n/utils';
+import { getSite, type Locale } from '../i18n/utils';
+import { getAbsoluteLocaleUrl } from 'astro:i18n';
 
 interface Props {
   title?: string;
@@ -15,9 +16,9 @@ const { title, description, lang = 'en', path = '/', type = 'website', published
 const site = getSite(lang);
 const pageTitle = title ? `${title} | ${site.title}` : site.title;
 const pageDescription = description || site.description;
-const canonical = canonicalUrl(lang, path);
-const alternate = alternateUrl(lang, path);
-const alternateLang = lang === 'en' ? 'ja' : 'en';
+const alternateLang: Locale = lang === 'en' ? 'ja' : 'en';
+const canonical = getAbsoluteLocaleUrl(lang, path);
+const alternate = getAbsoluteLocaleUrl(alternateLang, path);
 ---
 
 <!doctype html>

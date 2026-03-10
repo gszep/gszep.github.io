@@ -1,7 +1,8 @@
 ---
 import ThemeToggle from './ThemeToggle.astro';
 import LangToggle from './LangToggle.astro';
-import { t, getSite, localizedPath, type Locale } from '../../i18n/utils';
+import { t, getSite, type Locale } from '../../i18n/utils';
+import { getRelativeLocaleUrl } from 'astro:i18n';
 
 interface Props {
   lang?: Locale;
@@ -10,10 +11,10 @@ interface Props {
 const { lang = 'en' } = Astro.props;
 const site = getSite(lang);
 const currentPath = Astro.url.pathname;
-const switchPath = lang === 'en'
-  ? `/ja${currentPath}`
-  : currentPath.replace(/^\/ja/, '') || '/';
-const homeHref = localizedPath(lang, '/');
+const pathWithoutLocale = currentPath.replace(/^\/(en|ja)/, '') || '/';
+const alternateLang: Locale = lang === 'en' ? 'ja' : 'en';
+const switchPath = getRelativeLocaleUrl(alternateLang, pathWithoutLocale);
+const homeHref = getRelativeLocaleUrl(lang, '/');
 ---
 
 <nav class="fixed top-0 w-full bg-white dark:bg-black z-50" role="navigation" aria-label="main navigation" data-lang={lang}>
@@ -82,8 +83,7 @@ const homeHref = localizedPath(lang, '/');
   }
 
   // On homepage: scroll-based section highlighting
-  const homePaths = ['/', '/ja/', '/ja'];
-  const isHomepage = homePaths.includes(window.location.pathname);
+  const isHomepage = /^\/(en|ja)\/?$/.test(window.location.pathname);
   const homeSections = ['hero', 'blog', 'contact'];
   const sections = isHomepage
     ? homeSections.map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[]

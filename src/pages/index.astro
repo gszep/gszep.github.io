@@ -1,80 +1,17 @@
 ---
-import Base from '../layouts/Base.astro';
-import Nav from '../components/ui/Nav.astro';
-import Footer from '../components/ui/Footer.astro';
-import ProjectCard from '../components/ui/ProjectCard.astro';
-import CitationCard from '../components/ui/CitationCard.astro';
-import HeroSimulation from '../components/interactive/HeroSimulation.astro';
-import { t, getSite } from '../i18n/utils';
-import citations from '../data/citations.json';
-import { getPostsByLocale, stripLocalePrefix } from '../lib/posts';
-
-const lang = 'en';
-const site = getSite(lang);
-const posts = await getPostsByLocale(lang);
+// Language detection redirect — serves only at /
+// Browser language determines en/ or ja/, with en/ as fallback.
 ---
 
-<Base lang={lang}>
-  <Nav lang={lang} />
-
-  <!-- Hero -->
-  <section
-    class="min-h-screen flex items-center justify-center text-center relative"
-    id="hero"
-  >
-    <HeroSimulation />
-    <div class="px-4 relative z-10">
-      <h1 id="hero-title" class="font-bold tracking-wide text-gray-900 dark:text-white" style="font-size: 3rem;">
-        <span id="hero-left" class="inline-block transition-transform duration-[12000ms] ease-linear">grisha</span><span id="hero-right" class="inline-block transition-transform duration-[12000ms] ease-linear">.log</span>
-      </h1>
-    </div>
-    <script>
-      setTimeout(() => {
-        const left = document.getElementById('hero-left');
-        const right = document.getElementById('hero-right');
-        if (!left || !right) return;
-        const isMobile = window.innerWidth < 768;
-        if (isMobile) {
-          left.style.transform = 'translateY(-30vh)';
-          right.style.transform = 'translateY(40vh)';
-        } else {
-          left.style.transform = 'translateX(-20vw)';
-          right.style.transform = 'translateX(20vw)';
-        }
-      }, window.innerWidth < 768 ? 10000 : 30000);
+<!doctype html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="refresh" content="0;url=/en/" />
+    <script is:inline>
+      var lang = (navigator.language || '').startsWith('ja') ? 'ja' : 'en';
+      window.location.replace('/' + lang + '/');
     </script>
-  </section>
-
-  <!-- Posts -->
-  <section class="bg-gray-100 dark:bg-gray-900 py-16" id="blog" style="scroll-margin-top: 4rem;">
-    <div class="max-w-6xl mx-auto px-4">
-      <div class="flex flex-wrap justify-center gap-4">
-        {posts.map((post) => (
-          <ProjectCard
-            title={post.data.title}
-            description={post.data.description}
-            image={post.data.image || ''}
-            imagePosition={post.data.imagePosition}
-            href={`/blog/${stripLocalePrefix(post.slug)}/`}
-          />
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- Papers -->
-  <section class="bg-white dark:bg-black py-8" id="publications" style="scroll-margin-top: 4rem;">
-    <div class="max-w-4xl mx-auto px-4">
-      <p class="text-gray-400 dark:text-gray-500 text-xs uppercase tracking-wider mb-6">
-        {t(lang, 'footer.papers')}
-      </p>
-      <div class="space-y-4">
-        {citations.map((cite) => (
-          <CitationCard {...cite} />
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <Footer lang={lang} />
-</Base>
+  </head>
+  <body></body>
+</html>

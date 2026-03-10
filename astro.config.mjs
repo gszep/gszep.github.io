@@ -10,6 +10,10 @@ export default defineConfig({
   i18n: {
     defaultLocale: 'en',
     locales: ['en', 'ja'],
+    routing: {
+      prefixDefaultLocale: true,
+      redirectToDefaultLocale: false,
+    },
   },
   markdown: {
     shikiConfig: {

@@ -10,16 +10,6 @@ export function t(lang: Locale, key: string): string {
   return dicts[lang]?.[key] ?? dicts.en[key] ?? key;
 }
 
-export function getLangFromUrl(url: URL): Locale {
-  const [, lang] = url.pathname.split('/');
-  return lang === 'ja' ? 'ja' : 'en';
-}
-
-export function localizedPath(lang: Locale, path: string): string {
-  if (lang === 'en') return path;
-  return `/ja${path}`;
-}
-
 export function getSite(lang: Locale) {
   const localized = lang === 'ja' ? site.ja : site.en;
   return {
@@ -34,15 +24,4 @@ export function getSite(lang: Locale) {
       about: localized.authorAbout,
     },
   };
-}
-
-export function canonicalUrl(lang: Locale, path: string): string {
-  const base = site.url;
-  const localized = lang === 'en' ? path : `/ja${path}`;
-  return `${base}${localized}`;
-}
-
-export function alternateUrl(lang: Locale, path: string): string {
-  const other: Locale = lang === 'en' ? 'ja' : 'en';
-  return canonicalUrl(other, path);
 }

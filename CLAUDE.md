@@ -38,9 +38,9 @@ src/
     Page.astro             # Generic page wrapper with <main>
     Post.astro             # Blog post with JSON-LD, article meta tags
   pages/
-    index.astro
-    ja/{index,blog/}.astro
-    blog/{index,[...slug]}.astro
+    index.astro            # Language detection redirect (/ → /en/ or /ja/)
+    en/{index,blog/}.astro # English pages
+    ja/{index,blog/}.astro # Japanese pages
   styles/post.css
   data/{site,citations}.json
   i18n/{utils.ts,en.json,ja.json}
@@ -59,7 +59,7 @@ public/
 | `src/data/citations.json` | Publications |
 | `src/data/site.json` | Site metadata (en/ja keys) |
 | `src/i18n/{en,ja}.json` | UI strings |
-| `src/pages/index.astro` | EN homepage |
+| `src/pages/en/index.astro` | EN homepage |
 | `src/pages/ja/index.astro` | JA homepage |
 
 Assets go in `public/images/`, referenced as `/images/filename.ext`.
@@ -83,19 +83,27 @@ Required fields: title, description, date. Optional: image, imagePosition, tags,
 
 ## i18n Rules
 
-Folder-per-language: `en/` and `ja/` with matching filenames. Locale derived from folder structure.
+Both locales are equal: EN at `/en/`, JA at `/ja/`. Root `/` detects browser language and redirects.
+
+Astro config: `prefixDefaultLocale: true`, `redirectToDefaultLocale: false`.
+
+URL helpers from `astro:i18n`:
+- `getRelativeLocaleUrl(lang, path)` for internal links
+- `getAbsoluteLocaleUrl(lang, path)` for canonical/alternate URLs
+
+Custom utilities in `src/i18n/utils.ts`: `t()`, `getSite()`.
 
 1. Every post must have a counterpart in the other locale
 2. Shared fields identical across pairs: `date`, `image`, `imagePosition`, `order`, `draft`
 3. Tags use English keys in both languages
 4. Only `title`, `description`, and body content differ
-5. Component imports: `../../../components/` (three levels up)
+5. Component imports: `../../../components/` (three levels up from page files)
 6. `npm run build` validates i18n automatically
 
-Page template pairs (differ only in `const lang` and import depth):
-- `src/pages/index.astro` <-> `src/pages/ja/index.astro`
-- `src/pages/blog/index.astro` <-> `src/pages/ja/blog/index.astro`
-- `src/pages/blog/[...slug].astro` <-> `src/pages/ja/blog/[...slug].astro`
+Page template pairs (differ only in `const lang`):
+- `src/pages/en/index.astro` <-> `src/pages/ja/index.astro`
+- `src/pages/en/blog/index.astro` <-> `src/pages/ja/blog/index.astro`
+- `src/pages/en/blog/[...slug].astro` <-> `src/pages/ja/blog/[...slug].astro`
 
 ## Media
 
@@ -110,10 +118,9 @@ Distill.pub-inspired: white background, 700px text column, figures break to 900p
 ## SEO & LLM Navigability
 
 - `robots.txt` in `public/` with sitemap reference
-- `@astrojs/sitemap` generates `sitemap-index.xml` with hreflang variants
+- `@astrojs/sitemap` generates `sitemap-index.xml`
 - `Base.astro` outputs canonical URL, hreflang alternates, Open Graph, Twitter cards
 - `Post.astro` adds `og:type=article`, `article:published_time`, `article:tag`, JSON-LD `BlogPosting`
-- i18n utilities in `src/i18n/utils.ts`: `canonicalUrl(lang, path)`, `alternateUrl(lang, path)`
 
 ## Staging Password Gate
 
