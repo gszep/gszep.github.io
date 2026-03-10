@@ -29,14 +29,14 @@ All work happens on `staging`. Never push directly to `main`.
 src/
   content/blog/{en,ja}/    # MDX posts (matching filenames per locale)
   content/config.ts
-  lib/posts.ts
+  lib/posts.ts             # getPostsByLocale(), stripLocalePrefix()
   components/
     ui/                    # Layout components (.astro)
     interactive/           # WebGPU simulations
   layouts/
-    Base.astro             # HTML shell, staging password gate
-    Page.astro
-    Post.astro             # Distill-inspired blog layout
+    Base.astro             # HTML shell, meta tags, hreflang, staging gate
+    Page.astro             # Generic page wrapper with <main>
+    Post.astro             # Blog post with JSON-LD, article meta tags
   pages/
     index.astro
     ja/{index,blog/}.astro
@@ -45,7 +45,9 @@ src/
   data/{site,citations}.json
   i18n/{utils.ts,en.json,ja.json}
 scripts/check-i18n.mjs
-public/images/
+public/
+  robots.txt
+  images/
 ```
 
 ## Content Editing
@@ -104,6 +106,14 @@ MP4 for animation, not GIF.
 ## Blog Post Layout
 
 Distill.pub-inspired: white background, 700px text column, figures break to 900px, `github-light` syntax highlighting.
+
+## SEO & LLM Navigability
+
+- `robots.txt` in `public/` with sitemap reference
+- `@astrojs/sitemap` generates `sitemap-index.xml` with hreflang variants
+- `Base.astro` outputs canonical URL, hreflang alternates, Open Graph, Twitter cards
+- `Post.astro` adds `og:type=article`, `article:published_time`, `article:tag`, JSON-LD `BlogPosting`
+- i18n utilities in `src/i18n/utils.ts`: `canonicalUrl(lang, path)`, `alternateUrl(lang, path)`
 
 ## Staging Password Gate
 

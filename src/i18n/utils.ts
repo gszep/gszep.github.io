@@ -35,3 +35,14 @@ export function getSite(lang: Locale) {
     },
   };
 }
+
+export function canonicalUrl(lang: Locale, path: string): string {
+  const base = site.url;
+  const localized = lang === 'en' ? path : `/ja${path}`;
+  return `${base}${localized}`;
+}
+
+export function alternateUrl(lang: Locale, path: string): string {
+  const other: Locale = lang === 'en' ? 'ja' : 'en';
+  return canonicalUrl(other, path);
+}

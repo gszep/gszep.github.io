@@ -59,11 +59,6 @@
   margin-right: -50vw;
 }
 
-.post-content figure.l-screen {
-  margin-left: -50vw;
-  margin-right: -50vw;
-}
-
 .post-content {
   color: var(--post-text);
   line-height: 1.8;

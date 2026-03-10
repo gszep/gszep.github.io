@@ -3,50 +3,71 @@ import Base from './Base.astro';
 import Nav from '../components/ui/Nav.astro';
 import Footer from '../components/ui/Footer.astro';
 import '../styles/post.css';
-import type { Locale } from '../i18n/utils';
+import { getSite, type Locale } from '../i18n/utils';
+import { stripLocalePrefix } from '../lib/posts';
 
 interface Props {
   title: string;
   date: Date;
+  slug: string;
   description?: string;
   tags?: string[];
   lang?: Locale;
 }
 
-const { title, date, description, tags = [], lang = 'en' } = Astro.props;
+const { title, date, slug, description, tags = [], lang = 'en' } = Astro.props;
+const site = getSite(lang);
 const dateLocale = lang === 'ja' ? 'ja-JP' : 'en-US';
 const formattedDate = date.toLocaleDateString(dateLocale, {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
 });
+const postPath = `/blog/${stripLocalePrefix(slug)}/`;
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'BlogPosting',
+  headline: title,
+  description: description,
+  datePublished: date.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: site.author.name,
+    url: `https://github.com/${site.author.github}`,
+  },
+  keywords: tags,
+});
 ---
 
-<Base title={title} description={description} lang={lang}>
+<Base title={title} description={description} lang={lang} path={postPath} type="article" publishedDate={date} tags={tags}>
   <Nav lang={lang} />
-  <article class="post">
-    <header class="l-body pt-32 pb-8">
-      <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">{title}</h1>
-      {description && (
-        <p class="text-gray-600 dark:text-gray-400 text-lg leading-relaxed mb-4">{description}</p>
-      )}
-      <div class="flex items-center gap-4 text-gray-500 text-sm">
-        <time datetime={date.toISOString()}>{formattedDate}</time>
-        {tags.length > 0 && (
-          <div class="flex gap-2">
-            {tags.map((tag) => (
-              <span class="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded text-xs">{tag}</span>
-            ))}
-          </div>
+  <main>
+    <article class="post">
+      <header class="l-body pt-32 pb-8">
+        <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-4 tracking-tight">{title}</h1>
+        {description && (
+          <p class="text-gray-600 dark:text-gray-400 text-lg leading-relaxed mb-4">{description}</p>
         )}
+        <div class="flex items-center gap-4 text-gray-500 text-sm">
+          <time datetime={date.toISOString()}>{formattedDate}</time>
+          {tags.length > 0 && (
+            <div class="flex gap-2">
+              {tags.map((tag) => (
+                <span class="bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded text-xs">{tag}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+      <div class="post-content l-body">
+        <slot />
       </div>
-    </header>
-    <div class="post-content l-body">
-      <slot />
-    </div>
-    <div class="l-body pb-16 pt-12">
-      <hr class="post-separator" />
-    </div>
-  </article>
+      <div class="l-body pb-16 pt-12">
+        <hr class="post-separator" />
+      </div>
+    </article>
+  </main>
   <Footer lang={lang} />
+  <script type="application/ld+json" set:html={jsonLd} />
 </Base>

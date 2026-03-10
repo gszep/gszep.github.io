@@ -8,7 +8,7 @@ const lang = 'ja';
 const posts = await getPostsByLocale(lang);
 ---
 
-<Page title={t(lang, 'blog.title')} lang={lang}>
+<Page title={t(lang, 'blog.title')} lang={lang} path="/blog/">
   <div class="pt-24 pb-16 max-w-6xl mx-auto px-4">
     <h1 class="text-4xl font-bold text-gray-900 dark:text-white mb-8">{t(lang, 'blog.title')}</h1>
     <div class="flex flex-wrap justify-center gap-4">
