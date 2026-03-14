@@ -3,7 +3,7 @@ import Post from '../../../layouts/Post.astro';
 import { getPostsByLocale, stripLocalePrefix } from '../../../lib/posts';
 
 export async function getStaticPaths() {
-  const posts = await getPostsByLocale('en');
+  const posts = await getPostsByLocale('en', true);
   return posts.map((post) => ({
     params: { slug: stripLocalePrefix(post.slug) },
     props: { post },
