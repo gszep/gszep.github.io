@@ -8,6 +8,7 @@ order: 1
 import PrivateVsSocial from '../../../components/interactive/PrivateVsSocial.astro';
 import RaceEquilibrium from '../../../components/interactive/RaceEquilibrium.astro';
 import RegulatoryMultiplier from '../../../components/interactive/RegulatoryMultiplier.astro';
+import ValleyShape from '../../../components/interactive/ValleyShape.astro';
 
 Living in Tokyo feels very safe and even though it can be extremely crowded at times, there is a sense that people try hard to be considerate to each other. To the extent that it is typical to leave your bike unlocked, your phone on the table and let your kids walk to school by themselves. There is even a word for this kind of peace-induced carelessness.
 
@@ -85,6 +86,17 @@ Here the literature is cleaner. Technology accelerates at rate $a$. Institutions
 The canonical case is Engels' pause. Britain, 1780 to 1840. Output per worker rose forty-six percent. Real wages rose twelve. Profit share ballooned; labour share fell. Sixty years of people living through a productivity boom whose gains flowed somewhere else. The pause ended only after factory acts, union recognition, public education, and franchise expansion — institutional catch-up, not market magic. Allen (2009) is the standard reference. It is roughly the worst-case version of the thing Friedman calls the valley.
 
 This is an institutional-lag theorem, not an uncertainty principle, though it has the flavour of one. The tightest modern form is Goldin and Katz on the race between education and technology. When technology wins the race, inequality rises. When education and institutions catch up, it falls. Post-1980 technology has been winning, and the skill premium has widened for forty years and counting. The valley is not hypothetical. It is already here at its current depth, and we are discussing whether to make it deeper.
+
+You can see the shape. The black curve is the acceleration $a(t)$ — the growth rate above baseline that the frontier is pushing forward. The dashed blue curve is the institutional rate $\iota(t)$ — the speed at which labour law, retraining, bargaining, taxation, licensing absorb the new productivity. The red region between them, where $a > \iota$, is the valley. Its length is how long the gap stays open. Its depth is how far the two curves diverge. The shaded area is the total welfare cost that integrates over the lag.
+
+<figure>
+  <ValleyShape />
+  <figcaption>The valley as $(a - \iota)_+$ integrated over time. Historical precedents at their rough empirical magnitudes alongside two AI scenarios from the literature. Drag the sliders to see how the valley's shape moves with peak acceleration, its duration, and how quickly institutions catch up.</figcaption>
+</figure>
+
+Two things to notice when you drag. First, Engels' pause is a wide and shallow valley: the gap was not large in any single year, but sixty years of integration produced a generation of people who lived their working lives inside it. Davidson's scenario is the opposite — narrow and deep: if the radical compute-centric model is right, the peak gap is two orders of magnitude larger than anything in the historical record, even though the valley closes faster because institutions are forced to adapt at catastrophe speed. The Aghion-Bunel modest scenario sits between the two: a valley shaped like US deindustrialisation but imposed faster. All three versions are valleys. The question is not whether there is one. It is which version we are building.
+
+Second, the gap does not close by itself. The dashed blue curve rises only because we have drawn it that way; in the absence of institutional investment, $\iota$ is close to zero and the valley never closes. Every historical closure was paid for by a specific political-economy programme — factory acts, franchise expansion, unions, the welfare state, public education. Every future closure has to be paid for the same way.
 
 The welfare cost of the valley integrates over the gap:
 
