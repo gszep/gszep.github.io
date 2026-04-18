@@ -1,0 +1,205 @@
+---
+import Math from '../ui/Math.astro';
+---
+
+<div class="pvs">
+  <svg viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" aria-label="Private vs social cost plot">
+    <!-- log-scale axis: $1K to $10T, i.e. 10^3 to 10^13 -->
+    <g class="axes">
+      <line x1="160" y1="40" x2="160" y2="220" />
+      <line x1="160" y1="220" x2="620" y2="220" />
+    </g>
+    <g class="ticks">
+      <!-- ticks at 10^3, 10^5, 10^7, 10^9, 10^11, 10^13 -->
+      <g id="pvs-ticks"></g>
+    </g>
+    <text x="390" y="250" text-anchor="middle" class="axlabel">dollars (log scale)</text>
+
+    <!-- bars -->
+    <rect id="pvs-private-bar" class="bar bar-private" x="160" y="70" height="36" width="0" />
+    <text x="150" y="93" text-anchor="end" class="barlabel">private benefit</text>
+    <text id="pvs-private-val" class="barval"></text>
+
+    <rect id="pvs-social-bar" class="bar bar-social" x="160" y="150" height="36" width="0" />
+    <text x="150" y="173" text-anchor="end" class="barlabel">expected social cost</text>
+    <text id="pvs-social-val" class="barval"></text>
+
+    <!-- ratio readout -->
+    <text id="pvs-ratio" x="390" y="30" text-anchor="middle" class="readout"></text>
+  </svg>
+
+  <div class="controls">
+    <label>
+      <span><Math tex={String.raw`\mathbb{P}(\text{doom})`} /> (century) = <output id="pvs-pdoom">10%</output></span>
+      <input type="range" id="pvs-pdoom-slider" min="0.001" max="0.5" step="0.001" value="0.10" />
+    </label>
+    <label>
+      <span><Math tex={String.raw`\mu`} /> (marginal per researcher-year) = <output id="pvs-marg">1e-5</output></span>
+      <input type="range" id="pvs-marg-slider" min="-6" max="-3" step="0.1" value="-5" />
+    </label>
+  </div>
+
+  <p class="caption">
+    Private benefit anchored at $10M / researcher-year (base + equity, senior frontier role).
+    Social cost = <Math tex={String.raw`\mathbb{P}(\text{doom})`} /> × 8B × $10M VSL × <Math tex={String.raw`\mu`} />.
+  </p>
+</div>
+
+<style>
+  .pvs {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .pvs svg { width: 100%; height: auto; display: block; }
+  .pvs .axes line { stroke: var(--post-separator, #bbb); stroke-width: 1; }
+  .pvs .ticks line { stroke: var(--post-separator, #bbb); }
+  .pvs .ticks text,
+  .pvs .axlabel,
+  .pvs .barlabel {
+    fill: var(--post-caption, #737373);
+    font-size: 11px;
+  }
+  .pvs .axlabel { font-size: 12px; }
+  .pvs .barlabel { font-size: 12px; }
+  .pvs .bar-private { fill: var(--post-caption, #a3a3a3); opacity: 0.85; }
+  .pvs .bar-social  { fill: #dc2626; opacity: 0.9; }
+  .pvs .barval {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pvs .readout {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 14px;
+    font-weight: 700;
+  }
+  .pvs .controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+  }
+  @media (max-width: 520px) {
+    .pvs .controls { grid-template-columns: 1fr; }
+  }
+  .pvs .controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: var(--post-caption, #737373);
+  }
+  .pvs .controls input[type="range"] {
+    accent-color: #dc2626;
+    width: 100%;
+  }
+  .pvs .controls output {
+    color: var(--post-heading, #1a1a1a);
+    font-weight: 600;
+  }
+  .pvs .caption {
+    color: var(--post-caption, #737373);
+    font-size: 0.82rem;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+</style>
+
+<script>
+  const LOG_MIN = 3;   // $1K
+  const LOG_MAX = 16;  // $10 quadrillion
+  const X0 = 160, X1 = 620;
+  const PRIVATE_USD = 1e7;   // $10M base anchor
+  const POP = 8e9;
+  const VSL = 1e7;           // $10M per statistical life
+
+  const xFor = (usd: number) => {
+    const l = Math.log10(Math.max(usd, 1));
+    const frac = (l - LOG_MIN) / (LOG_MAX - LOG_MIN);
+    return X0 + Math.max(0, Math.min(1, frac)) * (X1 - X0);
+  };
+
+  function fmtUSD(usd: number): string {
+    if (usd >= 1e15) return `$${(usd / 1e15).toFixed(1)}Q`;
+    if (usd >= 1e12) return `$${(usd / 1e12).toFixed(1)}T`;
+    if (usd >= 1e9)  return `$${(usd / 1e9).toFixed(1)}B`;
+    if (usd >= 1e6)  return `$${(usd / 1e6).toFixed(1)}M`;
+    if (usd >= 1e3)  return `$${(usd / 1e3).toFixed(0)}K`;
+    return `$${usd.toFixed(0)}`;
+  }
+
+  function setupTicks() {
+    const g = document.getElementById("pvs-ticks");
+    if (!g) return;
+    while (g.firstChild) g.removeChild(g.firstChild);
+    const svgns = "http://www.w3.org/2000/svg";
+    for (let exp = LOG_MIN; exp <= LOG_MAX; exp += 1) {
+      const usd = Math.pow(10, exp);
+      const x = xFor(usd);
+      const line = document.createElementNS(svgns, "line");
+      line.setAttribute("x1", String(x));
+      line.setAttribute("y1", "220");
+      line.setAttribute("x2", String(x));
+      line.setAttribute("y2", "224");
+      g.appendChild(line);
+      if (exp % 2 === 1) {
+        const t = document.createElementNS(svgns, "text");
+        t.setAttribute("x", String(x));
+        t.setAttribute("y", "236");
+        t.setAttribute("text-anchor", "middle");
+        t.textContent = fmtUSD(usd);
+        g.appendChild(t);
+      }
+    }
+  }
+
+  const privBar = document.getElementById("pvs-private-bar") as unknown as SVGRectElement | null;
+  const socBar = document.getElementById("pvs-social-bar") as unknown as SVGRectElement | null;
+  const privVal = document.getElementById("pvs-private-val") as SVGTextElement | null;
+  const socVal = document.getElementById("pvs-social-val") as SVGTextElement | null;
+  const ratio = document.getElementById("pvs-ratio") as SVGTextElement | null;
+  const pSlider = document.getElementById("pvs-pdoom-slider") as HTMLInputElement | null;
+  const pOut = document.getElementById("pvs-pdoom") as HTMLOutputElement | null;
+  const mSlider = document.getElementById("pvs-marg-slider") as HTMLInputElement | null;
+  const mOut = document.getElementById("pvs-marg") as HTMLOutputElement | null;
+
+  function render() {
+    if (!privBar || !socBar || !privVal || !socVal || !ratio) return;
+    if (!pSlider || !pOut || !mSlider || !mOut) return;
+
+    const pDoom = parseFloat(pSlider.value);
+    const margExp = parseFloat(mSlider.value);
+    const marg = Math.pow(10, margExp);
+    const social = pDoom * POP * VSL * marg;
+
+    pOut.textContent = `${(pDoom * 100).toFixed(1)}%`;
+    mOut.textContent = marg.toExponential(0).replace("e+", "e");
+
+    const xPriv = xFor(PRIVATE_USD);
+    const xSoc = xFor(social);
+
+    privBar.setAttribute("width", String(Math.max(2, xPriv - X0)));
+    socBar.setAttribute("width", String(Math.max(2, xSoc - X0)));
+
+    privVal.setAttribute("x", String(xPriv + 6));
+    privVal.setAttribute("y", "93");
+    privVal.textContent = fmtUSD(PRIVATE_USD);
+
+    socVal.setAttribute("x", String(xSoc + 6));
+    socVal.setAttribute("y", "173");
+    socVal.textContent = fmtUSD(social);
+
+    const r = social / PRIVATE_USD;
+    ratio.textContent = r >= 1
+      ? `social cost is ${r >= 1000 ? r.toExponential(0).replace("e+", "×10^") : r.toFixed(0) + "×"} private benefit`
+      : `social cost is ${(1/r).toFixed(1)}× smaller than private benefit`;
+  }
+
+  setupTicks();
+  pSlider?.addEventListener("input", render);
+  mSlider?.addEventListener("input", render);
+  render();
+</script>

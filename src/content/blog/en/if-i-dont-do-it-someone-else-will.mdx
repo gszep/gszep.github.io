@@ -1,0 +1,191 @@
+---
+title: "If I don't do it, someone else will."
+date: 2026-04-18
+description: "An essay on rationalism and effective altruism."
+tags: ["ai", "safety", "policy", "game-theory"]
+order: 1
+---
+import PrivateVsSocial from '../../../components/interactive/PrivateVsSocial.astro';
+import RaceEquilibrium from '../../../components/interactive/RaceEquilibrium.astro';
+import RegulatoryMultiplier from '../../../components/interactive/RegulatoryMultiplier.astro';
+
+Living in Tokyo feels very safe and even though it can be extremely crowded at times, there is a sense that people try hard to be considerate to each other. To the extent that it is typical to leave your bike unlocked, your phone on the table and let your kids walk to school by themselves. There is even a word for this kind of peace-induced carelessness.
+
+<center>
+平和ボケ・heiwa-boke・Peace-induced complacency
+</center>
+
+Over the past couple of months I've been meeting with people who work in New York, Boston and San Francisco, and I kept hearing variants of this sentance:
+
+<center>
+If I don't do it, someone else will.
+</center>
+
+Said by researchers. Said by founders. Said by people working in hospitality and the gig economy. Said in the voice you use when you're explaining something obvious to a tourist.
+
+I want to write about this sentence. Specifically I want to show you, on paper, what it costs. Because I think saying such things to each other for long enough, we stop hearing it. Dare I coin a term for this?
+
+<center>
+競争ボケ・kyōsō-boke・Competition-induced complacency
+</center>
+
+## The game theory of races
+
+In 2013, three researchers at the Future of Humanity Institute wrote down a toy model of an AI arms race. If you squint at the equations, they have the shape of the thing I'm trying to describe.
+
+There are $N$ teams. Each team $i$ decides how much to spend on capability $c_i$ and how much on safety $s_i$, but they have limited time and resources so lets say $c_i + s_i = 1$. Whoever reaches the finish line first wins. If team $i$ wins, probability of catastrophe equals one minus whatever they invested in safety. One more parameter, which they call *enmity* $e$: how much it hurts, personally, if a rival wins instead of you.
+
+Expected utility for team $i$ is an average over who might win, weighted by how likely each is. The first term is what you get in the world where you win the race. The second is what you get in the world where a rival does — discounted by enmity, because someone else's safe win still stings.
+
+$$
+\mathbb{E}[U_i] = \mathbb{P}(i\text{ wins})\;s_i \;+\; (1-e)\sum_{j \neq i} \mathbb{P}(j\text{ wins}) \; s_j
+$$
+
+Solve it, and a shape falls out. More teams in the race, or more enmity between them, and every team spends less on safety. You can drag that shape around below.
+
+<figure>
+  <RaceEquilibrium />
+  <figcaption>Stylised symmetric equilibrium from Armstrong, Bostrom & Shulman (2013). As teams and mutual enmity rise, the safety each team invests in at equilibrium falls.</figcaption>
+</figure>
+
+Two things stuck with me.
+
+The first: this isn't a psychology. It isn't that the people in the race are insufficiently virtuous. The curve is a fixed point. Rational people, reading each other correctly, arrive here. "If I don't do it, someone else will" is the fixed point, speaking in the first person.
+
+The second is stranger. The same paper shows that if teams have *more* information about one another — sharper benchmarks, clearer evals, regular capability reports — the equilibrium gets *worse*. Uncertainty is a buffer. Precision sharpens the race, and has the same effect as increasing enmity $e$.
+
+Which means the modern habit of labs publishing capability benchmarks — which feels like transparency, which feels like a safety norm — is, in the model, a race accelerant. Not because anyone is lying. Because the geometry of the game punishes precision.
+
+## What the sentence costs
+
+Two sides. The private payoff. The social cost.
+
+Start with the private payoff. If a frontier lab calls a strong ML researcher today, the offer is a senior role: \$500K–3M in base, an equity grant worth another \$2–20M over four years, and real upside beyond that. The same brain working on AI labour policy at a public-interest institute makes \$150–300K, no equity, no lottery ticket. The ratio is ten to a hundred, favouring the lab. That's before any psychology about the "right side of the chasm." That's before accounting for the fact that, post-AI-transition, an ordinary stock portfolio is not expected to hold its real value.
+
+Now the social cost.
+
+For decades, the US government has used one accounting framework to decide whether to require a catalytic converter, ban a pesticide, or mandate airbags: the Value of a Statistical Life (VSL). In 2024 it sits between \$7M and \$13M, with agencies using around \$10M in the middle.
+
+Three factors. Eight billion people at risk. \$10M VSL. And $\mathbb{P}(\text{doom})$ — the probability of civilisation-ending or near-civilisation-ending outcomes from AI this century. The 2023 AI researcher survey put $\mathbb{P}(\text{doom})$ at 14% mean, 5% median; call it ten percent, which is generous to the low end. Multiply. Expected mortality at stake: eight quadrillion dollars. I'm not adding a zero.
+
+Against that, a single researcher-year moves $\mathbb{P}(\text{doom})$ by some tiny fraction $\mu$ — maybe $10^{-4}$, maybe $10^{-6}$, depending on how fungible the contribution is. Even at the low end —
+
+<figure>
+  <PrivateVsSocial />
+  <figcaption>Private benefit vs. expected social cost per researcher-year, both log scale. Drag $\mathbb{P}(\text{doom})$ and $\mu$. Even the lab-friendliest settings don't close the gap.</figcaption>
+</figure>
+
+Drag the sliders wherever you like. Even at $\mathbb{P}(\text{doom})$ of a tenth of a percent and $\mu$ of a millionth, the social cost exceeds the salary. In the middle of the credible range it exceeds the salary by three to five orders of magnitude.
+
+This isn't a borderline case. It's the largest externality gap in any industry that even resembles a regulated one. Which is where the comparison starts getting uncomfortable.
+
+## Every other industry already solved this
+
+You know this story, but in a slightly different form. Let me tell it once more in the form that matters here.
+
+In 1937, a Tennessee pharmaceutical company put out a raspberry-flavoured cough medicine called Elixir Sulfanilamide. The chemist, Harold Watkins, had used diethylene glycol as a solvent. He had not tested it. It killed a hundred and seven people, most of them children. The next year, Congress passed the Food, Drug and Cosmetic Act, and the FDA got its pre-market authority.
+
+In 1961, a sedative called thalidomide caused ten thousand severe birth defects and two thousand infant deaths worldwide. The United States was largely spared because a single FDA reviewer — Frances Kelsey, who deserves a statue bigger than the one she has — refused to approve it. The next year, Congress passed the Kefauver Amendments, and drugs had to prove efficacy, not just safety.
+
+Since then: eighty-eight percent of drugs that enter clinical trials never reach market. Vioxx still killed between twenty-seven and fifty-five thousand people before it was withdrawn. That is what happens *with* regulation.
+
+Aviation, same story. 1959: forty fatal accidents per million commercial departures. Today: one tenth of one fatal accident per million departures. A four-hundred-fold reduction, tracking one-for-one the introduction of FAA certification, NTSB investigations, mandatory incident reporting, licensed mechanics, and airworthiness directives.
+
+Chemicals: Bhopal killed about twenty thousand people under a weak Indian regulatory regime. Comparable US facilities, under OSHA and EPA, have had zero comparable events. Same chemistry, different regime.
+
+Nuclear: Chernobyl killed somewhere between thirty and sixty thousand people under Soviet regulation. Three Mile Island, a near-identical release scenario under US NRC rules, killed zero.
+
+The pattern across every catastrophic-risk industry we have ever regulated is a hundred-to-a-thousand-fold reduction in the rate of the bad thing. It is suspiciously consistent. It is not an industry-specific quirk. It is what well-designed safety regulation *does*.
+
+<figure>
+  <RegulatoryMultiplier />
+  <figcaption>Relative catastrophic-event rates, pre- and post-regulation, across dangerous-technology industries. The toggle applies the historical regulatory multiplier to frontier AI — which, as of today, has none of the ex-ante mechanisms every other row has.</figcaption>
+</figure>
+
+Frontier AI, as of this week, has: no mandatory pre-deployment approval, no statutory liability regime, no licensing, no mandatory incident reporting with teeth. It has twelve companies' worth of voluntary "responsible scaling policies," of which precisely zero have ever, in the public record, triggered a pause. Meanwhile the industry lobbies against the ones with teeth. Anthropic spent part of this spring fighting an Illinois bill that would have imposed liability for catastrophic outcomes.
+
+The summary sentence, which you are welcome to quote at a cocktail party: **frontier AI is operating under a regulatory regime weaker than the one governing cosmetics.**
+
+## "But I'll have more influence from inside"
+
+This is the sentence people use when they want to take the lab job and keep the self-image. I have said it myself, in other contexts, and I know how it feels from the inside. It feels like courage. It is a specific flavour of courage that the rationalist community has made available to its members at volume.
+
+So let's ask what disconfirming evidence would look like.
+
+Would it count if the best-positioned insiders in the most safety-committed frontier lab publicly stated that safety culture had "taken a backseat to shiny products," and then resigned? Because Jan Leike did that, from OpenAI, in May 2024.
+
+Would it count if the superalignment team — the flagship safety effort at the lab — was dissolved? Because it was.
+
+Would it count if Ilya Sutskever, the chief scientist who had co-led the safety push, left? Because he did.
+
+Would it count if the AGI Readiness team got shut down later that year? Because it did.
+
+Would it count if two former board members wrote publicly that the board had lost faith in the CEO's commitment to safety? Because Helen Toner and Tasha McCauley wrote that.
+
+I cannot construct, from first principles, a stronger set of disconfirming observations than what has actually happened. The best-positioned, highest-integrity inside-steerers, at the best-positioned lab, tried to steer, publicly said it did not work, and left.
+
+The community largely did not update. You can check for yourself: search any current MATS or 80,000 Hours recruiting material for the sentence "inside-steering has a poor track record." You will not find it. The sentence that instead appears, over and over, is "you can have more influence from inside" — a claim that has now been empirically tested and empirically failed, and is still the load-bearing argument in the recruiting funnel.
+
+A rationalist community applying its own epistemic standards to its own situation would have updated by now. It has not. That non-update is itself data about the community's ability to self-correct.
+
+## The closed loop
+
+The reason it cannot self-correct is boring and mechanical, and once you see it you cannot unsee it.
+
+Candidates come in through 80,000 Hours, LessWrong, university EA groups. They're filtered through MATS, ARENA, BlueDot. They're placed into a small handful of labs and adjacent nonprofits. Their funding comes, overwhelmingly, from Open Philanthropy (about fifty million dollars a year on technical AI safety), a couple of Jaan Tallinn vehicles, Schmidt Sciences, and a few other tech-fortune-adjacent sources. Total philanthropic footprint: eighty to a hundred and fifty million a year, globally. That's maybe half a percent of what the labs themselves raised last year.
+
+The research agendas that get prestige inside that loop are legible to lab leadership: interpretability, evals, scalable oversight. The research agendas that don't: antitrust, compute nationalisation, labour power at labs, structural democratic governance of AI. A rationalist who was actually calibrated on their community's blind spots would expect the neglected quadrant to contain some of the most important problems. They would not, however, be funded to work on it.
+
+This is not a conspiracy. No one in the loop is acting in bad faith. It is much worse than a conspiracy, because it is a fixed point. Perturbations get absorbed. The dissent that gets published is the dissent compatible with remaining in the community. The dissent that would require leaving the community — to become, say, a labour organiser, or a critical labour-studies scholar at a non-elite university, or a journalist who burns their source access — is not absent because it is wrong. It is absent because the filter removed it.
+
+You can be a perfectly good rationalist and end up inside a captured loop. In fact, you almost certainly will, because the loop was designed by rationalists for rationalists and it rewards exactly the traits the community selects for.
+
+## Three stances, approximately honest
+
+I have been thinking about which stance a young researcher can take and still sleep, and I have come to believe there are three honest ones and one dishonest one.
+
+**Stance A: Participate, then exit.** Take two to four years at a frontier lab. Accumulate, after taxes, something between five and fifty million dollars. Leave with enough capital to do independent work for the rest of your life. You will have contributed two to eight researcher-years of marginal capability progress. The social cost of those years, by the math two sections up, dwarfs what you took home. But you did not lie to yourself about what you were doing, and you now have the resources to do thirty years of whatever comes next.
+
+**Stance B: Captured academic.** Skip the labs. Work at a university or nonprofit funded by tech-fortune-adjacent philanthropy. You will make two to eight million dollars over a career, mostly housing. You will never directly push a capability forward. Your research agenda, your speaking invitations, and your next grant all depend on approval from the ecosystem whose structure is producing the very externality you are studying. The capture operates on you indirectly, pre-consciously, in the form of which sentences you find yourself interesting.
+
+**Stance C: Independent institution-builder.** Build the thing that doesn't exist. Non-lab-adjacent funding sources — Japanese government chairs, European public research money, union-linked foundations, development-bank research budgets, your own country's industrial conglomerates. Labour organising. Regulatory capacity. Non-US/UK governance venues. Lifetime wealth: somewhere in the middle, five to twenty million. You don't directly contribute to the race. You are not financially owned by the ecosystem. You also do not get invited to the parties I was at this week, which matters less than the people at those parties think.
+
+The dishonest fourth stance is to take Stance A and call it Stance C. To take the lab job, keep the pay, and tell yourself the story in which your presence there is a net subtraction from risk. I met a lot of people doing this. None of them seemed happy, exactly. They seemed the way people seem when they have made a decision they cannot afford to re-examine.
+
+## What would actually move the equilibrium
+
+The single most important sentence in the Armstrong–Bostrom–Shulman paper, translated into English: **you cannot slow the race by being one of the racers.**
+
+The leverage points are all exogenous to the community. There are really only four of them, and none of them are "solve alignment."
+
+*Independent funding* that does not route through Open Philanthropy or tech fortunes. Government research money in countries not competing for frontier capability. Union-linked research foundations. Industrial-conglomerate money in places like Japan that have strong reasons to want AI-resilient labour markets. Any of it changes the selection pressure on what research gets done.
+
+*Regulatory venues with teeth.* The EU AI Act, enforced rigorously rather than compliance-theatred. UK AISI's evaluation authority if it is actually used. Liability regimes. Pre-deployment licensing. These change the game's *payoffs*, which is the only thing changing outcomes.
+
+*Labour power.* The one nobody wants to talk about. Unionisation at AI labs. Sectoral organising across the AI research workforce. A ML-researcher strike. I want to be plain about this: a coordinated refusal by the research workforce to ship models without external safety certification would change the industry in ways no internal critique or published RSP ever has, because it would change the cost function each lab optimises against. When a company says "we cannot pause because our competitors won't," that is literally the definition of a coordination problem, and coordination problems are what unions are for.
+
+*Non-US/UK governance voices.* Japan. Korea. the EU. Brazil. South Africa. India. Countries that aren't competing to train GPT-7, but are going to live with the consequences of whoever does. Their governance voices being louder, more technically equipped, and better coordinated with each other is the thing that reshapes the equilibrium from outside.
+
+All four of these are boring compared to "build a better interpretability tool." They are also the only moves the model says actually change anything.
+
+## The ask
+
+I am going to be straightforward, because nobody I met this week was.
+
+If you are a researcher in this field, the game-theoretic analysis says the thing you are doing does not work. Steering from inside has a decade-long empirical track record of not slowing a single deployment the steerers themselves judged inadequately safe. The math of the race says that your presence inside a lab raises the equilibrium risk regardless of which team you're on. The math of the externality says your salary is between three and five orders of magnitude smaller than the expected social cost of your participation.
+
+You already know this. Most of the people I had dinner with this week know this. They say "if I don't do it, someone else will," which is the fixed point speaking through them, and then they pour another drink.
+
+Stop.
+
+Refuse the recruiting pipeline. Talk to the people at the next desk. Organise a union. If your lab has one, join it. If your country has an AI-workforce organising effort, find it. If it doesn't, start one. Attend the rooms where regulation is actually being written — EU AI Act enforcement, UK AISI's technical authority, the J-AISI's evolving frameworks, whatever your country's equivalent is — and make yourself useful there, not at the frontier-lab offsite.
+
+A sectoral strike by AI safety researchers would land harder than any paper any of you will ever publish. I mean this literally. The research workforce is the bottleneck. The labs cannot ship without you. That is the entire point.
+
+## 
+
+"If I don't do it, someone else will."
+
+You've seen the cost now.
+
+Do you still want to?

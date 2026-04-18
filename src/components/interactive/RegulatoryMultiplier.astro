@@ -1,0 +1,193 @@
+---
+---
+
+<div class="regmult">
+  <svg viewBox="0 0 640 380" preserveAspectRatio="xMidYMid meet" aria-label="Regulatory multiplier across industries">
+    <!-- log-scale axis: 10^-2 to 10^3 (catastrophic events per unit) -->
+    <g class="axes">
+      <line x1="160" y1="40" x2="160" y2="320" />
+      <line x1="160" y1="320" x2="620" y2="320" />
+    </g>
+    <g id="regmult-ticks" class="ticks"></g>
+    <text x="390" y="350" text-anchor="middle" class="axlabel">relative catastrophic-event rate (log scale)</text>
+
+    <!-- rows -->
+    <g id="regmult-rows"></g>
+
+    <text x="390" y="372" text-anchor="middle" class="caption-inline">
+      bar = pre-regulation rate · circle = post-regulation rate
+    </text>
+  </svg>
+
+  <div class="controls">
+    <label class="toggle">
+      <input type="checkbox" id="regmult-apply" />
+      <span>apply historical regulatory multiplier to AI</span>
+    </label>
+  </div>
+</div>
+
+<style>
+  .regmult {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .regmult svg { width: 100%; height: auto; display: block; }
+  .regmult .axes line { stroke: var(--post-separator, #bbb); stroke-width: 1; }
+  .regmult .ticks line { stroke: var(--post-separator, #bbb); }
+  .regmult .ticks text,
+  .regmult .axlabel,
+  .regmult .rowlabel,
+  .regmult .caption-inline {
+    fill: var(--post-caption, #737373);
+    font-size: 11px;
+  }
+  .regmult .axlabel { font-size: 12px; }
+  .regmult .rowlabel { font-size: 13px; }
+  .regmult .bar-pre {
+    fill: #dc2626;
+    opacity: 0.85;
+  }
+  .regmult .dot-post {
+    fill: var(--post-heading, #1a1a1a);
+  }
+  .regmult .ai-row .bar-pre { fill: #dc2626; }
+  .regmult .ai-row .bar-after {
+    fill: var(--post-link, #2563eb);
+    opacity: 0.85;
+  }
+  .regmult .controls {
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    text-align: center;
+  }
+  .regmult .toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--post-caption, #737373);
+    cursor: pointer;
+    user-select: none;
+  }
+  .regmult .toggle input { accent-color: var(--post-link, #2563eb); }
+</style>
+
+<script>
+  // Industries with stylised relative catastrophic-event rates, normalised to 1 = pre-regulation pharma baseline.
+  // These are illustrative orders of magnitude from the historical record, not precise measurements.
+  type Row = { label: string; pre: number; post: number | null; isAI?: boolean };
+  const rows: Row[] = [
+    { label: "pharma (pre-1938 / post-1962)",  pre: 100, post: 1 },
+    { label: "aviation (1959 / today)",         pre: 400, post: 1 },
+    { label: "chemicals (Bhopal era / OSHA)",   pre: 100, post: 1 },
+    { label: "nuclear (Chernobyl era / NRC)",   pre: 100, post: 1 },
+    { label: "frontier AI (today)",             pre: 100, post: null, isAI: true },
+  ];
+
+  const LOG_MIN = -1;  // 0.1
+  const LOG_MAX = 3;   // 1000
+  const X0 = 160, X1 = 620;
+  const xFor = (v: number) => {
+    const l = Math.log10(Math.max(v, Math.pow(10, LOG_MIN)));
+    const frac = (l - LOG_MIN) / (LOG_MAX - LOG_MIN);
+    return X0 + Math.max(0, Math.min(1, frac)) * (X1 - X0);
+  };
+
+  function setupTicks() {
+    const g = document.getElementById("regmult-ticks");
+    if (!g) return;
+    while (g.firstChild) g.removeChild(g.firstChild);
+    const svgns = "http://www.w3.org/2000/svg";
+    const ticks = [0.1, 1, 10, 100, 1000];
+    const labels = ["0.1×", "1×", "10×", "100×", "1000×"];
+    ticks.forEach((t, i) => {
+      const x = xFor(t);
+      const l = document.createElementNS(svgns, "line");
+      l.setAttribute("x1", String(x));
+      l.setAttribute("y1", "320");
+      l.setAttribute("x2", String(x));
+      l.setAttribute("y2", "324");
+      g.appendChild(l);
+      const txt = document.createElementNS(svgns, "text");
+      txt.setAttribute("x", String(x));
+      txt.setAttribute("y", "336");
+      txt.setAttribute("text-anchor", "middle");
+      txt.textContent = labels[i];
+      g.appendChild(txt);
+    });
+  }
+
+  function renderRows(applyToAI: boolean) {
+    const host = document.getElementById("regmult-rows");
+    if (!host) return;
+    while (host.firstChild) host.removeChild(host.firstChild);
+    const svgns = "http://www.w3.org/2000/svg";
+
+    const yStart = 55;
+    const yStep = 48;
+
+    rows.forEach((row, idx) => {
+      const y = yStart + idx * yStep;
+      const g = document.createElementNS(svgns, "g");
+      if (row.isAI) g.setAttribute("class", "ai-row");
+
+      const label = document.createElementNS(svgns, "text");
+      label.setAttribute("x", "150");
+      label.setAttribute("y", String(y + 14));
+      label.setAttribute("text-anchor", "end");
+      label.setAttribute("class", "rowlabel");
+      label.textContent = row.label;
+      g.appendChild(label);
+
+      // pre-regulation bar
+      const preBar = document.createElementNS(svgns, "rect");
+      preBar.setAttribute("class", "bar-pre");
+      preBar.setAttribute("x", String(X0));
+      preBar.setAttribute("y", String(y));
+      preBar.setAttribute("height", "22");
+      preBar.setAttribute("width", String(Math.max(2, xFor(row.pre) - X0)));
+      g.appendChild(preBar);
+
+      if (row.isAI && applyToAI) {
+        // show counterfactual post-regulation bar for AI
+        const postBar = document.createElementNS(svgns, "rect");
+        postBar.setAttribute("class", "bar-after");
+        postBar.setAttribute("x", String(X0));
+        postBar.setAttribute("y", String(y + 4));
+        postBar.setAttribute("height", "14");
+        postBar.setAttribute("width", String(Math.max(2, xFor(1) - X0)));
+        g.appendChild(postBar);
+        const note = document.createElementNS(svgns, "text");
+        note.setAttribute("x", String(xFor(1) + 6));
+        note.setAttribute("y", String(y + 14));
+        note.setAttribute("class", "rowlabel");
+        note.textContent = "~100× reduction — if regulated";
+        g.appendChild(note);
+      } else if (row.post !== null) {
+        const dot = document.createElementNS(svgns, "circle");
+        dot.setAttribute("class", "dot-post");
+        dot.setAttribute("cx", String(xFor(row.post)));
+        dot.setAttribute("cy", String(y + 11));
+        dot.setAttribute("r", "5");
+        g.appendChild(dot);
+      } else {
+        const note = document.createElementNS(svgns, "text");
+        note.setAttribute("x", String(xFor(row.pre) + 6));
+        note.setAttribute("y", String(y + 14));
+        note.setAttribute("class", "rowlabel");
+        note.textContent = "no binding regulation";
+        g.appendChild(note);
+      }
+
+      host.appendChild(g);
+    });
+  }
+
+  const toggle = document.getElementById("regmult-apply") as HTMLInputElement | null;
+  setupTicks();
+  renderRows(false);
+  toggle?.addEventListener("change", () => renderRows(toggle.checked));
+</script>
