@@ -3,52 +3,52 @@ import Math from '../ui/Math.astro';
 ---
 
 <div class="pvs">
-  <svg viewBox="0 0 640 260" preserveAspectRatio="xMidYMid meet" aria-label="Private vs social cost plot">
-    <!-- log-scale axis: $1K to $10T, i.e. 10^3 to 10^13 -->
+  <svg viewBox="0 0 680 400" preserveAspectRatio="xMidYMid meet" aria-label="Private vs social cost plot, four roles">
     <g class="axes">
-      <line x1="160" y1="40" x2="160" y2="220" />
-      <line x1="160" y1="220" x2="620" y2="220" />
+      <line x1="200" y1="40" x2="200" y2="340" />
+      <line x1="200" y1="340" x2="660" y2="340" />
     </g>
-    <g class="ticks">
-      <!-- ticks at 10^3, 10^5, 10^7, 10^9, 10^11, 10^13 -->
-      <g id="pvs-ticks"></g>
-    </g>
-    <text x="390" y="250" text-anchor="middle" class="axlabel">dollars (log scale)</text>
+    <g class="ticks" id="pvs-ticks"></g>
+    <text x="430" y="370" text-anchor="middle" class="axlabel">dollars per person-year (log scale)</text>
 
-    <!-- bars -->
-    <rect id="pvs-private-bar" class="bar bar-private" x="160" y="70" height="36" width="0" />
-    <text x="150" y="93" text-anchor="end" class="barlabel">private benefit</text>
-    <text id="pvs-private-val" class="barval"></text>
+    <g id="pvs-rows"></g>
 
-    <rect id="pvs-social-bar" class="bar bar-social" x="160" y="150" height="36" width="0" />
-    <text x="150" y="173" text-anchor="end" class="barlabel">expected social cost</text>
-    <text id="pvs-social-val" class="barval"></text>
-
-    <!-- ratio readout -->
-    <text id="pvs-ratio" x="390" y="30" text-anchor="middle" class="readout"></text>
+    <text id="pvs-ratio" x="430" y="30" text-anchor="middle" class="readout"></text>
   </svg>
 
   <div class="controls">
     <label>
-      <span><Math tex={String.raw`\mathbb{P}(\text{doom})`} /> (century) = <output id="pvs-pdoom">10%</output></span>
-      <input type="range" id="pvs-pdoom-slider" min="0.001" max="0.5" step="0.001" value="0.10" />
+      <span><Math tex={String.raw`a`} /> (acceleration, %/yr above baseline) = <output id="pvs-a-out">3.5</output></span>
+      <input type="range" id="pvs-a" min="0.001" max="0.2" step="0.001" value="0.035" />
     </label>
     <label>
-      <span><Math tex={String.raw`\mu`} /> (marginal per researcher-year) = <output id="pvs-marg">1e-5</output></span>
-      <input type="range" id="pvs-marg-slider" min="-6" max="-3" step="0.1" value="-5" />
+      <span><Math tex={String.raw`\iota`} /> (institutional rate, %/yr) = <output id="pvs-iota-out">1.5</output></span>
+      <input type="range" id="pvs-iota" min="0.001" max="0.05" step="0.001" value="0.015" />
+    </label>
+    <label>
+      <span><Math tex={String.raw`f`} /> (workforce fraction in valley) = <output id="pvs-f-out">15%</output></span>
+      <input type="range" id="pvs-f" min="0.05" max="0.5" step="0.01" value="0.15" />
+    </label>
+    <label>
+      <span><Math tex={String.raw`\mu`} /> (per-researcher contribution) = <output id="pvs-mu-out">3e-5</output></span>
+      <input type="range" id="pvs-mu" min="-7" max="-3" step="0.1" value="-4.5" />
     </label>
   </div>
 
   <p class="caption">
-    Private benefit anchored at $10M / researcher-year (base + equity, senior frontier role).
-    Social cost = <Math tex={String.raw`\mathbb{P}(\text{doom})`} /> × 8B × $10M VSL × <Math tex={String.raw`\mu`} />.
+    Valley cost <Math tex={String.raw`V = f \cdot L \cdot (a - \iota)_+ \cdot \tau_{\text{cap}} \cdot Y`} /> with
+    <Math tex={String.raw`L=10\text{ yr}`} />,
+    <Math tex={String.raw`\tau_{\text{cap}}=0.85`} />,
+    <Math tex={String.raw`Y=100\text{T}`} />.
+    Each role's social cost per person-year is its cohort share of <Math tex={String.raw`V`} />.
+    Per-role shares anchor on researcher (<Math tex={String.raw`\mu`} />) with fixed ratios (data worker <Math tex={String.raw`0.003\mu`} />, infrastructure <Math tex={String.raw`0.2\mu`} />, capital <Math tex={String.raw`0.7\mu`} />) reflecting cohort-size differences.
   </p>
 </div>
 
 <style>
   .pvs {
     width: 100%;
-    max-width: 720px;
+    max-width: 760px;
     margin: 0 auto;
     color: var(--post-text, #353535);
     font-family: ui-sans-serif, system-ui, sans-serif;
@@ -58,17 +58,20 @@ import Math from '../ui/Math.astro';
   .pvs .ticks line { stroke: var(--post-separator, #bbb); }
   .pvs .ticks text,
   .pvs .axlabel,
-  .pvs .barlabel {
+  .pvs .rowlabel,
+  .pvs .rowsub {
     fill: var(--post-caption, #737373);
     font-size: 11px;
   }
   .pvs .axlabel { font-size: 12px; }
-  .pvs .barlabel { font-size: 12px; }
-  .pvs .bar-private { fill: var(--post-caption, #a3a3a3); opacity: 0.85; }
+  .pvs .rowlabel { font-size: 12px; fill: var(--post-heading, #1a1a1a); font-weight: 600; }
+  .pvs .rowsub { font-size: 10px; }
+  .pvs .bar-private { fill: var(--post-caption, #a3a3a3); opacity: 0.9; }
   .pvs .bar-social  { fill: #dc2626; opacity: 0.9; }
+  .pvs .bar-zero { fill: none; stroke: var(--post-separator, #bbb); stroke-width: 1; stroke-dasharray: 2 2; }
   .pvs .barval {
     fill: var(--post-heading, #1a1a1a);
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
   }
   .pvs .readout {
@@ -79,11 +82,11 @@ import Math from '../ui/Math.astro';
   .pvs .controls {
     display: grid;
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 0.9rem 1.4rem;
     margin-top: 0.75rem;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
   }
-  @media (max-width: 520px) {
+  @media (max-width: 560px) {
     .pvs .controls { grid-template-columns: 1fr; }
   }
   .pvs .controls label {
@@ -111,10 +114,26 @@ import Math from '../ui/Math.astro';
 <script>
   const LOG_MIN = 3;   // $1K
   const LOG_MAX = 16;  // $10 quadrillion
-  const X0 = 160, X1 = 620;
-  const PRIVATE_USD = 1e7;   // $10M base anchor
-  const POP = 8e9;
-  const VSL = 1e7;           // $10M per statistical life
+  const X0 = 200, X1 = 660;
+
+  const L_YEARS = 10;
+  const TAU_CAP = 0.85;
+  const Y_GDP = 1e14;  // $100T world GDP
+
+  type Role = {
+    key: string;
+    label: string;
+    sub: string;
+    privateUsd: number;
+    muScale: number;
+  };
+
+  const ROLES: Role[] = [
+    { key: "researcher",    label: "Frontier ML researcher",   sub: "base + equity anchor $10M/yr",        privateUsd: 1e7, muScale: 1.0   },
+    { key: "data",          label: "Data-providing worker",    sub: "labellers, contract experts ~$10K/yr", privateUsd: 1e4, muScale: 0.003 },
+    { key: "infra",         label: "Infrastructure decision-maker", sub: "execs, legislators ~$20M/yr",     privateUsd: 2e7, muScale: 0.2   },
+    { key: "capital",       label: "Capital allocator",        sub: "VC, sovereign, pension ~$50M/yr",     privateUsd: 5e7, muScale: 0.7   },
+  ];
 
   const xFor = (usd: number) => {
     const l = Math.log10(Math.max(usd, 1));
@@ -123,6 +142,7 @@ import Math from '../ui/Math.astro';
   };
 
   function fmtUSD(usd: number): string {
+    if (usd <= 0) return "$0";
     if (usd >= 1e15) return `$${(usd / 1e15).toFixed(1)}Q`;
     if (usd >= 1e12) return `$${(usd / 1e12).toFixed(1)}T`;
     if (usd >= 1e9)  return `$${(usd / 1e9).toFixed(1)}B`;
@@ -141,14 +161,14 @@ import Math from '../ui/Math.astro';
       const x = xFor(usd);
       const line = document.createElementNS(svgns, "line");
       line.setAttribute("x1", String(x));
-      line.setAttribute("y1", "220");
+      line.setAttribute("y1", "340");
       line.setAttribute("x2", String(x));
-      line.setAttribute("y2", "224");
+      line.setAttribute("y2", "344");
       g.appendChild(line);
       if (exp % 2 === 1) {
         const t = document.createElementNS(svgns, "text");
         t.setAttribute("x", String(x));
-        t.setAttribute("y", "236");
+        t.setAttribute("y", "356");
         t.setAttribute("text-anchor", "middle");
         t.textContent = fmtUSD(usd);
         g.appendChild(t);
@@ -156,50 +176,145 @@ import Math from '../ui/Math.astro';
     }
   }
 
-  const privBar = document.getElementById("pvs-private-bar") as unknown as SVGRectElement | null;
-  const socBar = document.getElementById("pvs-social-bar") as unknown as SVGRectElement | null;
-  const privVal = document.getElementById("pvs-private-val") as SVGTextElement | null;
-  const socVal = document.getElementById("pvs-social-val") as SVGTextElement | null;
+  function setupRows() {
+    const g = document.getElementById("pvs-rows");
+    if (!g) return;
+    while (g.firstChild) g.removeChild(g.firstChild);
+    const svgns = "http://www.w3.org/2000/svg";
+    const rowHeight = 70;
+    const rowTop = 55;
+    ROLES.forEach((role, i) => {
+      const yBase = rowTop + i * rowHeight;
+
+      // Label
+      const label = document.createElementNS(svgns, "text");
+      label.setAttribute("x", String(X0 - 10));
+      label.setAttribute("y", String(yBase + 18));
+      label.setAttribute("text-anchor", "end");
+      label.setAttribute("class", "rowlabel");
+      label.textContent = role.label;
+      g.appendChild(label);
+
+      const sub = document.createElementNS(svgns, "text");
+      sub.setAttribute("x", String(X0 - 10));
+      sub.setAttribute("y", String(yBase + 32));
+      sub.setAttribute("text-anchor", "end");
+      sub.setAttribute("class", "rowsub");
+      sub.textContent = role.sub;
+      g.appendChild(sub);
+
+      // Private bar
+      const privBar = document.createElementNS(svgns, "rect");
+      privBar.setAttribute("id", `pvs-priv-${role.key}`);
+      privBar.setAttribute("class", "bar bar-private");
+      privBar.setAttribute("x", String(X0));
+      privBar.setAttribute("y", String(yBase + 6));
+      privBar.setAttribute("height", "16");
+      privBar.setAttribute("width", "0");
+      g.appendChild(privBar);
+
+      const privVal = document.createElementNS(svgns, "text");
+      privVal.setAttribute("id", `pvs-priv-val-${role.key}`);
+      privVal.setAttribute("class", "barval");
+      privVal.setAttribute("y", String(yBase + 18));
+      g.appendChild(privVal);
+
+      // Social bar
+      const socBar = document.createElementNS(svgns, "rect");
+      socBar.setAttribute("id", `pvs-soc-${role.key}`);
+      socBar.setAttribute("class", "bar bar-social");
+      socBar.setAttribute("x", String(X0));
+      socBar.setAttribute("y", String(yBase + 28));
+      socBar.setAttribute("height", "16");
+      socBar.setAttribute("width", "0");
+      g.appendChild(socBar);
+
+      const socVal = document.createElementNS(svgns, "text");
+      socVal.setAttribute("id", `pvs-soc-val-${role.key}`);
+      socVal.setAttribute("class", "barval");
+      socVal.setAttribute("y", String(yBase + 40));
+      g.appendChild(socVal);
+    });
+  }
+
+  const aSlider = document.getElementById("pvs-a") as HTMLInputElement | null;
+  const iotaSlider = document.getElementById("pvs-iota") as HTMLInputElement | null;
+  const fSlider = document.getElementById("pvs-f") as HTMLInputElement | null;
+  const muSlider = document.getElementById("pvs-mu") as HTMLInputElement | null;
+  const aOut = document.getElementById("pvs-a-out") as HTMLOutputElement | null;
+  const iotaOut = document.getElementById("pvs-iota-out") as HTMLOutputElement | null;
+  const fOut = document.getElementById("pvs-f-out") as HTMLOutputElement | null;
+  const muOut = document.getElementById("pvs-mu-out") as HTMLOutputElement | null;
   const ratio = document.getElementById("pvs-ratio") as SVGTextElement | null;
-  const pSlider = document.getElementById("pvs-pdoom-slider") as HTMLInputElement | null;
-  const pOut = document.getElementById("pvs-pdoom") as HTMLOutputElement | null;
-  const mSlider = document.getElementById("pvs-marg-slider") as HTMLInputElement | null;
-  const mOut = document.getElementById("pvs-marg") as HTMLOutputElement | null;
 
   function render() {
-    if (!privBar || !socBar || !privVal || !socVal || !ratio) return;
-    if (!pSlider || !pOut || !mSlider || !mOut) return;
+    if (!aSlider || !iotaSlider || !fSlider || !muSlider) return;
+    if (!aOut || !iotaOut || !fOut || !muOut || !ratio) return;
 
-    const pDoom = parseFloat(pSlider.value);
-    const margExp = parseFloat(mSlider.value);
-    const marg = Math.pow(10, margExp);
-    const social = pDoom * POP * VSL * marg;
+    const a = parseFloat(aSlider.value);
+    const iota = parseFloat(iotaSlider.value);
+    const f = parseFloat(fSlider.value);
+    const muExp = parseFloat(muSlider.value);
+    const mu = Math.pow(10, muExp);
 
-    pOut.textContent = `${(pDoom * 100).toFixed(1)}%`;
-    mOut.textContent = marg.toExponential(0).replace("e+", "e");
+    aOut.textContent = `${(a * 100).toFixed(1)}`;
+    iotaOut.textContent = `${(iota * 100).toFixed(1)}`;
+    fOut.textContent = `${(f * 100).toFixed(0)}%`;
+    muOut.textContent = mu.toExponential(0).replace("e+", "e").replace("e-0", "e-");
 
-    const xPriv = xFor(PRIVATE_USD);
-    const xSoc = xFor(social);
+    const gap = Math.max(0, a - iota);
+    const V = f * L_YEARS * gap * TAU_CAP * Y_GDP;
 
-    privBar.setAttribute("width", String(Math.max(2, xPriv - X0)));
-    socBar.setAttribute("width", String(Math.max(2, xSoc - X0)));
+    let worstRatio = 0;
+    let worstRole = "";
 
-    privVal.setAttribute("x", String(xPriv + 6));
-    privVal.setAttribute("y", "93");
-    privVal.textContent = fmtUSD(PRIVATE_USD);
+    ROLES.forEach((role) => {
+      const social = mu * role.muScale * V;
+      const privBar = document.getElementById(`pvs-priv-${role.key}`) as SVGRectElement | null;
+      const socBar = document.getElementById(`pvs-soc-${role.key}`) as SVGRectElement | null;
+      const privVal = document.getElementById(`pvs-priv-val-${role.key}`) as SVGTextElement | null;
+      const socVal = document.getElementById(`pvs-soc-val-${role.key}`) as SVGTextElement | null;
+      if (!privBar || !socBar || !privVal || !socVal) return;
 
-    socVal.setAttribute("x", String(xSoc + 6));
-    socVal.setAttribute("y", "173");
-    socVal.textContent = fmtUSD(social);
+      const xPriv = xFor(role.privateUsd);
+      privBar.setAttribute("width", String(Math.max(2, xPriv - X0)));
+      privVal.setAttribute("x", String(xPriv + 6));
+      privVal.textContent = fmtUSD(role.privateUsd);
 
-    const r = social / PRIVATE_USD;
-    ratio.textContent = r >= 1
-      ? `social cost is ${r >= 1000 ? r.toExponential(0).replace("e+", "×10^") : r.toFixed(0) + "×"} private benefit`
-      : `social cost is ${(1/r).toFixed(1)}× smaller than private benefit`;
+      if (social > 0) {
+        const xSoc = xFor(social);
+        socBar.setAttribute("width", String(Math.max(2, xSoc - X0)));
+        socVal.setAttribute("x", String(xSoc + 6));
+        socVal.textContent = fmtUSD(social);
+      } else {
+        socBar.setAttribute("width", "0");
+        socVal.setAttribute("x", String(X0 + 6));
+        socVal.textContent = "gap closed (ι ≥ a)";
+      }
+
+      if (social > role.privateUsd) {
+        const r = social / role.privateUsd;
+        if (r > worstRatio) { worstRatio = r; worstRole = role.label; }
+      }
+    });
+
+    if (gap <= 0) {
+      ratio.textContent = "ι ≥ a : institutional response absorbs acceleration, valley closes";
+    } else if (worstRatio > 0) {
+      const fmt = worstRatio >= 1000
+        ? worstRatio.toExponential(0).replace("e+", "×10^")
+        : worstRatio.toFixed(0) + "×";
+      ratio.textContent = `worst gap: ${worstRole} at ${fmt}`;
+    } else {
+      ratio.textContent = "social cost below private across all roles";
+    }
   }
 
   setupTicks();
-  pSlider?.addEventListener("input", render);
-  mSlider?.addEventListener("input", render);
+  setupRows();
+  aSlider?.addEventListener("input", render);
+  iotaSlider?.addEventListener("input", render);
+  fSlider?.addEventListener("input", render);
+  muSlider?.addEventListener("input", render);
   render();
 </script>

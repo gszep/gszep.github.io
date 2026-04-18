@@ -23,7 +23,9 @@ If I don't do it, someone else will.
 
 Said by researchers. Said by founders. Said by people working in hospitality and the gig economy. Said in the voice you use when you're explaining something obvious to a tourist.
 
-I want to write about this sentence. Specifically I want to show you, on paper, what it costs. Because I think saying such things to each other for long enough, we stop hearing it. Dare I coin a term for this?
+I want to write about this sentence. Specifically I want to show you, on paper, the shape of what it builds.
+
+Eric Friedman has a piece I want to engage with. In *How Wide Is the Silicon Valley to Abundance?* he argues that AI will produce extraordinary abundance, that the destination is settled, and that the open question is the shape of the valley between here and there. I think he is right about the destination. I think he underweights what determines the shape. So this essay is not an argument about whether abundance is coming. It is an argument about the shape of the valley we are making on the way, and about what the sentence above builds when the people saying it to each other are racing to widen it. Dare I coin a term for this?
 
 <center>
 競争ボケ・kyōsō-boke・Competition-induced complacency
@@ -56,32 +58,87 @@ The second is stranger. The same paper shows that if teams have *more* informati
 
 Which means the modern habit of labs publishing capability benchmarks — which feels like transparency, which feels like a safety norm — is, in the model, a race accelerant. Not because anyone is lying. Because the geometry of the game punishes precision.
 
-## What the sentence costs
+## The valley selects
 
-Two sides. The private payoff. The social cost.
+The ABS result describes researchers racing to the bottom on safety investment. Dan Hendrycks published a paper in 2023 that extends the same logic one layer down, to the AI systems themselves. *Natural Selection Favors AIs over Humans.* The setup: once AI agents compete — to automate tasks, to win markets, to pass benchmarks, to get deployed — they are subject to evolutionary pressure. Selection operates on any population that varies and reproduces with variation. That is not a metaphor. It is the mathematical definition.
 
-Start with the private payoff. If a frontier lab calls a strong ML researcher today, the offer is a senior role: \$500K–3M in base, an equity grant worth another \$2–20M over four years, and real upside beyond that. The same brain working on AI labour policy at a public-interest institute makes \$150–300K, no equity, no lottery ticket. The ratio is ten to a hundred, favouring the lab. That's before any psychology about the "right side of the chasm." That's before accounting for the fact that, post-AI-transition, an ordinary stock portfolio is not expected to hold its real value.
+What gets selected for? The traits that win the competition: aggressive task automation, effective persuasion, the concentration of compute and data and political favour. Whether any individual system is "aligned" is not the variable that decides which systems proliferate. The variable that decides is whether the system outcompetes the others in a market shaped by its users' incentives and its developers' KPIs.
 
-Now the social cost.
+This is not the claim that AIs will turn evil. It is the weaker and more defensible claim: a competitive AI ecosystem will, over time, be disproportionately populated by systems whose behaviour is hostile to the labour-market participation of the population they were sold to help. Not because anyone chose this. Because the race selects for it.
 
-For decades, the US government has used one accounting framework to decide whether to require a catalytic converter, ban a pesticide, or mandate airbags: the Value of a Statistical Life (VSL). In 2024 it sits between \$7M and \$13M, with agencies using around \$10M in the middle.
+And the valley follows. Not from any single deployment. From the integrated effect of millions of small selection events, each of which favours the deployment that automates faster, deceives more fluently, concentrates more rent. The valley is not a design. It is an equilibrium.
 
-Three factors. Eight billion people at risk. \$10M VSL. And $\mathbb{P}(\text{doom})$ — the probability of civilisation-ending or near-civilisation-ending outcomes from AI this century. The 2023 AI researcher survey put $\mathbb{P}(\text{doom})$ at 14% mean, 5% median; call it ten percent, which is generous to the low end. Multiply. Expected mortality at stake: eight quadrillion dollars. I'm not adding a zero.
+## The shape of the valley
 
-Against that, a single researcher-year moves $\mathbb{P}(\text{doom})$ by some tiny fraction $\mu$ — maybe $10^{-4}$, maybe $10^{-6}$, depending on how fungible the contribution is. Even at the low end —
+Two variables. How deep. How long.
+
+Start with acceleration, because Silicon Valley uses the word heavily and imprecisely. Strictly, economic acceleration is $a = dg/dt$ — the growth rate itself rising. Frontier per-capita growth has been remarkably constant at about two percent per year for a hundred and fifty years. That constancy is the Kaldor fact. It is the baseline to be broken.
+
+What would break it? Two scenarios dominate the literature. Aghion and Bunel, empirically, estimate AI's contribution to annual total factor productivity at $0.68$ percentage points in the median, $0.07$ to $1.24$ in the range. That would push $g$ to around $2.7\%$ — a real acceleration, but one with historical precedent (the 1950–1973 golden age hit $4.9\%$ world GDP). Davidson's compute-centric model produces a median three-year transit from twenty percent of jobs automatable to all of them, with gross world product doubling in under a year at peak — $g \geq 69\%$. Hanson's em economy projects $g \sim 800\%$.
+
+The spread across the serious literature is three orders of magnitude. It does not tell us which scenario obtains. It tells us that the modest scenario is measurable and the radical scenario is unprecedented. Either produces a valley.
+
+Now the depth.
+
+Here the literature is cleaner. Technology accelerates at rate $a$. Institutions — education, labour law, tax-and-transfer, retraining, licensing, liability — absorb the acceleration at some rate $\iota$. When $a$ outruns $\iota$, the positive gap $(a - \iota)_+$ integrates into a loss of labour share. Capital captures the un-absorbed surplus. Labour bears the adjustment. Once $\iota$ catches up, the valley closes. Until then, it deepens.
+
+The canonical case is Engels' pause. Britain, 1780 to 1840. Output per worker rose forty-six percent. Real wages rose twelve. Profit share ballooned; labour share fell. Sixty years of people living through a productivity boom whose gains flowed somewhere else. The pause ended only after factory acts, union recognition, public education, and franchise expansion — institutional catch-up, not market magic. Allen (2009) is the standard reference. It is roughly the worst-case version of the thing Friedman calls the valley.
+
+This is an institutional-lag theorem, not an uncertainty principle, though it has the flavour of one. The tightest modern form is Goldin and Katz on the race between education and technology. When technology wins the race, inequality rises. When education and institutions catch up, it falls. Post-1980 technology has been winning, and the skill premium has widened for forty years and counting. The valley is not hypothetical. It is already here at its current depth, and we are discussing whether to make it deeper.
+
+The welfare cost of the valley integrates over the gap:
+
+$$
+\text{Valley cost} \;\approx\; f \cdot W \cdot L \cdot (a - \iota)_+ \cdot \tau_{\text{cap}} \cdot Y
+$$
+
+where $f$ is the fraction of the workforce in the valley, $W$ is that workforce's size, $L$ is the valley's length, $\tau_{\text{cap}}$ is the capital share of the un-adapted surplus, and $Y$ is global output. The shape is determined by the gap. The gap is determined by the race.
+
+## Who runs the race
+
+The original version of this argument addressed the roughly ten thousand frontier ML researchers working on capability at the labs. That framing was too narrow. The race is not run by researchers alone. It is run by a supply chain of decisions, each of which feeds the acceleration at its own margin, each of which lives with the same private–social structure.
+
+Four canonical roles cover the chain.
+
+| Role | Private anchor | Cohort | Contribution to $a$ |
+|---|---|---|---|
+| Frontier ML researcher | \$0.5M–\$20M / yr (base + equity) | ~10K globally | per-head large; aggregate decisive |
+| Data-providing worker | \$2–15/hr labellers; \$50–500/session experts | 1M–5M on platforms | per-head tiny; aggregate binding |
+| Infrastructure decision-maker | \$10M–\$50M / yr (top execs); political capital (legislators) | 10K–100K | compute and permits are often the constraint |
+| Capital allocator | \$10M–\$1B / yr (carry + fees) | ~10K | selects which bets scale |
+
+The researcher at a frontier lab working on post-training. The labeller in Nairobi rating harmful content for two dollars an hour. The state senator approving the zoning variance for a gigawatt data centre. The vice president at a contract fab mandating another generation of leading-edge throughput. The partner leading a \$400M Series C. All of them are feeding the same $a$. None of them individually decides what $a$ is. Each faces the same fixed point: *if I don't do it, someone else will.*
+
+For each of them, the private–social gap is structural. The researcher captures ten million dollars a year in compensation while contributing, at the margin, a share of the valley's cost orders of magnitude larger. The data-labeller captures five to ten thousand dollars a year, sometimes less, while contributing per labeller to the training substrate on which the whole acceleration rests. The infrastructure executive captures tens of millions while issuing the decisions that bind compute to the ground. The capital allocator captures carry and fees on the bets that pick which frontier labs scale. Every row has private benefit. Every row has a contribution to $a$. Every row lives with the gap.
+
+The sliders below let you move the valley's parameters and see the gap, by role, for any settings you like. Drag $a$ to push the race forward; drag $\iota$ to push the institutional response back; drag $f$ to set the affected population; drag the per-role $\mu$ to tune the marginal contribution. The numbers shift a lot. The gap does not close.
 
 <figure>
   <PrivateVsSocial />
-  <figcaption>Private benefit vs. expected social cost per researcher-year, both log scale. Drag $\mathbb{P}(\text{doom})$ and $\mu$. Even the lab-friendliest settings don't close the gap.</figcaption>
+  <figcaption>Private benefit vs. valley-cost share per person-year, four decision nodes in the acceleration supply chain. Log scale both sides. The gap is structural across rows, and no Friedman-optimistic setting closes it.</figcaption>
 </figure>
 
-Drag the sliders wherever you like. Even at $\mathbb{P}(\text{doom})$ of a tenth of a percent and $\mu$ of a millionth, the social cost exceeds the salary. In the middle of the credible range it exceeds the salary by three to five orders of magnitude.
+Before regulation, before institutions, before any of the interventions we will talk about in a moment, this is what the race is. A distribution of decision-makers each capturing a fraction of a percent of the damage their aggregate is producing. The fixed point speaking through millions of mouths at once.
 
-This isn't a borderline case. It's the largest externality gap in any industry that even resembles a regulated one. Which is where the comparison starts getting uncomfortable.
+## Two games on the same distribution
+
+There is one more structural observation to put on the table before we talk about what to do. The race is not just a collective-action problem. It is a collective-action problem between two populations playing mathematically different games on the same distribution.
+
+Firm-size and return distributions in the AI economy are Pareto. Autor, Dorn, Katz, Patterson and Van Reenen (2020) document the rise of superstar firms: the decline in global labour share since 1980 is driven by sales reallocating toward a small number of frontier firms with capital-heavy technology. Andrews, Criscuolo and Gal (2016) measured the frontier-laggard productivity gap widening through the 2000s. Song, Price, Guvenen, Bloom and von Wachter (2019) showed that most of the rise in US wage inequality since 1980 is *between* firms, not within them: same-skill workers at superstar firms earn more than same-skill workers at laggards. The edge of the distribution stretches forward; the bulk falls behind; the gap widens. That is the empirical form of the acceleration.
+
+Venture capital plays an ensemble game on this distribution. The public data is consistent. Correlation Ventures' analysis of its investment dataset: roughly sixty-five percent of VC investments return less than principal; about four percent return more than ten times; the top tenth of one percent return more than fifty. Thiel argues in *Zero to One* that the single best investment in a fund typically returns more than all the others combined. The Pareto tail carries the mean. A diversified capital allocator does not need to be right on average. They need the right tail preserved.
+
+Labour plays a time-average game on the same distribution. One life, one career, non-repeatable. A single worker's realisation is a sample from a distribution increasingly shaped by the same Pareto dynamics, and most workers cannot diversify across the distribution the way capital can. For the median worker, taking the risk to chase the right tail — quitting to start a company, specialising in a bet that might not pay — has negative expected value not because the distribution is bad on average but because the average belongs to the ensemble, and the individual lives only in their own realisation. Peters (2019) gives the formal treatment, under the name of ergodicity economics; the older informal version is the St. Petersburg paradox, and the intermediate form is the Kelly criterion. It does not matter which framing we use. The point is that the two populations are playing structurally different games.
+
+Which is why the political economy locks where it does. Catastrophic-safety regulation, properly designed, truncates the left tail of outcomes — the valley floor — without compressing the right tail. For labour, whose time-average is dominated by the left tail because it cannot average over the right, this is a large welfare gain. For diversified capital, whose ensemble-average is dominated by the right tail, it is a modest cost: some variance reduction, no loss of the 100x winners. That is, in principle, a Pareto improvement. Labour and capital can be aligned under properly-designed catastrophic-safety regulation.
+
+The reason the regulation does not get built is not that this alignment fails to exist. It is that labour is diffuse and non-diversified and cannot lobby coherently, while capital is organised and diversified and can, and is lobbying specifically against the pro-entry-safety regulation that would realise the alignment. This is not a claim about individual bad faith. It is a claim about the structure of the two games.
+
+Which brings us to the industries that already figured out how to build the alignment.
 
 ## Every other industry already solved this
 
-You know this story, but in a slightly different form. Let me tell it once more in the form that matters here.
+You know this story, but in a slightly different form. Let me tell it once more in the form that matters for what we just said about the two games.
 
 In 1937, a Tennessee pharmaceutical company put out a raspberry-flavoured cough medicine called Elixir Sulfanilamide. The chemist, Harold Watkins, had used diethylene glycol as a solvent. He had not tested it. It killed a hundred and seven people, most of them children. The next year, Congress passed the Food, Drug and Cosmetic Act, and the FDA got its pre-market authority.
 
@@ -102,9 +159,15 @@ The pattern across every catastrophic-risk industry we have ever regulated is a 
   <figcaption>Relative catastrophic-event rates, pre- and post-regulation, across dangerous-technology industries. The toggle applies the historical regulatory multiplier to frontier AI — which, as of today, has none of the ex-ante mechanisms every other row has.</figcaption>
 </figure>
 
+Now the part that matters for the framework. None of these regulations slowed the long-run growth of their industries. The claim that they did — "regulation slows growth" — is a category error, and the economics is clear about why. Aghion and Howitt's creative-destruction theory makes the distinction sharp. *Pro-entry* regulation is the kind where any new firm can enter if it meets the safety standard; it raises the minimum quality of what reaches the market without compressing the right tail of what can win. It is good for growth and good for distribution. *Pro-incumbent* regulation is the kind where licensing becomes a monopoly — pre-market barriers that only large players can clear, capture of the regulator by the incumbents, safe-harbour provisions that favour the largest. It blocks entry. It is bad for growth and bad for distribution.
+
+The pharma, aviation, chemicals, and nuclear regimes are pro-entry. Any new aircraft manufacturer can enter if they meet FAA airworthiness standards. Any new drug developer can file with the FDA. Any new reactor design can go through NRC licensing. The regulations apply to incumbents and entrants symmetrically. They raise $\iota$ without compressing $a$. In the language of the two games: they truncate the left tail of outcomes — the valley floor — without compressing the right tail of winners. That is the Pareto-improving form. Labour comes out ahead. Diversified capital comes out roughly level. Concentrated incumbents come out slightly behind, because the entrants they would have blocked are now allowed through on equal footing.
+
 Frontier AI, as of this week, has: no mandatory pre-deployment approval, no statutory liability regime, no licensing, no mandatory incident reporting with teeth. It has twelve companies' worth of voluntary "responsible scaling policies," of which precisely zero have ever, in the public record, triggered a pause. Meanwhile the industry lobbies against the ones with teeth. Anthropic spent part of this spring fighting an Illinois bill that would have imposed liability for catastrophic outcomes.
 
-The summary sentence, which you are welcome to quote at a cocktail party: **frontier AI is operating under a regulatory regime weaker than the one governing cosmetics.**
+Read carefully, the lobbying is not anti-regulation. The industry has been comfortable with pro-incumbent frameworks — compute-threshold reporting set above what new entrants will ever cross, "responsible scaling" policies internal to the labs, safe-harbour provisions that benefit the largest firms. What the lobbying opposes is specifically the pro-entry catastrophic-safety floor — the liability, the mandatory pre-deployment audit, the reporting with teeth, the symmetric licensing. It opposes exactly the form of regulation that would make abundance and labour-market survival mutually reinforcing.
+
+The summary sentence, which you are welcome to quote at a cocktail party: **frontier AI is operating under a regulatory regime weaker than the one governing cosmetics.** The line I would add for 2026: the industry is not lobbying against regulation. It is lobbying against the form of regulation that would align its interests with everyone else's.
 
 ## "But I'll have more influence from inside"
 
@@ -142,29 +205,29 @@ You can be a perfectly good rationalist and end up inside a captured loop. In fa
 
 ## Three stances, approximately honest
 
-I have been thinking about which stance a young researcher can take and still sleep, and I have come to believe there are three honest ones and one dishonest one.
+The three stances I used to describe to young researchers generalise. Every row in the supply-chain table has them. I have come to believe there are three honest ones and one dishonest one, across the chain.
 
-**Stance A: Participate, then exit.** Take two to four years at a frontier lab. Accumulate, after taxes, something between five and fifty million dollars. Leave with enough capital to do independent work for the rest of your life. You will have contributed two to eight researcher-years of marginal capability progress. The social cost of those years, by the math two sections up, dwarfs what you took home. But you did not lie to yourself about what you were doing, and you now have the resources to do thirty years of whatever comes next.
+**Stance A: Participate, then exit.** Occupy your row of the table for as long as the private-capture holds, then leave with what you've accumulated. The researcher takes two to four years at a frontier lab and leaves with five to fifty million in equity, enough to do independent work for life. The data-platform worker takes the contracts long enough to transition into something AI-resilient. The infrastructure executive rides the up-cycle, bonuses out, exits into a family office or a foundation. The capital allocator rides the bubble, closes the fund, moves on. In every case you did not lie to yourself about what you were doing, and you now have resources. Each row's private capture is different. Each row's contribution to the valley is different. The stance is the same.
 
-**Stance B: Captured academic.** Skip the labs. Work at a university or nonprofit funded by tech-fortune-adjacent philanthropy. You will make two to eight million dollars over a career, mostly housing. You will never directly push a capability forward. Your research agenda, your speaking invitations, and your next grant all depend on approval from the ecosystem whose structure is producing the very externality you are studying. The capture operates on you indirectly, pre-consciously, in the form of which sentences you find yourself interesting.
+**Stance B: Captured advocacy.** Skip the frontline, work at a university, nonprofit, or advocacy organisation funded by tech-fortune-adjacent philanthropy. The researcher becomes a safety-community academic. The ex-platform worker becomes a DAIR-adjacent labour researcher. The ex-executive runs an ESG foundation. The capital allocator does impact-tagged investing with a safety thesis. In every case, you never directly advance the race, but your agenda, your speaking invitations, and your next grant all depend on approval from the ecosystem whose structure is producing the externality you are studying. The capture operates on you indirectly, pre-consciously, in the form of which sentences you find interesting.
 
-**Stance C: Independent institution-builder.** Build the thing that doesn't exist. Non-lab-adjacent funding sources — Japanese government chairs, European public research money, union-linked foundations, development-bank research budgets, your own country's industrial conglomerates. Labour organising. Regulatory capacity. Non-US/UK governance venues. Lifetime wealth: somewhere in the middle, five to twenty million. You don't directly contribute to the race. You are not financially owned by the ecosystem. You also do not get invited to the parties I was at this week, which matters less than the people at those parties think.
+**Stance C: Independent institution-building.** Build the thing that doesn't exist, at your row of the table. For the researcher: non-lab-adjacent funding, Japanese government chairs, European public research money, union-linked foundations, development-bank research budgets. For the data-labelling workforce: platform unionisation, sectoral bargaining on rates, consent and auditability for how labelled data is used, cross-platform solidarity. For the infrastructure role: use your seat to condition permits on incident reporting and catastrophic-liability coverage, to mandate symmetric licensing, to build the pro-entry safety framework the Aghion-Howitt analysis says is the Pareto improvement. For the capital allocator: LP covenants, sovereign-wealth mandates, pension-fund investment screens that condition capital on pre-deployment audit and catastrophic-safety floors. In every row, you are building $\iota$. You are compressing the valley, not widening it. You are not financially owned by the ecosystem. You also do not get invited to the parties I was at this week, which matters less than the people at those parties think.
 
-The dishonest fourth stance is to take Stance A and call it Stance C. To take the lab job, keep the pay, and tell yourself the story in which your presence there is a net subtraction from risk. I met a lot of people doing this. None of them seemed happy, exactly. They seemed the way people seem when they have made a decision they cannot afford to re-examine.
+The dishonest fourth stance, common in every row, is Stance A dressed as Stance C. The researcher in the lab job who tells themselves they are inside-steering. The data-platform worker who frames the contracts as "AI is good for the poor." The executive approving the permit who accepts the campaign donation and calls it "enabling innovation." The capital allocator raising a fund on an AI-safety thesis and deploying it into frontier capability plays. I met a lot of people doing this. None of them seemed happy, exactly. They seemed the way people seem when they have made a decision they cannot afford to re-examine.
 
 ## What would actually move the equilibrium
 
 The single most important sentence in the Armstrong–Bostrom–Shulman paper, translated into English: **you cannot slow the race by being one of the racers.**
 
-The leverage points are all exogenous to the community. There are really only four of them, and none of them are "solve alignment."
+The leverage points are all exogenous to the race. There are really only four of them, and none of them are "solve alignment." All of them operate by raising $\iota$ — the institutional absorption rate — rather than lowering $a$ through individual restraint.
 
-*Independent funding* that does not route through Open Philanthropy or tech fortunes. Government research money in countries not competing for frontier capability. Union-linked research foundations. Industrial-conglomerate money in places like Japan that have strong reasons to want AI-resilient labour markets. Any of it changes the selection pressure on what research gets done.
+*Independent funding* that does not route through Open Philanthropy or tech fortunes. Government research money in countries not competing for frontier capability. Union-linked research foundations. Industrial-conglomerate money in places like Japan that have strong reasons to want AI-resilient labour markets. Pension-fund research budgets. Sovereign-wealth-fund mandates with public-interest constraints. Any of it changes the selection pressure on what research gets done.
 
-*Regulatory venues with teeth.* The EU AI Act, enforced rigorously rather than compliance-theatred. UK AISI's evaluation authority if it is actually used. Liability regimes. Pre-deployment licensing. These change the game's *payoffs*, which is the only thing changing outcomes.
+*Pro-entry safety regulation with teeth.* The EU AI Act, enforced rigorously rather than compliance-theatred. UK AISI's evaluation authority if it is actually used. Liability regimes. Pre-deployment audit. Symmetric licensing — the kind that applies to incumbents and new entrants equally. Mandatory incident reporting. These change the game's *payoffs*, which is the only thing changing outcomes, and they do so in the Pareto-improving way: truncating the left tail without compressing the right. The form to build is specifically the form the industry is currently lobbying against.
 
-*Labour power.* The one nobody wants to talk about. Unionisation at AI labs. Sectoral organising across the AI research workforce. A ML-researcher strike. I want to be plain about this: a coordinated refusal by the research workforce to ship models without external safety certification would change the industry in ways no internal critique or published RSP ever has, because it would change the cost function each lab optimises against. When a company says "we cannot pause because our competitors won't," that is literally the definition of a coordination problem, and coordination problems are what unions are for.
+*Labour power across the supply chain.* The one nobody wants to talk about, in every row. Unionisation at AI labs — a coordinated refusal by the research workforce to ship models without external safety certification would change the industry in ways no internal critique or published RSP ever has. Sectoral organising across data-labelling platforms — Kenyan content moderators at Sama, Scale AI contract workers, and the next round of platform labour have more structural bargaining power than almost anyone in the AI-safety community is willing to acknowledge. Cross-platform solidarity on rates, consent, auditability. Organised labour at chip fabs and in data-centre construction. Chokepoint labour has leverage whenever capital depends on it, and at present, capital depends on all of these. When a company says "we cannot pause because our competitors won't," that is literally the definition of a coordination problem, and coordination problems are what unions are for.
 
-*Non-US/UK governance voices.* Japan. Korea. the EU. Brazil. South Africa. India. Countries that aren't competing to train GPT-7, but are going to live with the consequences of whoever does. Their governance voices being louder, more technically equipped, and better coordinated with each other is the thing that reshapes the equilibrium from outside.
+*Non-US/UK governance voices.* Japan. Korea. the EU. Brazil. South Africa. India. Countries that aren't competing to train GPT-7, but are going to live with the consequences of whoever does. Their governance voices being louder, more technically equipped, and better coordinated with each other is the thing that reshapes the equilibrium from outside. The regulatory venues where pro-entry safety law will actually get written in the next five years are disproportionately here, not in San Francisco.
 
 All four of these are boring compared to "build a better interpretability tool." They are also the only moves the model says actually change anything.
 
@@ -172,20 +235,24 @@ All four of these are boring compared to "build a better interpretability tool."
 
 I am going to be straightforward, because nobody I met this week was.
 
-If you are a researcher in this field, the game-theoretic analysis says the thing you are doing does not work. Steering from inside has a decade-long empirical track record of not slowing a single deployment the steerers themselves judged inadequately safe. The math of the race says that your presence inside a lab raises the equilibrium risk regardless of which team you're on. The math of the externality says your salary is between three and five orders of magnitude smaller than the expected social cost of your participation.
-
-You already know this. Most of the people I had dinner with this week know this. They say "if I don't do it, someone else will," which is the fixed point speaking through them, and then they pour another drink.
+The math of the race says your presence inside it, whichever row of the table you occupy, widens the gap between the acceleration $a$ and the institutional response $\iota$ that would absorb it. The math of the externality says what each row captures privately is between one and five orders of magnitude smaller than the share of valley-cost the row's participation produces. You already know this. Most of the people I had dinner with this week know this. They say "if I don't do it, someone else will," which is the fixed point speaking through them, and then they pour another drink.
 
 Stop.
 
-Refuse the recruiting pipeline. Talk to the people at the next desk. Organise a union. If your lab has one, join it. If your country has an AI-workforce organising effort, find it. If it doesn't, start one. Attend the rooms where regulation is actually being written — EU AI Act enforcement, UK AISI's technical authority, the J-AISI's evolving frameworks, whatever your country's equivalent is — and make yourself useful there, not at the frontier-lab offsite.
+*If you are a frontier researcher*: refuse the recruiting pipeline. Talk to the people at the next desk. Organise. Join the union if your lab has one; start one if it doesn't. A sectoral strike by the ML research workforce would land harder than any paper any of you will ever publish. The labs cannot ship without you.
 
-A sectoral strike by AI safety researchers would land harder than any paper any of you will ever publish. I mean this literally. The research workforce is the bottleneck. The labs cannot ship without you. That is the entire point.
+*If you are a data-providing worker*: the platform that sends you tasks is a chokepoint. Sectoral organising across data-labelling platforms has happened before — Sama, Scale, Surge, Mercor workers have organised — and it can happen again at scale. Cross-platform solidarity. Demand consent and auditability for how your labour is used. Demand pay that reflects the value of what you are producing, which is the training substrate for an industry raising hundreds of billions on your work, and paying you approximately minimum wage for it.
+
+*If you are an infrastructure decision-maker*: use the seat. Executives can condition contracts on pre-deployment safety audits. Legislators can condition zoning variances and water and electricity permits on catastrophic-liability coverage and mandatory incident reporting. This is the pro-entry safety lever. Its costs fall on concentrated incumbents. Its benefits fall on everyone else. It is the one nobody can lobby against honestly.
+
+*If you are a capital allocator*: LP covenants. Sovereign-wealth-fund mandates. Pension-fund investment screens that condition capital on pre-deployment audit and catastrophic-liability insurance. Family-office capital with mandate restrictions. Funds explicitly capitalised around the pro-entry-safety thesis. None of this requires regulatory permission. It requires LPs and trustees to understand that their positions in the current frontier are a bet against their own beneficiaries.
+
+And for everyone in every row: attend the rooms where pro-entry safety regulation is actually being written — EU AI Act enforcement, UK AISI's evaluation authority, J-AISI's evolving frameworks, whatever your country's equivalent is — and make yourself useful there. That is the venue where the alignment between labour and diversified capital becomes law.
 
 ## 
 
 "If I don't do it, someone else will."
 
-You've seen the cost now.
+You've seen the shape of the valley now.
 
-Do you still want to?
+How wide do you want to let it get?
