@@ -1,357 +1,349 @@
 ---
 import Math from '../ui/Math.astro';
+import PRESETS from '../../data/valley-shapes.json';
 ---
 
-<div class="vs">
-  <svg viewBox="0 0 680 340" preserveAspectRatio="xMidYMid meet" aria-label="Valley-shape plot: acceleration versus institutional response over time">
+<div class="vs" data-presets={JSON.stringify(PRESETS)}>
+  <svg viewBox="0 0 680 360" preserveAspectRatio="xMidYMid meet" aria-label="Valley-shape plot: productivity versus compensation over time, with the shaded valley as the accumulated gap">
     <g class="axes">
-      <line x1="70" y1="30" x2="70" y2="280" />
-      <line x1="70" y1="280" x2="650" y2="280" />
+      <line x1="70" y1="50" x2="70" y2="300" />
+      <line x1="70" y1="300" x2="650" y2="300" />
     </g>
-
-    <text x="28" y="155" text-anchor="middle" class="axlabel" transform="rotate(-90 28 155)">growth rate (%/yr)</text>
-    <text x="360" y="318" text-anchor="middle" class="axlabel">years</text>
-
+    <text x="28" y="175" text-anchor="middle" class="axlabel" transform="rotate(-90 28 175)">index (base year = 100)</text>
+    <text x="360" y="338" text-anchor="middle" class="axlabel">year</text>
     <g id="vs-xticks"></g>
     <g id="vs-yticks"></g>
-
+    <g id="vs-regime"></g>
     <path id="vs-valley" class="valley-area" d="" />
-    <path id="vs-a" class="curve curve-a" d="" />
-    <path id="vs-iota" class="curve curve-iota" d="" />
-
-    <g class="legend" transform="translate(470, 40)">
-      <line x1="0" y1="4" x2="24" y2="4" class="curve-a" />
-      <text x="30" y="8" class="legend-text">acceleration a(t)</text>
-      <line x1="0" y1="24" x2="24" y2="24" class="curve-iota" />
-      <text x="30" y="28" class="legend-text">institutional ι(t)</text>
-      <rect x="0" y="38" width="24" height="12" class="valley-legend" />
-      <text x="30" y="48" class="legend-text">valley (a − ι)₊</text>
+    <path id="vs-prod" class="curve curve-prod" d="" />
+    <path id="vs-wages" class="curve curve-wages" d="" />
+    <path id="vs-typical" class="curve curve-typical" d="" />
+    <g class="legend" transform="translate(90, 60)">
+      <line x1="0" y1="4" x2="24" y2="4" class="curve-prod-legend" />
+      <text x="30" y="8" class="legend-text" id="vs-leg-prod">productivity</text>
+      <line x1="0" y1="22" x2="24" y2="22" class="curve-wages-legend" />
+      <text x="30" y="26" class="legend-text" id="vs-leg-wages">real compensation</text>
+      <g id="vs-leg-typical-group" style="display:none">
+        <line x1="0" y1="40" x2="24" y2="40" class="curve-typical-legend" />
+        <text x="30" y="44" class="legend-text">typical-worker compensation</text>
+      </g>
+      <rect id="vs-leg-valley-rect" x="0" y="56" width="24" height="12" class="valley-legend" />
+      <text id="vs-leg-valley-text" x="30" y="66" class="legend-text">valley (productivity − lowest wage)</text>
     </g>
-
     <text id="vs-title" x="360" y="22" text-anchor="middle" class="title"></text>
+    <text id="vs-subtitle" x="360" y="38" text-anchor="middle" class="subtitle"></text>
   </svg>
 
   <div class="controls">
     <label class="preset">
       <span>scenario</span>
       <select id="vs-preset">
-        <option value="engels">Engels' pause — Britain 1780-1840</option>
-        <option value="deindust">US deindustrialisation 1980-</option>
-        <option value="soviet">Post-Soviet transition 1991-2000</option>
-        <option value="aghion" selected>Aghion-Bunel modest AI scenario</option>
+        <option value="britain">Britain 1770-1900 — Engels' pause + recovery</option>
+        <option value="us" selected>United States 1947-2020 — alignment then divergence</option>
+        <option value="soviet">Post-Soviet Russia 1989-2005</option>
+        <option value="aghion">Aghion-Bunel modest AI scenario</option>
         <option value="davidson">Davidson radical AI scenario</option>
-        <option value="custom">Custom</option>
+        <option value="custom">Custom parametric</option>
       </select>
     </label>
-    <label>
-      <span>peak acceleration <Math tex={String.raw`a_{\text{peak}}`} /> (%/yr) = <output id="vs-apeak-out"></output></span>
+    <label class="slider" data-param="a_peak">
+      <span>peak acceleration <Math tex={String.raw`a_{\text{peak}}`} /> (pp/yr) = <output id="vs-apeak-out"></output></span>
       <input type="range" id="vs-apeak" min="0.1" max="80" step="0.1" value="0.7" />
     </label>
-    <label>
+    <label class="slider" data-param="sigma">
       <span>time scale <Math tex={String.raw`\sigma`} /> (yr) = <output id="vs-sigma-out"></output></span>
       <input type="range" id="vs-sigma" min="1" max="40" step="0.5" value="8" />
     </label>
-    <label>
-      <span>institutional catch-up <Math tex={String.raw`k`} /> (%/yr²) = <output id="vs-k-out"></output></span>
+    <label class="slider" data-param="k">
+      <span>institutional catch-up <Math tex={String.raw`k`} /> (pp/yr²) = <output id="vs-k-out"></output></span>
       <input type="range" id="vs-k" min="0.001" max="5" step="0.001" value="0.04" />
     </label>
   </div>
 
   <div class="readout">
-    <span>valley length <strong id="vs-L"></strong></span>
-    <span>peak depth <strong id="vs-depth"></strong></span>
-    <span>integrated gap <strong id="vs-area"></strong></span>
+    <span>valley length <strong id="vs-L">—</strong></span>
+    <span>peak gap <strong id="vs-depth">—</strong></span>
+    <span>integrated cost <strong id="vs-area">—</strong></span>
   </div>
 </div>
 
 <style>
-  .vs {
-    width: 100%;
-    max-width: 760px;
-    margin: 0 auto;
-    color: var(--post-text, #353535);
-    font-family: ui-sans-serif, system-ui, sans-serif;
-  }
+  .vs { width: 100%; max-width: 760px; margin: 0 auto; color: var(--post-text, #353535); font-family: ui-sans-serif, system-ui, sans-serif; }
   .vs svg { width: 100%; height: auto; display: block; }
   .vs .axes line { stroke: var(--post-separator, #bbb); stroke-width: 1; }
-  .vs g#vs-xticks line,
-  .vs g#vs-yticks line { stroke: var(--post-separator, #bbb); }
-  .vs g#vs-xticks text,
-  .vs g#vs-yticks text,
-  .vs .axlabel,
-  .vs .legend-text {
+  .vs g#vs-xticks line, .vs g#vs-yticks line { stroke: var(--post-separator, #bbb); }
+  .vs g#vs-xticks text, .vs g#vs-yticks text, .vs .axlabel, .vs .legend-text, .vs .subtitle {
     fill: var(--post-caption, #737373);
     font-size: 11px;
   }
   .vs .axlabel { font-size: 12px; }
-  .vs .title {
-    fill: var(--post-heading, #1a1a1a);
-    font-size: 13px;
-    font-weight: 600;
-  }
+  .vs .title { fill: var(--post-heading, #1a1a1a); font-size: 13px; font-weight: 600; }
+  .vs .subtitle { font-size: 11px; }
   .vs .curve { fill: none; stroke-width: 2; }
-  .vs .curve-a { stroke: #1a1a1a; }
-  .vs .curve-iota { stroke: #2563eb; stroke-dasharray: 5 3; }
-  .vs line.curve-a { stroke-width: 2; }
-  .vs line.curve-iota { stroke-width: 2; }
-  .vs .valley-area { fill: #dc2626; fill-opacity: 0.22; stroke: none; }
-  .vs .valley-legend { fill: #dc2626; fill-opacity: 0.22; stroke: none; }
-
-  .vs .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 0.9rem 1.4rem;
-    margin-top: 0.9rem;
-    font-size: 0.88rem;
-  }
-  @media (max-width: 560px) {
-    .vs .controls { grid-template-columns: 1fr; }
-  }
-  .vs .controls label {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-    color: var(--post-caption, #737373);
-  }
+  .vs .curve-prod, .vs line.curve-prod-legend { stroke: #1a1a1a; stroke-width: 2; }
+  .vs .curve-wages, .vs line.curve-wages-legend { stroke: #2563eb; stroke-width: 2; }
+  .vs .curve-typical, .vs line.curve-typical-legend { stroke: #0891b2; stroke-width: 2; stroke-dasharray: 4 3; }
+  .vs .valley-area, .vs .valley-legend { fill: #dc2626; fill-opacity: 0.22; stroke: none; }
+  .vs .regime-line { stroke: var(--post-caption, #737373); stroke-width: 1; stroke-dasharray: 3 3; }
+  .vs .regime-label { fill: var(--post-caption, #737373); font-size: 10px; }
+  .vs .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.4rem; margin-top: 0.9rem; font-size: 0.88rem; }
+  @media (max-width: 560px) { .vs .controls { grid-template-columns: 1fr; } }
+  .vs .controls label { display: flex; flex-direction: column; gap: 0.25rem; color: var(--post-caption, #737373); }
+  .vs .controls label.slider[data-disabled="true"] { opacity: 0.4; pointer-events: none; }
   .vs .controls input[type="range"] { accent-color: #dc2626; width: 100%; }
-  .vs .controls select {
-    padding: 0.3rem 0.4rem;
-    font-size: 0.88rem;
-    color: var(--post-heading, #1a1a1a);
-    background: transparent;
-    border: 1px solid var(--post-separator, #bbb);
-    border-radius: 3px;
-  }
+  .vs .controls select { padding: 0.3rem 0.4rem; font-size: 0.88rem; color: var(--post-heading, #1a1a1a); background: transparent; border: 1px solid var(--post-separator, #bbb); border-radius: 3px; }
   .vs .controls output { color: var(--post-heading, #1a1a1a); font-weight: 600; }
-  .vs .readout {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 1.5rem;
-    margin-top: 0.7rem;
-    font-size: 0.82rem;
-    color: var(--post-caption, #737373);
-    justify-content: center;
-  }
+  .vs .readout { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; margin-top: 0.7rem; font-size: 0.82rem; color: var(--post-caption, #737373); justify-content: center; }
   .vs .readout strong { color: var(--post-heading, #1a1a1a); font-weight: 600; margin-left: 0.25rem; }
 </style>
 
 <script>
-  const X0 = 70, X1 = 650, Y0 = 30, Y1 = 280;
-  const T_MAX_DEFAULT = 80;  // years of x-axis
+  const X0 = 70, X1 = 650, Y0 = 50, Y1 = 300;
 
+  type DataPoint = { year: number; productivity: number; wages: number; wages_typical?: number };
   type Preset = {
-    key: string;
     title: string;
-    a_peak: number;   // %/yr
-    sigma: number;    // yr
-    k: number;        // %/yr^2
-    t_max: number;    // yr axis range
+    subtitle: string;
+    source_refs?: string;
+    kind?: "historical" | "parametric";
+    x_range: [number, number];
+    y_range: [number, number];
+    regime_change?: { year: number; label: string };
+    show_typical_cohort?: boolean;
+    data?: DataPoint[];
+    params?: { a_peak: number; sigma: number; k: number };
   };
 
-  const PRESETS: Record<string, Preset> = {
-    engels:    { key: "engels",    title: "Engels' pause — Britain 1780-1840",           a_peak: 0.8,  sigma: 25,  k: 0.010, t_max: 80  },
-    deindust:  { key: "deindust",  title: "US deindustrialisation 1980-",                a_peak: 0.5,  sigma: 20,  k: 0.005, t_max: 70  },
-    soviet:    { key: "soviet",    title: "Post-Soviet transition 1991-2000",            a_peak: 8.0,  sigma: 3,   k: 0.50,  t_max: 30  },
-    aghion:    { key: "aghion",    title: "Aghion-Bunel modest AI scenario",             a_peak: 0.7,  sigma: 8,   k: 0.04,  t_max: 40  },
-    davidson:  { key: "davidson",  title: "Davidson radical AI scenario",                a_peak: 50.0, sigma: 2,   k: 3.0,   t_max: 15  },
-    custom:    { key: "custom",    title: "Custom parameters",                           a_peak: 2.0,  sigma: 10,  k: 0.10,  t_max: 50  },
-  };
+  const root = document.querySelector(".vs") as HTMLElement | null;
+  if (!root) throw new Error("valley-shape root not found");
+  const PRESETS: Record<string, Preset> = JSON.parse(root.dataset.presets || "{}");
 
-  const IOTA_0 = 0.1;  // baseline institutional rate, %/yr
-
-  function computeCurves(p: Preset, t_max: number) {
-    const N = 400;
-    const dt = t_max / N;
-    const ts: number[] = [];
-    const as_: number[] = [];
-    const iotas: number[] = [];
-    const gaps: number[] = [];
-    for (let i = 0; i <= N; i++) {
-      const t = i * dt;
-      const a = p.a_peak * Math.exp(-0.5 * Math.pow((t - p.sigma) / (p.sigma / 1.4), 2));
-      const iota = IOTA_0 + p.k * t;
-      ts.push(t);
-      as_.push(a);
-      iotas.push(iota);
-      gaps.push(Math.max(0, a - iota));
-    }
-    return { ts, as: as_, iotas, gaps, dt };
-  }
-
-  function summarise(ts: number[], gaps: number[], dt: number) {
-    let area = 0;
-    let peak = 0;
-    let lastPositive = 0;
-    let firstPositive = -1;
-    for (let i = 0; i < gaps.length; i++) {
-      if (gaps[i] > 0) {
-        if (firstPositive < 0) firstPositive = ts[i];
-        lastPositive = ts[i];
-        area += gaps[i] * dt;
-        if (gaps[i] > peak) peak = gaps[i];
-      }
-    }
-    const length = firstPositive >= 0 ? (lastPositive - firstPositive) : 0;
-    return { area, peak, length };
-  }
-
-  function pathFor(ts: number[], vals: number[], yMax: number, t_max: number): string {
-    let d = "";
-    for (let i = 0; i < ts.length; i++) {
-      const x = X0 + (ts[i] / t_max) * (X1 - X0);
-      const y = Y1 - (Math.max(0, vals[i]) / yMax) * (Y1 - Y0);
-      d += `${i === 0 ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)} `;
-    }
-    return d;
-  }
-
-  function valleyPathFor(ts: number[], as_: number[], iotas: number[], yMax: number, t_max: number): string {
-    // build polygon wrapping around (a above iota) regions
-    const xFor = (t: number) => X0 + (t / t_max) * (X1 - X0);
-    const yFor = (v: number) => Y1 - (Math.max(0, v) / yMax) * (Y1 - Y0);
-    let d = "";
-    let inRegion = false;
-    const starts: number[] = [];
-    const ends: number[] = [];
-    for (let i = 0; i < ts.length; i++) {
-      const above = as_[i] > iotas[i];
-      if (above && !inRegion) { starts.push(i); inRegion = true; }
-      if (!above && inRegion) { ends.push(i - 1); inRegion = false; }
-    }
-    if (inRegion) ends.push(ts.length - 1);
-    for (let r = 0; r < starts.length; r++) {
-      const s = starts[r], e = ends[r];
-      // forward along a
-      for (let i = s; i <= e; i++) {
-        const x = xFor(ts[i]), y = yFor(as_[i]);
-        d += `${i === s ? "M" : "L"}${x.toFixed(2)},${y.toFixed(2)} `;
-      }
-      // backward along iota
-      for (let i = e; i >= s; i--) {
-        const x = xFor(ts[i]), y = yFor(iotas[i]);
-        d += `L${x.toFixed(2)},${y.toFixed(2)} `;
-      }
-      d += "Z ";
-    }
-    return d;
-  }
-
-  function yAxisMax(aPeak: number): number {
-    // round up to a nice value
-    if (aPeak <= 1) return 1.5;
-    if (aPeak <= 2) return 3;
-    if (aPeak <= 5) return 6;
-    if (aPeak <= 10) return 12;
-    if (aPeak <= 20) return 24;
-    if (aPeak <= 50) return 60;
-    return 100;
-  }
-
-  function setupAxisTicks(t_max: number, yMax: number) {
-    const svgns = "http://www.w3.org/2000/svg";
-    const xg = document.getElementById("vs-xticks");
-    const yg = document.getElementById("vs-yticks");
-    if (!xg || !yg) return;
-    while (xg.firstChild) xg.removeChild(xg.firstChild);
-    while (yg.firstChild) yg.removeChild(yg.firstChild);
-
-    // x ticks: 5 divisions
-    const nx = 5;
-    for (let i = 0; i <= nx; i++) {
-      const t = (t_max * i) / nx;
-      const x = X0 + (i / nx) * (X1 - X0);
-      const tick = document.createElementNS(svgns, "line");
-      tick.setAttribute("x1", String(x));
-      tick.setAttribute("y1", String(Y1));
-      tick.setAttribute("x2", String(x));
-      tick.setAttribute("y2", String(Y1 + 4));
-      xg.appendChild(tick);
-      const label = document.createElementNS(svgns, "text");
-      label.setAttribute("x", String(x));
-      label.setAttribute("y", String(Y1 + 16));
-      label.setAttribute("text-anchor", "middle");
-      label.textContent = t % 1 === 0 ? String(Math.round(t)) : t.toFixed(1);
-      xg.appendChild(label);
-    }
-
-    // y ticks: 4 divisions
-    const ny = 4;
-    for (let i = 0; i <= ny; i++) {
-      const v = (yMax * i) / ny;
-      const y = Y1 - (i / ny) * (Y1 - Y0);
-      const tick = document.createElementNS(svgns, "line");
-      tick.setAttribute("x1", String(X0 - 4));
-      tick.setAttribute("y1", String(y));
-      tick.setAttribute("x2", String(X0));
-      tick.setAttribute("y2", String(y));
-      yg.appendChild(tick);
-      const label = document.createElementNS(svgns, "text");
-      label.setAttribute("x", String(X0 - 8));
-      label.setAttribute("y", String(y + 4));
-      label.setAttribute("text-anchor", "end");
-      label.textContent = v < 10 ? v.toFixed(1) : String(Math.round(v));
-      yg.appendChild(label);
-    }
-  }
-
+  const svgns = "http://www.w3.org/2000/svg";
   const select = document.getElementById("vs-preset") as HTMLSelectElement | null;
   const aSlider = document.getElementById("vs-apeak") as HTMLInputElement | null;
   const sigmaSlider = document.getElementById("vs-sigma") as HTMLInputElement | null;
   const kSlider = document.getElementById("vs-k") as HTMLInputElement | null;
-  const aOut = document.getElementById("vs-apeak-out") as HTMLOutputElement | null;
-  const sigmaOut = document.getElementById("vs-sigma-out") as HTMLOutputElement | null;
-  const kOut = document.getElementById("vs-k-out") as HTMLOutputElement | null;
-  const title = document.getElementById("vs-title") as SVGTextElement | null;
-  const aPath = document.getElementById("vs-a") as SVGPathElement | null;
-  const iotaPath = document.getElementById("vs-iota") as SVGPathElement | null;
-  const valleyPath = document.getElementById("vs-valley") as SVGPathElement | null;
-  const LOut = document.getElementById("vs-L") as HTMLElement | null;
-  const depthOut = document.getElementById("vs-depth") as HTMLElement | null;
-  const areaOut = document.getElementById("vs-area") as HTMLElement | null;
+  const aOut = document.getElementById("vs-apeak-out");
+  const sigmaOut = document.getElementById("vs-sigma-out");
+  const kOut = document.getElementById("vs-k-out");
+  const title = document.getElementById("vs-title");
+  const subtitle = document.getElementById("vs-subtitle");
+  const prodPath = document.getElementById("vs-prod") as unknown as SVGPathElement | null;
+  const wagesPath = document.getElementById("vs-wages") as unknown as SVGPathElement | null;
+  const typicalPath = document.getElementById("vs-typical") as unknown as SVGPathElement | null;
+  const valleyPath = document.getElementById("vs-valley") as unknown as SVGPathElement | null;
+  const regimeGroup = document.getElementById("vs-regime");
+  const xTicksGroup = document.getElementById("vs-xticks");
+  const yTicksGroup = document.getElementById("vs-yticks");
+  const legTypicalGroup = document.getElementById("vs-leg-typical-group");
+  const legValleyText = document.getElementById("vs-leg-valley-text");
+  const LOut = document.getElementById("vs-L");
+  const depthOut = document.getElementById("vs-depth");
+  const areaOut = document.getElementById("vs-area");
+  const sliderLabels = document.querySelectorAll(".vs .controls label.slider");
 
-  function applyPreset(key: string) {
-    const p = PRESETS[key] || PRESETS.custom;
-    if (aSlider) aSlider.value = String(p.a_peak);
-    if (sigmaSlider) sigmaSlider.value = String(p.sigma);
-    if (kSlider) kSlider.value = String(p.k);
-    if (title) title.textContent = p.title;
-    render(p.t_max);
+  function clear(el: HTMLElement | null) {
+    if (!el) return;
+    while (el.firstChild) el.removeChild(el.firstChild);
+  }
+  function xFor(val: number, xr: [number, number]) { return X0 + ((val - xr[0]) / (xr[1] - xr[0])) * (X1 - X0); }
+  function yFor(val: number, yr: [number, number]) { return Y1 - ((val - yr[0]) / (yr[1] - yr[0])) * (Y1 - Y0); }
+  function niceTicks(lo: number, hi: number, count = 5): number[] {
+    const step = (hi - lo) / count;
+    const mag = Math.pow(10, Math.floor(Math.log10(step)));
+    const normalized = step / mag;
+    const niceStep = normalized < 1.5 ? 1 : normalized < 3 ? 2 : normalized < 7 ? 5 : 10;
+    const stepSize = niceStep * mag;
+    const first = Math.ceil(lo / stepSize) * stepSize;
+    const ticks: number[] = [];
+    for (let v = first; v <= hi + 1e-9; v += stepSize) ticks.push(Math.round(v * 1000) / 1000);
+    return ticks;
   }
 
-  function render(t_max?: number) {
-    if (!aSlider || !sigmaSlider || !kSlider || !aOut || !sigmaOut || !kOut) return;
-    const a_peak = parseFloat(aSlider.value);
-    const sigma = parseFloat(sigmaSlider.value);
-    const k = parseFloat(kSlider.value);
-    aOut.textContent = a_peak.toFixed(1);
-    sigmaOut.textContent = sigma.toFixed(1);
-    kOut.textContent = k.toFixed(3);
-
-    const presetKey = select?.value || "custom";
-    const preset = PRESETS[presetKey] || PRESETS.custom;
-    const t_axis = t_max ?? preset.t_max;
-
-    const p: Preset = { key: presetKey, title: preset.title, a_peak, sigma, k, t_max: t_axis };
-    const { ts, as: as_, iotas, gaps, dt } = computeCurves(p, t_axis);
-    const yMax = yAxisMax(a_peak);
-    setupAxisTicks(t_axis, yMax);
-
-    if (aPath) aPath.setAttribute("d", pathFor(ts, as_, yMax, t_axis));
-    if (iotaPath) iotaPath.setAttribute("d", pathFor(ts, iotas, yMax, t_axis));
-    if (valleyPath) valleyPath.setAttribute("d", valleyPathFor(ts, as_, iotas, yMax, t_axis));
-
-    const { area, peak, length } = summarise(ts, gaps, dt);
-    if (LOut) LOut.textContent = length > 0 ? `${length.toFixed(1)} yr` : "—";
-    if (depthOut) depthOut.textContent = peak > 0 ? `${peak.toFixed(2)} pp/yr` : "—";
-    if (areaOut) areaOut.textContent = area > 0 ? `${area.toFixed(1)} pp·yr` : "0";
+  function drawAxes(xr: [number, number], yr: [number, number]) {
+    clear(xTicksGroup as HTMLElement);
+    clear(yTicksGroup as HTMLElement);
+    const xt = niceTicks(xr[0], xr[1], 6);
+    for (const v of xt) {
+      const x = xFor(v, xr);
+      const tick = document.createElementNS(svgns, "line");
+      tick.setAttribute("x1", String(x)); tick.setAttribute("y1", String(Y1));
+      tick.setAttribute("x2", String(x)); tick.setAttribute("y2", String(Y1 + 4));
+      xTicksGroup?.appendChild(tick);
+      const label = document.createElementNS(svgns, "text");
+      label.setAttribute("x", String(x)); label.setAttribute("y", String(Y1 + 16));
+      label.setAttribute("text-anchor", "middle");
+      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
+      xTicksGroup?.appendChild(label);
+    }
+    const yt = niceTicks(yr[0], yr[1], 5);
+    for (const v of yt) {
+      const y = yFor(v, yr);
+      const tick = document.createElementNS(svgns, "line");
+      tick.setAttribute("x1", String(X0 - 4)); tick.setAttribute("y1", String(y));
+      tick.setAttribute("x2", String(X0)); tick.setAttribute("y2", String(y));
+      yTicksGroup?.appendChild(tick);
+      const label = document.createElementNS(svgns, "text");
+      label.setAttribute("x", String(X0 - 8)); label.setAttribute("y", String(y + 4));
+      label.setAttribute("text-anchor", "end");
+      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
+      yTicksGroup?.appendChild(label);
+    }
   }
 
-  select?.addEventListener("change", () => {
-    applyPreset(select.value);
-  });
+  function drawRegime(p: Preset) {
+    clear(regimeGroup as HTMLElement);
+    if (!p.regime_change) return;
+    const x = xFor(p.regime_change.year, p.x_range);
+    if (x < X0 || x > X1) return;
+    const line = document.createElementNS(svgns, "line");
+    line.setAttribute("class", "regime-line");
+    line.setAttribute("x1", String(x)); line.setAttribute("y1", String(Y0));
+    line.setAttribute("x2", String(x)); line.setAttribute("y2", String(Y1));
+    regimeGroup?.appendChild(line);
+    const label = document.createElementNS(svgns, "text");
+    label.setAttribute("class", "regime-label");
+    label.setAttribute("x", String(x + 4)); label.setAttribute("y", String(Y0 + 12));
+    label.setAttribute("text-anchor", "start");
+    label.textContent = p.regime_change.label;
+    regimeGroup?.appendChild(label);
+  }
+
+  function parametricData(params: { a_peak: number; sigma: number; k: number }, xr: [number, number]): DataPoint[] {
+    const N = 200;
+    const t0 = xr[0], t1 = xr[1];
+    const dt = (t1 - t0) / N;
+    const pts: DataPoint[] = [];
+    let cumA = 0, cumI = 0, aPrev = 0, iPrev = 0;
+    for (let i = 0; i <= N; i++) {
+      const t = t0 + i * dt;
+      const a = params.a_peak * Math.exp(-0.5 * Math.pow((t - params.sigma) / (params.sigma / 1.4), 2));
+      const iRate = Math.min(params.a_peak, params.k * t);
+      if (i > 0) {
+        cumA += ((a + aPrev) / 2) * dt;
+        cumI += ((iRate + iPrev) / 2) * dt;
+      }
+      aPrev = a; iPrev = iRate;
+      pts.push({ year: t, productivity: 100 + cumA, wages: 100 + cumI });
+    }
+    return pts;
+  }
+
+  function pathFromSeries(data: DataPoint[], field: "productivity" | "wages" | "wages_typical", xr: [number, number], yr: [number, number]): string {
+    let d = "", first = true;
+    for (const pt of data) {
+      const v = (pt as any)[field];
+      if (v === undefined || v === null) continue;
+      const x = xFor(pt.year, xr).toFixed(2);
+      const y = yFor(v, yr).toFixed(2);
+      d += `${first ? "M" : "L"}${x},${y} `;
+      first = false;
+    }
+    return d;
+  }
+
+  function valleyPolygon(data: DataPoint[], lowerField: "wages" | "wages_typical", xr: [number, number], yr: [number, number]): string {
+    const pts = data.filter(pt => (pt as any)[lowerField] !== undefined && (pt as any)[lowerField] !== null && pt.productivity > (pt as any)[lowerField]);
+    if (pts.length < 2) return "";
+    let d = "";
+    for (let i = 0; i < pts.length; i++) {
+      const x = xFor(pts[i].year, xr).toFixed(2);
+      const y = yFor(pts[i].productivity, yr).toFixed(2);
+      d += `${i === 0 ? "M" : "L"}${x},${y} `;
+    }
+    for (let i = pts.length - 1; i >= 0; i--) {
+      const x = xFor(pts[i].year, xr).toFixed(2);
+      const y = yFor((pts[i] as any)[lowerField], yr).toFixed(2);
+      d += `L${x},${y} `;
+    }
+    d += "Z";
+    return d;
+  }
+
+  function summarise(data: DataPoint[], lowerField: "wages" | "wages_typical"): { length: number; peak: number; area: number } {
+    let length = 0, peak = 0, area = 0, first = -1, last = -1;
+    for (let i = 0; i < data.length; i++) {
+      const p = data[i].productivity;
+      const w = (data[i] as any)[lowerField];
+      if (w === undefined || w === null) continue;
+      const gap = p - w;
+      if (gap > 0) {
+        if (first < 0) first = i;
+        last = i;
+        if (gap > peak) peak = gap;
+        if (i > 0 && data[i - 1] && (data[i - 1] as any)[lowerField] !== undefined) {
+          const prevGap = Math.max(0, data[i - 1].productivity - (data[i - 1] as any)[lowerField]);
+          const dy = data[i].year - data[i - 1].year;
+          area += ((gap + prevGap) / 2) * dy;
+        }
+      }
+    }
+    if (first >= 0 && last >= 0) length = data[last].year - data[first].year;
+    return { length, peak, area };
+  }
+
+  function setSlidersFromParams(params: { a_peak: number; sigma: number; k: number }) {
+    if (aSlider) aSlider.value = String(params.a_peak);
+    if (sigmaSlider) sigmaSlider.value = String(params.sigma);
+    if (kSlider) kSlider.value = String(params.k);
+  }
+
+  function setSliderEnabled(enabled: boolean) {
+    sliderLabels.forEach(l => (l as HTMLElement).dataset.disabled = enabled ? "false" : "true");
+  }
+
+  function render() {
+    const key = select?.value || "us";
+    const preset = PRESETS[key];
+    if (!preset) return;
+    if (title) title.textContent = preset.title;
+    if (subtitle) subtitle.textContent = preset.subtitle;
+
+    const isParam = preset.kind === "parametric";
+    setSliderEnabled(isParam);
+    if (isParam && preset.params) {
+      if (key !== "custom") setSlidersFromParams(preset.params);
+    }
+
+    if (aOut) aOut.textContent = parseFloat(aSlider?.value || "0").toFixed(1);
+    if (sigmaOut) sigmaOut.textContent = parseFloat(sigmaSlider?.value || "0").toFixed(1);
+    if (kOut) kOut.textContent = parseFloat(kSlider?.value || "0").toFixed(3);
+
+    let data: DataPoint[] = [];
+    if (isParam) {
+      const params = {
+        a_peak: parseFloat(aSlider?.value || "0"),
+        sigma: parseFloat(sigmaSlider?.value || "1"),
+        k: parseFloat(kSlider?.value || "0"),
+      };
+      data = parametricData(params, preset.x_range);
+    } else if (preset.data) {
+      data = preset.data;
+    }
+
+    drawAxes(preset.x_range, preset.y_range);
+    drawRegime(preset);
+
+    const showTypical = !!preset.show_typical_cohort;
+    if (legTypicalGroup) (legTypicalGroup as HTMLElement).style.display = showTypical ? "block" : "none";
+    const lowerField: "wages" | "wages_typical" = showTypical ? "wages_typical" : "wages";
+    if (legValleyText) legValleyText.textContent = showTypical ? "valley (productivity − typical wage)" : "valley (productivity − wage)";
+
+    prodPath?.setAttribute("d", pathFromSeries(data, "productivity", preset.x_range, preset.y_range));
+    wagesPath?.setAttribute("d", pathFromSeries(data, "wages", preset.x_range, preset.y_range));
+    typicalPath?.setAttribute("d", showTypical ? pathFromSeries(data, "wages_typical", preset.x_range, preset.y_range) : "");
+    valleyPath?.setAttribute("d", valleyPolygon(data, lowerField, preset.x_range, preset.y_range));
+
+    const s = summarise(data, lowerField);
+    if (LOut) LOut.textContent = s.length > 0 ? `${s.length.toFixed(0)} yr` : "—";
+    if (depthOut) depthOut.textContent = s.peak > 0 ? `${s.peak.toFixed(1)} index pts` : "—";
+    if (areaOut) areaOut.textContent = s.area > 0 ? `${s.area.toFixed(0)} index·yr` : "0";
+  }
+
+  select?.addEventListener("change", () => render());
   aSlider?.addEventListener("input", () => { if (select) select.value = "custom"; render(); });
   sigmaSlider?.addEventListener("input", () => { if (select) select.value = "custom"; render(); });
   kSlider?.addEventListener("input", () => { if (select) select.value = "custom"; render(); });
 
-  applyPreset(select?.value || "aghion");
+  render();
 </script>
