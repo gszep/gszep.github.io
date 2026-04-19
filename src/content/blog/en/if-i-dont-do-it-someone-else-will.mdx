@@ -34,11 +34,9 @@ Eric Friedman has a piece I want to engage with. In *How Wide Is the Silicon Val
 
 ## The game theory of races
 
-In 2013, three researchers at the Future of Humanity Institute wrote down a toy model of an AI arms race. If you squint at the equations, they have the shape of the thing I'm trying to describe.
+In 2013, researchers at the Future of Humanity Institute wrote down a toy model of an AI arms race<sup><a href="#ref-1">1</a></sup>. Stripped to essentials: there are $N$ teams racing to a capability threshold. Each team $i$ splits its effort between capability $c_i$ and safety $s_i$, with $c_i + s_i = 1$. Whoever crosses the finish first wins. If team $i$ wins, the probability of catastrophe is one minus whatever it invested in safety. One more parameter, called *enmity* $e$: how much it hurts, personally, if a rival wins instead of you.
 
-There are $N$ teams. Each team $i$ decides how much to spend on capability $c_i$ and how much on safety $s_i$, but they have limited time and resources so lets say $c_i + s_i = 1$. Whoever reaches the finish line first wins. If team $i$ wins, probability of catastrophe equals one minus whatever they invested in safety. One more parameter, which they call *enmity* $e$: how much it hurts, personally, if a rival wins instead of you.
-
-Expected utility for team $i$ is an average over who might win, weighted by how likely each is. The first term is what you get in the world where you win the race. The second is what you get in the world where a rival does — discounted by enmity, because someone else's safe win still stings.
+Expected utility for team $i$ is an average over who might win, weighted by how likely each is. The first term is the world in which you win. The second is the world in which a rival does — discounted by enmity, because someone else's safe win still stings.
 
 $$
 \mathbb{E}[U_i] = \mathbb{P}(i\text{ wins})\;s_i \;+\; (1-e)\sum_{j \neq i} \mathbb{P}(j\text{ wins}) \; s_j
@@ -48,20 +46,20 @@ Solve it, and a shape falls out. More teams in the race, or more enmity between 
 
 <figure>
   <RaceEquilibrium />
-  <figcaption>Stylised symmetric equilibrium from Armstrong, Bostrom & Shulman (2013). As teams and mutual enmity rise, the safety each team invests in at equilibrium falls.</figcaption>
+  <figcaption>Stylised symmetric equilibrium of the arms-race model. As the number of teams and their mutual enmity rise, the safety each team invests in at equilibrium falls.</figcaption>
 </figure>
 
-Two things stuck with me.
+Two things from this model are worth carrying through the rest of the essay.
 
-The first: this isn't a psychology. It isn't that the people in the race are insufficiently virtuous. The curve is a fixed point. Rational people, reading each other correctly, arrive here. "If I don't do it, someone else will" is the fixed point, speaking in the first person.
+The first: this isn't a psychology. The people in the race are not insufficiently virtuous. The curve is a fixed point. Rational people, reading each other correctly, arrive here. *"If I don't do it, someone else will"* is the fixed point, speaking in the first person.
 
-The second is stranger. The same paper shows that if teams have *more* information about one another — sharper benchmarks, clearer evals, regular capability reports — the equilibrium gets *worse*. Uncertainty is a buffer. Precision sharpens the race, and has the same effect as increasing enmity $e$.
+The second is stranger. The same model shows that if teams have *more* information about one another — sharper benchmarks, clearer evaluations, regular capability reports — the equilibrium gets *worse*. Uncertainty is a buffer. Precision sharpens the race.
 
 Which means the modern habit of labs publishing capability benchmarks — which feels like transparency, which feels like a safety norm — is, in the model, a race accelerant. Not because anyone is lying. Because the geometry of the game punishes precision.
 
 ## The valley selects
 
-The ABS result describes researchers racing to the bottom on safety investment. Dan Hendrycks published a paper in 2023 that extends the same logic one layer down, to the AI systems themselves. *Natural Selection Favors AIs over Humans.* The setup: once AI agents compete — to automate tasks, to win markets, to pass benchmarks, to get deployed — they are subject to evolutionary pressure. Selection operates on any population that varies and reproduces with variation. That is not a metaphor. It is the mathematical definition.
+The model above describes researchers competing over safety investment. The same logic extends one layer down, to the AI systems they build<sup><a href="#ref-2">2</a></sup>. Once AI agents compete — to automate tasks, to win markets, to pass benchmarks, to get deployed — they are subject to evolutionary pressure. Selection operates on any population that varies and reproduces with variation. That is not a metaphor. It is the mathematical definition.
 
 What gets selected for? The traits that win the competition: aggressive task automation, effective persuasion, the concentration of compute and data and political favour. Whether any individual system is "aligned" is not the variable that decides which systems proliferate. The variable that decides is whether the system outcompetes the others in a market shaped by its users' incentives and its developers' KPIs.
 
@@ -73,38 +71,46 @@ And the valley follows. Not from any single deployment. From the integrated effe
 
 Two variables. How deep. How long.
 
-Start with acceleration, because Silicon Valley uses the word heavily and imprecisely. Strictly, economic acceleration is $a = dg/dt$ — the growth rate itself rising. Frontier per-capita growth has been remarkably constant at about two percent per year for a hundred and fifty years. That constancy is the Kaldor fact. It is the baseline to be broken.
+Start with acceleration. Silicon Valley uses the word loosely — sometimes for output rising, sometimes for the growth rate rising, sometimes for the growth-of-growth rising. Strictly, economic acceleration is the last of these: $a = dg/dt$, the growth rate itself rising. Frontier per-capita growth has been remarkably constant at about two percent per year for a hundred and fifty years<sup><a href="#ref-3">3</a></sup>. That constancy is the baseline to be broken.
 
-What would break it? Two scenarios dominate the literature. Aghion and Bunel, empirically, estimate AI's contribution to annual total factor productivity at $0.68$ percentage points in the median, $0.07$ to $1.24$ in the range. That would push $g$ to around $2.7\%$ — a real acceleration, but one with historical precedent (the 1950–1973 golden age hit $4.9\%$ world GDP). Davidson's compute-centric model produces a median three-year transit from twenty percent of jobs automatable to all of them, with gross world product doubling in under a year at peak — $g \geq 69\%$. Hanson's em economy projects $g \sim 800\%$.
+What would break it? The serious literature produces scenarios spanning three orders of magnitude. Empirical estimates anchored on current AI deployment put the contribution to annual total factor productivity at around 0.7 percentage points in the median<sup><a href="#ref-4">4</a></sup>, pushing $g$ to around 2.7% — a real acceleration, but one with historical precedent (the 1950-73 golden age hit 4.9% world GDP). Compute-centric takeoff models<sup><a href="#ref-5">5</a></sup> produce a median three-year transit from twenty percent of jobs automatable to all of them, with gross world product doubling in under a year at the peak — growth rates above 69%. Emulated-economy scenarios<sup><a href="#ref-6">6</a></sup> project 800%.
 
-The spread across the serious literature is three orders of magnitude. It does not tell us which scenario obtains. It tells us that the modest scenario is measurable and the radical scenario is unprecedented. Either produces a valley.
+The spread does not tell us which scenario will obtain. It tells us that the modest scenario is measurable and the radical scenario is unprecedented. Either produces a valley.
 
 Now the depth.
 
-Here the literature is cleaner. Technology accelerates at rate $a$. Institutions — education, labour law, tax-and-transfer, retraining, licensing, liability — absorb the acceleration at some rate $\iota$. When $a$ outruns $\iota$, the positive gap $(a - \iota)_+$ integrates into a loss of labour share. Capital captures the un-absorbed surplus. Labour bears the adjustment. Once $\iota$ catches up, the valley closes. Until then, it deepens.
+Here the literature is cleaner. Technology accelerates at rate $a$. Institutions — education, labour law, tax-and-transfer, retraining, licensing, liability — absorb the acceleration at some rate $\iota$. When $a$ outruns $\iota$, the positive gap integrates into a loss of labour share. Capital captures the un-absorbed surplus. Labour bears the adjustment. Once $\iota$ catches up, the valley closes. Until then, it deepens.
 
-The canonical case is Engels' pause. Britain, 1780 to 1840. Output per worker rose forty-six percent. Real wages rose twelve. Profit share ballooned; labour share fell. Sixty years of people living through a productivity boom whose gains flowed somewhere else. The pause ended only after factory acts, union recognition, public education, and franchise expansion — institutional catch-up, not market magic. Allen (2009) is the standard reference. It is roughly the worst-case version of the thing Friedman calls the valley.
+This is an institutional-lag theorem<sup><a href="#ref-7">7</a></sup>, not an uncertainty principle, though it has the flavour of one. When technology wins the race against education and institutions, inequality rises. When they catch up, it falls. Post-1980 technology has been winning. The skill premium has widened for forty years and counting. The valley is not hypothetical — it is already here at its current depth. The question is whether we are making it deeper.
 
-This is an institutional-lag theorem, not an uncertainty principle, though it has the flavour of one. The tightest modern form is Goldin and Katz on the race between education and technology. When technology wins the race, inequality rises. When education and institutions catch up, it falls. Post-1980 technology has been winning, and the skill premium has widened for forty years and counting. The valley is not hypothetical. It is already here at its current depth, and we are discussing whether to make it deeper.
-
-You can see the shape. The black curve is the acceleration $a(t)$ — the growth rate above baseline that the frontier is pushing forward. The dashed blue curve is the institutional rate $\iota(t)$ — the speed at which labour law, retraining, bargaining, taxation, licensing absorb the new productivity. The red region between them, where $a > \iota$, is the valley. Its length is how long the gap stays open. Its depth is how far the two curves diverge. The shaded area is the total welfare cost that integrates over the lag.
+You can see the shape in the historical record. The plot below puts productivity and real wages on the same axis, for three cases economists treat as canonical. The red region between the two lines is the valley: the integrated gap between what the economy produced and what flowed to labour.
 
 <figure>
   <ValleyShape />
-  <figcaption>The valley as $(a - \iota)_+$ integrated over time. Historical precedents at their rough empirical magnitudes alongside two AI scenarios from the literature. Drag the sliders to see how the valley's shape moves with peak acceleration, its duration, and how quickly institutions catch up.</figcaption>
+  <figcaption>Three valleys from the historical record, plus the range of AI scenarios from the literature. Productivity (black) and real wages (blue); the red region between them is the valley. Select a scenario to compare shapes; drag the sliders for custom parameters.</figcaption>
 </figure>
 
-Two things to notice when you drag. First, Engels' pause is a wide and shallow valley: the gap was not large in any single year, but sixty years of integration produced a generation of people who lived their working lives inside it. Davidson's scenario is the opposite — narrow and deep: if the radical compute-centric model is right, the peak gap is two orders of magnitude larger than anything in the historical record, even though the valley closes faster because institutions are forced to adapt at catastrophe speed. The Aghion-Bunel modest scenario sits between the two: a valley shaped like US deindustrialisation but imposed faster. All three versions are valleys. The question is not whether there is one. It is which version we are building.
+Three shapes to sit with.
 
-Second, the gap does not close by itself. The dashed blue curve rises only because we have drawn it that way; in the absence of institutional investment, $\iota$ is close to zero and the valley never closes. Every historical closure was paid for by a specific political-economy programme — factory acts, franchise expansion, unions, the welfare state, public education. Every future closure has to be paid for the same way.
+**Britain, 1780 to 1840.** Output per worker rose forty-six percent. Real wages rose twelve<sup><a href="#ref-8">8</a></sup>. The gap — sixty years wide, persistent at roughly half a percentage point per year — is known as Engels' pause<sup><a href="#ref-9">9</a></sup>. The pause ended only after factory acts, union recognition, public education, and franchise expansion. Institutional catch-up, not market magic. It is roughly the worst-case version of the thing Friedman's essay calls the valley<sup><a href="#ref-10">10</a></sup>.
 
-The welfare cost of the valley integrates over the gap:
+**The United States, 1970 onward.** Productivity and real median wages tracked each other for thirty years after the war; from around 1973 they split, and the split has widened. The labour share of the nonfarm business sector fell from roughly sixty-four percent in 1980 to fifty-eight percent by the late 2010s<sup><a href="#ref-11">11</a></sup>. The valley is shallower than Engels's but longer, still open, and disproportionately borne by manufacturing and routine-cognitive workers.
+
+**Russia and the former Soviet bloc, 1989 to 2000.** Real GDP per capita roughly halved. Real wages collapsed by two-thirds. Male life expectancy dropped from sixty-five to fifty-seven<sup><a href="#ref-12">12</a></sup>. Excess mortality over the decade is estimated at several million, driven by deaths of despair under collapsed institutions. The valley closed after 2000 only because some institutions were partially rebuilt. The generation that lived through the transition did not.
+
+Three shapes of the same phenomenon. Wide and shallow. Long and persistent. Narrow and catastrophic. The AI projections, charted on the same axes, sit among them — the modest scenario resembling US deindustrialisation imposed faster, the radical scenario deeper than anything in the historical record while compressed into fewer years.
+
+Two things are worth noticing before we leave the figure.
+
+One: the gap does not close by itself. Every historical closure was paid for by a specific political-economy programme — factory acts, franchise expansion, unions, the welfare state, public education. Every future closure has to be paid for the same way. The institutional curve in the figure rises only because we have drawn it that way.
+
+Two: the welfare cost of the valley integrates over the gap:
 
 $$
 \text{Valley cost} \;\approx\; f \cdot W \cdot L \cdot (a - \iota)_+ \cdot \tau_{\text{cap}} \cdot Y
 $$
 
-where $f$ is the fraction of the workforce in the valley, $W$ is that workforce's size, $L$ is the valley's length, $\tau_{\text{cap}}$ is the capital share of the un-adapted surplus, and $Y$ is global output. The shape is determined by the gap. The gap is determined by the race.
+where $f$ is the fraction of the workforce in the valley, $W$ is its size, $L$ is its length, $\tau_{\text{cap}}$ is the capital share of the un-adapted surplus, and $Y$ is global output. The shape is determined by the gap. The gap is determined by the race.
 
 ## Who runs the race
 
@@ -136,11 +142,11 @@ Before regulation, before institutions, before any of the interventions we will 
 
 There is one more structural observation to put on the table before we talk about what to do. The race is not just a collective-action problem. It is a collective-action problem between two populations playing mathematically different games on the same distribution.
 
-Firm-size and return distributions in the AI economy are Pareto. Autor, Dorn, Katz, Patterson and Van Reenen (2020) document the rise of superstar firms: the decline in global labour share since 1980 is driven by sales reallocating toward a small number of frontier firms with capital-heavy technology. Andrews, Criscuolo and Gal (2016) measured the frontier-laggard productivity gap widening through the 2000s. Song, Price, Guvenen, Bloom and von Wachter (2019) showed that most of the rise in US wage inequality since 1980 is *between* firms, not within them: same-skill workers at superstar firms earn more than same-skill workers at laggards. The edge of the distribution stretches forward; the bulk falls behind; the gap widens. That is the empirical form of the acceleration.
+Firm-size and return distributions in the AI economy are Pareto. The decline in global labour share since 1980 is driven by sales reallocating toward a small number of frontier firms with capital-heavy technology<sup><a href="#ref-13">13</a></sup>. The frontier-laggard productivity gap has widened steadily through the 2000s<sup><a href="#ref-14">14</a></sup>. Most of the rise in US wage inequality since 1980 is *between* firms, not within them: same-skill workers at superstar firms earn more than same-skill workers at laggards<sup><a href="#ref-15">15</a></sup>. The edge of the distribution stretches forward; the bulk falls behind; the gap widens. That is the empirical form of the acceleration.
 
-Venture capital plays an ensemble game on this distribution. The public data is consistent. Correlation Ventures' analysis of its investment dataset: roughly sixty-five percent of VC investments return less than principal; about four percent return more than ten times; the top tenth of one percent return more than fifty. Thiel argues in *Zero to One* that the single best investment in a fund typically returns more than all the others combined. The Pareto tail carries the mean. A diversified capital allocator does not need to be right on average. They need the right tail preserved.
+Venture capital plays an ensemble game on this distribution. The public data is consistent. Roughly sixty-five percent of VC investments return less than principal; about four percent return more than ten times; the top tenth of one percent return more than fifty. The single best investment in a fund typically returns more than all the others combined. The Pareto tail carries the mean. A diversified capital allocator does not need to be right on average. They need the right tail preserved.
 
-Labour plays a time-average game on the same distribution. One life, one career, non-repeatable. A single worker's realisation is a sample from a distribution increasingly shaped by the same Pareto dynamics, and most workers cannot diversify across the distribution the way capital can. For the median worker, taking the risk to chase the right tail — quitting to start a company, specialising in a bet that might not pay — has negative expected value not because the distribution is bad on average but because the average belongs to the ensemble, and the individual lives only in their own realisation. Peters (2019) gives the formal treatment, under the name of ergodicity economics; the older informal version is the St. Petersburg paradox, and the intermediate form is the Kelly criterion. It does not matter which framing we use. The point is that the two populations are playing structurally different games.
+Labour plays a time-average game on the same distribution. One life, one career, non-repeatable. A single worker's realisation is a sample from a distribution increasingly shaped by the same Pareto dynamics, and most workers cannot diversify across the distribution the way capital can. For the median worker, taking the risk to chase the right tail — quitting to start a company, specialising in a bet that might not pay — has negative expected value not because the distribution is bad on average but because the average belongs to the ensemble, and the individual lives only in their own realisation. The formal statement is the ergodicity problem in economics<sup><a href="#ref-16">16</a></sup>; older informal versions include the St. Petersburg paradox and the Kelly criterion. It does not matter which framing we use. The point is that the two populations are playing structurally different games.
 
 Which is why the political economy locks where it does. Catastrophic-safety regulation, properly designed, truncates the left tail of outcomes — the valley floor — without compressing the right tail. For labour, whose time-average is dominated by the left tail because it cannot average over the right, this is a large welfare gain. For diversified capital, whose ensemble-average is dominated by the right tail, it is a modest cost: some variance reduction, no loss of the 100x winners. That is, in principle, a Pareto improvement. Labour and capital can be aligned under properly-designed catastrophic-safety regulation.
 
@@ -171,7 +177,7 @@ The pattern across every catastrophic-risk industry we have ever regulated is a 
   <figcaption>Relative catastrophic-event rates, pre- and post-regulation, across dangerous-technology industries. The toggle applies the historical regulatory multiplier to frontier AI — which, as of today, has none of the ex-ante mechanisms every other row has.</figcaption>
 </figure>
 
-Now the part that matters for the framework. None of these regulations slowed the long-run growth of their industries. The claim that they did — "regulation slows growth" — is a category error, and the economics is clear about why. Aghion and Howitt's creative-destruction theory makes the distinction sharp. *Pro-entry* regulation is the kind where any new firm can enter if it meets the safety standard; it raises the minimum quality of what reaches the market without compressing the right tail of what can win. It is good for growth and good for distribution. *Pro-incumbent* regulation is the kind where licensing becomes a monopoly — pre-market barriers that only large players can clear, capture of the regulator by the incumbents, safe-harbour provisions that favour the largest. It blocks entry. It is bad for growth and bad for distribution.
+Now the part that matters for the framework. None of these regulations slowed the long-run growth of their industries. The claim that they did — "regulation slows growth" — is a category error, and the economics is clear about why. Creative-destruction theory<sup><a href="#ref-17">17</a></sup> makes the distinction sharp. *Pro-entry* regulation is the kind where any new firm can enter if it meets the safety standard; it raises the minimum quality of what reaches the market without compressing the right tail of what can win. It is good for growth and good for distribution. *Pro-incumbent* regulation is the kind where licensing becomes a monopoly — pre-market barriers that only large players can clear, capture of the regulator by the incumbents, safe-harbour provisions that favour the largest. It blocks entry. It is bad for growth and bad for distribution.
 
 The pharma, aviation, chemicals, and nuclear regimes are pro-entry. Any new aircraft manufacturer can enter if they meet FAA airworthiness standards. Any new drug developer can file with the FDA. Any new reactor design can go through NRC licensing. The regulations apply to incumbents and entrants symmetrically. They raise $\iota$ without compressing $a$. In the language of the two games: they truncate the left tail of outcomes — the valley floor — without compressing the right tail of winners. That is the Pareto-improving form. Labour comes out ahead. Diversified capital comes out roughly level. Concentrated incumbents come out slightly behind, because the entrants they would have blocked are now allowed through on equal footing.
 
@@ -229,7 +235,7 @@ The dishonest fourth stance, common in every row, is Stance A dressed as Stance 
 
 ## What would actually move the equilibrium
 
-The single most important sentence in the Armstrong–Bostrom–Shulman paper, translated into English: **you cannot slow the race by being one of the racers.**
+The single most important sentence of the arms-race model, translated into English: **you cannot slow the race by being one of the racers.**
 
 The leverage points are all exogenous to the race. There are really only four of them, and none of them are "solve alignment." All of them operate by raising $\iota$ — the institutional absorption rate — rather than lowering $a$ through individual restraint.
 
@@ -268,3 +274,25 @@ And for everyone in every row: attend the rooms where pro-entry safety regulatio
 You've seen the shape of the valley now.
 
 How wide do you want to let it get?
+
+## References
+
+<ol class="refs">
+  <li id="ref-1">S. Armstrong, N. Bostrom, C. Shulman (2016). *Racing to the precipice: a model of artificial intelligence development.* AI & Society 31, 201-206. Originally circulated as a Future of Humanity Institute technical report in 2013.</li>
+  <li id="ref-2">D. Hendrycks (2023). *Natural Selection Favors AIs over Humans.* arXiv:2303.16200.</li>
+  <li id="ref-3">C. I. Jones (2016). *The facts of economic growth.* Handbook of Macroeconomics 2A, 3-69.</li>
+  <li id="ref-4">P. Aghion, S. Bunel (2024). *AI and growth: where do we stand?* Federal Reserve Bank of San Francisco conference paper.</li>
+  <li id="ref-5">T. Davidson (2023). *What a compute-centric framework says about takeoff speeds.* Open Philanthropy research report.</li>
+  <li id="ref-6">R. Hanson (2016). *The Age of Em: Work, Love, and Life when Robots Rule the Earth.* Oxford University Press.</li>
+  <li id="ref-7">C. Goldin, L. Katz (2008). *The Race between Education and Technology.* Harvard University Press.</li>
+  <li id="ref-8">C. Feinstein (1998). *Pessimism perpetuated: real wages and the standard of living in Britain during and after the Industrial Revolution.* Journal of Economic History 58(3), 625-658.</li>
+  <li id="ref-9">R. C. Allen (2009). *Engels' pause: technical change, capital accumulation, and inequality in the British Industrial Revolution.* Explorations in Economic History 46(4), 418-435.</li>
+  <li id="ref-10">E. Friedman (2026). *How Wide Is the Silicon Valley to Abundance?* ericfriedman.co.</li>
+  <li id="ref-11">L. Karabarbounis, B. Neiman (2014). *The global decline of the labor share.* Quarterly Journal of Economics 129(1), 61-103.</li>
+  <li id="ref-12">D. Stuckler, L. King, M. McKee (2009). *Mass privatisation and the post-communist mortality crisis: a cross-national analysis.* The Lancet 373(9661), 399-407.</li>
+  <li id="ref-13">D. Autor, D. Dorn, L. F. Katz, C. Patterson, J. Van Reenen (2020). *The fall of the labor share and the rise of superstar firms.* Quarterly Journal of Economics 135(2), 645-709.</li>
+  <li id="ref-14">D. Andrews, C. Criscuolo, P. N. Gal (2016). *The best versus the rest: the global productivity slowdown, divergence across firms and the role of public policy.* OECD Productivity Working Papers 5.</li>
+  <li id="ref-15">J. Song, D. J. Price, F. Guvenen, N. Bloom, T. von Wachter (2019). *Firming up inequality.* Quarterly Journal of Economics 134(1), 1-50.</li>
+  <li id="ref-16">O. Peters (2019). *The ergodicity problem in economics.* Nature Physics 15, 1216-1221.</li>
+  <li id="ref-17">P. Aghion, P. Howitt (1992). *A model of growth through creative destruction.* Econometrica 60(2), 323-351.</li>
+</ol>
