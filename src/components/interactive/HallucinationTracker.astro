@@ -1,0 +1,197 @@
+---
+const TRACKER_URL = 'https://www.damiencharlotin.com/hallucinations/hallucinations/download.csv';
+const TRACKER_PAGE = 'https://www.damiencharlotin.com/hallucinations/';
+
+// Snapshot fallback if the build-time fetch fails — kept current with the most recent successful build.
+const FALLBACK = {
+  total: 50,
+  asOf: '2026-05-05',
+  series: [
+    ['2023-05', 1], ['2023-12', 2], ['2024-08', 3], ['2024-12', 4],
+    ['2025-01', 5], ['2025-04', 7], ['2025-05', 9], ['2025-06', 12],
+    ['2025-07', 17], ['2025-08', 20], ['2025-09', 21], ['2025-10', 30],
+    ['2025-11', 35], ['2025-12', 42], ['2026-01', 48], ['2026-02', 49],
+    ['2026-03', 50],
+  ] as [string, number][],
+};
+
+function parseCSV(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let field = '';
+  let inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i];
+    if (inQ) {
+      if (c === '"') {
+        if (text[i + 1] === '"') { field += '"'; i++; }
+        else { inQ = false; }
+      } else { field += c; }
+    } else {
+      if (c === '"') inQ = true;
+      else if (c === ',') { row.push(field); field = ''; }
+      else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+      else if (c !== '\r') { field += c; }
+    }
+  }
+  if (field.length || row.length) { row.push(field); rows.push(row); }
+  return rows;
+}
+
+type Snapshot = { total: number; asOf: string; series: [string, number][] };
+
+async function loadSnapshot(): Promise<Snapshot> {
+  try {
+    const res = await fetch(TRACKER_URL, { signal: AbortSignal.timeout(5000) });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const csv = await res.text();
+    const rows = parseCSV(csv);
+    if (rows.length < 2) throw new Error('empty CSV');
+    const header = rows[0].map(h => h.trim());
+    const ji = header.findIndex(h => /state/i.test(h));
+    const di = header.findIndex(h => /^date$/i.test(h));
+    if (ji < 0 || di < 0) throw new Error('missing columns');
+
+    const ukDates: string[] = [];
+    for (let i = 1; i < rows.length; i++) {
+      const r = rows[i];
+      if ((r[ji] || '').trim() === 'UK') {
+        const d = (r[di] || '').trim();
+        if (/^\d{4}-\d{2}/.test(d)) ukDates.push(d.slice(0, 7));
+      }
+    }
+    if (ukDates.length === 0) throw new Error('no UK rows');
+    ukDates.sort();
+    const monthly = new Map<string, number>();
+    for (const m of ukDates) monthly.set(m, (monthly.get(m) || 0) + 1);
+    const months = [...monthly.keys()].sort();
+    const series: [string, number][] = [];
+    let cum = 0;
+    for (const m of months) { cum += monthly.get(m)!; series.push([m, cum]); }
+    return {
+      total: ukDates.length,
+      asOf: new Date().toISOString().slice(0, 10),
+      series,
+    };
+  } catch {
+    return FALLBACK;
+  }
+}
+
+const snap = await loadSnapshot();
+
+// Build SVG geometry
+const W = 640, H = 260, PAD_L = 48, PAD_R = 16, PAD_T = 16, PAD_B = 36;
+const innerW = W - PAD_L - PAD_R;
+const innerH = H - PAD_T - PAD_B;
+
+function monthIndex(m: string): number {
+  const [y, mo] = m.split('-').map(Number);
+  return y * 12 + (mo - 1);
+}
+
+const idxs = snap.series.map(([m]) => monthIndex(m));
+const minIdx = idxs[0];
+const maxIdx = idxs[idxs.length - 1];
+const span = Math.max(1, maxIdx - minIdx);
+const yMax = Math.max(...snap.series.map(s => s[1]));
+
+const xFor = (m: string) => PAD_L + ((monthIndex(m) - minIdx) / span) * innerW;
+const yFor = (v: number) => PAD_T + innerH - (v / yMax) * innerH;
+
+// Step path (cumulative count is piecewise constant between months)
+const points = snap.series.map(([m, v]) => [xFor(m), yFor(v)] as [number, number]);
+let path = `M ${points[0][0]} ${PAD_T + innerH}`;
+for (let i = 0; i < points.length; i++) {
+  if (i === 0) path += ` L ${points[i][0]} ${points[i][1]}`;
+  else path += ` L ${points[i][0]} ${points[i - 1][1]} L ${points[i][0]} ${points[i][1]}`;
+}
+path += ` L ${points[points.length - 1][0]} ${PAD_T + innerH} Z`;
+
+// Year tick marks
+const years = new Set<number>();
+for (const [m] of snap.series) years.add(Number(m.slice(0, 4)));
+const yearTicks = [...years].sort().map(y => ({
+  year: y,
+  x: xFor(`${y}-01`),
+}));
+
+// Y axis ticks (round numbers up to yMax)
+const yStep = yMax <= 20 ? 5 : yMax <= 60 ? 10 : 20;
+const yTicks: number[] = [];
+for (let v = 0; v <= yMax; v += yStep) yTicks.push(v);
+if (yTicks[yTicks.length - 1] !== yMax) yTicks.push(yMax);
+---
+
+<figure class="halltracker">
+  <svg viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="xMidYMid meet" aria-label="UK judgments containing AI-fabricated authorities, cumulative">
+    <g class="grid">
+      {yTicks.map(t => (
+        <line x1={PAD_L} x2={W - PAD_R} y1={yFor(t)} y2={yFor(t)} />
+      ))}
+    </g>
+    <g class="axes">
+      <line x1={PAD_L} y1={PAD_T} x2={PAD_L} y2={PAD_T + innerH} />
+      <line x1={PAD_L} y1={PAD_T + innerH} x2={W - PAD_R} y2={PAD_T + innerH} />
+    </g>
+    <g class="ticks">
+      {yTicks.map(t => (
+        <>
+          <line x1={PAD_L - 4} x2={PAD_L} y1={yFor(t)} y2={yFor(t)} />
+          <text x={PAD_L - 8} y={yFor(t) + 3.5} text-anchor="end">{t}</text>
+        </>
+      ))}
+      {yearTicks.map(t => (
+        <>
+          <line x1={t.x} x2={t.x} y1={PAD_T + innerH} y2={PAD_T + innerH + 4} />
+          <text x={t.x} y={PAD_T + innerH + 16} text-anchor="middle">{t.year}</text>
+        </>
+      ))}
+    </g>
+    <path class="area" d={path} />
+    <text x={W - PAD_R} y={yFor(snap.total) - 6} text-anchor="end" class="total">{snap.total}</text>
+  </svg>
+  <figcaption>
+    Cumulative count of UK judgments in which a court has identified or strongly suspected AI-fabricated authorities or quotations. Source: <a href={TRACKER_PAGE} target="_blank" rel="noopener">Damien Charlotin's AI Hallucination Cases tracker</a>, fetched at build time. Snapshot: {snap.total} UK cases as of {snap.asOf}.
+  </figcaption>
+</figure>
+
+<style>
+  .halltracker {
+    width: 100%;
+    max-width: 720px;
+    margin: 1.5rem auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .halltracker svg { width: 100%; height: auto; display: block; }
+  .halltracker .axes line { stroke: var(--post-separator, #bbb); stroke-width: 1; }
+  .halltracker .grid line { stroke: var(--post-separator, #bbb); stroke-opacity: 0.35; }
+  .halltracker .ticks line { stroke: var(--post-separator, #bbb); }
+  .halltracker .ticks text {
+    fill: var(--post-caption, #737373);
+    font-size: 11px;
+  }
+  .halltracker .area {
+    fill: var(--post-link, #2563eb);
+    fill-opacity: 0.18;
+    stroke: var(--post-link, #2563eb);
+    stroke-width: 1.5;
+    stroke-linejoin: miter;
+  }
+  .halltracker .total {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .halltracker figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    color: var(--post-caption, #737373);
+    text-align: center;
+    line-height: 1.4;
+  }
+  .halltracker figcaption a {
+    color: var(--post-link, #2563eb);
+  }
+</style>
