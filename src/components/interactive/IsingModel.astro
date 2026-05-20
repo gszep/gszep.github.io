@@ -1,0 +1,442 @@
+---
+---
+
+<div class="ising-model" data-ising-model>
+  <div class="im-main">
+    <canvas class="im-canvas" width="512" height="512" aria-label="2D Ising model lattice"></canvas>
+    <div class="im-side">
+      <svg class="im-domain-plot" viewBox="0 0 360 150" aria-label="Log-log domain size distribution">
+        <g class="im-grid">
+          <line x1="46" y1="18" x2="46" y2="120" />
+          <line x1="46" y1="120" x2="340" y2="120" />
+          <line x1="144" y1="18" x2="144" y2="120" />
+          <line x1="242" y1="18" x2="242" y2="120" />
+          <line x1="46" y1="86" x2="340" y2="86" />
+          <line x1="46" y1="52" x2="340" y2="52" />
+        </g>
+        <path data-theory-path class="im-theory-path" />
+        <g data-domain-points class="im-domain-points"></g>
+        <text x="46" y="12" class="im-plot-title">domain sizes</text>
+        <text x="193" y="145" text-anchor="middle" class="im-axis-label">log(size)</text>
+        <text x="14" y="73" text-anchor="middle" class="im-axis-label" transform="rotate(-90 14 73)">log(normalized count)</text>
+      </svg>
+      <div class="im-readout">
+        <span>temperature</span>
+        <strong><output data-temp-out>2.40</output></strong>
+      </div>
+      <div class="im-readout">
+        <span>magnetization</span>
+        <strong><output data-mag-out>0.00</output></strong>
+      </div>
+      <div class="im-readout">
+        <span>state</span>
+        <strong data-state-out>near critical</strong>
+      </div>
+      <label class="im-control">
+        <span>T</span>
+        <div class="im-slider-wrap">
+          <input data-temp type="range" min="0.50" max="12.00" step="0.01" value="2.40" />
+          <i class="im-tc-marker"></i>
+          <b class="im-tc-label">T<sub>c</sub> = 2.269</b>
+        </div>
+      </label>
+    </div>
+  </div>
+</div>
+
+<style>
+  .ising-model {
+    width: 100%;
+    margin: 0.65rem auto 0;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .ising-model .im-main {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+  }
+  .ising-model .im-canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border: 1px solid var(--post-separator, #bbb);
+    image-rendering: pixelated;
+    background: #111827;
+  }
+  .ising-model .im-side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .ising-model .im-domain-plot {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .ising-model .im-grid line {
+    stroke: var(--post-separator, #bbb);
+    opacity: 0.45;
+    stroke-dasharray: 3 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .ising-model .im-domain-points circle {
+    fill: #f59e0b;
+    stroke: #7c2d12;
+    stroke-width: 0.6;
+    opacity: 0.9;
+    vector-effect: non-scaling-stroke;
+  }
+  .ising-model .im-theory-path {
+    fill: none;
+    stroke: var(--post-caption, #737373);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .ising-model .im-theory-label {
+    fill: var(--post-caption, #737373);
+    font-size: 0.58rem;
+    font-weight: 900;
+  }
+  .ising-model .im-plot-title {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+  .ising-model .im-axis-label {
+    fill: var(--post-caption, #737373);
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .ising-model .im-readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--post-separator, #bbb);
+    padding-bottom: 0.3rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+  }
+  .ising-model .im-readout strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .ising-model .im-control {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+  .ising-model .im-slider-wrap {
+    position: relative;
+    min-height: 2.4rem;
+    display: flex;
+    align-items: center;
+  }
+  .ising-model input[type="range"] {
+    width: 100%;
+    height: 1.4rem;
+    margin: 0;
+    appearance: none;
+    background: transparent;
+    accent-color: #f59e0b;
+  }
+  .ising-model input[type="range"]::-webkit-slider-runnable-track {
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--post-caption, #737373) 55%, transparent);
+  }
+  .ising-model input[type="range"]::-webkit-slider-thumb {
+    width: 16px;
+    height: 16px;
+    margin-top: -6px;
+    appearance: none;
+    border: 0;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+  .ising-model input[type="range"]::-moz-range-track {
+    height: 4px;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--post-caption, #737373) 55%, transparent);
+  }
+  .ising-model input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: 0;
+    border-radius: 50%;
+    background: #f59e0b;
+  }
+  .ising-model .im-tc-marker {
+    position: absolute;
+    left: var(--tc-position, 15.383%);
+    top: 0.42rem;
+    bottom: 0.72rem;
+    width: 2px;
+    transform: translateX(-1px);
+    background: #ef4444;
+    pointer-events: none;
+  }
+  .ising-model .im-tc-label {
+    position: absolute;
+    left: var(--tc-position, 15.383%);
+    top: 1.62rem;
+    transform: translateX(-50%);
+    color: #ef4444;
+    font-size: 0.62rem;
+    font-weight: 900;
+    white-space: nowrap;
+    pointer-events: none;
+  }
+  @media (max-width: 720px) {
+    .ising-model .im-main {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector("[data-ising-model]");
+  const canvas = root?.querySelector<HTMLCanvasElement>(".im-canvas") ?? null;
+  const ctx = canvas?.getContext("2d") ?? null;
+  const tempInput = root?.querySelector<HTMLInputElement>("[data-temp]") ?? null;
+  const sliderWrap = root?.querySelector<HTMLElement>(".im-slider-wrap") ?? null;
+  const tempOut = root?.querySelector<HTMLOutputElement>("[data-temp-out]") ?? null;
+  const magOut = root?.querySelector<HTMLOutputElement>("[data-mag-out]") ?? null;
+  const stateOut = root?.querySelector<HTMLElement>("[data-state-out]") ?? null;
+  const domainPoints = root?.querySelector<SVGGElement>("[data-domain-points]") ?? null;
+  const theoryPath = root?.querySelector<SVGPathElement>("[data-theory-path]") ?? null;
+
+  const N = 512;
+  const N_BITS = 9;
+  const N_MASK = N - 1;
+  const TC = 2.269;
+  const SWEEPS_PER_FRAME = 1;
+  const DOMAIN_BINS = 72;
+  const DOMAIN_SAMPLE_HISTORY = 32;
+  const DOMAIN_X_MIN = 1;
+  const DOMAIN_X_MAX = 10000;
+  const DOMAIN_Y_MIN = 0.0001;
+  const DOMAIN_Y_MAX = 10000;
+  const SPIN_CLUSTER_TAU = 379 / 187;
+  const TEMP_THUMB_SIZE = 16;
+  const spins = new Int8Array(N * N);
+  const visited = new Uint8Array(N * N);
+  const queue = new Int32Array(N * N);
+  const image = ctx ? ctx.createImageData(N, N) : null;
+  const domainHistory: Float32Array[] = [];
+  let temperature = tempInput ? parseFloat(tempInput.value) : 2.4;
+  let raf = 0;
+  let frame = 0;
+
+  function updateCriticalMarker() {
+    if (!tempInput || !sliderWrap) return;
+    const min = parseFloat(tempInput.min);
+    const max = parseFloat(tempInput.max);
+    const ratio = Math.max(0, Math.min(1, (TC - min) / Math.max(0.001, max - min)));
+    const inputRect = tempInput.getBoundingClientRect();
+    const wrapRect = sliderWrap.getBoundingClientRect();
+    const travel = Math.max(0, inputRect.width - TEMP_THUMB_SIZE);
+    const position = inputRect.left - wrapRect.left + (TEMP_THUMB_SIZE / 2) + (ratio * travel);
+    sliderWrap.style.setProperty("--tc-position", `${position.toFixed(2)}px`);
+  }
+
+  function plotPoint(size: number, value: number): [number, number] {
+    const lxMin = Math.log10(DOMAIN_X_MIN);
+    const lxMax = Math.log10(DOMAIN_X_MAX);
+    const lyMin = Math.log10(DOMAIN_Y_MIN);
+    const lyMax = Math.log10(DOMAIN_Y_MAX);
+    const x0 = 46, y0 = 18, w = 294, h = 102;
+    const x = x0 + ((Math.log10(size) - lxMin) / (lxMax - lxMin)) * w;
+    const y = y0 + h - ((Math.log10(value) - lyMin) / Math.max(0.001, lyMax - lyMin)) * h;
+    return [x, y];
+  }
+
+  function renderTheoryLine() {
+    if (!theoryPath) return;
+    // Geometric 2D Ising spin clusters: tau = 379/187. Because the plot
+    // uses logarithmic bins, bin mass scales as s^(1 - tau).
+    const slope = 1 - SPIN_CLUSTER_TAU;
+    const anchorX = 12;
+    const anchorY = 0.08;
+    const points = [8, 18, 40, 90, 200, 450, 1000, 2200].map((size) => {
+      const value = anchorY * Math.pow(size / anchorX, slope);
+      return plotPoint(size, Math.max(DOMAIN_Y_MIN, value));
+    });
+    theoryPath.setAttribute("d", points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" "));
+  }
+
+  function idx(x: number, y: number): number {
+    return ((y + N) & N_MASK) * N + ((x + N) & N_MASK);
+  }
+
+  function resetRandom() {
+    for (let i = 0; i < spins.length; i++) spins[i] = Math.random() < 0.5 ? 1 : -1;
+  }
+
+  function metropolisSweep() {
+    for (let k = 0; k < spins.length; k++) {
+      const x = (Math.random() * N) | 0;
+      const y = (Math.random() * N) | 0;
+      const i = idx(x, y);
+      const s = spins[i];
+      const neighbors =
+        spins[idx(x + 1, y)] +
+        spins[idx(x - 1, y)] +
+        spins[idx(x, y + 1)] +
+        spins[idx(x, y - 1)];
+      const dE = 2 * s * neighbors;
+      if (dE <= 0 || Math.random() < Math.exp(-dE / temperature)) spins[i] = -s;
+    }
+  }
+
+  function magnetization(): number {
+    let total = 0;
+    for (let i = 0; i < spins.length; i++) total += spins[i];
+    return total / spins.length;
+  }
+
+  function draw() {
+    if (!ctx || !image) return;
+    const data = image.data;
+    for (let i = 0; i < spins.length; i++) {
+      const o = i * 4;
+      if (spins[i] > 0) {
+        data[o] = 248; data[o + 1] = 250; data[o + 2] = 252;
+      } else {
+        data[o] = 17; data[o + 1] = 24; data[o + 2] = 39;
+      }
+      data[o + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+  }
+
+  function updateReadouts() {
+    const m = magnetization();
+    if (tempOut) tempOut.textContent = temperature.toFixed(2);
+    if (magOut) magOut.textContent = m.toFixed(2);
+    if (stateOut) {
+      stateOut.textContent = Math.abs(temperature - TC) < 0.18
+        ? "near critical"
+        : temperature < TC
+          ? "ordered"
+          : "disordered";
+    }
+  }
+
+  function updateDomainPlot() {
+    if (!domainPoints) return;
+    visited.fill(0);
+    const bins = new Float32Array(DOMAIN_BINS);
+    const lxMin = Math.log10(DOMAIN_X_MIN);
+    const lxMax = Math.log10(DOMAIN_X_MAX);
+    for (let start = 0; start < spins.length; start++) {
+      if (visited[start]) continue;
+      const spin = spins[start];
+      visited[start] = 1;
+      let head = 0;
+      let tail = 0;
+      let size = 0;
+      queue[tail++] = start;
+      while (head < tail) {
+        const current = queue[head++];
+        size++;
+        const x = current & N_MASK;
+        const y = current >> N_BITS;
+        const neighbors = [
+          idx(x + 1, y),
+          idx(x - 1, y),
+          idx(x, y + 1),
+          idx(x, y - 1),
+        ];
+        for (const n of neighbors) {
+          if (!visited[n] && spins[n] === spin) {
+            visited[n] = 1;
+            queue[tail++] = n;
+          }
+        }
+      }
+      const b = Math.max(0, Math.min(DOMAIN_BINS - 1, Math.floor(((Math.log10(size) - lxMin) / (lxMax - lxMin)) * DOMAIN_BINS)));
+      bins[b]++;
+    }
+
+    let totalDomains = 0;
+    for (const count of bins) totalDomains += count;
+    const normalized = new Float32Array(DOMAIN_BINS);
+    for (let i = 0; i < DOMAIN_BINS; i++) {
+      normalized[i] = bins[i] / Math.max(1, totalDomains);
+    }
+    domainHistory.push(normalized);
+    if (domainHistory.length > DOMAIN_SAMPLE_HISTORY) domainHistory.shift();
+
+    const averaged = new Float32Array(DOMAIN_BINS);
+    for (const sample of domainHistory) {
+      for (let i = 0; i < DOMAIN_BINS; i++) averaged[i] += sample[i];
+    }
+    for (let i = 0; i < DOMAIN_BINS; i++) averaged[i] /= domainHistory.length;
+
+    const points: Array<[number, number]> = [];
+    for (let i = 0; i < DOMAIN_BINS; i++) {
+      if (averaged[i] <= 0) continue;
+      const logSize = lxMin + ((i + 0.5) / DOMAIN_BINS) * (lxMax - lxMin);
+      points.push([Math.pow(10, logSize), averaged[i]]);
+    }
+    if (points.length < 2) {
+      domainPoints.replaceChildren();
+      return;
+    }
+    const markers = points.map(([size, count]) => {
+      const [x, y] = plotPoint(size, count);
+      const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      marker.setAttribute("cx", x.toFixed(1));
+      marker.setAttribute("cy", y.toFixed(1));
+      marker.setAttribute("r", count < 0.001 ? "1.8" : "2.4");
+      marker.setAttribute("fill", "#f59e0b");
+      marker.setAttribute("stroke", "#fed7aa");
+      marker.setAttribute("stroke-width", "0.6");
+      marker.setAttribute("opacity", "0.92");
+      marker.setAttribute("vector-effect", "non-scaling-stroke");
+      return marker;
+    });
+    domainPoints.replaceChildren(...markers);
+  }
+
+  function tick() {
+    for (let i = 0; i < SWEEPS_PER_FRAME; i++) metropolisSweep();
+    draw();
+    updateReadouts();
+    if (frame++ % 36 === 0) updateDomainPlot();
+    raf = requestAnimationFrame(tick);
+  }
+
+  tempInput?.addEventListener("input", () => {
+    temperature = parseFloat(tempInput.value);
+    domainHistory.length = 0;
+    updateReadouts();
+  });
+  window.addEventListener("resize", updateCriticalMarker);
+
+  if (root && ctx && image) {
+    updateCriticalMarker();
+    resetRandom();
+    draw();
+    updateReadouts();
+    updateDomainPlot();
+    renderTheoryLine();
+    raf = requestAnimationFrame(tick);
+    document.addEventListener("astro:before-swap", () => cancelAnimationFrame(raf), { once: true });
+  }
+</script>

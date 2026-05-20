@@ -1,0 +1,701 @@
+---
+---
+
+<div class="coop-emergence">
+  <div class="ce-main">
+    <canvas id="ce-grid" width="480" height="300" aria-label="Spatial prisoner's dilemma population"></canvas>
+
+    <div class="ce-side">
+      <svg id="ce-chart" viewBox="0 0 260 130" preserveAspectRatio="none" aria-label="Cooperation over time">
+        <line class="ce-axis" x1="0" y1="130" x2="260" y2="130" />
+        <line class="ce-gridline" x1="0" y1="65" x2="260" y2="65" />
+        <path id="ce-line-good" class="ce-line good" />
+        <path id="ce-line-mixed" class="ce-line mixed" />
+        <path id="ce-line-bad" class="ce-line bad" />
+      </svg>
+      <div class="ce-readout">
+        <span>Cooperative moves</span>
+        <strong id="ce-coop">0%</strong>
+      </div>
+      <div class="ce-readout">
+        <span>Generation</span>
+        <strong id="ce-gen">0</strong>
+      </div>
+      <div class="ce-readout">
+        <span>Dominant</span>
+        <strong id="ce-dom">-</strong>
+      </div>
+      <div class="ce-legend">
+        <span><i class="good"></i> good</span>
+        <span><i class="mixed"></i> mixed</span>
+        <span><i class="bad"></i> bad</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="ce-controls">
+    <label>
+      <span>Paint strategy</span>
+      <select id="ce-paint"></select>
+    </label>
+    <label>
+      <span>Temptation = <output id="ce-t-out">1.50</output></span>
+      <input id="ce-t" type="range" min="1.00" max="2.00" step="0.01" value="1.50" />
+    </label>
+    <label>
+      <span>Match rounds = <output id="ce-rounds-out">20</output></span>
+      <input id="ce-rounds" type="range" min="5" max="60" step="5" value="20" />
+    </label>
+    <label>
+      <span>Mutation = <output id="ce-mut-out">0.2%</output></span>
+      <input id="ce-mut" type="range" min="0" max="10" step="0.1" value="0.2" />
+    </label>
+    <div class="ce-buttons">
+      <button id="ce-toggle" type="button">Pause</button>
+      <button id="ce-reset" type="button">Reset</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .coop-emergence {
+    width: 100%;
+    margin: 0 auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .coop-emergence .ce-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 260px;
+    gap: 1.25rem;
+    align-items: stretch;
+  }
+  .coop-emergence canvas {
+    width: 100%;
+    aspect-ratio: 8 / 5;
+    display: block;
+    border: 1px solid var(--post-separator, #bbb);
+    background: var(--post-code-bg, #f5f5f5);
+    cursor: crosshair;
+    touch-action: none;
+    user-select: none;
+  }
+  .coop-emergence .ce-side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+  }
+  .coop-emergence svg {
+    width: 100%;
+    height: 130px;
+    display: block;
+    overflow: visible;
+  }
+  .coop-emergence .ce-axis,
+  .coop-emergence .ce-gridline {
+    stroke: var(--post-separator, #bbb);
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .coop-emergence .ce-gridline {
+    stroke-dasharray: 3 3;
+    opacity: 0.6;
+  }
+  .coop-emergence .ce-line {
+    fill: none;
+    stroke-width: 2.5;
+    vector-effect: non-scaling-stroke;
+  }
+  .coop-emergence .ce-line.good { stroke: #10b981; }
+  .coop-emergence .ce-line.mixed { stroke: #f59e0b; }
+  .coop-emergence .ce-line.bad { stroke: #ef4444; }
+  .coop-emergence .ce-readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--post-separator, #bbb);
+    padding-bottom: 0.35rem;
+    font-size: 0.8rem;
+    color: var(--post-caption, #737373);
+  }
+  .coop-emergence .ce-readout strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .coop-emergence .ce-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.7rem;
+    font-weight: 700;
+  }
+  .coop-emergence .ce-legend span {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+  .coop-emergence .ce-legend i {
+    width: 0.65rem;
+    height: 0.65rem;
+    display: inline-block;
+  }
+  .coop-emergence .ce-legend .good { background: #10b981; }
+  .coop-emergence .ce-legend .mixed { background: #f59e0b; }
+  .coop-emergence .ce-legend .bad { background: #ef4444; }
+  .coop-emergence .ce-controls {
+    display: grid;
+    grid-template-columns: 1.1fr repeat(3, minmax(0, 1fr)) auto;
+    gap: 0.75rem;
+    align-items: end;
+    margin-top: 0.75rem;
+    font-size: 0.75rem;
+  }
+  .coop-emergence .ce-controls label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    color: var(--post-caption, #737373);
+  }
+  .coop-emergence .ce-controls output {
+    color: var(--post-heading, #1a1a1a);
+    font-weight: 700;
+  }
+  .coop-emergence input[type="range"] {
+    width: 100%;
+    accent-color: #10b981;
+  }
+  .coop-emergence select {
+    width: 100%;
+    min-width: 0;
+    border: 1px solid var(--post-separator, #bbb);
+    background: transparent;
+    color: var(--post-heading, #1a1a1a);
+    border-radius: 0.25rem;
+    padding: 0.28rem 0.4rem;
+    font: inherit;
+    font-weight: 700;
+  }
+  .coop-emergence .ce-buttons {
+    display: flex;
+    gap: 0.4rem;
+  }
+  .coop-emergence button {
+    border: 1px solid var(--post-separator, #bbb);
+    background: transparent;
+    color: var(--post-heading, #1a1a1a);
+    border-radius: 0.25rem;
+    padding: 0.3rem 0.65rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  @media (max-width: 780px) {
+    .coop-emergence .ce-main {
+      grid-template-columns: 1fr;
+    }
+    .coop-emergence .ce-controls {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  import { STUDENT_STRATEGIES } from "../../lib/ipdStudentStrategies";
+
+  type Move = "C" | "D";
+  type Category = "good" | "mixed" | "bad";
+  type HistEntry = { mine: Move; theirs: Move; pof: number };
+  type Stats = {
+    oppDefTotal: number;
+    oppDefLast: number;
+    cumDefAtLast: number;
+    afterMyC_oppC: number;
+    afterMyC_total: number;
+    afterMyD_oppC: number;
+    afterMyD_total: number;
+  };
+  type Strategy = {
+    key: string;
+    name: string;
+    category: Category;
+    source: "baseline" | "student" | "literature";
+    stochastic?: boolean;
+    decide: (history: HistEntry[], R: number, S: number, T: number, P: number, totalRounds: number, stats: Stats) => Move;
+  };
+
+  const COLS = 64;
+  const ROWS = 40;
+  const HISTORY_LIMIT = 220;
+  const BRUSH_RADIUS = 7;
+  const R = 1;
+  const S = 0;
+  const P = 0;
+  const CATEGORY_COLOR: Record<Category, string> = {
+    good: "#10b981",
+    mixed: "#f59e0b",
+    bad: "#ef4444",
+  };
+  const NEIGHBORS = [
+    [-1, -1], [0, -1], [1, -1],
+    [-1, 0],           [1, 0],
+    [-1, 1],  [0, 1],  [1, 1],
+  ];
+  const COPY_NEIGHBORHOOD = [[0, 0], ...NEIGHBORS];
+
+  const LITERATURE_STRATEGIES: Strategy[] = [
+    {
+      key: "tft", name: "Tit-for-Tat", category: "good", source: "literature", stochastic: false,
+      decide: (h) => h.length === 0 ? "C" : h[h.length - 1].theirs,
+    },
+    {
+      key: "gtft", name: "Generous Tit-for-Tat", category: "good", source: "literature", stochastic: true,
+      decide: (h, r, s, t, p) => {
+        if (h.length === 0) return "C";
+        if (h[h.length - 1].theirs === "C") return "C";
+        const q1 = r > s ? 1 - (t - r) / (r - s) : 0;
+        const q2 = t > p ? (r - p) / (t - p) : 0;
+        return Math.random() < Math.max(0, Math.min(q1, q2)) ? "C" : "D";
+      },
+    },
+    {
+      key: "grim", name: "Grim Trigger", category: "mixed", source: "literature", stochastic: false,
+      decide: (_h, _r, _s, _t, _p, _n, st) => st.oppDefTotal > 0 ? "D" : "C",
+    },
+    {
+      key: "tideman", name: "Modified Tit-for-Tat (Tideman-Chieruzzi)", category: "good", source: "literature", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        let move: Move = h[h.length - 1].theirs;
+        if (h.length >= 10) {
+          let recentDef = 0;
+          for (let i = h.length - 10; i < h.length; i++) if (h[i].theirs === "D") recentDef++;
+          if (recentDef > 3) move = "D";
+        }
+        return move;
+      },
+    },
+    {
+      key: "nydegger", name: "Three-Round Retaliator (Nydegger)", category: "good", source: "literature", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length === 1) return h[0].theirs;
+        if (h.length === 2) return h[1].theirs;
+        if (h[h.length - 1].theirs === "D") return "D";
+        let defCount = 0;
+        for (let i = h.length - 3; i < h.length; i++) if (h[i].theirs === "D") defCount++;
+        return defCount >= 2 ? "D" : "C";
+      },
+    },
+    {
+      key: "grofman", name: "Probabilistic Forgiver (Grofman)", category: "good", source: "literature", stochastic: true,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        const last = h[h.length - 1];
+        if (last.mine === last.theirs) return "C";
+        return Math.random() < 2 / 7 ? "C" : "D";
+      },
+    },
+    {
+      key: "shubik", name: "Gradual Punisher (Shubik)", category: "mixed", source: "literature", stochastic: false,
+      decide: (h, _r, _s, _t, _p, _n, st) => {
+        if (st.oppDefLast < 0) return "C";
+        const since = h.length - 1 - st.oppDefLast;
+        return since < st.cumDefAtLast ? "D" : "C";
+      },
+    },
+    {
+      key: "stein", name: "Random Detector (Stein-Rapoport)", category: "good", source: "literature", stochastic: false,
+      decide: (h, _r, _s, _t, _p, n, st) => {
+        const round = h.length + 1;
+        if (n && round > n - 2) return "D";
+        if (h.length === 0) return "C";
+        if (h.length >= 15) {
+          const opC = 1 - st.oppDefTotal / h.length;
+          if (Math.abs(opC - 0.5) < 0.08) return "D";
+        }
+        return h[h.length - 1].theirs;
+      },
+    },
+    {
+      key: "davis", name: "Delayed Grim Trigger (Davis)", category: "mixed", source: "literature", stochastic: false,
+      decide: (h, _r, _s, _t, _p, _n, st) => {
+        if (h.length < 10) return "C";
+        return st.oppDefTotal > 0 ? "D" : "C";
+      },
+    },
+    {
+      key: "graaskamp", name: "Probe-and-Exploit (Graaskamp)", category: "mixed", source: "literature", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length <= 50) return h[h.length - 1].theirs;
+        if (h.length === 51) return "D";
+        if (h.length <= 56) return h[h.length - 1].theirs;
+        let retaliated = false;
+        for (let i = 51; i < 56; i++) if (h[i].theirs === "D") { retaliated = true; break; }
+        if (retaliated) return h[h.length - 1].theirs;
+        return h.length % 5 === 0 ? "D" : "C";
+      },
+    },
+    {
+      key: "downing", name: "Expected-Payoff Learner (Downing)", category: "mixed", source: "literature", stochastic: false,
+      decide: (h, r, s, t, p, _n, st) => {
+        if (h.length < 2) return "C";
+        const pC = st.afterMyC_total > 0 ? st.afterMyC_oppC / st.afterMyC_total : 0.5;
+        const pD = st.afterMyD_total > 0 ? st.afterMyD_oppC / st.afterMyD_total : 0.5;
+        return pC * r + (1 - pC) * s > pD * t + (1 - pD) * p ? "C" : "D";
+      },
+    },
+    {
+      key: "feld", name: "Fading Tit-for-Tat (Feld)", category: "bad", source: "literature", stochastic: true,
+      decide: (h, _r, _s, _t, _p, n) => {
+        if (h.length === 0) return "C";
+        const intent = h[h.length - 1].theirs;
+        if (intent === "D") return "D";
+        const total = n || 200;
+        const coopProb = 1 - 0.5 * (h.length / total);
+        return Math.random() < coopProb ? "C" : "D";
+      },
+    },
+    {
+      key: "joss", name: "Sneaky Tit-for-Tat (Joss)", category: "bad", source: "literature", stochastic: true,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        const intent = h[h.length - 1].theirs;
+        if (intent === "D") return "D";
+        return Math.random() < 0.9 ? "C" : "D";
+      },
+    },
+    {
+      key: "tullock", name: "Undercutting Cooperator (Tullock)", category: "bad", source: "literature", stochastic: true,
+      decide: (h) => {
+        if (h.length < 11) return "C";
+        let defCount = 0;
+        for (let i = h.length - 10; i < h.length; i++) if (h[i].theirs === "D") defCount++;
+        const oppC = 1 - defCount / 10;
+        const myC = Math.max(0, oppC - 0.1);
+        return Math.random() < myC ? "C" : "D";
+      },
+    },
+    {
+      key: "withheld", name: "Periodic Prober", category: "mixed", source: "literature", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length % 20 === 0) return "D";
+        return h[h.length - 1].theirs;
+      },
+    },
+  ];
+
+  const BASELINE_STRATEGIES: Strategy[] = [
+    {
+      key: "rand", name: "Random", category: "bad", source: "baseline", stochastic: true,
+      decide: () => Math.random() < 0.5 ? "C" : "D",
+    },
+  ];
+
+  const STRATEGIES: Strategy[] = [
+    ...LITERATURE_STRATEGIES,
+    ...STUDENT_STRATEGIES,
+    ...BASELINE_STRATEGIES,
+  ];
+
+  const canvas = document.getElementById("ce-grid") as HTMLCanvasElement | null;
+  const ctx = canvas?.getContext("2d") ?? null;
+  const lineGood = document.getElementById("ce-line-good") as SVGPathElement | null;
+  const lineMixed = document.getElementById("ce-line-mixed") as SVGPathElement | null;
+  const lineBad = document.getElementById("ce-line-bad") as SVGPathElement | null;
+  const coopOut = document.getElementById("ce-coop");
+  const genOut = document.getElementById("ce-gen");
+  const domOut = document.getElementById("ce-dom");
+  const paintSelect = document.getElementById("ce-paint") as HTMLSelectElement | null;
+  const tInput = document.getElementById("ce-t") as HTMLInputElement | null;
+  const roundsInput = document.getElementById("ce-rounds") as HTMLInputElement | null;
+  const mutInput = document.getElementById("ce-mut") as HTMLInputElement | null;
+  const tOut = document.getElementById("ce-t-out");
+  const roundsOut = document.getElementById("ce-rounds-out");
+  const mutOut = document.getElementById("ce-mut-out");
+  const toggleBtn = document.getElementById("ce-toggle") as HTMLButtonElement | null;
+  const resetBtn = document.getElementById("ce-reset") as HTMLButtonElement | null;
+
+  let cells: number[] = [];
+  let payoffs = new Float32Array(COLS * ROWS);
+  let next: number[] = [];
+  let history: Record<Category, number[]> = { good: [], mixed: [], bad: [] };
+  let lastCoopRate = 0;
+  let generation = 0;
+  let running = true;
+  let lastStep = 0;
+  let raf = 0;
+  let paintStrategy = Math.max(0, STRATEGIES.findIndex((s) => s.key === "alld"));
+
+  function idx(x: number, y: number): number {
+    return ((y + ROWS) % ROWS) * COLS + ((x + COLS) % COLS);
+  }
+
+  function getTemptation(): number {
+    return tInput ? parseFloat(tInput.value) : 1.6;
+  }
+
+  function getMutation(): number {
+    return mutInput ? parseFloat(mutInput.value) / 100 : 0.002;
+  }
+
+  function getRounds(): number {
+    return roundsInput ? parseInt(roundsInput.value, 10) : 20;
+  }
+
+  function createStats(): Stats {
+    return { oppDefTotal: 0, oppDefLast: -1, cumDefAtLast: 0, afterMyC_oppC: 0, afterMyC_total: 0, afterMyD_oppC: 0, afterMyD_total: 0 };
+  }
+
+  function payoff(me: Move, other: Move, temptation: number): number {
+    if (me === "C" && other === "C") return R;
+    if (me === "C" && other === "D") return S;
+    if (me === "D" && other === "C") return temptation;
+    return P;
+  }
+
+  function reset() {
+    cells = new Array(COLS * ROWS);
+    next = new Array(COLS * ROWS);
+    for (let i = 0; i < cells.length; i++) cells[i] = Math.floor(Math.random() * STRATEGIES.length);
+    history = { good: [], mixed: [], bad: [] };
+    lastCoopRate = 0;
+    generation = 0;
+    updateOutputs();
+    draw();
+  }
+
+  function playMatch(aIdx: number, bIdx: number, rounds: number, temptation: number): [number, number, number] {
+    const a = STRATEGIES[aIdx];
+    const b = STRATEGIES[bIdx];
+    const histA: HistEntry[] = [];
+    const histB: HistEntry[] = [];
+    const stA = createStats();
+    const stB = createStats();
+    let sumA = 0;
+    let sumB = 0;
+    let coopMoves = 0;
+    for (let r = 0; r < rounds; r++) {
+      const mA = a.decide(histA, R, S, temptation, P, rounds, stA);
+      const mB = b.decide(histB, R, S, temptation, P, rounds, stB);
+      const pA = payoff(mA, mB, temptation);
+      const pB = payoff(mB, mA, temptation);
+      if (r >= 1) {
+        const prevA = histA[r - 1].mine;
+        if (prevA === "C") { stA.afterMyC_total++; if (mB === "C") stA.afterMyC_oppC++; }
+        else { stA.afterMyD_total++; if (mB === "C") stA.afterMyD_oppC++; }
+        const prevB = histB[r - 1].mine;
+        if (prevB === "C") { stB.afterMyC_total++; if (mA === "C") stB.afterMyC_oppC++; }
+        else { stB.afterMyD_total++; if (mA === "C") stB.afterMyD_oppC++; }
+      }
+      histA.push({ mine: mA, theirs: mB, pof: pA });
+      histB.push({ mine: mB, theirs: mA, pof: pB });
+      sumA += pA;
+      sumB += pB;
+      if (mA === "C") coopMoves++;
+      if (mB === "C") coopMoves++;
+      if (mB === "D") { stA.oppDefTotal++; stA.oppDefLast = r; stA.cumDefAtLast = stA.oppDefTotal; }
+      if (mA === "D") { stB.oppDefTotal++; stB.oppDefLast = r; stB.cumDefAtLast = stB.oppDefTotal; }
+    }
+    return [sumA, sumB, coopMoves];
+  }
+
+  function step() {
+    const temptation = getTemptation();
+    const mutation = getMutation();
+    const rounds = getRounds();
+    payoffs.fill(0);
+    let coopMoves = 0;
+    let totalMoves = 0;
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const here = idx(x, y);
+        for (const [dx, dy] of NEIGHBORS) {
+          const there = idx(x + dx, y + dy);
+          if (there <= here) continue;
+          const [pHere, pThere, coop] = playMatch(cells[here], cells[there], rounds, temptation);
+          payoffs[here] += pHere;
+          payoffs[there] += pThere;
+          coopMoves += coop;
+          totalMoves += rounds * 2;
+        }
+      }
+    }
+    lastCoopRate = totalMoves > 0 ? coopMoves / totalMoves : 0;
+
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        let best = idx(x, y);
+        let bestPayoff = payoffs[best];
+        for (const [dx, dy] of COPY_NEIGHBORHOOD) {
+          const n = idx(x + dx, y + dy);
+          if (payoffs[n] > bestPayoff) {
+            best = n;
+            bestPayoff = payoffs[n];
+          }
+        }
+        let copied = cells[best];
+        if (Math.random() < mutation) copied = Math.floor(Math.random() * STRATEGIES.length);
+        next[idx(x, y)] = copied;
+      }
+    }
+
+    const tmp = cells;
+    cells = next;
+    next = tmp;
+    generation++;
+    updateOutputs();
+  }
+
+  function dominantStrategy(): Strategy {
+    const counts = new Array(STRATEGIES.length).fill(0);
+    for (const c of cells) counts[c]++;
+    let best = 0;
+    for (let i = 1; i < counts.length; i++) if (counts[i] > counts[best]) best = i;
+    return STRATEGIES[best];
+  }
+
+  function categoryShares(): Record<Category, number> {
+    const counts: Record<Category, number> = { good: 0, mixed: 0, bad: 0 };
+    for (const c of cells) counts[STRATEGIES[c].category]++;
+    return {
+      good: counts.good / cells.length,
+      mixed: counts.mixed / cells.length,
+      bad: counts.bad / cells.length,
+    };
+  }
+
+  function updateOutputs(recordHistory = true) {
+    const rate = lastCoopRate;
+    const dominant = dominantStrategy();
+    const shares = categoryShares();
+    if (recordHistory) {
+      for (const category of ["good", "mixed", "bad"] as Category[]) {
+        history[category].push(shares[category]);
+        if (history[category].length > HISTORY_LIMIT) history[category].shift();
+      }
+    }
+
+    if (coopOut) coopOut.textContent = `${Math.round(rate * 100)}%`;
+    if (genOut) genOut.textContent = String(generation);
+    if (domOut) domOut.textContent = dominant.name;
+    if (tInput && tOut) tOut.textContent = parseFloat(tInput.value).toFixed(2);
+    if (roundsInput && roundsOut) roundsOut.textContent = roundsInput.value;
+    if (mutInput && mutOut) mutOut.textContent = `${parseFloat(mutInput.value).toFixed(1)}%`;
+    renderChart();
+  }
+
+  function renderChart() {
+    if (!lineGood || !lineMixed || !lineBad) return;
+    const w = 260;
+    const h = 130;
+    const denom = Math.max(1, HISTORY_LIMIT - 1);
+    const pathFor = (values: number[]) => values.map((v, i) => {
+        const x = (i / denom) * w;
+        const y = h - v * h;
+        return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      }).join(" ");
+    lineGood.setAttribute("d", pathFor(history.good));
+    lineMixed.setAttribute("d", pathFor(history.mixed));
+    lineBad.setAttribute("d", pathFor(history.bad));
+  }
+
+  function draw() {
+    if (!ctx || !canvas) return;
+    const cw = canvas.width / COLS;
+    const ch = canvas.height / ROWS;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        ctx.fillStyle = CATEGORY_COLOR[STRATEGIES[cells[idx(x, y)]].category];
+        ctx.fillRect(x * cw, y * ch, Math.ceil(cw), Math.ceil(ch));
+      }
+    }
+  }
+
+  function populatePaintSelect() {
+    if (!paintSelect) return;
+    paintSelect.innerHTML = "";
+    STRATEGIES.forEach((strategy, i) => {
+      const option = document.createElement("option");
+      option.value = String(i);
+      option.textContent = strategy.name;
+      option.style.color = CATEGORY_COLOR[strategy.category];
+      option.style.fontWeight = "700";
+      paintSelect.appendChild(option);
+    });
+    paintSelect.value = String(paintStrategy);
+  }
+
+  function cellFromPointer(e: PointerEvent): [number, number] | null {
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.floor(((e.clientX - rect.left) / rect.width) * COLS);
+    const y = Math.floor(((e.clientY - rect.top) / rect.height) * ROWS);
+    if (x < 0 || x >= COLS || y < 0 || y >= ROWS) return null;
+    return [x, y];
+  }
+
+  function paintAt(e: PointerEvent, strategyIndex: number) {
+    const cell = cellFromPointer(e);
+    if (!cell) return;
+    const [cx, cy] = cell;
+    for (let dy = -BRUSH_RADIUS; dy <= BRUSH_RADIUS; dy++) {
+      for (let dx = -BRUSH_RADIUS; dx <= BRUSH_RADIUS; dx++) {
+        cells[idx(cx + dx, cy + dy)] = strategyIndex;
+      }
+    }
+    updateOutputs(false);
+    draw();
+  }
+
+  function tick(t: number) {
+    if (running && t - lastStep > 80) {
+      step();
+      draw();
+      lastStep = t;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  tInput?.addEventListener("input", () => updateOutputs());
+  mutInput?.addEventListener("input", () => updateOutputs());
+  roundsInput?.addEventListener("input", () => updateOutputs());
+  resetBtn?.addEventListener("click", () => reset());
+  toggleBtn?.addEventListener("click", () => {
+    running = !running;
+    toggleBtn.textContent = running ? "Pause" : "Run";
+  });
+  canvas?.addEventListener("contextmenu", (e) => e.preventDefault());
+  canvas?.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    canvas.setPointerCapture(e.pointerId);
+    paintAt(e, paintStrategy);
+  });
+  canvas?.addEventListener("pointermove", (e) => {
+    if (e.buttons & 1) paintAt(e, paintStrategy);
+  });
+  canvas?.addEventListener("pointerup", (e) => {
+    if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+  });
+  canvas?.addEventListener("pointercancel", (e) => {
+    if (canvas.hasPointerCapture(e.pointerId)) canvas.releasePointerCapture(e.pointerId);
+  });
+  paintSelect?.addEventListener("change", () => {
+    paintStrategy = parseInt(paintSelect.value, 10);
+  });
+
+  populatePaintSelect();
+  reset();
+  raf = requestAnimationFrame(tick);
+  document.addEventListener("astro:before-swap", () => cancelAnimationFrame(raf), { once: true });
+</script>

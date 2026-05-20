@@ -1,0 +1,724 @@
+---
+type Scale = "linear" | "log";
+
+type Panel = {
+  title: string;
+  subtitle: string;
+  color: string;
+  xLabel: string;
+  yLabel: string;
+  xMin: number;
+  xMax: number;
+  yMin: number;
+  yMax: number;
+  xScale: Scale;
+  yScale: Scale;
+  points: Array<[number, number]>;
+  xTicks: number[];
+  yTicks: number[];
+  guide?: Array<[number, number]>;
+  mean?: { x: number; y: number; label: string; divergent?: boolean };
+};
+
+const normalPdf = (x: number, mean = 0, sigma = 1) => {
+  const z = (x - mean) / sigma;
+  return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+};
+
+const sample = (n: number, fn: (u: number) => [number, number]) =>
+  Array.from({ length: n }, (_, i) => fn(i / (n - 1)));
+
+const normalPoints = sample(160, (u) => {
+  const x = -4 + u * 8;
+  return [x, normalPdf(x)];
+});
+
+const logNormalPoints = sample(160, (u) => {
+  const logX = -4 + u * 8;
+  return [logX, normalPdf(logX, 0.25, 1.05)];
+});
+
+const powerPoints = sample(160, (u) => {
+  const x = Math.pow(10, u * 3);
+  return [x, Math.pow(x, -2.4)];
+});
+
+const logNormalMean = Math.exp(0.25 + (1.05 * 1.05) / 2);
+
+const panels: Panel[] = [
+  {
+    title: "Normal",
+    subtitle: "Linear scale",
+    color: "#3b82f6",
+    xLabel: "value",
+    yLabel: "density",
+    xMin: -4,
+    xMax: 4,
+    yMin: 0,
+    yMax: 0.42,
+    xScale: "linear",
+    yScale: "linear",
+    points: normalPoints,
+    xTicks: [-4, -2, 0, 2, 4],
+    yTicks: [0.1, 0.2, 0.3, 0.4],
+    mean: { x: 0, y: normalPdf(0), label: "mean" },
+  },
+  {
+    title: "Log-normal",
+    subtitle: "Log transform",
+    color: "#10b981",
+    xLabel: "log(value)",
+    yLabel: "density",
+    xMin: -4,
+    xMax: 4,
+    yMin: 0,
+    yMax: 0.42,
+    xScale: "linear",
+    yScale: "linear",
+    points: logNormalPoints,
+    xTicks: [-4, -2, 0, 2, 4],
+    yTicks: [0.1, 0.2, 0.3, 0.4],
+    mean: { x: Math.log(logNormalMean), y: normalPdf(Math.log(logNormalMean), 0.25, 1.05), label: "mean" },
+  },
+  {
+    title: "Power law",
+    subtitle: "Log-log transform",
+    color: "#f59e0b",
+    xLabel: "log(value)",
+    yLabel: "log(density)",
+    xMin: 1,
+    xMax: 1000,
+    yMin: 0.00000001,
+    yMax: 1,
+    xScale: "log",
+    yScale: "log",
+    points: powerPoints,
+    xTicks: [1, 10, 100, 1000],
+    yTicks: [0.00000001, 0.000001, 0.0001, 0.01],
+    guide: [
+      [1, 1],
+      [1000, Math.pow(1000, -2.4)],
+    ],
+    mean: { x: 3.5, y: Math.pow(3.5, -2.4), label: "mean" },
+  },
+];
+
+const PLOT = {
+  top: 62,
+  left: 42,
+  width: 220,
+  height: 150,
+};
+const PANEL_WIDTH = 286;
+const PANEL_GAP = 20;
+const panelOrigin = (i: number) => 8 + i * (PANEL_WIDTH + PANEL_GAP);
+
+const scaleValue = (value: number, min: number, max: number, scale: Scale) => {
+  if (scale === "log") {
+    const logMin = Math.log10(min);
+    const logMax = Math.log10(max);
+    return (Math.log10(value) - logMin) / (logMax - logMin);
+  }
+  return (value - min) / (max - min);
+};
+
+const mapPoint = (panel: Panel, x: number, y: number, origin: number) => {
+  const px = origin + PLOT.left + scaleValue(x, panel.xMin, panel.xMax, panel.xScale) * PLOT.width;
+  const py = PLOT.top + PLOT.height - scaleValue(y, panel.yMin, panel.yMax, panel.yScale) * PLOT.height;
+  return [px, py];
+};
+
+const pathFor = (panel: Panel, points: Array<[number, number]>, origin: number) =>
+  points.map(([x, y], i) => {
+    const [px, py] = mapPoint(panel, x, y, origin);
+    return `${i === 0 ? "M" : "L"}${px.toFixed(2)},${py.toFixed(2)}`;
+  }).join(" ");
+
+const tickLabel = (value: number, scale: Scale) => {
+  if (scale === "log") {
+    if (value >= 1) return `${value}`;
+    return value.toExponential(0).replace("e-0", "e-");
+  }
+  return Number.isInteger(value) ? `${value}` : value.toFixed(1);
+};
+---
+
+<div class="dist-transform">
+  <svg class="dt-plot" viewBox="0 0 900 286" role="img" aria-label="Normal, log-normal, and power-law distributions under linear, log, and log-log transforms">
+    <defs>
+      {panels.map((_panel, i) => {
+        const origin = panelOrigin(i);
+        return <clipPath id={`dt-clip-${i}`}><rect x={origin + PLOT.left} y={PLOT.top} width={PLOT.width} height={PLOT.height} /></clipPath>;
+      })}
+    </defs>
+    {panels.map((panel, i) => {
+      const origin = panelOrigin(i);
+      const x0 = origin + PLOT.left;
+      const y0 = PLOT.top;
+      const x1 = x0 + PLOT.width;
+      const y1 = y0 + PLOT.height;
+      return (
+        <g class="dt-panel" data-panel={i}>
+          <text class="dt-title" x={origin + 2} y="24">{panel.title}</text>
+          <text class="dt-subtitle" data-subtitle x={origin + 2} y="45">{panel.subtitle}</text>
+
+          <g class="dt-grid" data-grid>
+            {panel.xTicks.map((tick) => {
+              const [x] = mapPoint(panel, tick, panel.yMin || panel.yTicks[0] || 0.0001, origin);
+              return <line x1={x} y1={y0} x2={x} y2={y1} />;
+            })}
+            {panel.yTicks.map((tick) => {
+              const [, y] = mapPoint(panel, panel.xMin, tick, origin);
+              return <line x1={x0} y1={y} x2={x1} y2={y} />;
+            })}
+          </g>
+
+          <g class="dt-axes">
+            <line x1={x0} y1={y1} x2={x1} y2={y1} />
+            <line x1={x0} y1={y0} x2={x0} y2={y1} />
+          </g>
+
+          <g clip-path={`url(#dt-clip-${i})`}>
+            <path class="dt-guide" data-guide d={panel.guide ? pathFor(panel, panel.guide, origin) : ""} style={panel.guide ? "" : "display:none"} />
+            <path class="dt-curve" data-curve d={pathFor(panel, panel.points, origin)} style={`stroke:${panel.color}`} />
+          </g>
+
+          <g class="dt-ticks" data-ticks>
+            {panel.xTicks.map((tick) => {
+              const [x] = mapPoint(panel, tick, panel.yMin || panel.yTicks[0] || 0.0001, origin);
+              return <text x={x} y={y1 + 18} text-anchor="middle">{tickLabel(tick, panel.xScale)}</text>;
+            })}
+            {panel.yTicks.map((tick) => {
+              const [, y] = mapPoint(panel, panel.xMin, tick, origin);
+              return <text x={x0 - 8} y={y + 4} text-anchor="end">{tickLabel(tick, panel.yScale)}</text>;
+            })}
+          </g>
+
+          <g class="dt-mean" data-mean style={panel.mean ? "" : "display:none"}>
+            {panel.mean && (() => {
+              const [mx, my] = mapPoint(panel, panel.mean.x, panel.mean.y, origin);
+              return (
+                <>
+                  <line x1={mx} y1={y1} x2={mx} y2={my} class={panel.mean.divergent ? "divergent" : ""} />
+                  <text x={mx + (panel.mean.divergent ? -8 : 7)} y={Math.max(y0 + 12, my - 7)} text-anchor={panel.mean.divergent ? "end" : "start"}>{panel.mean.label}</text>
+                </>
+              );
+            })()}
+          </g>
+
+          <text class="dt-axis-label" data-x-label x={(x0 + x1) / 2} y="270" text-anchor="middle">{panel.xLabel}</text>
+          <text class="dt-axis-label dt-y-label" data-y-label x={origin + 12} y={(y0 + y1) / 2} text-anchor="middle" transform={`rotate(-90 ${origin + 12} ${(y0 + y1) / 2})`}>{panel.yLabel}</text>
+        </g>
+      );
+    })}
+  </svg>
+  <div class="dt-switches">
+    <div></div>
+    <label class="dt-switch">
+      <span>Linear</span>
+      <input type="checkbox" data-toggle-panel="1" checked />
+      <i></i>
+      <span>Log x</span>
+    </label>
+    <label class="dt-switch">
+      <span>Linear</span>
+      <input type="checkbox" data-toggle-panel="2" checked />
+      <i></i>
+      <span>Log-log</span>
+    </label>
+  </div>
+  <label class="dt-exponent">
+    <span>Power-law exponent = <output id="dt-alpha-out">2.400</output></span>
+    <input id="dt-alpha" type="range" min="1.80" max="2.40" step="0.001" value="2.40" />
+    <strong id="dt-mean-state">mean = 3.5</strong>
+  </label>
+</div>
+
+<style>
+  .dist-transform {
+    width: 100%;
+    margin: 0.7rem auto 0;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .dist-transform .dt-plot {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .dist-transform .dt-title {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .dist-transform .dt-subtitle,
+  .dist-transform .dt-axis-label,
+  .dist-transform .dt-ticks text {
+    fill: var(--post-caption, #737373);
+    font-weight: 700;
+  }
+  .dist-transform .dt-subtitle {
+    font-size: 14px;
+  }
+  .dist-transform .dt-axis-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .dist-transform .dt-ticks text {
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+  }
+  .dist-transform .dt-grid line {
+    stroke: var(--post-separator, #bbb);
+    opacity: 0.35;
+    stroke-dasharray: 3 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-axes line {
+    stroke: var(--post-separator, #bbb);
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-curve {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-guide {
+    fill: none;
+    stroke: var(--post-caption, #737373);
+    stroke-width: 2;
+    stroke-dasharray: 7 6;
+    opacity: 0.75;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-mean line {
+    stroke: var(--post-heading, #1a1a1a);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-mean line.divergent {
+    stroke: #f59e0b;
+  }
+  .dist-transform .dt-mean text {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .dist-transform .dt-switches {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: -0.25rem;
+    font-size: 0.7rem;
+    color: var(--post-caption, #737373);
+    font-weight: 800;
+  }
+  .dist-transform .dt-switch {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+    min-width: 0;
+    cursor: pointer;
+    user-select: none;
+  }
+  .dist-transform .dt-switch input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .dist-transform .dt-switch i {
+    width: 2.25rem;
+    height: 1.15rem;
+    position: relative;
+    display: inline-block;
+    flex: 0 0 auto;
+    border: 1px solid var(--post-separator, #bbb);
+    border-radius: 999px;
+    background: transparent;
+  }
+  .dist-transform .dt-switch i::after {
+    content: "";
+    width: 0.78rem;
+    height: 0.78rem;
+    position: absolute;
+    top: 50%;
+    left: 0.18rem;
+    transform: translateY(-50%);
+    border-radius: 999px;
+    background: var(--post-caption, #737373);
+    transition: left 0.16s ease, background-color 0.16s ease;
+  }
+  .dist-transform .dt-switch input:checked + i::after {
+    left: 1.22rem;
+    background: #f59e0b;
+  }
+  .dist-transform .dt-switch input[data-toggle-panel="1"]:checked + i::after {
+    background: #10b981;
+  }
+  .dist-transform .dt-exponent {
+    width: min(31rem, 100%);
+    margin: 0.35rem 0 0 auto;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--post-caption, #737373);
+    font-size: 0.7rem;
+    font-weight: 800;
+  }
+  .dist-transform .dt-exponent input {
+    width: 100%;
+    accent-color: #f59e0b;
+  }
+  .dist-transform .dt-exponent output,
+  .dist-transform .dt-exponent strong {
+    color: var(--post-heading, #1a1a1a);
+    font-weight: 800;
+    white-space: nowrap;
+  }
+  .dist-transform .dt-exponent strong.divergent {
+    color: #f59e0b;
+  }
+  @media (max-width: 720px) {
+    .dist-transform .dt-switches {
+      grid-template-columns: 1fr;
+    }
+    .dist-transform .dt-switches > div {
+      display: none;
+    }
+    .dist-transform .dt-exponent {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<style is:global>
+  .dist-transform .dt-grid line {
+    stroke: var(--post-separator, #bbb);
+    opacity: 0.35;
+    stroke-dasharray: 3 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-ticks text {
+    fill: var(--post-caption, #737373);
+    font-size: 11px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .dist-transform .dt-mean line {
+    stroke: var(--post-heading, #1a1a1a);
+    stroke-width: 1.5;
+    stroke-dasharray: 4 4;
+    vector-effect: non-scaling-stroke;
+  }
+  .dist-transform .dt-mean line.divergent {
+    stroke: #f59e0b;
+  }
+  .dist-transform .dt-mean text {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 11px;
+    font-weight: 800;
+  }
+</style>
+
+<script>
+  type Scale = "linear" | "log";
+  type PanelConfig = {
+    subtitle: string;
+    xLabel: string;
+    yLabel: string;
+    xMin: number;
+    xMax: number;
+    yMin: number;
+    yMax: number;
+    xScale: Scale;
+    yScale: Scale;
+    points: Array<[number, number]>;
+    xTicks: number[];
+    yTicks: number[];
+    guide?: Array<[number, number]>;
+    mean?: { x: number; y: number; label: string; divergent?: boolean };
+  };
+
+  const root = document.querySelector(".dist-transform");
+  const SVG_NS = "http://www.w3.org/2000/svg";
+  const PLOT = { top: 62, left: 42, width: 220, height: 150 };
+  const PANEL_WIDTH = 286;
+  const PANEL_GAP = 20;
+  const LOG_NORMAL_MU = 0.25;
+  const LOG_NORMAL_SIGMA = 1.05;
+  const panelOrigin = (i: number) => 8 + i * (PANEL_WIDTH + PANEL_GAP);
+
+  function normalPdf(x: number, mean = 0, sigma = 1): number {
+    const z = (x - mean) / sigma;
+    return Math.exp(-0.5 * z * z) / (sigma * Math.sqrt(2 * Math.PI));
+  }
+
+  function logNormalPdf(x: number, mean = 0.25, sigma = 1.05): number {
+    return x > 0 ? normalPdf(Math.log(x), mean, sigma) / x : 0;
+  }
+
+  function sample(n: number, fn: (u: number) => [number, number]): Array<[number, number]> {
+    return Array.from({ length: n }, (_, i) => fn(i / (n - 1)));
+  }
+
+  const logNormalMean = Math.exp(LOG_NORMAL_MU + (LOG_NORMAL_SIGMA * LOG_NORMAL_SIGMA) / 2);
+  const modes: Record<number, "linear" | "transformed"> = { 1: "transformed", 2: "transformed" };
+
+  function powerConfig(alpha: number, mode: "linear" | "transformed"): PanelConfig {
+    const finiteMean = alpha > 2;
+    const meanX = finiteMean ? (alpha - 1) / (alpha - 2) : (mode === "linear" ? 30 : 1000);
+    const mean = {
+      x: meanX,
+      y: Math.pow(meanX, -alpha),
+      label: finiteMean ? "mean" : "mean diverges",
+      divergent: !finiteMean,
+    };
+    if (mode === "linear") {
+      return {
+        subtitle: "Linear scale, zoomed",
+        xLabel: "value",
+        yLabel: "density",
+        xMin: 1,
+        xMax: 30,
+        yMin: 0,
+        yMax: 0.3,
+        xScale: "linear",
+        yScale: "linear",
+        points: sample(180, (u) => {
+          const x = 1 + u * 29;
+          return [x, Math.pow(x, -alpha)];
+        }),
+        xTicks: [1, 5, 10, 20, 30],
+        yTicks: [0.1, 0.2, 0.3],
+        mean,
+      };
+    }
+    return {
+      subtitle: "Log-log transform",
+      xLabel: "log(value)",
+      yLabel: "log(density)",
+      xMin: 1,
+      xMax: 1000,
+        yMin: 0.00000001,
+      yMax: 1,
+      xScale: "log",
+      yScale: "log",
+      points: sample(160, (u) => {
+        const x = Math.pow(10, u * 3);
+        return [x, Math.pow(x, -alpha)];
+      }),
+      xTicks: [1, 10, 100, 1000],
+        yTicks: [0.00000001, 0.000001, 0.0001, 0.01],
+      guide: [[1, 1], [1000, Math.pow(1000, -alpha)]],
+      mean,
+    };
+  }
+
+  const configs: Record<number, Record<"linear" | "transformed", PanelConfig>> = {
+    1: {
+      linear: {
+        subtitle: "Linear scale, zoomed",
+        xLabel: "value",
+        yLabel: "density",
+        xMin: 0,
+        xMax: 8,
+        yMin: 0,
+        yMax: 0.85,
+        xScale: "linear",
+        yScale: "linear",
+        points: sample(180, (u) => {
+          const x = 0.02 * Math.pow(8 / 0.02, u);
+          return [x, logNormalPdf(x)];
+        }),
+        xTicks: [0, 2, 4, 6, 8],
+        yTicks: [0.2, 0.4, 0.6, 0.8],
+        mean: { x: logNormalMean, y: logNormalPdf(logNormalMean), label: "mean" },
+      },
+      transformed: {
+        subtitle: "Log transform",
+        xLabel: "log(value)",
+        yLabel: "density",
+        xMin: -4,
+        xMax: 4,
+        yMin: 0,
+        yMax: 0.42,
+        xScale: "linear",
+        yScale: "linear",
+        points: sample(160, (u) => {
+          const x = -4 + u * 8;
+          return [x, normalPdf(x, LOG_NORMAL_MU, LOG_NORMAL_SIGMA)];
+        }),
+        xTicks: [-4, -2, 0, 2, 4],
+        yTicks: [0.1, 0.2, 0.3, 0.4],
+        mean: { x: Math.log(logNormalMean), y: normalPdf(Math.log(logNormalMean), LOG_NORMAL_MU, LOG_NORMAL_SIGMA), label: "mean" },
+      },
+    },
+    2: {
+      linear: powerConfig(2.4, "linear"),
+      transformed: powerConfig(2.4, "transformed"),
+    },
+  };
+
+  function scaleValue(value: number, min: number, max: number, scale: Scale): number {
+    if (scale === "log") {
+      const logMin = Math.log10(min);
+      const logMax = Math.log10(max);
+      return (Math.log10(value) - logMin) / (logMax - logMin);
+    }
+    return (value - min) / (max - min);
+  }
+
+  function mapPoint(config: PanelConfig, x: number, y: number, origin: number): [number, number] {
+    const px = origin + PLOT.left + scaleValue(x, config.xMin, config.xMax, config.xScale) * PLOT.width;
+    const py = PLOT.top + PLOT.height - scaleValue(y, config.yMin, config.yMax, config.yScale) * PLOT.height;
+    return [px, py];
+  }
+
+  function pathFor(config: PanelConfig, points: Array<[number, number]>, origin: number): string {
+    return points.map(([x, y], i) => {
+      const [px, py] = mapPoint(config, x, y, origin);
+      return `${i === 0 ? "M" : "L"}${px.toFixed(2)},${py.toFixed(2)}`;
+    }).join(" ");
+  }
+
+  function tickLabel(value: number, scale: Scale): string {
+    if (scale === "log") {
+      if (value >= 1) return `${value}`;
+      return value.toExponential(0).replace("e-0", "e-");
+    }
+    return Number.isInteger(value) ? `${value}` : value.toFixed(1);
+  }
+
+  function textEl(x: number, y: number, text: string, anchor = "start"): SVGTextElement {
+    const el = document.createElementNS(SVG_NS, "text");
+    el.setAttribute("x", String(x));
+    el.setAttribute("y", String(y));
+    el.setAttribute("text-anchor", anchor);
+    el.textContent = text;
+    return el;
+  }
+
+  function renderPanel(index: number, config: PanelConfig) {
+    const panel = root?.querySelector<SVGGElement>(`[data-panel="${index}"]`);
+    if (!panel) return;
+    const origin = panelOrigin(index);
+    const x0 = origin + PLOT.left;
+    const y0 = PLOT.top;
+    const x1 = x0 + PLOT.width;
+    const y1 = y0 + PLOT.height;
+
+    const subtitle = panel.querySelector<SVGTextElement>("[data-subtitle]");
+    const curve = panel.querySelector<SVGPathElement>("[data-curve]");
+    const guide = panel.querySelector<SVGPathElement>("[data-guide]");
+    const mean = panel.querySelector<SVGGElement>("[data-mean]");
+    const grid = panel.querySelector<SVGGElement>("[data-grid]");
+    const ticks = panel.querySelector<SVGGElement>("[data-ticks]");
+    const xLabel = panel.querySelector<SVGTextElement>("[data-x-label]");
+    const yLabel = panel.querySelector<SVGTextElement>("[data-y-label]");
+
+    if (subtitle) subtitle.textContent = config.subtitle;
+    if (curve) curve.setAttribute("d", pathFor(config, config.points, origin));
+    if (xLabel) xLabel.textContent = config.xLabel;
+    if (yLabel) yLabel.textContent = config.yLabel;
+    if (guide) {
+      if (config.guide) {
+        guide.setAttribute("d", pathFor(config, config.guide, origin));
+        guide.style.display = "";
+      } else {
+        guide.style.display = "none";
+      }
+    }
+    if (mean) {
+      mean.innerHTML = "";
+      if (config.mean) {
+        const [mx, my] = mapPoint(config, config.mean.x, config.mean.y, origin);
+        const labelX = mx + (config.mean.divergent ? -8 : 7);
+        const labelAnchor = config.mean.divergent ? "end" : "start";
+        const line = document.createElementNS(SVG_NS, "line");
+        line.setAttribute("x1", String(mx));
+        line.setAttribute("y1", String(y1));
+        line.setAttribute("x2", String(mx));
+        line.setAttribute("y2", String(my));
+        if (config.mean.divergent) line.classList.add("divergent");
+        mean.appendChild(line);
+        mean.appendChild(textEl(labelX, Math.max(y0 + 12, my - 7), config.mean.label, labelAnchor));
+        mean.style.display = "";
+      } else {
+        mean.style.display = "none";
+      }
+    }
+
+    if (grid) {
+      grid.innerHTML = "";
+      for (const tick of config.xTicks) {
+        const [x] = mapPoint(config, tick, config.yMin || config.yTicks[0] || 0.0001, origin);
+        const line = document.createElementNS(SVG_NS, "line");
+        line.setAttribute("x1", String(x));
+        line.setAttribute("y1", String(y0));
+        line.setAttribute("x2", String(x));
+        line.setAttribute("y2", String(y1));
+        grid.appendChild(line);
+      }
+      for (const tick of config.yTicks) {
+        const [, y] = mapPoint(config, config.xMin || config.xTicks[0], tick, origin);
+        const line = document.createElementNS(SVG_NS, "line");
+        line.setAttribute("x1", String(x0));
+        line.setAttribute("y1", String(y));
+        line.setAttribute("x2", String(x1));
+        line.setAttribute("y2", String(y));
+        grid.appendChild(line);
+      }
+    }
+
+    if (ticks) {
+      ticks.innerHTML = "";
+      for (const tick of config.xTicks) {
+        const [x] = mapPoint(config, tick, config.yMin || config.yTicks[0] || 0.0001, origin);
+        ticks.appendChild(textEl(x, y1 + 18, tickLabel(tick, config.xScale), "middle"));
+      }
+      for (const tick of config.yTicks) {
+        const [, y] = mapPoint(config, config.xMin || config.xTicks[0], tick, origin);
+        ticks.appendChild(textEl(x0 - 8, y + 4, tickLabel(tick, config.yScale), "end"));
+      }
+    }
+
+    // Keep the mean marker above redrawn ticks/grid after scale toggles.
+    if (mean) panel.appendChild(mean);
+  }
+
+  root?.querySelectorAll<HTMLInputElement>("[data-toggle-panel]").forEach((toggle) => {
+    toggle.addEventListener("change", () => {
+      const index = parseInt(toggle.dataset.togglePanel || "0", 10);
+      const mode = toggle.checked ? "transformed" : "linear";
+      modes[index] = mode;
+      renderPanel(index, configs[index][mode]);
+    });
+  });
+
+  const alphaInput = document.getElementById("dt-alpha") as HTMLInputElement | null;
+  const alphaOut = document.getElementById("dt-alpha-out");
+  const meanState = document.getElementById("dt-mean-state");
+  alphaInput?.addEventListener("input", () => {
+    const alpha = parseFloat(alphaInput.value);
+    configs[2].linear = powerConfig(alpha, "linear");
+    configs[2].transformed = powerConfig(alpha, "transformed");
+    if (alphaOut) alphaOut.textContent = alpha.toFixed(3);
+    if (meanState) {
+      if (alpha <= 2) {
+        meanState.textContent = "mean diverges";
+        meanState.classList.add("divergent");
+      } else {
+        meanState.textContent = `mean = ${((alpha - 1) / (alpha - 2)).toFixed(1)}`;
+        meanState.classList.remove("divergent");
+      }
+    }
+    renderPanel(2, configs[2][modes[2]]);
+  });
+</script>

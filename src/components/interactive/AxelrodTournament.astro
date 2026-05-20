@@ -48,6 +48,10 @@
   </div>
 
   <div class="st-controls">
+    <label class="st-check">
+      <input type="checkbox" id="st-reveal-literature" />
+      <span>Show literature strategies</span>
+    </label>
     <label>
       <span>Rounds = <output id="st-n-out">200</output></span>
       <input type="range" id="st-n" min="25" max="800" step="25" value="200" />
@@ -164,13 +168,27 @@
 
   /* Controls */
   .st-tournament .st-controls {
-    display: grid; grid-template-columns: 1fr 1fr;
+    display: grid; grid-template-columns: auto 1fr 1fr;
     gap: 0.5rem 1rem;
     margin-top: 0.5rem; font-size: 0.75rem;
+    align-items: end;
   }
   .st-tournament .st-controls label {
     display: flex; flex-direction: column; gap: 0.15rem;
     color: var(--post-caption, #737373);
+  }
+  .st-tournament .st-controls .st-check {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.4rem;
+    min-height: 1.7rem;
+    white-space: nowrap;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .st-tournament .st-controls .st-check input {
+    margin: 0;
+    accent-color: #3b82f6;
   }
   .st-tournament .st-controls input[type="range"] {
     accent-color: #3b82f6; width: 100%;
@@ -193,6 +211,8 @@
 </style>
 
 <script>
+  import { STUDENT_STRATEGIES } from "../../lib/ipdStudentStrategies";
+
   type Move = "C" | "D";
   type HistEntry = { mine: Move; theirs: Move; pof: number };
   type Stats = {
@@ -227,6 +247,7 @@
     name: string;
     color: string;
     category: Category;
+    source: "baseline" | "student" | "literature";
     // Set true if decide() uses Math.random. Default true is safe — it
     // disables the deterministic-matchup cache so a student-added stochastic
     // strategy never gets locked to a single sample.
@@ -234,18 +255,20 @@
     decide: (history: HistEntry[], R: number, S: number, T: number, P: number, totalRounds: number, stats: Stats) => Move;
   };
 
+  let revealLiteratureStrategies = false;
+
   // Axelrod's 1980 tournament: 14 submitted strategies + RANDOM (control).
   // Most implementations are simplified approximations of the originals.
-  const STRATEGIES: Strategy[] = [
+  const LITERATURE_STRATEGIES: Strategy[] = [
     {
-      key: "tft", name: "Tit-for-Tat (Rapoport)", color: "#3b82f6", category: "good", stochastic: false,
+      key: "tft", name: "Tit-for-Tat", color: "#3b82f6", category: "good", source: "literature", stochastic: false,
       decide: (h) => h.length === 0 ? "C" : h[h.length - 1].theirs,
     },
     {
       // Nowak & Sigmund 1992 — TFT that forgives defections with probability
       // q = min(1 - (T-R)/(R-S), (R-P)/(T-P)). For classic payoffs (5,3,1,0)
       // this gives q ≈ 1/3. GTFT outperforms TFT under noise.
-      key: "gtft", name: "Generous Tit-for-Tat", color: "#eab308", category: "good", stochastic: true,
+      key: "gtft", name: "Generous Tit-for-Tat", color: "#eab308", category: "good", source: "literature", stochastic: true,
       decide: (h, R, S, T, P) => {
         if (h.length === 0) return "C";
         if (h[h.length - 1].theirs === "C") return "C";
@@ -257,11 +280,11 @@
       },
     },
     {
-      key: "friedman", name: "Friedman (Grim)", color: "#dc2626", category: "mixed", stochastic: false,
+      key: "friedman", name: "Grim Trigger", color: "#dc2626", category: "mixed", source: "literature", stochastic: false,
       decide: (_h, _R, _S, _T, _P, _N, st) => st.oppDefTotal > 0 ? "D" : "C",
     },
     {
-      key: "tideman", name: "Tideman-Chieruzzi", color: "#f59e0b", category: "good", stochastic: false,
+      key: "tideman", name: "Modified Tit-for-Tat (Tideman-Chieruzzi)", color: "#f59e0b", category: "good", source: "literature", stochastic: false,
       decide: (h) => {
         if (h.length === 0) return "C";
         let move: Move = h[h.length - 1].theirs;
@@ -274,7 +297,7 @@
       },
     },
     {
-      key: "nydegger", name: "Nydegger", color: "#06b6d4", category: "good", stochastic: false,
+      key: "nydegger", name: "Three-Round Retaliator (Nydegger)", color: "#06b6d4", category: "good", source: "literature", stochastic: false,
       decide: (h) => {
         if (h.length === 0) return "C";
         if (h.length === 1) return h[0].theirs;
@@ -286,7 +309,7 @@
       },
     },
     {
-      key: "grofman", name: "Grofman", color: "#10b981", category: "good", stochastic: true,
+      key: "grofman", name: "Probabilistic Forgiver (Grofman)", color: "#10b981", category: "good", source: "literature", stochastic: true,
       decide: (h) => {
         if (h.length === 0) return "C";
         const last = h[h.length - 1];
@@ -295,7 +318,7 @@
       },
     },
     {
-      key: "shubik", name: "Shubik", color: "#a855f7", category: "mixed", stochastic: false,
+      key: "shubik", name: "Gradual Punisher (Shubik)", color: "#a855f7", category: "mixed", source: "literature", stochastic: false,
       decide: (h, _R, _S, _T, _P, _N, st) => {
         if (st.oppDefLast < 0) return "C";
         const since = h.length - 1 - st.oppDefLast;
@@ -303,7 +326,7 @@
       },
     },
     {
-      key: "stein", name: "Stein-Rapoport", color: "#ec4899", category: "good", stochastic: false,
+      key: "stein", name: "Random Detector (Stein-Rapoport)", color: "#ec4899", category: "good", source: "literature", stochastic: false,
       decide: (h, _R, _S, _T, _P, N, st) => {
         const round = h.length + 1;
         if (N && round > N - 2) return "D"; // defect last 2 rounds
@@ -317,14 +340,14 @@
       },
     },
     {
-      key: "davis", name: "Davis", color: "#14b8a6", category: "mixed", stochastic: false,
+      key: "davis", name: "Delayed Grim Trigger (Davis)", color: "#14b8a6", category: "mixed", source: "literature", stochastic: false,
       decide: (h, _R, _S, _T, _P, _N, st) => {
         if (h.length < 10) return "C";
         return st.oppDefTotal > 0 ? "D" : "C";
       },
     },
     {
-      key: "graaskamp", name: "Graaskamp", color: "#f97316", category: "mixed", stochastic: false,
+      key: "graaskamp", name: "Probe-and-Exploit (Graaskamp)", color: "#f97316", category: "mixed", source: "literature", stochastic: false,
       decide: (h) => {
         if (h.length === 0) return "C";
         if (h.length <= 50) return h[h.length - 1].theirs; // TFT
@@ -337,7 +360,7 @@
       },
     },
     {
-      key: "downing", name: "Downing (revised)", color: "#8b5cf6", category: "mixed", stochastic: false,
+      key: "downing", name: "Expected-Payoff Learner (Downing)", color: "#8b5cf6", category: "mixed", source: "literature", stochastic: false,
       decide: (h, R, S, T, P, _N, st) => {
         if (h.length < 2) return "C";
         const pC = st.afterMyC_total > 0 ? st.afterMyC_oppC / st.afterMyC_total : 0.5;
@@ -348,7 +371,7 @@
       },
     },
     {
-      key: "feld", name: "Feld", color: "#84cc16", category: "bad", stochastic: true,
+      key: "feld", name: "Fading Tit-for-Tat (Feld)", color: "#84cc16", category: "bad", source: "literature", stochastic: true,
       decide: (h, _R, _S, _T, _P, N) => {
         if (h.length === 0) return "C";
         const intent = h[h.length - 1].theirs;
@@ -359,7 +382,7 @@
       },
     },
     {
-      key: "joss", name: "Joss (sneaky TFT)", color: "#f43f5e", category: "bad", stochastic: true,
+      key: "joss", name: "Sneaky Tit-for-Tat (Joss)", color: "#f43f5e", category: "bad", source: "literature", stochastic: true,
       decide: (h) => {
         if (h.length === 0) return "C";
         const intent = h[h.length - 1].theirs;
@@ -368,7 +391,7 @@
       },
     },
     {
-      key: "tullock", name: "Tullock", color: "#0ea5e9", category: "bad", stochastic: true,
+      key: "tullock", name: "Undercutting Cooperator (Tullock)", color: "#0ea5e9", category: "bad", source: "literature", stochastic: true,
       decide: (h) => {
         if (h.length < 11) return "C";
         let defCount = 0;
@@ -379,7 +402,7 @@
       },
     },
     {
-      key: "withheld", name: "Name Withheld", color: "#6366f1", category: "mixed", stochastic: false,
+      key: "withheld", name: "Periodic Prober", color: "#6366f1", category: "mixed", source: "literature", stochastic: false,
       // Submitter requested anonymity; original strategy details aren't public.
       // Placeholder: TFT with periodic probing defection.
       decide: (h) => {
@@ -388,11 +411,38 @@
         return h[h.length - 1].theirs;
       },
     },
+  ];
+
+  const BASELINE_STRATEGIES: Strategy[] = [
     {
-      key: "rand", name: "Random (control)", color: "#737373", category: "bad", stochastic: true,
+      key: "rand", name: "Random", color: "#737373", category: "bad", source: "baseline", stochastic: true,
       decide: () => Math.random() < 0.5 ? "C" : "D",
     },
   ];
+
+  const TOURNAMENT_POOL: Strategy[] = [
+    ...LITERATURE_STRATEGIES,
+    ...STUDENT_STRATEGIES,
+    ...BASELINE_STRATEGIES,
+  ];
+
+  function getDisplayedStrategies(): Strategy[] {
+    return TOURNAMENT_POOL.filter((s) =>
+      s.source !== "literature" || revealLiteratureStrategies
+    );
+  }
+
+  function getLegendColor(strategy: Strategy): string {
+    return strategy.source === "literature"
+      ? CATEGORY_COLOR[strategy.category]
+      : strategy.color;
+  }
+
+  function getLegendTitle(strategy: Strategy): string {
+    if (strategy.source === "student") return "Student strategy";
+    if (strategy.source === "baseline") return "Baseline strategy";
+    return CATEGORY_LABEL[strategy.category];
+  }
 
   function payoff(mine: Move, theirs: Move, R: number, S: number, T: number, P: number): number {
     if (mine === "C" && theirs === "C") return R;
@@ -409,6 +459,7 @@
   const nOut = document.getElementById("st-n-out") as HTMLOutputElement;
   const noiseInput = document.getElementById("st-noise") as HTMLInputElement;
   const noiseOut = document.getElementById("st-noise-out") as HTMLOutputElement;
+  const revealInput = document.getElementById("st-reveal-literature") as HTMLInputElement | null;
   const constraint = document.getElementById("st-constraint");
   const chart = document.getElementById("st-chart") as SVGSVGElement | null;
   const legend = document.getElementById("st-legend");
@@ -449,10 +500,11 @@
 
     // Per-strategy: collected per-matchup final scores across all iterations.
     // Each iteration runs the full round-robin (including self-matchups).
-    // Each strategy participates in 16 matchups per iteration; with ITERATIONS=50
-    // that's 800 samples per strategy — enough for a smooth histogram.
+    // Each strategy plays every strategy in the full pool, including hidden
+    // literature strategies. Only the display subset is drawn below.
     const samples: Record<string, number[]> = {};
-    for (const s of STRATEGIES) samples[s.key] = [];
+    const displayedStrategies = getDisplayedStrategies();
+    for (const s of TOURNAMENT_POOL) samples[s.key] = [];
 
     // Cache for deterministic matchups (run once, reuse for all iterations)
     const cache: Map<string, [number, number]> = new Map();
@@ -491,10 +543,10 @@
     }
 
     for (let iter = 0; iter < ITERATIONS; iter++) {
-      for (let i = 0; i < STRATEGIES.length; i++) {
-        for (let j = i; j < STRATEGIES.length; j++) {
-          const stratA = STRATEGIES[i];
-          const stratB = STRATEGIES[j];
+      for (let i = 0; i < TOURNAMENT_POOL.length; i++) {
+        for (let j = i; j < TOURNAMENT_POOL.length; j++) {
+          const stratA = TOURNAMENT_POOL[i];
+          const stratB = TOURNAMENT_POOL[j];
           // A matchup is deterministic if neither strategy uses randomness AND there's no noise.
           // `stochastic` defaults to true (safe) when omitted, so a newly-added strategy
           // without an explicit flag never gets locked to a cached single sample.
@@ -517,8 +569,8 @@
 
     // Find global score range
     let xMin = Infinity, xMax = -Infinity;
-    for (const k in samples) {
-      for (const v of samples[k]) {
+    for (const s of displayedStrategies) {
+      for (const v of samples[s.key]) {
         if (v < xMin) xMin = v;
         if (v > xMax) xMax = v;
       }
@@ -530,7 +582,7 @@
     // Bin samples per strategy
     const hists: Record<string, number[]> = {};
     let yMax = 0;
-    for (const s of STRATEGIES) {
+    for (const s of displayedStrategies) {
       const counts = new Array(NUM_BINS).fill(0);
       for (const v of samples[s.key]) {
         const b = Math.min(NUM_BINS - 1, Math.max(0, Math.floor((v - xMin) / binWidth)));
@@ -543,7 +595,7 @@
 
     // Compute strategy medians for ranked legend (robust to outliers)
     const medians: Record<string, number> = {};
-    for (const s of STRATEGIES) {
+    for (const s of displayedStrategies) {
       const arr = samples[s.key].slice().sort((a, b) => a - b);
       if (arr.length === 0) { medians[s.key] = 0; continue; }
       const mid = Math.floor(arr.length / 2);
@@ -555,10 +607,10 @@
     // Clear existing histograms (keep axis)
     chart.querySelectorAll(".st-hist").forEach(e => e.remove());
 
-    // Build all paths in a fragment, then append once to avoid 15 reflows.
+    // Build visible paths in a fragment, then append once.
     const frag = document.createDocumentFragment();
     const ns = "http://www.w3.org/2000/svg";
-    for (const s of STRATEGIES) {
+    for (const s of displayedStrategies) {
       const counts = hists[s.key];
       let d = "";
       let b = 0;
@@ -596,9 +648,9 @@
 
     // Update legend (sorted by median; text color = category)
     if (legend) {
-      const ranked = STRATEGIES.slice().sort((a, b) => medians[b.key] - medians[a.key]);
+      const ranked = displayedStrategies.slice().sort((a, b) => medians[b.key] - medians[a.key]);
       legend.innerHTML = ranked.map(s =>
-        `<span class="st-legend-item" data-key="${s.key}" style="color:${CATEGORY_COLOR[s.category]}" title="${CATEGORY_LABEL[s.category]}">${s.name}</span>`
+        `<span class="st-legend-item" data-key="${s.key}" style="color:${getLegendColor(s)}" title="${getLegendTitle(s)}">${s.name}</span>`
       ).join("");
     }
     applyFilter();
@@ -644,5 +696,10 @@
   }
 
   [rInput, sInput, tInput, pInput, nInput, noiseInput].forEach(el => el?.addEventListener("input", update));
+  revealInput?.addEventListener("change", () => {
+    revealLiteratureStrategies = revealInput.checked;
+    selectedKey = null;
+    update();
+  });
   update();
 </script>

@@ -8,6 +8,9 @@ order: 1
 ---
 import PrisonersDilemma from '../../../components/interactive/PrisonersDilemma.astro';
 import AxelrodTournament from '../../../components/interactive/AxelrodTournament.astro';
+import CooperationEmergence from '../../../components/interactive/CooperationEmergence.astro';
+import DistributionTransform from '../../../components/interactive/DistributionTransform.astro';
+import IsingModel from '../../../components/interactive/IsingModel.astro';
 import RaceEquilibrium from '../../../components/interactive/RaceEquilibrium.astro';
 import PrivateVsSocial from '../../../components/interactive/PrivateVsSocial.astro';
 
@@ -53,18 +56,9 @@ Two players choose to **cooperate** or **defect**. Defecting is always the ratio
 
 ## Axelrod's Tournament (1980)
 
-Robert Axelrod invited experts to submit strategies for a **repeated** prisoner's dilemma. Let's do our own tournament!
+Robert Axelrod invited experts to submit strategies for a **repeated** prisoner's dilemma. We'll start with **Random** as the baseline, then add student strategies one by one.
 
 <AxelrodTournament />
-
----
-
-## Four Traits of Successful Strategies
-
-- **Nice** — never be the first to defect
-- **Retaliatory** — if the opponent defects, defect back immediately
-- **Forgiving** — if the opponent returns to cooperating, stop retaliating
-- **Clear** — your strategy should be predictable so others can learn to trust you
 
 ---
 
@@ -74,18 +68,24 @@ In the real world, **noise** — misunderstandings, accidents — can trigger a 
 
 Stanislav Petrov, 1983: a Soviet officer correctly identified a "noise" error in a missile detection system, preventing nuclear war.
 
-**Generous Tit-for-Tat**: forgive some defections to restore cooperation. Under the classic payoff matrix, the stable forgiveness rate is about one third.
+One possible repair: forgive some defections to restore cooperation. Under the classic payoff matrix, a stable forgiveness rate can be about one third.
 
 ---
 
-## Strategy Comparison
+## Emergence of Cooperation
 
-| Strategy | Character | Long-term Result |
-|---|---|---|
-| Always Defect | The Predator | Scores well against naive cooperators, poorly against itself |
-| Tit-for-Tat | The Just Player | Top cluster in clean games, but brittle under noise |
-| Generous Tit-for-Tat | The Peacemaker | Recovers from accidental defections |
-| Downing (revised) | The Modeler | Learns the opponent and can beat fixed principles |
+Agents only copy the neighbor who earned the highest payoff. No one is altruistic, yet cooperative clusters can survive and spread.
+
+<CooperationEmergence />
+
+---
+
+## Four Traits of Successful Strategies
+
+- **Nice** — never be the first to defect
+- **Retaliatory** — if the opponent defects, defect back immediately
+- **Forgiving** — if the opponent returns to cooperating, stop retaliating
+- **Clear** — your strategy should be predictable so others can learn to trust you
 
 ---
 
@@ -105,11 +105,13 @@ Why some games have no "average" outcome — and what that means for races.
 
 ---
 
-## Normal vs. Power Law
+## Normal, Log-Normal, Power Law
 
-In a **Normal Distribution** (height, IQ), data clusters around an average. Random effects are *additive*.
+**Normal distributions** have a scale: most outcomes cluster around the average.
 
-In a **Power Law** (income, earthquakes, citations), there is no meaningful average. A few outliers dominate. Random effects are *multiplicative*.
+**Log-normal distributions** come from multiplicative growth. **Power laws** go further: on log-log axes, the tail becomes a straight line.
+
+<DistributionTransform />
 
 ---
 
@@ -134,6 +136,8 @@ Heat a magnet to its **Curie temperature**. At the critical point:
 - The system is maximally **unpredictable**
 
 At criticality, technical details stop mattering — only **universality classes** remain.
+
+<IsingModel />
 
 ---
 
