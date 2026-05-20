@@ -111,6 +111,31 @@ import Math from '../ui/Math.astro';
   }
 </style>
 
+<style is:global>
+  .pvs .rowlabel {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 12px;
+    font-weight: 600;
+  }
+  .pvs .rowsub {
+    fill: var(--post-caption, #737373);
+    font-size: 10px;
+  }
+  .pvs .bar-private {
+    fill: var(--post-caption, #a3a3a3);
+    opacity: 0.9;
+  }
+  .pvs .bar-social {
+    fill: #dc2626;
+    opacity: 0.9;
+  }
+  .pvs .barval {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 11px;
+    font-weight: 600;
+  }
+</style>
+
 <script>
   const LOG_MIN = 3;   // $1K
   const LOG_MAX = 16;  // $10 quadrillion

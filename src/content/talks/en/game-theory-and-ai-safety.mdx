@@ -45,27 +45,15 @@ How rational agents make decisions when outcomes depend on each other.
 
 ## The Prisoner's Dilemma
 
-Two players choose to **cooperate** or **defect**. Defecting is always the "logical" choice, yet mutual defection is worse than mutual cooperation.
+Two players choose to **cooperate** or **defect**. Defecting is always the rational choice, yet mutual defection is worse than mutual cooperation. _"If I don't do it, someone else will."_
 
 <PrisonersDilemma />
 
 ---
 
-## The "Rational" Trap
-
-"If I don't do it, someone else will."
-
-This sentence *is* the prisoner's dilemma. Each player reasons:
-
-"Regardless of what the other does, I'm better off defecting."
-
-Both defect. Both lose.
-
----
-
 ## Axelrod's Tournament (1980)
 
-Robert Axelrod invited experts to submit strategies for a **repeated** prisoner's dilemma. The winner was the simplest program: **Tit-for-Tat**.
+Robert Axelrod invited experts to submit strategies for a **repeated** prisoner's dilemma. Let's do our own tournament!
 
 <AxelrodTournament />
 
@@ -86,7 +74,7 @@ In the real world, **noise** — misunderstandings, accidents — can trigger a 
 
 Stanislav Petrov, 1983: a Soviet officer correctly identified a "noise" error in a missile detection system, preventing nuclear war.
 
-**Generous Tit-for-Tat**: occasionally ignore a defection (~10% of the time) to restore cooperation.
+**Generous Tit-for-Tat**: forgive some defections to restore cooperation. Under the classic payoff matrix, the stable forgiveness rate is about one third.
 
 ---
 
@@ -94,10 +82,10 @@ Stanislav Petrov, 1983: a Soviet officer correctly identified a "noise" error in
 
 | Strategy | Character | Long-term Result |
 |---|---|---|
-| Always Defect | The Predator | Wins early, starves as cooperators die out |
-| Always Cooperate | The Sucker | Gets exploited and goes extinct |
-| Tit-for-Tat | The Just Player | Winner — robust, promotes mutual benefit |
-| Generous Tit-for-Tat | The Peacemaker | Survives noise, prevents endless conflict |
+| Always Defect | The Predator | Scores well against naive cooperators, poorly against itself |
+| Tit-for-Tat | The Just Player | Top cluster in clean games, but brittle under noise |
+| Generous Tit-for-Tat | The Peacemaker | Recovers from accidental defections |
+| Downing (revised) | The Modeler | Learns the opponent and can beat fixed principles |
 
 ---
 

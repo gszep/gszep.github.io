@@ -1,297 +1,648 @@
 ---
 ---
 
-<div class="axelrod">
-  <div class="matchup-header">
-    <select id="ax-select" class="matchup-select"></select>
-  </div>
-
-  <div class="grid-area">
-    <div class="row">
-      <div class="row-label" id="ax-label-a"></div>
-      <div class="cells" id="ax-row-a">
-        {Array.from({ length: 100 }).map(() => <div class="ax-cell" />)}
-      </div>
-      <div class="score-label" id="ax-score-a">0</div>
+<div class="st-tournament">
+  <div class="st-top">
+    <div class="st-matrix-wrap">
+      <table class="st-payoff-table">
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th colspan="2" class="st-axis-label">Someone else</th>
+          </tr>
+          <tr>
+            <th colspan="2"></th>
+            <th>Cooperate</th>
+            <th>Defect</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th rowspan="2" class="st-axis-label-side">Me</th>
+            <th>Cooperate</th>
+            <td><input type="number" id="st-r" step="1" value="3" /> <span class="st-label">Reward</span></td>
+            <td><input type="number" id="st-s" step="1" value="0" /> <span class="st-label">Sucker</span></td>
+          </tr>
+          <tr>
+            <th>Defect</th>
+            <td><input type="number" id="st-t" step="1" value="5" /> <span class="st-label">Temptation</span></td>
+            <td><input type="number" id="st-p" step="1" value="1" /> <span class="st-label">Punishment</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="st-constraint" id="st-constraint"></p>
     </div>
-    <div class="row">
-      <div class="row-label" id="ax-label-b"></div>
-      <div class="cells" id="ax-row-b">
-        {Array.from({ length: 100 }).map(() => <div class="ax-cell" />)}
+
+    <div class="st-chart-wrap">
+      <svg id="st-chart" class="st-chart" viewBox="0 0 250 100" preserveAspectRatio="none" aria-label="Distribution of per-matchup scores">
+        <line class="st-chart-axis" x1="0" y1="100" x2="250" y2="100" />
+      </svg>
+      <div class="st-x-labels">
+        <span id="st-x-min">0</span>
+        <span id="st-x-mid">0</span>
+        <span id="st-x-max">0</span>
       </div>
-      <div class="score-label" id="ax-score-b">0</div>
     </div>
+
+    <div class="st-legend" id="st-legend"></div>
   </div>
 
-  <div class="legend">
-    <span class="legend-item"><span class="swatch coop"></span>Cooperate</span>
-    <span class="legend-item"><span class="swatch defect"></span>Defect</span>
+  <div class="st-controls">
+    <label>
+      <span>Rounds = <output id="st-n-out">200</output></span>
+      <input type="range" id="st-n" min="25" max="800" step="25" value="200" />
+    </label>
+    <label>
+      <span>Noise = <output id="st-noise-out">0%</output></span>
+      <input type="range" id="st-noise" min="0" max="50" step="1" value="0" />
+    </label>
   </div>
-
-  <div class="standings" id="ax-standings"></div>
 </div>
 
 <style>
-  .axelrod {
+  .st-tournament {
     width: 100%;
-    max-width: 860px;
     margin: 0 auto;
     font-family: ui-sans-serif, system-ui, sans-serif;
     color: var(--post-text, #353535);
   }
-  .axelrod .matchup-header {
-    margin-bottom: 0.5rem;
+  .st-tournament .st-top {
+    display: flex; gap: 1.25rem; align-items: start;
   }
-  .axelrod .matchup-select {
-    background: var(--post-code-bg, #f5f5f5);
-    color: var(--post-text, #353535);
-    border: 1px solid var(--post-separator, #bbb);
-    border-radius: 0.3rem;
-    padding: 0.3rem 0.5rem;
-    font-size: 0.75rem;
-    cursor: pointer;
-    width: 100%;
+  @media (max-width: 720px) {
+    .st-tournament .st-top { flex-direction: column; }
   }
-  .axelrod .grid-area {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
+
+  /* Matrix */
+  .st-tournament .st-matrix-wrap { flex: 0 0 40%; min-width: 0; }
+  .st-tournament .st-payoff-table {
+    width: 100%; border-collapse: collapse; font-size: 0.75rem;
   }
-  .axelrod .row {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+  .st-tournament .st-payoff-table th {
+    font-weight: 600; color: var(--post-caption, #737373);
+    padding: 0.3rem; text-align: center;
+    border-bottom: 1px solid var(--post-separator, #bbb);
   }
-  .axelrod .row-label {
-    font-size: 0.7rem;
-    font-weight: 600;
-    color: var(--post-caption, #737373);
-    width: 5.5rem;
-    text-align: right;
-    flex-shrink: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+  .st-tournament .st-payoff-table tbody th {
+    border-right: 1px solid var(--post-separator, #bbb);
+    border-bottom: 1px solid transparent;
   }
-  .axelrod .cells {
-    display: flex;
-    gap: 1px;
-    flex: 1;
-    min-height: 18px;
-  }
-  .axelrod .ax-cell {
-    flex: 1 1 0;
-    min-width: 0;
-    height: 18px;
-    border-radius: 1px;
-    background: var(--post-code-bg, #f5f5f5);
-    transition: background-color 0.1s;
-  }
-  .axelrod .ax-cell.coop { background-color: #3b82f6; }
-  .axelrod .ax-cell.defect { background-color: #ef4444; }
-  .axelrod .score-label {
-    font-size: 0.75rem;
-    font-weight: 700;
+  .st-tournament .st-payoff-table th:empty { border: none; }
+  .st-tournament .st-payoff-table .st-axis-label {
     color: var(--post-heading, #1a1a1a);
-    width: 2rem;
-    text-align: right;
-    flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 0.65rem; border-bottom: none; padding-bottom: 0.2rem;
   }
-  .axelrod .legend {
-    display: flex;
-    gap: 1rem;
-    margin-top: 0.35rem;
-    font-size: 0.65rem;
-    color: var(--post-caption, #737373);
+  .st-tournament .st-payoff-table tbody th.st-axis-label-side {
+    color: var(--post-heading, #1a1a1a);
+    text-transform: uppercase; letter-spacing: 0.08em;
+    font-size: 0.65rem; writing-mode: vertical-rl; transform: rotate(180deg);
+    padding: 0; border-right: none; border-bottom: none; width: 1rem;
   }
-  .axelrod .legend-item { display: flex; align-items: center; gap: 0.3rem; }
-  .axelrod .swatch { width: 8px; height: 8px; border-radius: 2px; }
-  .axelrod .swatch.coop { background-color: #3b82f6; }
-  .axelrod .swatch.defect { background-color: #ef4444; }
-  .axelrod .standings {
-    margin-top: 0.6rem;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 0.3rem;
-    font-size: 0.65rem;
+  .st-tournament .st-payoff-table td {
+    padding: 0.4rem; text-align: center; vertical-align: middle;
   }
-  .axelrod .standing-entry {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.25rem;
-    background: var(--post-code-bg, #f5f5f5);
+  .st-tournament .st-payoff-table input[type="number"] {
+    width: 2.5rem; padding: 0.15rem 0.25rem;
+    font-size: 0.85rem; font-weight: 700; text-align: center;
+    background: transparent; color: var(--post-heading, #1a1a1a);
+    border: 1px solid var(--post-separator, #bbb); border-radius: 0.25rem;
+    font-family: inherit; -moz-appearance: textfield;
   }
-  .axelrod .standing-name {
-    color: var(--post-text, #353535);
+  .st-tournament .st-payoff-table input[type="number"]::-webkit-outer-spin-button,
+  .st-tournament .st-payoff-table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  .st-tournament .st-payoff-table input[type="number"]:focus {
+    outline: none; border-color: #3b82f6;
+  }
+  .st-tournament .st-payoff-table .st-label {
+    display: block; font-size: 0.6rem;
+    color: var(--post-caption, #737373); margin-top: 0.15rem;
+  }
+  .st-tournament .st-constraint {
+    text-align: center; font-size: 0.65rem;
+    color: var(--post-caption, #737373); margin-top: 0.4rem; min-height: 1em;
+  }
+  .st-tournament .st-constraint.warning { color: #ef4444; }
+
+  /* Chart */
+  .st-tournament .st-chart-wrap { flex: 1; min-width: 0; }
+  .st-tournament .st-chart {
+    width: 100%; height: 160px; overflow: visible; display: block;
+  }
+  .st-tournament .st-chart-axis {
+    stroke: var(--post-separator, #bbb); stroke-width: 0.5;
+  }
+  .st-tournament .st-hist {
+    fill-opacity: 0.1; stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition: opacity 0.15s, fill-opacity 0.15s;
+  }
+  .st-tournament .st-hist.focused {
+    fill-opacity: 0.4;
+  }
+  .st-tournament .st-x-labels {
+    display: flex; justify-content: space-between;
+    font-size: 0.6rem; color: var(--post-caption, #737373);
+    margin-top: 0.2rem; font-variant-numeric: tabular-nums;
+  }
+
+  /* Legend (right column) */
+  .st-tournament .st-legend {
+    flex: 0 0 auto;
+    display: flex; flex-direction: column; gap: 0.3rem;
+    font-size: 0.7rem; min-width: 9rem;
+  }
+  .st-tournament .st-legend-item {
     font-weight: 600;
-    overflow: hidden;
-    text-overflow: ellipsis;
     white-space: nowrap;
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.15s;
   }
-  .axelrod .standing-score {
+
+  /* Controls */
+  .st-tournament .st-controls {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 0.5rem 1rem;
+    margin-top: 0.5rem; font-size: 0.75rem;
+  }
+  .st-tournament .st-controls label {
+    display: flex; flex-direction: column; gap: 0.15rem;
     color: var(--post-caption, #737373);
-    font-variant-numeric: tabular-nums;
-    flex-shrink: 0;
+  }
+  .st-tournament .st-controls input[type="range"] {
+    accent-color: #3b82f6; width: 100%;
+  }
+  .st-tournament .st-controls output {
+    color: var(--post-heading, #1a1a1a); font-weight: 600;
+  }
+</style>
+
+<style is:global>
+  .st-tournament .st-hist {
+    fill-opacity: 0.1;
+    stroke-width: 1;
+    vector-effect: non-scaling-stroke;
+    transition: opacity 0.15s, fill-opacity 0.15s;
+  }
+  .st-tournament .st-hist.focused {
+    fill-opacity: 0.4;
   }
 </style>
 
 <script>
-  // ── Strategies (ported from aps-i/src/t3-b) ──
-  type History = { myMove: string; theirMove: string; myPayoff: number }[];
-  type Context = { history: History; round: number };
-
-  const STRATEGIES: Record<string, { name: string; decide: (ctx: Context) => string }> = {
-    tft: {
-      name: "Tit-for-Tat",
-      decide: (ctx) => {
-        if (ctx.history.length === 0) return "cooperate";
-        return ctx.history[ctx.history.length - 1].theirMove;
-      }
-    },
-    allc: {
-      name: "Always Cooperate",
-      decide: () => "cooperate"
-    },
-    alld: {
-      name: "Always Defect",
-      decide: () => "defect"
-    },
-    grim: {
-      name: "Grim Trigger",
-      decide: (ctx) => {
-        if (ctx.history.some(r => r.theirMove === "defect")) return "defect";
-        return "cooperate";
-      }
-    },
-    pavlov: {
-      name: "Pavlov",
-      decide: (ctx) => {
-        if (ctx.history.length === 0) return "cooperate";
-        const last = ctx.history[ctx.history.length - 1];
-        return last.myPayoff >= 2.5 ? last.myMove : (last.myMove === "cooperate" ? "defect" : "cooperate");
-      }
-    },
-    stft: {
-      name: "Suspicious TFT",
-      decide: (ctx) => {
-        if (ctx.history.length === 0) return "defect";
-        return ctx.history[ctx.history.length - 1].theirMove;
-      }
-    },
-    tf2t: {
-      name: "Tit-for-Two-Tats",
-      decide: (ctx) => {
-        if (ctx.history.length < 2) return "cooperate";
-        const last2 = ctx.history.slice(-2);
-        return last2.every(r => r.theirMove === "defect") ? "defect" : "cooperate";
-      }
-    },
-    random: {
-      name: "Random",
-      decide: () => Math.random() < 0.5 ? "cooperate" : "defect"
-    }
+  type Move = "C" | "D";
+  type HistEntry = { mine: Move; theirs: Move; pof: number };
+  type Stats = {
+    oppDefTotal: number;   // running count of opponent's defections
+    oppDefLast: number;    // index of opponent's most recent defection (or -1)
+    cumDefAtLast: number;  // total opp defections through (and including) that index
+    // Downing-specific running counts: P(opp coops | my last move)
+    afterMyC_oppC: number;  // # of rounds where my prev move = C and opp cooperated this round
+    afterMyC_total: number; // # of rounds where my prev move = C
+    afterMyD_oppC: number;  // # of rounds where my prev move = D and opp cooperated this round
+    afterMyD_total: number; // # of rounds where my prev move = D
   };
 
-  const T = 5, R = 3, P = 1, S = 0;
-  const ROUNDS = 100;
+  // Category captures Axelrod's three core "nice cluster" traits:
+  //   "good"  – nice + retaliatory + forgiving
+  //   "mixed" – nice but missing one trait (e.g. unforgiving, or has a probe)
+  //   "bad"   – breaks niceness or never reliably retaliates
+  type Category = "good" | "mixed" | "bad";
+  const CATEGORY_COLOR: Record<Category, string> = {
+    good: "#10b981",  // green
+    mixed: "#f59e0b", // amber
+    bad: "#ef4444",   // red
+  };
+  const CATEGORY_LABEL: Record<Category, string> = {
+    good: "nice + retaliatory + forgiving",
+    mixed: "nice but missing a trait",
+    bad: "non-cooperative / unreliable",
+  };
 
-  function payoff(me: string, them: string): number {
-    if (me === "cooperate" && them === "cooperate") return R;
-    if (me === "cooperate" && them === "defect") return S;
-    if (me === "defect" && them === "cooperate") return T;
+  type Strategy = {
+    key: string;
+    name: string;
+    color: string;
+    category: Category;
+    // Set true if decide() uses Math.random. Default true is safe — it
+    // disables the deterministic-matchup cache so a student-added stochastic
+    // strategy never gets locked to a single sample.
+    stochastic?: boolean;
+    decide: (history: HistEntry[], R: number, S: number, T: number, P: number, totalRounds: number, stats: Stats) => Move;
+  };
+
+  // Axelrod's 1980 tournament: 14 submitted strategies + RANDOM (control).
+  // Most implementations are simplified approximations of the originals.
+  const STRATEGIES: Strategy[] = [
+    {
+      key: "tft", name: "Tit-for-Tat (Rapoport)", color: "#3b82f6", category: "good", stochastic: false,
+      decide: (h) => h.length === 0 ? "C" : h[h.length - 1].theirs,
+    },
+    {
+      // Nowak & Sigmund 1992 — TFT that forgives defections with probability
+      // q = min(1 - (T-R)/(R-S), (R-P)/(T-P)). For classic payoffs (5,3,1,0)
+      // this gives q ≈ 1/3. GTFT outperforms TFT under noise.
+      key: "gtft", name: "Generous Tit-for-Tat", color: "#eab308", category: "good", stochastic: true,
+      decide: (h, R, S, T, P) => {
+        if (h.length === 0) return "C";
+        if (h[h.length - 1].theirs === "C") return "C";
+        const denom1 = R - S, denom2 = T - P;
+        const q1 = denom1 > 0 ? 1 - (T - R) / denom1 : 0;
+        const q2 = denom2 > 0 ? (R - P) / denom2 : 0;
+        const q = Math.max(0, Math.min(q1, q2));
+        return Math.random() < q ? "C" : "D";
+      },
+    },
+    {
+      key: "friedman", name: "Friedman (Grim)", color: "#dc2626", category: "mixed", stochastic: false,
+      decide: (_h, _R, _S, _T, _P, _N, st) => st.oppDefTotal > 0 ? "D" : "C",
+    },
+    {
+      key: "tideman", name: "Tideman-Chieruzzi", color: "#f59e0b", category: "good", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        let move: Move = h[h.length - 1].theirs;
+        if (h.length >= 10) {
+          let recentDef = 0;
+          for (let i = h.length - 10; i < h.length; i++) if (h[i].theirs === "D") recentDef++;
+          if (recentDef > 3) move = "D";
+        }
+        return move;
+      },
+    },
+    {
+      key: "nydegger", name: "Nydegger", color: "#06b6d4", category: "good", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length === 1) return h[0].theirs;
+        if (h.length === 2) return h[1].theirs;
+        if (h[h.length - 1].theirs === "D") return "D";
+        let defCount = 0;
+        for (let i = h.length - 3; i < h.length; i++) if (h[i].theirs === "D") defCount++;
+        return defCount >= 2 ? "D" : "C";
+      },
+    },
+    {
+      key: "grofman", name: "Grofman", color: "#10b981", category: "good", stochastic: true,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        const last = h[h.length - 1];
+        if (last.mine === last.theirs) return "C";
+        return Math.random() < 2 / 7 ? "C" : "D";
+      },
+    },
+    {
+      key: "shubik", name: "Shubik", color: "#a855f7", category: "mixed", stochastic: false,
+      decide: (h, _R, _S, _T, _P, _N, st) => {
+        if (st.oppDefLast < 0) return "C";
+        const since = h.length - 1 - st.oppDefLast;
+        return since < st.cumDefAtLast ? "D" : "C";
+      },
+    },
+    {
+      key: "stein", name: "Stein-Rapoport", color: "#ec4899", category: "good", stochastic: false,
+      decide: (h, _R, _S, _T, _P, N, st) => {
+        const round = h.length + 1;
+        if (N && round > N - 2) return "D"; // defect last 2 rounds
+        if (h.length === 0) return "C";
+        // Detect "random" opponent: cooperation rate near 50% (O(1) via stats)
+        if (h.length >= 15) {
+          const opC = 1 - st.oppDefTotal / h.length;
+          if (Math.abs(opC - 0.5) < 0.08) return "D";
+        }
+        return h[h.length - 1].theirs;
+      },
+    },
+    {
+      key: "davis", name: "Davis", color: "#14b8a6", category: "mixed", stochastic: false,
+      decide: (h, _R, _S, _T, _P, _N, st) => {
+        if (h.length < 10) return "C";
+        return st.oppDefTotal > 0 ? "D" : "C";
+      },
+    },
+    {
+      key: "graaskamp", name: "Graaskamp", color: "#f97316", category: "mixed", stochastic: false,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length <= 50) return h[h.length - 1].theirs; // TFT
+        if (h.length === 51) return "D";                    // probe
+        if (h.length <= 56) return h[h.length - 1].theirs;
+        let retaliated = false;
+        for (let i = 51; i < 56; i++) if (h[i].theirs === "D") { retaliated = true; break; }
+        if (retaliated) return h[h.length - 1].theirs;     // TFT
+        return h.length % 5 === 0 ? "D" : "C";              // exploit
+      },
+    },
+    {
+      key: "downing", name: "Downing (revised)", color: "#8b5cf6", category: "mixed", stochastic: false,
+      decide: (h, R, S, T, P, _N, st) => {
+        if (h.length < 2) return "C";
+        const pC = st.afterMyC_total > 0 ? st.afterMyC_oppC / st.afterMyC_total : 0.5;
+        const pD = st.afterMyD_total > 0 ? st.afterMyD_oppC / st.afterMyD_total : 0.5;
+        const eC = pC * R + (1 - pC) * S;
+        const eD = pD * T + (1 - pD) * P;
+        return eC > eD ? "C" : "D";
+      },
+    },
+    {
+      key: "feld", name: "Feld", color: "#84cc16", category: "bad", stochastic: true,
+      decide: (h, _R, _S, _T, _P, N) => {
+        if (h.length === 0) return "C";
+        const intent = h[h.length - 1].theirs;
+        if (intent === "D") return "D";
+        const total = N || 200;
+        const coopProb = 1 - 0.5 * (h.length / total);
+        return Math.random() < coopProb ? "C" : "D";
+      },
+    },
+    {
+      key: "joss", name: "Joss (sneaky TFT)", color: "#f43f5e", category: "bad", stochastic: true,
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        const intent = h[h.length - 1].theirs;
+        if (intent === "D") return "D";
+        return Math.random() < 0.9 ? "C" : "D"; // 10% chance to defect when should cooperate
+      },
+    },
+    {
+      key: "tullock", name: "Tullock", color: "#0ea5e9", category: "bad", stochastic: true,
+      decide: (h) => {
+        if (h.length < 11) return "C";
+        let defCount = 0;
+        for (let i = h.length - 10; i < h.length; i++) if (h[i].theirs === "D") defCount++;
+        const oppC = 1 - defCount / 10;
+        const myC = Math.max(0, oppC - 0.1);
+        return Math.random() < myC ? "C" : "D";
+      },
+    },
+    {
+      key: "withheld", name: "Name Withheld", color: "#6366f1", category: "mixed", stochastic: false,
+      // Submitter requested anonymity; original strategy details aren't public.
+      // Placeholder: TFT with periodic probing defection.
+      decide: (h) => {
+        if (h.length === 0) return "C";
+        if (h.length % 20 === 0) return "D";
+        return h[h.length - 1].theirs;
+      },
+    },
+    {
+      key: "rand", name: "Random (control)", color: "#737373", category: "bad", stochastic: true,
+      decide: () => Math.random() < 0.5 ? "C" : "D",
+    },
+  ];
+
+  function payoff(mine: Move, theirs: Move, R: number, S: number, T: number, P: number): number {
+    if (mine === "C" && theirs === "C") return R;
+    if (mine === "C" && theirs === "D") return S;
+    if (mine === "D" && theirs === "C") return T;
     return P;
   }
 
-  type MatchResult = {
-    key1: string; key2: string;
-    moves1: string[]; moves2: string[];
-    score1: number; score2: number;
-  };
+  const rInput = document.getElementById("st-r") as HTMLInputElement;
+  const sInput = document.getElementById("st-s") as HTMLInputElement;
+  const tInput = document.getElementById("st-t") as HTMLInputElement;
+  const pInput = document.getElementById("st-p") as HTMLInputElement;
+  const nInput = document.getElementById("st-n") as HTMLInputElement;
+  const nOut = document.getElementById("st-n-out") as HTMLOutputElement;
+  const noiseInput = document.getElementById("st-noise") as HTMLInputElement;
+  const noiseOut = document.getElementById("st-noise-out") as HTMLOutputElement;
+  const constraint = document.getElementById("st-constraint");
+  const chart = document.getElementById("st-chart") as SVGSVGElement | null;
+  const legend = document.getElementById("st-legend");
+  const xMinEl = document.getElementById("st-x-min");
+  const xMidEl = document.getElementById("st-x-mid");
+  const xMaxEl = document.getElementById("st-x-max");
 
-  function runMatchup(key1: string, key2: string): MatchResult {
-    const s1 = STRATEGIES[key1], s2 = STRATEGIES[key2];
-    const h1: History = [], h2: History = [];
-    const moves1: string[] = [], moves2: string[] = [];
-    let score1 = 0, score2 = 0;
+  const CHART_W = 250, CHART_H = 100;
+  const ITERATIONS = 50;
+  const NUM_BINS = 40;
 
-    for (let r = 0; r < ROUNDS; r++) {
-      const m1 = s1.decide({ history: h1, round: r });
-      const m2 = s2.decide({ history: h2, round: r });
-      const p1 = payoff(m1, m2), p2 = payoff(m2, m1);
-      h1.push({ myMove: m1, theirMove: m2, myPayoff: p1 });
-      h2.push({ myMove: m2, theirMove: m1, myPayoff: p2 });
-      moves1.push(m1); moves2.push(m2);
-      score1 += p1; score2 += p2;
-    }
-    return { key1, key2, moves1, moves2, score1, score2 };
+  function getPayoffs() {
+    return {
+      R: parseFloat(rInput.value),
+      S: parseFloat(sInput.value),
+      T: parseFloat(tInput.value),
+      P: parseFloat(pInput.value),
+    };
   }
 
-  // ── Run full tournament ──
-  const keys = Object.keys(STRATEGIES);
-  const results: MatchResult[] = [];
-  const totalScores: Record<string, number> = {};
-  keys.forEach(k => totalScores[k] = 0);
-
-  for (let i = 0; i < keys.length; i++) {
-    for (let j = i + 1; j < keys.length; j++) {
-      const r = runMatchup(keys[i], keys[j]);
-      results.push(r);
-      totalScores[keys[i]] += r.score1;
-      totalScores[keys[j]] += r.score2;
-    }
+  function renderConstraint() {
+    const { R, S, T, P } = getPayoffs();
+    if (!constraint) return;
+    const isPD = T > R && R > P && P > S;
+    constraint.textContent = isPD
+      ? "T > R > P > S — prisoner's dilemma"
+      : "T > R > P > S violated";
+    constraint.className = isPD ? "st-constraint" : "st-constraint warning";
   }
 
-  // ── DOM ──
-  const select = document.getElementById("ax-select") as HTMLSelectElement | null;
-  const rowA = document.getElementById("ax-row-a");
-  const rowB = document.getElementById("ax-row-b");
-  const labelA = document.getElementById("ax-label-a");
-  const labelB = document.getElementById("ax-label-b");
-  const scoreA = document.getElementById("ax-score-a");
-  const scoreB = document.getElementById("ax-score-b");
-  const standingsEl = document.getElementById("ax-standings");
+  function runTournament() {
+    if (!chart) return;
+    const { R, S, T, P } = getPayoffs();
+    const N = parseInt(nInput.value);
+    const noise = parseInt(noiseInput.value) / 100;
+    nOut.textContent = String(N);
+    noiseOut.textContent = noiseInput.value + "%";
 
-  // Populate select
-  if (select) {
-    results.forEach((r, i) => {
-      const opt = document.createElement("option");
-      opt.value = String(i);
-      opt.textContent = `${STRATEGIES[r.key1].name} vs ${STRATEGIES[r.key2].name}`;
-      select.appendChild(opt);
+    // Per-strategy: collected per-matchup final scores across all iterations.
+    // Each iteration runs the full round-robin (including self-matchups).
+    // Each strategy participates in 16 matchups per iteration; with ITERATIONS=50
+    // that's 800 samples per strategy — enough for a smooth histogram.
+    const samples: Record<string, number[]> = {};
+    for (const s of STRATEGIES) samples[s.key] = [];
+
+    // Cache for deterministic matchups (run once, reuse for all iterations)
+    const cache: Map<string, [number, number]> = new Map();
+
+    function playMatchup(stratA: Strategy, stratB: Strategy): [number, number] {
+      const histA: HistEntry[] = [];
+      const histB: HistEntry[] = [];
+      const stA: Stats = { oppDefTotal: 0, oppDefLast: -1, cumDefAtLast: 0, afterMyC_oppC: 0, afterMyC_total: 0, afterMyD_oppC: 0, afterMyD_total: 0 };
+      const stB: Stats = { oppDefTotal: 0, oppDefLast: -1, cumDefAtLast: 0, afterMyC_oppC: 0, afterMyC_total: 0, afterMyD_oppC: 0, afterMyD_total: 0 };
+      let sumA = 0, sumB = 0;
+      for (let r = 0; r < N; r++) {
+        let mA = stratA.decide(histA, R, S, T, P, N, stA);
+        let mB = stratB.decide(histB, R, S, T, P, N, stB);
+        if (noise > 0) {
+          if (Math.random() < noise) mA = mA === "C" ? "D" : "C";
+          if (Math.random() < noise) mB = mB === "C" ? "D" : "C";
+        }
+        const pA = payoff(mA, mB, R, S, T, P);
+        const pB = payoff(mB, mA, R, S, T, P);
+        // Downing stats: use the prev round's "mine" move to attribute this round's opp move
+        if (r >= 1) {
+          const prevA = histA[r - 1].mine;
+          if (prevA === "C") { stA.afterMyC_total++; if (mB === "C") stA.afterMyC_oppC++; }
+          else { stA.afterMyD_total++; if (mB === "C") stA.afterMyD_oppC++; }
+          const prevB = histB[r - 1].mine;
+          if (prevB === "C") { stB.afterMyC_total++; if (mA === "C") stB.afterMyC_oppC++; }
+          else { stB.afterMyD_total++; if (mA === "C") stB.afterMyD_oppC++; }
+        }
+        histA.push({ mine: mA, theirs: mB, pof: pA });
+        histB.push({ mine: mB, theirs: mA, pof: pB });
+        sumA += pA; sumB += pB;
+        if (mB === "D") { stA.oppDefTotal++; stA.oppDefLast = r; stA.cumDefAtLast = stA.oppDefTotal; }
+        if (mA === "D") { stB.oppDefTotal++; stB.oppDefLast = r; stB.cumDefAtLast = stB.oppDefTotal; }
+      }
+      return [sumA, sumB];
+    }
+
+    for (let iter = 0; iter < ITERATIONS; iter++) {
+      for (let i = 0; i < STRATEGIES.length; i++) {
+        for (let j = i; j < STRATEGIES.length; j++) {
+          const stratA = STRATEGIES[i];
+          const stratB = STRATEGIES[j];
+          // A matchup is deterministic if neither strategy uses randomness AND there's no noise.
+          // `stochastic` defaults to true (safe) when omitted, so a newly-added strategy
+          // without an explicit flag never gets locked to a cached single sample.
+          const isDeterministic = noise === 0
+            && stratA.stochastic === false
+            && stratB.stochastic === false;
+          const cacheKey = `${i}-${j}`;
+          let sumA: number, sumB: number;
+          if (isDeterministic && cache.has(cacheKey)) {
+            [sumA, sumB] = cache.get(cacheKey)!;
+          } else {
+            [sumA, sumB] = playMatchup(stratA, stratB);
+            if (isDeterministic) cache.set(cacheKey, [sumA, sumB]);
+          }
+          samples[stratA.key].push(sumA);
+          if (i !== j) samples[stratB.key].push(sumB);
+        }
+      }
+    }
+
+    // Find global score range
+    let xMin = Infinity, xMax = -Infinity;
+    for (const k in samples) {
+      for (const v of samples[k]) {
+        if (v < xMin) xMin = v;
+        if (v > xMax) xMax = v;
+      }
+    }
+    if (!isFinite(xMin)) { xMin = 0; xMax = 1; }
+    if (xMax === xMin) xMax = xMin + 1;
+    const binWidth = (xMax - xMin) / NUM_BINS;
+
+    // Bin samples per strategy
+    const hists: Record<string, number[]> = {};
+    let yMax = 0;
+    for (const s of STRATEGIES) {
+      const counts = new Array(NUM_BINS).fill(0);
+      for (const v of samples[s.key]) {
+        const b = Math.min(NUM_BINS - 1, Math.max(0, Math.floor((v - xMin) / binWidth)));
+        counts[b]++;
+      }
+      hists[s.key] = counts;
+      for (const c of counts) if (c > yMax) yMax = c;
+    }
+    if (yMax === 0) yMax = 1;
+
+    // Compute strategy medians for ranked legend (robust to outliers)
+    const medians: Record<string, number> = {};
+    for (const s of STRATEGIES) {
+      const arr = samples[s.key].slice().sort((a, b) => a - b);
+      if (arr.length === 0) { medians[s.key] = 0; continue; }
+      const mid = Math.floor(arr.length / 2);
+      medians[s.key] = arr.length % 2 === 0
+        ? (arr[mid - 1] + arr[mid]) / 2
+        : arr[mid];
+    }
+
+    // Clear existing histograms (keep axis)
+    chart.querySelectorAll(".st-hist").forEach(e => e.remove());
+
+    // Build all paths in a fragment, then append once to avoid 15 reflows.
+    const frag = document.createDocumentFragment();
+    const ns = "http://www.w3.org/2000/svg";
+    for (const s of STRATEGIES) {
+      const counts = hists[s.key];
+      let d = "";
+      let b = 0;
+      while (b < NUM_BINS) {
+        if (counts[b] === 0) { b++; continue; }
+        const segStart = b;
+        while (b < NUM_BINS && counts[b] > 0) b++;
+        const segEnd = b; // exclusive
+        const xLStart = (segStart / NUM_BINS) * CHART_W;
+        d += `M ${xLStart.toFixed(2)} ${CHART_H}`;
+        for (let k = segStart; k < segEnd; k++) {
+          const xL = (k / NUM_BINS) * CHART_W;
+          const xR = ((k + 1) / NUM_BINS) * CHART_W;
+          const yT = CHART_H - (counts[k] / yMax) * CHART_H;
+          d += ` L ${xL.toFixed(2)} ${yT.toFixed(2)} L ${xR.toFixed(2)} ${yT.toFixed(2)}`;
+        }
+        const xREnd = (segEnd / NUM_BINS) * CHART_W;
+        d += ` L ${xREnd.toFixed(2)} ${CHART_H} Z`;
+      }
+      if (!d) continue; // no non-empty bins → skip
+      const path = document.createElementNS(ns, "path");
+      path.setAttribute("class", "st-hist");
+      path.setAttribute("data-key", s.key);
+      path.setAttribute("d", d);
+      path.setAttribute("fill", s.color);
+      path.setAttribute("stroke", s.color);
+      frag.appendChild(path);
+    }
+    chart.appendChild(frag);
+
+    // Update x-axis labels
+    if (xMinEl) xMinEl.textContent = xMin.toFixed(0);
+    if (xMidEl) xMidEl.textContent = ((xMin + xMax) / 2).toFixed(0);
+    if (xMaxEl) xMaxEl.textContent = xMax.toFixed(0);
+
+    // Update legend (sorted by median; text color = category)
+    if (legend) {
+      const ranked = STRATEGIES.slice().sort((a, b) => medians[b.key] - medians[a.key]);
+      legend.innerHTML = ranked.map(s =>
+        `<span class="st-legend-item" data-key="${s.key}" style="color:${CATEGORY_COLOR[s.category]}" title="${CATEGORY_LABEL[s.category]}">${s.name}</span>`
+      ).join("");
+    }
+    applyFilter();
+  }
+
+  let selectedKey: string | null = null;
+
+  function applyFilter() {
+    if (!chart) return;
+    const hists = chart.querySelectorAll<SVGPathElement>(".st-hist");
+    hists.forEach(h => {
+      const k = h.getAttribute("data-key");
+      if (selectedKey === null) {
+        h.style.opacity = "1";
+        h.classList.remove("focused");
+      } else if (k === selectedKey) {
+        h.style.opacity = "1";
+        h.classList.add("focused");
+      } else {
+        h.style.opacity = "0";
+        h.classList.remove("focused");
+      }
+    });
+    legend?.querySelectorAll<HTMLElement>(".st-legend-item").forEach(item => {
+      const k = item.getAttribute("data-key");
+      item.style.opacity = (selectedKey === null || k === selectedKey) ? "1" : "0.3";
     });
   }
 
-  function showMatchup(idx: number) {
-    const r = results[idx];
-    if (!r || !rowA || !rowB) return;
-    const cellsA = rowA.querySelectorAll<HTMLElement>(".ax-cell");
-    const cellsB = rowB.querySelectorAll<HTMLElement>(".ax-cell");
+  legend?.addEventListener("click", (e) => {
+    const target = (e.target as HTMLElement)?.closest(".st-legend-item") as HTMLElement | null;
+    if (!target) return;
+    const k = target.getAttribute("data-key");
+    selectedKey = selectedKey === k ? null : k;
+    applyFilter();
+  });
 
-    for (let i = 0; i < ROUNDS; i++) {
-      cellsA[i].className = "ax-cell " + (r.moves1[i] === "cooperate" ? "coop" : "defect");
-      cellsB[i].className = "ax-cell " + (r.moves2[i] === "cooperate" ? "coop" : "defect");
-    }
-    if (labelA) labelA.textContent = STRATEGIES[r.key1].name;
-    if (labelB) labelB.textContent = STRATEGIES[r.key2].name;
-    if (scoreA) scoreA.textContent = String(r.score1);
-    if (scoreB) scoreB.textContent = String(r.score2);
+  let raf: number | null = null;
+  function update() {
+    renderConstraint();
+    if (raf !== null) cancelAnimationFrame(raf);
+    raf = requestAnimationFrame(() => { raf = null; runTournament(); });
   }
 
-  // Standings
-  if (standingsEl) {
-    const sorted = keys.slice().sort((a, b) => totalScores[b] - totalScores[a]);
-    sorted.forEach((k, i) => {
-      const el = document.createElement("div");
-      el.className = "standing-entry";
-      el.innerHTML = `<span class="standing-name">${i + 1}. ${STRATEGIES[k].name}</span><span class="standing-score">${totalScores[k]}</span>`;
-      standingsEl.appendChild(el);
-    });
-  }
-
-  select?.addEventListener("change", () => showMatchup(parseInt(select.value)));
-  showMatchup(0);
+  [rInput, sInput, tInput, pInput, nInput, noiseInput].forEach(el => el?.addEventListener("input", update));
+  update();
 </script>
