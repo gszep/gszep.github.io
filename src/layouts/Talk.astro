@@ -1,0 +1,166 @@
+---
+import Base from './Base.astro';
+import LangToggle from '../components/ui/LangToggle.astro';
+import ThemeToggle from '../components/ui/ThemeToggle.astro';
+import '../styles/post.css';
+import '../styles/talk.css';
+import 'katex/dist/katex.min.css';
+import { getSite, type Locale } from '../i18n/utils';
+import { stripLocalePrefix } from '../lib/talks';
+import { getRelativeLocaleUrl } from 'astro:i18n';
+
+interface Props {
+  title: string;
+  date: Date;
+  slug: string;
+  description?: string;
+  tags?: string[];
+  lang?: Locale;
+}
+
+const { title, date, slug, description, tags = [], lang = 'en' } = Astro.props;
+const site = getSite(lang);
+const talkPath = `/talks/${stripLocalePrefix(slug)}/`;
+const alternateLang: Locale = lang === 'en' ? 'ja' : 'en';
+const currentPath = Astro.url.pathname;
+const pathWithoutLocale = currentPath.replace(/^\/(en|ja)/, '') || '/';
+const switchPath = getRelativeLocaleUrl(alternateLang, pathWithoutLocale);
+
+const jsonLd = JSON.stringify({
+  '@context': 'https://schema.org',
+  '@type': 'PresentationDigitalDocument',
+  name: title,
+  description: description,
+  datePublished: date.toISOString(),
+  author: {
+    '@type': 'Person',
+    name: site.author.name,
+    url: `https://github.com/${site.author.github}`,
+  },
+  keywords: tags,
+});
+---
+
+<Base title={title} description={description} lang={lang} path={talkPath} type="article" publishedDate={date} tags={tags}>
+  <div id="talk-controls" class="fixed top-4 right-4 z-50 flex items-center gap-1">
+    <LangToggle lang={lang} switchPath={switchPath} />
+    <ThemeToggle lang={lang} />
+  </div>
+
+  <div id="talk-content" style="display:none;">
+    <slot />
+  </div>
+
+  <div id="talk-deck"></div>
+
+  <div id="section-label" class="fixed top-4 left-6 z-50 text-xs uppercase tracking-widest text-gray-400 dark:text-gray-500 font-medium select-none transition-opacity duration-200" style="opacity:0;"></div>
+  <div id="slide-counter" class="fixed bottom-4 right-4 z-50 text-sm text-gray-400 dark:text-gray-500 font-mono select-none"></div>
+  <div id="slide-progress" class="fixed bottom-0 left-0 h-0.5 bg-blue-500 z-50 transition-all duration-200" style="width:0%"></div>
+
+  <script is:inline>
+    (function() {
+      var container = document.getElementById('talk-content');
+      var deck = document.getElementById('talk-deck');
+      if (!container || !deck) return;
+
+      var groups = [[]];
+      var children = Array.from(container.childNodes);
+      for (var i = 0; i < children.length; i++) {
+        var node = children[i];
+        if (node.nodeType === 1 && node.tagName === 'HR') {
+          groups.push([]);
+        } else {
+          groups[groups.length - 1].push(node);
+        }
+      }
+
+      groups.forEach(function(nodes, idx) {
+        var section = document.createElement('section');
+        section.className = 'slide';
+        section.dataset.slide = String(idx);
+        section.style.cssText = 'width:100vw;height:100vh;overflow:hidden;display:none;position:relative;';
+        var inner = document.createElement('div');
+        inner.className = 'slide-content l-body';
+        inner.style.cssText = 'height:100%;display:flex;flex-direction:column;justify-content:center;margin:0 auto;';
+        for (var j = 0; j < nodes.length; j++) {
+          inner.appendChild(nodes[j]);
+        }
+        section.appendChild(inner);
+        deck.appendChild(section);
+      });
+
+      container.remove();
+
+      var currentSlide = 0;
+      var total = groups.length;
+      var allSlides = deck.querySelectorAll('.slide');
+      if (allSlides.length === 0) return;
+      allSlides[0].style.display = 'block';
+
+      var sectionMap = [];
+      var currentSection = '';
+      for (var s = 0; s < allSlides.length; s++) {
+        var h2 = allSlides[s].querySelector('h2');
+        if (h2) {
+          var text = h2.textContent || '';
+          var match = text.match(/^(?:Part\s+\w+:\s*|第\w+部[：:]\s*)(.*)/);
+          if (match) currentSection = match[1].trim();
+        }
+        sectionMap.push(currentSection);
+      }
+
+      var counter = document.getElementById('slide-counter');
+      var progress = document.getElementById('slide-progress');
+      var sectionLabel = document.getElementById('section-label');
+      var controls = document.getElementById('talk-controls');
+      var langToggle = controls ? controls.querySelector('a') : null;
+
+      function update() {
+        if (counter) counter.textContent = (currentSlide + 1) + ' / ' + total;
+        if (progress) progress.style.width = ((currentSlide + 1) / total * 100) + '%';
+        if (sectionLabel) {
+          var label = sectionMap[currentSlide] || '';
+          sectionLabel.textContent = label;
+          sectionLabel.style.opacity = label ? '1' : '0';
+        }
+        if (langToggle) {
+          var base = langToggle.href.split('#')[0];
+          langToggle.href = base + '#' + (currentSlide + 1);
+        }
+      }
+      update();
+
+      function goTo(idx) {
+        if (idx < 0 || idx >= total) return;
+        allSlides[currentSlide].style.display = 'none';
+        currentSlide = idx;
+        allSlides[currentSlide].style.display = 'block';
+        update();
+        history.replaceState(null, '', '#' + (currentSlide + 1));
+        window.dispatchEvent(new Event('resize'));
+      }
+
+      document.addEventListener('keydown', function(e) {
+        var tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' ||
+            (e.target && e.target.isContentEditable)) return;
+        if (e.key === 'ArrowRight' || e.key === ' ') { e.preventDefault(); goTo(currentSlide + 1); }
+        if (e.key === 'ArrowLeft' || e.key === 'Backspace') { e.preventDefault(); goTo(currentSlide - 1); }
+        if (e.key === 'Home') { e.preventDefault(); goTo(0); }
+        if (e.key === 'End') { e.preventDefault(); goTo(total - 1); }
+      });
+
+      var touchStartX = 0;
+      deck.addEventListener('touchstart', function(e) { touchStartX = e.touches[0].clientX; });
+      deck.addEventListener('touchend', function(e) {
+        var dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 50) goTo(currentSlide + (dx < 0 ? 1 : -1));
+      });
+
+      var hash = parseInt(location.hash.replace('#', ''), 10);
+      if (hash > 0 && hash <= total) goTo(hash - 1);
+    })();
+  </script>
+
+  <script type="application/ld+json" set:html={jsonLd} />
+</Base>

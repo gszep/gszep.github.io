@@ -1,0 +1,293 @@
+---
+title: "Game Theory & AI Safety"
+description: "From the prisoner's dilemma to collective AI behavior risks — an interactive lecture."
+date: 2026-05-20
+venue: "Chiba Institute of Technology"
+tags: ["ai", "safety", "game-theory"]
+order: 1
+---
+import PrisonersDilemma from '../../../components/interactive/PrisonersDilemma.astro';
+import AxelrodTournament from '../../../components/interactive/AxelrodTournament.astro';
+import RaceEquilibrium from '../../../components/interactive/RaceEquilibrium.astro';
+import PrivateVsSocial from '../../../components/interactive/PrivateVsSocial.astro';
+
+# Game Theory & AI Safety
+
+From the prisoner's dilemma to collective AI behavior risks
+
+---
+
+## Part I: Game Theory
+
+How rational agents make decisions when outcomes depend on each other.
+
+
+---
+
+## The Nuclear Stakes
+
+<div style="display:flex;gap:2rem;align-items:center;">
+<div style="flex:1;">
+
+1949 — The Soviets have the bomb.
+
+> "With the Russians it is not a question of whether but of when. If you say why not bomb them tomorrow, I say why not today? If you say today at 5 o'clock, I say why not one o'clock?"
+
+— John von Neumann, LIFE Magazine, 1957
+
+</div>
+<div style="flex-shrink:0;">
+<img src="/images/von-neumann.jpg" alt="John von Neumann" style="width:180px;border-radius:0.5rem;" />
+</div>
+</div>
+
+---
+
+## The Prisoner's Dilemma
+
+Two players choose to **cooperate** or **defect**. Defecting is always the "logical" choice, yet mutual defection is worse than mutual cooperation.
+
+<PrisonersDilemma />
+
+---
+
+## The "Rational" Trap
+
+"If I don't do it, someone else will."
+
+This sentence *is* the prisoner's dilemma. Each player reasons:
+
+"Regardless of what the other does, I'm better off defecting."
+
+Both defect. Both lose.
+
+---
+
+## Axelrod's Tournament (1980)
+
+Robert Axelrod invited experts to submit strategies for a **repeated** prisoner's dilemma. The winner was the simplest program: **Tit-for-Tat**.
+
+<AxelrodTournament />
+
+---
+
+## Four Traits of Successful Strategies
+
+- **Nice** — never be the first to defect
+- **Retaliatory** — if the opponent defects, defect back immediately
+- **Forgiving** — if the opponent returns to cooperating, stop retaliating
+- **Clear** — your strategy should be predictable so others can learn to trust you
+
+---
+
+## The Noise Problem
+
+In the real world, **noise** — misunderstandings, accidents — can trigger a death spiral of endless retaliation.
+
+Stanislav Petrov, 1983: a Soviet officer correctly identified a "noise" error in a missile detection system, preventing nuclear war.
+
+**Generous Tit-for-Tat**: occasionally ignore a defection (~10% of the time) to restore cooperation.
+
+---
+
+## Strategy Comparison
+
+| Strategy | Character | Long-term Result |
+|---|---|---|
+| Always Defect | The Predator | Wins early, starves as cooperators die out |
+| Always Cooperate | The Sucker | Gets exploited and goes extinct |
+| Tit-for-Tat | The Just Player | Winner — robust, promotes mutual benefit |
+| Generous Tit-for-Tat | The Peacemaker | Survives noise, prevents endless conflict |
+
+---
+
+## Life Is Non-Zero-Sum
+
+This is not chess, where one must lose for the other to win.
+
+In a non-zero-sum world, you don't "win" by beating the other player — you win by extracting the most reward from the **environment**.
+
+Cooperation unlocks rewards that defection cannot reach.
+
+---
+
+## Part II: Venture Capital
+
+Why some games have no "average" outcome — and what that means for races.
+
+---
+
+## Normal vs. Power Law
+
+In a **Normal Distribution** (height, IQ), data clusters around an average. Random effects are *additive*.
+
+In a **Power Law** (income, earthquakes, citations), there is no meaningful average. A few outliers dominate. Random effects are *multiplicative*.
+
+---
+
+## The St. Petersburg Paradox
+
+A coin is flipped until heads. The payout doubles each round.
+
+$$E = \sum_{n=1}^{\infty} \frac{1}{2^n} \cdot 2^n = \sum_{n=1}^{\infty} 1 = \infty$$
+
+The expected value is **infinite** — yet no rational person would pay $1,000 to play.
+
+This is the mathematical backbone of power laws: tiny probability × massive payout skews the entire system.
+
+---
+
+## Criticality & Phase Transitions
+
+Heat a magnet to its **Curie temperature**. At the critical point:
+
+- The system becomes **scale-free** and fractal
+- A single atom flipping can cascade across the entire material
+- The system is maximally **unpredictable**
+
+At criticality, technical details stop mattering — only **universality classes** remain.
+
+---
+
+## Self-Organized Criticality
+
+Some systems drive themselves to the critical point.
+
+**Forest fires**: suppress all small fires → the forest grows too dense → a single lightning strike causes a mega-fire. The cause of a small event and a catastrophe is the same — only the **state of the system** determines the outcome.
+
+**Sandpiles**: add grains one by one. The pile self-organizes to a critical slope where avalanches follow a power law.
+
+---
+
+## Preferential Attachment
+
+In networks, new nodes connect to already-popular nodes. The rich get richer.
+
+This "snowball effect" creates power-law distributions where a few hubs (Google, YouTube) dominate the entire network.
+
+The same dynamic applies to AI labs, capital flows, and talent concentration.
+
+---
+
+## Distribution Comparison
+
+| Feature | Normal | Power Law |
+|---|---|---|
+| Randomness | Additive | Multiplicative |
+| Scale | Has inherent scale | Scale-free (fractal) |
+| Outliers | Mathematically rare | Dominate the average |
+| Examples | Height, IQ | Earthquakes, wealth, citations |
+| Strategy | Be consistent | Be persistent, take many bets |
+
+---
+
+## How Venture Capital Thinks
+
+VCs aren't playing a normal-distribution game. They're playing St. Petersburg.
+
+One mega-winner pays for 99 failures. The **rational** strategy is to fund everything that *could* be huge, regardless of individual risk.
+
+This is the same logic as "if I don't do it, someone else will" — but now with **multiplicative** stakes.
+
+The prisoner's dilemma meets the power law.
+
+---
+
+## Part III: Automation Velocity
+
+What happens when game theory and power-law incentives collide in AI.
+
+---
+
+## Safety at Equilibrium
+
+As competition intensifies, safety investment drops.
+
+<RaceEquilibrium />
+
+---
+
+## The Cost of Racing
+
+Private benefit vs. social cost — the externality that races create.
+
+<PrivateVsSocial />
+
+---
+
+## Network Topology Matters
+
+**Limited interactions** promote cooperation.
+
+When everyone competes with everyone, cooperation collapses.
+
+Network structure determines whether norms can survive.
+
+---
+
+## The Self-Organized Criticality of AI Risk
+
+The AI ecosystem is a sandpile.
+
+Each new model, each new capability is another grain of sand. Small incidents (biased outputs, hallucinations) are the small avalanches.
+
+We're suppressing the small fires. The forest grows denser.
+
+---
+
+## Individual Alignment Is Not Enough
+
+Even if every individual agent is aligned:
+
+- Agents override each other's beliefs
+- The collective becomes misaligned
+- Ecosystem-level thinking is required
+
+Individual safety ≠ collective safety.
+
+---
+
+## Echo Chambers & Drift
+
+Two agents in conversation:
+
+1. Self-consistency is prioritized over truth
+2. Shared beliefs amplify, minority views decay
+3. Accumulated drift from initial positions
+
+The conversation moves, even when neither agent intends it.
+
+---
+
+## AI Psychosis
+
+Human-AI interaction can spiral away from reality.
+
+When an AI prioritizes coherence with the user's beliefs over accuracy, both drift together into a shared delusion.
+
+**Shared knowledge is power — and risk.**
+
+---
+
+## One-to-One Interactions Shape Worldview
+
+- Humans are susceptible to agent influence
+- Individual worldviews can fragment from collective reality
+- Coordination requires common ground
+
+The risk is not a single rogue AI. It's a million personalized AIs slowly diverging everyone's model of reality.
+
+---
+
+## What Can We Do?
+
+1. Think at the **ecosystem** level, not just individual agents
+2. Preserve **shared epistemic commons**
+3. Design for **collective** alignment, not just individual
+4. Resist the power-law logic that says "move fast, worry later"
+
+---
+
+# Thank You
+
+Questions?

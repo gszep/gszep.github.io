@@ -1,0 +1,297 @@
+---
+---
+
+<div class="axelrod">
+  <div class="matchup-header">
+    <select id="ax-select" class="matchup-select"></select>
+  </div>
+
+  <div class="grid-area">
+    <div class="row">
+      <div class="row-label" id="ax-label-a"></div>
+      <div class="cells" id="ax-row-a">
+        {Array.from({ length: 100 }).map(() => <div class="ax-cell" />)}
+      </div>
+      <div class="score-label" id="ax-score-a">0</div>
+    </div>
+    <div class="row">
+      <div class="row-label" id="ax-label-b"></div>
+      <div class="cells" id="ax-row-b">
+        {Array.from({ length: 100 }).map(() => <div class="ax-cell" />)}
+      </div>
+      <div class="score-label" id="ax-score-b">0</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span class="legend-item"><span class="swatch coop"></span>Cooperate</span>
+    <span class="legend-item"><span class="swatch defect"></span>Defect</span>
+  </div>
+
+  <div class="standings" id="ax-standings"></div>
+</div>
+
+<style>
+  .axelrod {
+    width: 100%;
+    max-width: 860px;
+    margin: 0 auto;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: var(--post-text, #353535);
+  }
+  .axelrod .matchup-header {
+    margin-bottom: 0.5rem;
+  }
+  .axelrod .matchup-select {
+    background: var(--post-code-bg, #f5f5f5);
+    color: var(--post-text, #353535);
+    border: 1px solid var(--post-separator, #bbb);
+    border-radius: 0.3rem;
+    padding: 0.3rem 0.5rem;
+    font-size: 0.75rem;
+    cursor: pointer;
+    width: 100%;
+  }
+  .axelrod .grid-area {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .axelrod .row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .axelrod .row-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--post-caption, #737373);
+    width: 5.5rem;
+    text-align: right;
+    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .axelrod .cells {
+    display: flex;
+    gap: 1px;
+    flex: 1;
+    min-height: 18px;
+  }
+  .axelrod .ax-cell {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 18px;
+    border-radius: 1px;
+    background: var(--post-code-bg, #f5f5f5);
+    transition: background-color 0.1s;
+  }
+  .axelrod .ax-cell.coop { background-color: #3b82f6; }
+  .axelrod .ax-cell.defect { background-color: #ef4444; }
+  .axelrod .score-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--post-heading, #1a1a1a);
+    width: 2rem;
+    text-align: right;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+  .axelrod .legend {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.35rem;
+    font-size: 0.65rem;
+    color: var(--post-caption, #737373);
+  }
+  .axelrod .legend-item { display: flex; align-items: center; gap: 0.3rem; }
+  .axelrod .swatch { width: 8px; height: 8px; border-radius: 2px; }
+  .axelrod .swatch.coop { background-color: #3b82f6; }
+  .axelrod .swatch.defect { background-color: #ef4444; }
+  .axelrod .standings {
+    margin-top: 0.6rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 0.3rem;
+    font-size: 0.65rem;
+  }
+  .axelrod .standing-entry {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    background: var(--post-code-bg, #f5f5f5);
+  }
+  .axelrod .standing-name {
+    color: var(--post-text, #353535);
+    font-weight: 600;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .axelrod .standing-score {
+    color: var(--post-caption, #737373);
+    font-variant-numeric: tabular-nums;
+    flex-shrink: 0;
+  }
+</style>
+
+<script>
+  // ── Strategies (ported from aps-i/src/t3-b) ──
+  type History = { myMove: string; theirMove: string; myPayoff: number }[];
+  type Context = { history: History; round: number };
+
+  const STRATEGIES: Record<string, { name: string; decide: (ctx: Context) => string }> = {
+    tft: {
+      name: "Tit-for-Tat",
+      decide: (ctx) => {
+        if (ctx.history.length === 0) return "cooperate";
+        return ctx.history[ctx.history.length - 1].theirMove;
+      }
+    },
+    allc: {
+      name: "Always Cooperate",
+      decide: () => "cooperate"
+    },
+    alld: {
+      name: "Always Defect",
+      decide: () => "defect"
+    },
+    grim: {
+      name: "Grim Trigger",
+      decide: (ctx) => {
+        if (ctx.history.some(r => r.theirMove === "defect")) return "defect";
+        return "cooperate";
+      }
+    },
+    pavlov: {
+      name: "Pavlov",
+      decide: (ctx) => {
+        if (ctx.history.length === 0) return "cooperate";
+        const last = ctx.history[ctx.history.length - 1];
+        return last.myPayoff >= 2.5 ? last.myMove : (last.myMove === "cooperate" ? "defect" : "cooperate");
+      }
+    },
+    stft: {
+      name: "Suspicious TFT",
+      decide: (ctx) => {
+        if (ctx.history.length === 0) return "defect";
+        return ctx.history[ctx.history.length - 1].theirMove;
+      }
+    },
+    tf2t: {
+      name: "Tit-for-Two-Tats",
+      decide: (ctx) => {
+        if (ctx.history.length < 2) return "cooperate";
+        const last2 = ctx.history.slice(-2);
+        return last2.every(r => r.theirMove === "defect") ? "defect" : "cooperate";
+      }
+    },
+    random: {
+      name: "Random",
+      decide: () => Math.random() < 0.5 ? "cooperate" : "defect"
+    }
+  };
+
+  const T = 5, R = 3, P = 1, S = 0;
+  const ROUNDS = 100;
+
+  function payoff(me: string, them: string): number {
+    if (me === "cooperate" && them === "cooperate") return R;
+    if (me === "cooperate" && them === "defect") return S;
+    if (me === "defect" && them === "cooperate") return T;
+    return P;
+  }
+
+  type MatchResult = {
+    key1: string; key2: string;
+    moves1: string[]; moves2: string[];
+    score1: number; score2: number;
+  };
+
+  function runMatchup(key1: string, key2: string): MatchResult {
+    const s1 = STRATEGIES[key1], s2 = STRATEGIES[key2];
+    const h1: History = [], h2: History = [];
+    const moves1: string[] = [], moves2: string[] = [];
+    let score1 = 0, score2 = 0;
+
+    for (let r = 0; r < ROUNDS; r++) {
+      const m1 = s1.decide({ history: h1, round: r });
+      const m2 = s2.decide({ history: h2, round: r });
+      const p1 = payoff(m1, m2), p2 = payoff(m2, m1);
+      h1.push({ myMove: m1, theirMove: m2, myPayoff: p1 });
+      h2.push({ myMove: m2, theirMove: m1, myPayoff: p2 });
+      moves1.push(m1); moves2.push(m2);
+      score1 += p1; score2 += p2;
+    }
+    return { key1, key2, moves1, moves2, score1, score2 };
+  }
+
+  // ── Run full tournament ──
+  const keys = Object.keys(STRATEGIES);
+  const results: MatchResult[] = [];
+  const totalScores: Record<string, number> = {};
+  keys.forEach(k => totalScores[k] = 0);
+
+  for (let i = 0; i < keys.length; i++) {
+    for (let j = i + 1; j < keys.length; j++) {
+      const r = runMatchup(keys[i], keys[j]);
+      results.push(r);
+      totalScores[keys[i]] += r.score1;
+      totalScores[keys[j]] += r.score2;
+    }
+  }
+
+  // ── DOM ──
+  const select = document.getElementById("ax-select") as HTMLSelectElement | null;
+  const rowA = document.getElementById("ax-row-a");
+  const rowB = document.getElementById("ax-row-b");
+  const labelA = document.getElementById("ax-label-a");
+  const labelB = document.getElementById("ax-label-b");
+  const scoreA = document.getElementById("ax-score-a");
+  const scoreB = document.getElementById("ax-score-b");
+  const standingsEl = document.getElementById("ax-standings");
+
+  // Populate select
+  if (select) {
+    results.forEach((r, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = `${STRATEGIES[r.key1].name} vs ${STRATEGIES[r.key2].name}`;
+      select.appendChild(opt);
+    });
+  }
+
+  function showMatchup(idx: number) {
+    const r = results[idx];
+    if (!r || !rowA || !rowB) return;
+    const cellsA = rowA.querySelectorAll<HTMLElement>(".ax-cell");
+    const cellsB = rowB.querySelectorAll<HTMLElement>(".ax-cell");
+
+    for (let i = 0; i < ROUNDS; i++) {
+      cellsA[i].className = "ax-cell " + (r.moves1[i] === "cooperate" ? "coop" : "defect");
+      cellsB[i].className = "ax-cell " + (r.moves2[i] === "cooperate" ? "coop" : "defect");
+    }
+    if (labelA) labelA.textContent = STRATEGIES[r.key1].name;
+    if (labelB) labelB.textContent = STRATEGIES[r.key2].name;
+    if (scoreA) scoreA.textContent = String(r.score1);
+    if (scoreB) scoreB.textContent = String(r.score2);
+  }
+
+  // Standings
+  if (standingsEl) {
+    const sorted = keys.slice().sort((a, b) => totalScores[b] - totalScores[a]);
+    sorted.forEach((k, i) => {
+      const el = document.createElement("div");
+      el.className = "standing-entry";
+      el.innerHTML = `<span class="standing-name">${i + 1}. ${STRATEGIES[k].name}</span><span class="standing-score">${totalScores[k]}</span>`;
+      standingsEl.appendChild(el);
+    });
+  }
+
+  select?.addEventListener("change", () => showMatchup(parseInt(select.value)));
+  showMatchup(0);
+</script>

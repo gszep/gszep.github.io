@@ -1,0 +1,370 @@
+---
+---
+
+<div class="pd-combined">
+  <div class="top-row">
+    <!-- Payoff matrix -->
+    <div class="matrix-wrap">
+      <table class="payoff-table">
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th colspan="2" class="axis-label">Someone else</th>
+          </tr>
+          <tr>
+            <th colspan="2"></th>
+            <th>Cooperate</th>
+            <th>Defect</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th rowspan="2" class="axis-label-side">Me</th>
+            <th>Cooperate</th>
+            <td><input type="number" id="pd-r" step="0.5" value="1" /> <span class="label">Reward</span></td>
+            <td><input type="number" id="pd-s" step="0.5" value="-1" /> <span class="label">Sucker</span></td>
+          </tr>
+          <tr>
+            <th>Defect</th>
+            <td><input type="number" id="pd-t" step="0.5" value="2" /> <span class="label">Temptation</span></td>
+            <td><input type="number" id="pd-p" step="0.5" value="-0.5" /> <span class="label">Punishment</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="constraint" id="pd-constraint"></p>
+    </div>
+
+    <!-- 25-game simulation -->
+    <div class="sim-wrap">
+      <div class="scores-row">
+        <span class="score-a">Me</span>
+        <span class="score-b">Someone else</span>
+        <button id="pd-sim-mode" class="mode-toggle" type="button">per-round</button>
+      </div>
+
+      <svg id="pd-sim-chart" class="sim-chart" viewBox="0 0 250 60" preserveAspectRatio="none" aria-label="Per-round points">
+        <line class="chart-axis" x1="0" y1="60" x2="250" y2="60" />
+        <line class="chart-grid" x1="0" y1="0" x2="250" y2="0" />
+        <line id="pd-sim-zero" class="chart-zero" x1="0" x2="250" y1="60" y2="60" />
+        <polyline id="pd-sim-line-a" class="chart-line chart-line-a" />
+        <polyline id="pd-sim-line-b" class="chart-line chart-line-b" />
+      </svg>
+
+      <div class="sim-controls">
+        <label>
+          <span>Games = <output id="pd-sim-n-out">25</output></span>
+          <input type="range" id="pd-sim-n" min="25" max="800" step="25" value="25" />
+        </label>
+        <label>
+          <span>I defect = <output id="pd-sim-pa-out">50%</output></span>
+          <input type="range" id="pd-sim-pa" min="0" max="100" step="1" value="50" />
+        </label>
+        <label>
+          <span>They defect = <output id="pd-sim-pb-out">50%</output></span>
+          <input type="range" id="pd-sim-pb" min="0" max="100" step="1" value="50" />
+        </label>
+      </div>
+    </div>
+  </div>
+</div>
+
+<style>
+  .pd-combined {
+    width: 100%;
+    margin: 0 auto;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    color: var(--post-text, #353535);
+  }
+  .pd-combined .top-row {
+    display: flex;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 720px) {
+    .pd-combined .top-row { flex-direction: column; }
+  }
+
+  /* Matrix side */
+  .pd-combined .matrix-wrap {
+    flex: 0 0 48%;
+    min-width: 0;
+  }
+  .pd-combined .payoff-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+  }
+  .pd-combined .payoff-table th {
+    font-weight: 600;
+    color: var(--post-caption, #737373);
+    padding: 0.4rem;
+    text-align: center;
+    border-bottom: 1px solid var(--post-separator, #bbb);
+  }
+  .pd-combined .payoff-table tbody th {
+    border-right: 1px solid var(--post-separator, #bbb);
+    border-bottom: 1px solid transparent;
+  }
+  .pd-combined .payoff-table th:empty {
+    border: none;
+  }
+  .pd-combined .payoff-table .axis-label {
+    color: var(--post-heading, #1a1a1a);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    border-bottom: none;
+    padding-bottom: 0.2rem;
+  }
+  .pd-combined .payoff-table tbody th.axis-label-side {
+    color: var(--post-heading, #1a1a1a);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.7rem;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    padding: 0;
+    border-right: none;
+    border-bottom: none;
+    width: 1rem;
+  }
+  .pd-combined .payoff-table td {
+    padding: 0.5rem;
+    text-align: center;
+    vertical-align: middle;
+    border-bottom: 1px solid transparent;
+  }
+  .pd-combined .payoff-table input[type="number"] {
+    width: 3rem;
+    padding: 0.2rem 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 700;
+    text-align: center;
+    background: transparent;
+    color: var(--post-heading, #1a1a1a);
+    border: 1px solid var(--post-separator, #bbb);
+    border-radius: 0.25rem;
+    font-family: inherit;
+    -moz-appearance: textfield;
+  }
+  .pd-combined .payoff-table input[type="number"]::-webkit-outer-spin-button,
+  .pd-combined .payoff-table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .pd-combined .payoff-table input[type="number"]:focus {
+    outline: none;
+    border-color: #3b82f6;
+  }
+  .pd-combined .payoff-table .label {
+    display: block;
+    font-size: 0.65rem;
+    color: var(--post-caption, #737373);
+    margin-top: 0.2rem;
+  }
+  .pd-combined .constraint {
+    text-align: center; font-size: 0.7rem; color: var(--post-caption, #737373); margin-top: 0.5rem; min-height: 1em;
+  }
+  .pd-combined .constraint.warning { color: #ef4444; }
+
+  /* Simulation side */
+  .pd-combined .sim-wrap { flex: 1; min-width: 0; }
+  .pd-combined .scores-row {
+    display: flex; gap: 1.25rem; margin-bottom: 0.35rem;
+    font-size: 0.8rem; font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+  .pd-combined .score-a { color: #3b82f6; }
+  .pd-combined .score-b { color: var(--post-heading, #1a1a1a); }
+  .pd-combined .mode-toggle {
+    margin-left: auto;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.7rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--post-caption, #737373);
+    border: 1px solid var(--post-separator, #bbb);
+    border-radius: 0.25rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .pd-combined .mode-toggle:hover {
+    color: var(--post-heading, #1a1a1a);
+    border-color: #3b82f6;
+  }
+  .pd-combined .sim-chart {
+    width: 100%; height: 60px; overflow: visible; display: block;
+  }
+  .pd-combined .chart-axis { stroke: var(--post-separator, #bbb); stroke-width: 0.5; }
+  .pd-combined .chart-grid { stroke: var(--post-separator, #bbb); stroke-width: 0.3; stroke-dasharray: 2 2; opacity: 0.5; }
+  .pd-combined .chart-zero {
+    stroke: var(--post-caption, #737373);
+    stroke-width: 1;
+    stroke-dasharray: 3 2;
+    opacity: 1;
+    vector-effect: non-scaling-stroke;
+  }
+  .pd-combined .chart-line { fill: none; stroke-width: 1; vector-effect: non-scaling-stroke; }
+  .pd-combined .chart-line-a { stroke: #3b82f6; }
+  .pd-combined .chart-line-b { stroke: var(--post-heading, #1a1a1a); }
+
+  .pd-combined .sim-controls {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; margin-top: 0.5rem; font-size: 0.75rem;
+  }
+  .pd-combined .sim-controls label {
+    display: flex; flex-direction: column; gap: 0.15rem; color: var(--post-caption, #737373);
+  }
+  .pd-combined .sim-controls input[type="range"] { accent-color: #3b82f6; width: 100%; }
+  .pd-combined .sim-controls output { color: var(--post-heading, #1a1a1a); font-weight: 600; }
+
+  @media (max-width: 520px) {
+    .pd-combined .sim-controls { grid-template-columns: 1fr; }
+    .pd-combined .payoff-controls { grid-template-columns: 1fr; }
+  }
+</style>
+
+<script>
+  // Payoff matrix inputs (R = both cooperate, S = sucker, T = temptation, P = both defect)
+  const rInput = document.getElementById("pd-r") as HTMLInputElement | null;
+  const sInput = document.getElementById("pd-s") as HTMLInputElement | null;
+  const tInput = document.getElementById("pd-t") as HTMLInputElement | null;
+  const pInput = document.getElementById("pd-p") as HTMLInputElement | null;
+  const constraint = document.getElementById("pd-constraint");
+
+  // Simulation elements
+  const paSlider = document.getElementById("pd-sim-pa") as HTMLInputElement | null;
+  const pbSlider = document.getElementById("pd-sim-pb") as HTMLInputElement | null;
+  const paOut = document.getElementById("pd-sim-pa-out") as HTMLOutputElement | null;
+  const pbOut = document.getElementById("pd-sim-pb-out") as HTMLOutputElement | null;
+  const nSlider = document.getElementById("pd-sim-n") as HTMLInputElement | null;
+  const nOut = document.getElementById("pd-sim-n-out") as HTMLOutputElement | null;
+  const modeBtn = document.getElementById("pd-sim-mode");
+  let mode: "cumulative" | "per-round" = "per-round";
+
+  function getPayoffs(): { R: number; S: number; T: number; P: number } {
+    return {
+      R: rInput ? parseFloat(rInput.value) : 1,
+      S: sInput ? parseFloat(sInput.value) : -1,
+      T: tInput ? parseFloat(tInput.value) : 2,
+      P: pInput ? parseFloat(pInput.value) : -0.5,
+    };
+  }
+
+  function renderMatrix() {
+    const { R, S, T, P } = getPayoffs();
+    const isPD = T > R && R > P && P > S;
+    if (constraint) {
+      constraint.textContent = isPD
+        ? "T > R > P > S — prisoner’s dilemma"
+        : "T > R > P > S violated";
+      constraint.className = isPD ? "constraint" : "constraint warning";
+    }
+  }
+
+  const lineA = document.getElementById("pd-sim-line-a");
+  const lineB = document.getElementById("pd-sim-line-b");
+  const zeroLine = document.getElementById("pd-sim-zero");
+  const CHART_W = 250, CHART_H = 60;
+
+  function simulate() {
+    if (!paSlider || !pbSlider) return;
+    const pA = parseInt(paSlider.value) / 100;
+    const pB = parseInt(pbSlider.value) / 100;
+    const N = nSlider ? parseInt(nSlider.value) : 25;
+    const { R, S, T, P } = getPayoffs();
+
+    if (paOut) paOut.textContent = paSlider.value + "%";
+    if (pbOut) pbOut.textContent = pbSlider.value + "%";
+    if (nOut) nOut.textContent = String(N);
+
+    let totalA = 0, totalB = 0;
+    const seriesA: number[] = [];
+    const seriesB: number[] = [];
+
+    for (let i = 0; i < N; i++) {
+      // pA, pB are P(defect): cooperate when random draw exceeds the defect probability
+      const aC = Math.random() >= pA;
+      const bC = Math.random() >= pB;
+      let pofA: number, pofB: number;
+      if (aC && bC) { pofA = R; pofB = R; }
+      else if (aC && !bC) { pofA = S; pofB = T; }
+      else if (!aC && bC) { pofA = T; pofB = S; }
+      else { pofA = P; pofB = P; }
+      totalA += pofA; totalB += pofB;
+      if (mode === "cumulative") {
+        seriesA.push(totalA);
+        seriesB.push(totalB);
+      } else {
+        seriesA.push(pofA);
+        seriesB.push(pofB);
+      }
+    }
+
+    // Y-axis range: cumulative uses [N*min, N*max]; per-round uses [min, max]
+    let yMin: number, yMax: number;
+    if (mode === "cumulative") {
+      const maxSingle = Math.max(R, S, T, P);
+      const minSingle = Math.min(R, S, T, P);
+      yMax = N * maxSingle;
+      yMin = N * minSingle;
+    } else {
+      yMax = Math.max(R, S, T, P);
+      yMin = Math.min(R, S, T, P);
+    }
+    const ySpan = Math.max(yMax - yMin, 1e-6);
+
+    const ptsA: string[] = [];
+    const ptsB: string[] = [];
+    for (let i = 0; i < N; i++) {
+      const x = mode === "cumulative"
+        ? (i / Math.max(N - 1, 1)) * CHART_W
+        : (i + 0.5) * (CHART_W / N);
+      const yA = CHART_H - ((seriesA[i] - yMin) / ySpan) * CHART_H;
+      const yB = CHART_H - ((seriesB[i] - yMin) / ySpan) * CHART_H;
+      ptsA.push(`${x.toFixed(2)},${yA.toFixed(2)}`);
+      ptsB.push(`${x.toFixed(2)},${yB.toFixed(2)}`);
+    }
+
+    lineA?.setAttribute("points", ptsA.join(" "));
+    lineB?.setAttribute("points", ptsB.join(" "));
+
+    // Position the y=0 reference line, hide if 0 is outside the visible range
+    if (zeroLine) {
+      if (yMin <= 0 && yMax >= 0) {
+        const yZero = CHART_H - ((0 - yMin) / ySpan) * CHART_H;
+        zeroLine.setAttribute("y1", yZero.toFixed(2));
+        zeroLine.setAttribute("y2", yZero.toFixed(2));
+        zeroLine.style.display = "";
+      } else {
+        zeroLine.style.display = "none";
+      }
+    }
+  }
+
+  function renderAll() { renderMatrix(); simulate(); }
+
+  [rInput, sInput, tInput, pInput].forEach((el) => el?.addEventListener("input", renderAll));
+  paSlider?.addEventListener("input", simulate);
+  pbSlider?.addEventListener("input", simulate);
+  nSlider?.addEventListener("input", simulate);
+  modeBtn?.addEventListener("click", () => {
+    mode = mode === "cumulative" ? "per-round" : "cumulative";
+    if (modeBtn) modeBtn.textContent = mode;
+    simulate();
+  });
+
+  let simInterval: number | null = null;
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "p" && e.key !== "P") return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    e.preventDefault();
+    if (simInterval !== null) {
+      window.clearInterval(simInterval);
+      simInterval = null;
+    } else {
+      simInterval = window.setInterval(simulate, 10);
+    }
+  });
+  renderAll();
+</script>

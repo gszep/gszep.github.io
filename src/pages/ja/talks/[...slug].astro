@@ -1,0 +1,26 @@
+---
+import Talk from '../../../layouts/Talk.astro';
+import { getTalksByLocale, stripLocalePrefix } from '../../../lib/talks';
+
+export async function getStaticPaths() {
+  const talks = await getTalksByLocale('ja', true);
+  return talks.map((talk) => ({
+    params: { slug: stripLocalePrefix(talk.slug) },
+    props: { talk },
+  }));
+}
+
+const { talk } = Astro.props;
+const { Content } = await talk.render();
+---
+
+<Talk
+  title={talk.data.title}
+  date={talk.data.date}
+  slug={talk.slug}
+  description={talk.data.description}
+  tags={talk.data.tags}
+  lang="ja"
+>
+  <Content />
+</Talk>
