@@ -1,0 +1,379 @@
+---
+---
+
+<div class="forest-fire" data-forest-fire>
+  <div class="ff-main">
+    <canvas class="ff-canvas" width="256" height="256" aria-label="Forest fire self-organized criticality simulation"></canvas>
+    <div class="ff-side">
+      <svg class="ff-fire-plot" viewBox="0 0 360 150" aria-label="Log-log fire size distribution">
+        <g class="ff-grid">
+          <line x1="46" y1="18" x2="46" y2="120" />
+          <line x1="46" y1="120" x2="340" y2="120" />
+          <line x1="144" y1="18" x2="144" y2="120" />
+          <line x1="242" y1="18" x2="242" y2="120" />
+          <line x1="46" y1="86" x2="340" y2="86" />
+          <line x1="46" y1="52" x2="340" y2="52" />
+        </g>
+        <path data-guide-path class="ff-guide-path" />
+        <g data-fire-points class="ff-fire-points"></g>
+        <text x="46" y="12" class="ff-plot-title">fire sizes</text>
+        <text x="193" y="145" text-anchor="middle" class="ff-axis-label">log(size)</text>
+        <text x="14" y="73" text-anchor="middle" class="ff-axis-label" transform="rotate(-90 14 73)">log(probability density)</text>
+      </svg>
+      <div class="ff-readout">
+        <span>forest cover</span>
+        <strong><output data-cover-out>0.00</output></strong>
+      </div>
+      <div class="ff-readout">
+        <span>last fire</span>
+        <strong><output data-last-out>0</output></strong>
+      </div>
+      <div class="ff-readout">
+        <span>largest fire</span>
+        <strong><output data-largest-out>0</output></strong>
+      </div>
+      <label class="ff-control">
+        <span>growth</span>
+        <input data-growth type="range" min="128" max="4096" step="128" value="512" />
+      </label>
+    </div>
+  </div>
+</div>
+
+<style>
+  .forest-fire {
+    width: 100%;
+    margin: 0.65rem auto 0;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .forest-fire .ff-main {
+    display: grid;
+    grid-template-columns: minmax(0, 320px) minmax(0, 1fr);
+    gap: 1rem;
+    align-items: center;
+  }
+  .forest-fire .ff-canvas {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    display: block;
+    border: 1px solid var(--post-separator, #bbb);
+    image-rendering: pixelated;
+    background: #120f0b;
+  }
+  .forest-fire .ff-side {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+  .forest-fire .ff-fire-plot {
+    width: 100%;
+    height: auto;
+    display: block;
+    overflow: visible;
+  }
+  .forest-fire .ff-grid line {
+    stroke: var(--post-separator, #bbb);
+    opacity: 0.45;
+    stroke-dasharray: 3 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .forest-fire .ff-fire-points circle {
+    fill: #f97316;
+    stroke: #fed7aa;
+    stroke-width: 0.6;
+    opacity: 0.92;
+    vector-effect: non-scaling-stroke;
+  }
+  .forest-fire .ff-guide-path {
+    fill: none;
+    stroke: var(--post-caption, #737373);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 5;
+    vector-effect: non-scaling-stroke;
+  }
+  .forest-fire .ff-plot-title {
+    fill: var(--post-heading, #1a1a1a);
+    font-size: 0.72rem;
+    font-weight: 900;
+  }
+  .forest-fire .ff-axis-label {
+    fill: var(--post-caption, #737373);
+    font-size: 0.58rem;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .forest-fire .ff-readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--post-separator, #bbb);
+    padding-bottom: 0.3rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+  }
+  .forest-fire .ff-readout strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .forest-fire .ff-control {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+  .forest-fire input[type="range"] {
+    width: 100%;
+    accent-color: #f97316;
+  }
+  @media (max-width: 720px) {
+    .forest-fire .ff-main {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector("[data-forest-fire]");
+  const canvas = root?.querySelector<HTMLCanvasElement>(".ff-canvas") ?? null;
+  const ctx = canvas?.getContext("2d") ?? null;
+  const growthInput = root?.querySelector<HTMLInputElement>("[data-growth]") ?? null;
+  const coverOut = root?.querySelector<HTMLOutputElement>("[data-cover-out]") ?? null;
+  const lastOut = root?.querySelector<HTMLOutputElement>("[data-last-out]") ?? null;
+  const largestOut = root?.querySelector<HTMLOutputElement>("[data-largest-out]") ?? null;
+  const firePoints = root?.querySelector<SVGGElement>("[data-fire-points]") ?? null;
+  const guidePath = root?.querySelector<SVGPathElement>("[data-guide-path]") ?? null;
+
+  const N = 256;
+  const N_BITS = 8;
+  const N_MASK = N - 1;
+  const GROWTH_PER_FRAME_DEFAULT = 512;
+  const STRIKE_EVERY_FRAMES = 4;
+  const FIRE_FLASH_FRAMES = 7;
+  const FIRE_BINS = 64;
+  const FIRE_HISTORY_LIMIT = 700;
+  const WARMUP_FIRES = 260;
+  const FIRE_X_MIN = 1;
+  const FIRE_X_MAX = N * N;
+  const FIRE_Y_MIN = 0.0000001;
+  const FIRE_Y_MAX = 1;
+  const forest = new Uint8Array(N * N);
+  const queue = new Int32Array(N * N);
+  const burningSites: number[] = [];
+  const fireHistory: number[] = [];
+  const image = ctx ? ctx.createImageData(N, N) : null;
+  let growthPerFrame = growthInput ? parseInt(growthInput.value, 10) : GROWTH_PER_FRAME_DEFAULT;
+  let treeCount = 0;
+  let lastFireSize = 0;
+  let largestFireSize = 0;
+  let flashFrames = 0;
+  let frame = 0;
+  let raf = 0;
+
+  function idx(x: number, y: number): number {
+    return ((y + N) & N_MASK) * N + ((x + N) & N_MASK);
+  }
+
+  function resetForest() {
+    treeCount = 0;
+    fireHistory.length = 0;
+    lastFireSize = 0;
+    largestFireSize = 0;
+    flashFrames = 0;
+    burningSites.length = 0;
+    for (let i = 0; i < forest.length; i++) {
+      forest[i] = Math.random() < 0.56 ? 1 : 0;
+      if (forest[i] === 1) treeCount++;
+    }
+  }
+
+  function clearBurning() {
+    if (burningSites.length === 0) return;
+    for (const site of burningSites) forest[site] = 0;
+    burningSites.length = 0;
+  }
+
+  function growTrees(attempts = growthPerFrame) {
+    for (let i = 0; i < attempts; i++) {
+      const site = (Math.random() * forest.length) | 0;
+      if (forest[site] === 0) {
+        forest[site] = 1;
+        treeCount++;
+      }
+    }
+  }
+
+  function findTree(): number {
+    if (treeCount <= 0) return -1;
+    for (let attempt = 0; attempt < 2048; attempt++) {
+      const site = (Math.random() * forest.length) | 0;
+      if (forest[site] === 1) return site;
+    }
+    for (let i = 0; i < forest.length; i++) if (forest[i] === 1) return i;
+    return -1;
+  }
+
+  function strikeLightning(shouldUpdatePlot = true) {
+    clearBurning();
+    const start = findTree();
+    if (start < 0) return;
+    let head = 0;
+    let tail = 0;
+    let size = 0;
+    queue[tail++] = start;
+    forest[start] = 2;
+    while (head < tail) {
+      const current = queue[head++];
+      burningSites.push(current);
+      size++;
+      const x = current & N_MASK;
+      const y = current >> N_BITS;
+      const neighbors = [
+        idx(x + 1, y),
+        idx(x - 1, y),
+        idx(x, y + 1),
+        idx(x, y - 1),
+      ];
+      for (const next of neighbors) {
+        if (forest[next] === 1) {
+          forest[next] = 2;
+          queue[tail++] = next;
+        }
+      }
+    }
+    treeCount -= size;
+    lastFireSize = size;
+    largestFireSize = Math.max(largestFireSize, size);
+    flashFrames = FIRE_FLASH_FRAMES;
+    fireHistory.push(size);
+    if (fireHistory.length > FIRE_HISTORY_LIMIT) fireHistory.shift();
+    if (shouldUpdatePlot) updateFirePlot();
+  }
+
+  function plotPoint(size: number, value: number): [number, number] {
+    const lxMin = Math.log10(FIRE_X_MIN);
+    const lxMax = Math.log10(FIRE_X_MAX);
+    const lyMin = Math.log10(FIRE_Y_MIN);
+    const lyMax = Math.log10(FIRE_Y_MAX);
+    const x0 = 46, y0 = 18, w = 294, h = 102;
+    const x = x0 + ((Math.log10(size) - lxMin) / (lxMax - lxMin)) * w;
+    const y = y0 + h - ((Math.log10(value) - lyMin) / (lyMax - lyMin)) * h;
+    return [x, y];
+  }
+
+  function renderGuideLine() {
+    if (!guidePath) return;
+    const slope = -1.15;
+    const anchorX = 8;
+    const anchorY = 0.02;
+    const sizes = [2, 5, 12, 30, 75, 180, 450, 1100, 2700, 6500, 16000, 39000];
+    const points = sizes.map((size) => {
+      const value = Math.max(FIRE_Y_MIN, anchorY * Math.pow(size / anchorX, slope));
+      return plotPoint(size, value);
+    });
+    guidePath.setAttribute("d", points.map(([x, y], i) => `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`).join(" "));
+  }
+
+  function updateFirePlot() {
+    if (!firePoints) return;
+    const bins = new Float32Array(FIRE_BINS);
+    const lxMin = Math.log10(FIRE_X_MIN);
+    const lxMax = Math.log10(FIRE_X_MAX);
+    const binEdges = new Float32Array(FIRE_BINS + 1);
+    for (let i = 0; i <= FIRE_BINS; i++) {
+      binEdges[i] = Math.pow(10, lxMin + (i / FIRE_BINS) * (lxMax - lxMin));
+    }
+    for (const size of fireHistory) {
+      const b = Math.max(0, Math.min(FIRE_BINS - 1, Math.floor(((Math.log10(size) - lxMin) / (lxMax - lxMin)) * FIRE_BINS)));
+      bins[b]++;
+    }
+    const points: Array<[number, number]> = [];
+    for (let i = 0; i < FIRE_BINS; i++) {
+      if (bins[i] <= 0) continue;
+      const logSize = lxMin + ((i + 0.5) / FIRE_BINS) * (lxMax - lxMin);
+      const binWidth = Math.max(1, binEdges[i + 1] - binEdges[i]);
+      points.push([Math.pow(10, logSize), bins[i] / Math.max(1, fireHistory.length) / binWidth]);
+    }
+    const markers = points.map(([size, count]) => {
+      const [x, y] = plotPoint(size, Math.max(FIRE_Y_MIN, count));
+      const marker = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+      marker.setAttribute("cx", x.toFixed(1));
+      marker.setAttribute("cy", y.toFixed(1));
+      marker.setAttribute("r", count < 0.002 ? "1.8" : "2.4");
+      marker.setAttribute("fill", "#f97316");
+      marker.setAttribute("stroke", "#fed7aa");
+      marker.setAttribute("stroke-width", "0.6");
+      marker.setAttribute("opacity", "0.92");
+      marker.setAttribute("vector-effect", "non-scaling-stroke");
+      return marker;
+    });
+    firePoints.replaceChildren(...markers);
+  }
+
+  function draw() {
+    if (!ctx || !image) return;
+    const data = image.data;
+    for (let i = 0; i < forest.length; i++) {
+      const o = i * 4;
+      if (forest[i] === 1) {
+        data[o] = 34; data[o + 1] = 120; data[o + 2] = 67;
+      } else if (forest[i] === 2) {
+        data[o] = 249; data[o + 1] = 115; data[o + 2] = 22;
+      } else {
+        data[o] = 20; data[o + 1] = 18; data[o + 2] = 14;
+      }
+      data[o + 3] = 255;
+    }
+    ctx.putImageData(image, 0, 0);
+  }
+
+  function updateReadouts() {
+    if (coverOut) coverOut.textContent = (treeCount / forest.length).toFixed(2);
+    if (lastOut) lastOut.textContent = String(lastFireSize);
+    if (largestOut) largestOut.textContent = String(largestFireSize);
+  }
+
+  function tick() {
+    if (flashFrames > 0) {
+      flashFrames--;
+      if (flashFrames === 0) clearBurning();
+    }
+    growTrees();
+    if (frame++ % STRIKE_EVERY_FRAMES === 0) strikeLightning();
+    draw();
+    updateReadouts();
+    raf = requestAnimationFrame(tick);
+  }
+
+  growthInput?.addEventListener("input", () => {
+    growthPerFrame = parseInt(growthInput.value, 10);
+  });
+
+  if (root && ctx && image) {
+    resetForest();
+    for (let i = 0; i < WARMUP_FIRES; i++) {
+      growTrees(growthPerFrame * STRIKE_EVERY_FRAMES);
+      strikeLightning(false);
+      clearBurning();
+      flashFrames = 0;
+    }
+    renderGuideLine();
+    updateFirePlot();
+    draw();
+    updateReadouts();
+    raf = requestAnimationFrame(tick);
+  }
+
+  document.addEventListener("astro:before-swap", () => {
+    if (raf) cancelAnimationFrame(raf);
+  }, { once: true });
+</script>

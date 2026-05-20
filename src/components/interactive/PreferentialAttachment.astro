@@ -1,0 +1,329 @@
+---
+---
+
+<div class="preferential-attachment" data-preferential-attachment>
+  <div class="pa-main">
+    <canvas class="pa-canvas" width="960" height="420" aria-label="Preferential attachment network simulation"></canvas>
+    <div class="pa-side">
+      <div class="pa-readout">
+        <span>nodes</span>
+        <strong><output data-node-out>0</output></strong>
+      </div>
+      <div class="pa-readout">
+        <span>top degree</span>
+        <strong><output data-degree-out>0</output></strong>
+      </div>
+      <div class="pa-readout">
+        <span>hub share</span>
+        <strong><output data-share-out>0%</output></strong>
+      </div>
+      <label class="pa-control">
+        <span>pace</span>
+        <input data-speed type="range" min="1" max="6" step="1" value="2" />
+      </label>
+    </div>
+  </div>
+</div>
+
+<style>
+  .preferential-attachment {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    pointer-events: none;
+  }
+  .preferential-attachment .pa-main {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+  .preferential-attachment .pa-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    display: block;
+    background: transparent;
+  }
+  .preferential-attachment .pa-side {
+    position: absolute;
+    left: max(1.5rem, calc((100vw - 52rem) / 2));
+    right: max(1.5rem, calc((100vw - 52rem) / 2));
+    bottom: 5.9rem;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.5rem;
+    min-width: 0;
+    pointer-events: auto;
+  }
+  .preferential-attachment .pa-readout {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    border-bottom: 1px solid var(--post-separator, #bbb);
+    padding-bottom: 0.3rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+  }
+  .preferential-attachment .pa-readout strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: 1rem;
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .preferential-attachment .pa-control {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.65rem;
+    align-items: center;
+    color: var(--post-caption, #737373);
+    font-size: 0.78rem;
+    font-weight: 800;
+  }
+  .preferential-attachment input[type="range"] {
+    width: 100%;
+    accent-color: #38bdf8;
+  }
+  @media (max-width: 720px) {
+    .preferential-attachment .pa-side {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .preferential-attachment .pa-control {
+      grid-column: 1 / -1;
+    }
+  }
+</style>
+
+<script>
+  const root = document.querySelector("[data-preferential-attachment]");
+  const canvas = root?.querySelector<HTMLCanvasElement>(".pa-canvas") ?? null;
+  const ctx = canvas?.getContext("2d") ?? null;
+  const speedInput = root?.querySelector<HTMLInputElement>("[data-speed]") ?? null;
+  const nodeOut = root?.querySelector<HTMLOutputElement>("[data-node-out]") ?? null;
+  const degreeOut = root?.querySelector<HTMLOutputElement>("[data-degree-out]") ?? null;
+  const shareOut = root?.querySelector<HTMLOutputElement>("[data-share-out]") ?? null;
+
+  type Node = {
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    degree: number;
+  };
+  type Edge = { a: number; b: number };
+
+  const MAX_NODES = 260;
+  const SEED_NODES = 4;
+  const LINKS_PER_NODE = 2;
+  const ADD_INTERVALS = [90, 70, 52, 38, 26, 16];
+  const nodes: Node[] = [];
+  const edges: Edge[] = [];
+  let width = 960;
+  let height = 540;
+  let cx = width / 2;
+  let cy = height / 2;
+  let pace = speedInput ? parseInt(speedInput.value, 10) : 2;
+  let pauseFrames = 0;
+  let frame = 0;
+  let raf = 0;
+
+  function resizeCanvas() {
+    if (!canvas || !ctx) return;
+    const slide = root?.closest<HTMLElement>(".slide");
+    const rect = slide?.getBoundingClientRect();
+    width = Math.max(320, Math.round(rect?.width || window.innerWidth));
+    height = Math.max(240, Math.round(rect?.height || window.innerHeight));
+    cx = width / 2;
+    cy = height / 2;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(width * dpr);
+    canvas.height = Math.round(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  function resetNetwork() {
+    nodes.length = 0;
+    edges.length = 0;
+    pauseFrames = 0;
+    frame = 0;
+    for (let i = 0; i < SEED_NODES; i++) {
+      const angle = (i / SEED_NODES) * Math.PI * 2;
+      nodes.push({
+        x: cx + Math.cos(angle) * 34,
+        y: cy + Math.sin(angle) * 34,
+        vx: 0,
+        vy: 0,
+        degree: 0,
+      });
+    }
+    for (let i = 0; i < SEED_NODES; i++) {
+      for (let j = i + 1; j < SEED_NODES; j++) connect(i, j);
+    }
+  }
+
+  function connect(a: number, b: number) {
+    edges.push({ a, b });
+    nodes[a].degree++;
+    nodes[b].degree++;
+  }
+
+  function chooseTarget(excluded: Set<number>): number {
+    let total = 0;
+    for (let i = 0; i < nodes.length; i++) {
+      if (!excluded.has(i)) total += nodes[i].degree;
+    }
+    let threshold = Math.random() * Math.max(1, total);
+    for (let i = 0; i < nodes.length; i++) {
+      if (excluded.has(i)) continue;
+      threshold -= nodes[i].degree;
+      if (threshold <= 0) return i;
+    }
+    return nodes.findIndex((_, i) => !excluded.has(i));
+  }
+
+  function addNode() {
+    if (nodes.length >= MAX_NODES) {
+      pauseFrames++;
+      if (pauseFrames > 90) resetNetwork();
+      return;
+    }
+    const targets = new Set<number>();
+    while (targets.size < LINKS_PER_NODE && targets.size < nodes.length) {
+      targets.add(chooseTarget(targets));
+    }
+    let tx = 0;
+    let ty = 0;
+    for (const target of targets) {
+      tx += nodes[target].x;
+      ty += nodes[target].y;
+    }
+    tx /= Math.max(1, targets.size);
+    ty /= Math.max(1, targets.size);
+    const angle = nodes.length * 2.399963229728653;
+    const fill = Math.sqrt(nodes.length / MAX_NODES);
+    const radius = 130 + fill * 300 + Math.random() * 34;
+    const index = nodes.length;
+    nodes.push({
+      x: (tx * 0.08) + ((cx + Math.cos(angle) * radius) * 0.92),
+      y: (ty * 0.08) + ((cy + Math.sin(angle) * radius * 0.52) * 0.92),
+      vx: 0,
+      vy: 0,
+      degree: 0,
+    });
+    for (const target of targets) connect(index, target);
+  }
+
+  function relaxLayout() {
+    for (const edge of edges) {
+      const a = nodes[edge.a];
+      const b = nodes[edge.b];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.max(1, Math.hypot(dx, dy));
+      const force = (dist - 96) * 0.0005;
+      const fx = dx * force;
+      const fy = dy * force;
+      a.vx += fx; a.vy += fy;
+      b.vx -= fx; b.vy -= fy;
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      const a = nodes[i];
+      for (let j = i + 1; j < nodes.length; j++) {
+        const b = nodes[j];
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const dist2 = Math.max(36, dx * dx + dy * dy);
+        const force = 42 / dist2;
+        const fx = dx * force;
+        const fy = dy * force;
+        a.vx -= fx; a.vy -= fy;
+        b.vx += fx; b.vy += fy;
+      }
+      a.vx += (cx - a.x) * 0.00018;
+      a.vy += (cy - a.y) * 0.00018;
+    }
+    for (const node of nodes) {
+      node.vx *= 0.86;
+      node.vy *= 0.86;
+      node.x = Math.max(18, Math.min(width - 18, node.x + node.vx));
+      node.y = Math.max(18, Math.min(height - 18, node.y + node.vy));
+    }
+  }
+
+  function draw() {
+    if (!ctx) return;
+    ctx.clearRect(0, 0, width, height);
+    for (const edge of edges) {
+      const a = nodes[edge.a];
+      const b = nodes[edge.b];
+      const weight = Math.min(0.58, 0.16 + ((a.degree + b.degree) / 95));
+      ctx.lineWidth = 1.05;
+      ctx.strokeStyle = `rgba(148, 163, 184, ${weight})`;
+      ctx.beginPath();
+      ctx.moveTo(a.x, a.y);
+      ctx.lineTo(b.x, b.y);
+      ctx.stroke();
+    }
+    const order = nodes.map((_, i) => i).sort((a, b) => nodes[a].degree - nodes[b].degree);
+    const maxDegree = Math.max(1, ...nodes.map((n) => n.degree));
+    for (const index of order) {
+      const node = nodes[index];
+      const t = node.degree / maxDegree;
+      const radius = 2.4 + Math.sqrt(node.degree) * 1.45;
+      ctx.fillStyle = t > 0.72 ? "#f8fafc" : t > 0.38 ? "#38bdf8" : "#0ea5e9";
+      ctx.strokeStyle = t > 0.72 ? "#f97316" : "rgba(226, 232, 240, 0.72)";
+      ctx.lineWidth = t > 0.72 ? 2.4 : 0.9;
+      ctx.beginPath();
+      ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+    }
+  }
+
+  function updateReadouts() {
+    const maxDegree = Math.max(0, ...nodes.map((n) => n.degree));
+    const totalDegree = nodes.reduce((sum, node) => sum + node.degree, 0);
+    if (nodeOut) nodeOut.textContent = String(nodes.length);
+    if (degreeOut) degreeOut.textContent = String(maxDegree);
+    if (shareOut) shareOut.textContent = `${Math.round((maxDegree / Math.max(1, totalDegree)) * 100)}%`;
+  }
+
+  function tick() {
+    const interval = ADD_INTERVALS[Math.max(0, Math.min(ADD_INTERVALS.length - 1, pace - 1))];
+    if (frame++ % interval === 0) addNode();
+    for (let i = 0; i < 3; i++) relaxLayout();
+    draw();
+    updateReadouts();
+    raf = requestAnimationFrame(tick);
+  }
+
+  speedInput?.addEventListener("input", () => {
+    pace = parseInt(speedInput.value, 10);
+  });
+  window.addEventListener("resize", () => {
+    resizeCanvas();
+    resetNetwork();
+    draw();
+    updateReadouts();
+  });
+
+  if (root && ctx) {
+    resizeCanvas();
+    resetNetwork();
+    draw();
+    updateReadouts();
+    raf = requestAnimationFrame(tick);
+  }
+
+  document.addEventListener("astro:before-swap", () => {
+    if (raf) cancelAnimationFrame(raf);
+  }, { once: true });
+</script>

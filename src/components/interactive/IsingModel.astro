@@ -271,7 +271,7 @@
     // uses logarithmic bins, bin mass scales as s^(1 - tau).
     const slope = 1 - SPIN_CLUSTER_TAU;
     const anchorX = 12;
-    const anchorY = 0.08;
+    const anchorY = 0.024;
     const points = [8, 18, 40, 90, 200, 450, 1000, 2200].map((size) => {
       const value = anchorY * Math.pow(size / anchorX, slope);
       return plotPoint(size, Math.max(DOMAIN_Y_MIN, value));

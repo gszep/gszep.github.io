@@ -71,8 +71,12 @@ import PRESETS from '../../data/valley-shapes.json';
   .vs { width: 100%; max-width: 760px; margin: 0 auto; color: var(--post-text, #353535); font-family: ui-sans-serif, system-ui, sans-serif; }
   .vs svg { width: 100%; height: auto; display: block; }
   .vs .axes line { stroke: var(--post-separator, #bbb); stroke-width: 1; }
-  .vs g#vs-xticks line, .vs g#vs-yticks line { stroke: var(--post-separator, #bbb); }
-  .vs g#vs-xticks text, .vs g#vs-yticks text, .vs .axlabel, .vs .legend-text, .vs .subtitle {
+  :global(.vs #vs-xticks line), :global(.vs #vs-yticks line) { stroke: var(--post-separator, #bbb); }
+  :global(.vs #vs-xticks text), :global(.vs #vs-yticks text) {
+    fill: var(--post-caption, #737373);
+    font-size: 8.5px;
+  }
+  .vs .axlabel, .vs .legend-text, .vs .subtitle {
     fill: var(--post-caption, #737373);
     font-size: 11px;
   }
@@ -84,8 +88,8 @@ import PRESETS from '../../data/valley-shapes.json';
   .vs .curve-wages, .vs line.curve-wages-legend { stroke: #2563eb; stroke-width: 2; }
   .vs .curve-typical, .vs line.curve-typical-legend { stroke: #0891b2; stroke-width: 2; stroke-dasharray: 4 3; }
   .vs .valley-area, .vs .valley-legend { fill: #dc2626; fill-opacity: 0.22; stroke: none; }
-  .vs .regime-line { stroke: var(--post-caption, #737373); stroke-width: 1; stroke-dasharray: 3 3; }
-  .vs .regime-label { fill: var(--post-caption, #737373); font-size: 10px; }
+  :global(.vs .regime-line) { stroke: var(--post-caption, #737373); stroke-width: 1; stroke-dasharray: 3 3; }
+  :global(.vs .regime-label) { fill: var(--post-caption, #737373); font-size: 9px; }
   .vs .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 0.9rem 1.4rem; margin-top: 0.9rem; font-size: 0.88rem; }
   @media (max-width: 560px) { .vs .controls { grid-template-columns: 1fr; } }
   .vs .controls label { display: flex; flex-direction: column; gap: 0.25rem; color: var(--post-caption, #737373); }
@@ -159,6 +163,16 @@ import PRESETS from '../../data/valley-shapes.json';
     for (let v = first; v <= hi + 1e-9; v += stepSize) ticks.push(Math.round(v * 1000) / 1000);
     return ticks;
   }
+  function isCalendarYearRange(xr: [number, number]) {
+    return xr[0] >= 1000 && xr[1] >= 1000;
+  }
+  function formatXTick(v: number, xr: [number, number]) {
+    if (isCalendarYearRange(xr)) return String(Math.round(v));
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
+  function formatYTick(v: number) {
+    return Number.isInteger(v) ? String(v) : v.toFixed(1);
+  }
 
   function drawAxes(xr: [number, number], yr: [number, number]) {
     clear(xTicksGroup as HTMLElement);
@@ -173,7 +187,7 @@ import PRESETS from '../../data/valley-shapes.json';
       const label = document.createElementNS(svgns, "text");
       label.setAttribute("x", String(x)); label.setAttribute("y", String(Y1 + 16));
       label.setAttribute("text-anchor", "middle");
-      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
+      label.textContent = formatXTick(v, xr);
       xTicksGroup?.appendChild(label);
     }
     const yt = niceTicks(yr[0], yr[1], 5);
@@ -186,7 +200,7 @@ import PRESETS from '../../data/valley-shapes.json';
       const label = document.createElementNS(svgns, "text");
       label.setAttribute("x", String(X0 - 8)); label.setAttribute("y", String(y + 4));
       label.setAttribute("text-anchor", "end");
-      label.textContent = Number.isInteger(v) ? String(v) : v.toFixed(1);
+      label.textContent = formatYTick(v);
       yTicksGroup?.appendChild(label);
     }
   }

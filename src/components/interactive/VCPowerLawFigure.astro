@@ -1,0 +1,283 @@
+---
+type Locale = "en" | "ja";
+
+const { locale = "en" } = Astro.props as { locale?: Locale };
+
+const labels = locale === "ja"
+  ? {
+      title: "VCのべき乗則カーブ",
+      subtitle: "少数の案件がリターンの大半を生む",
+      chartTitle: "米国VC投資のリターン別構成",
+      deals: "案件数",
+      cost: "投資額",
+      returns: "総リターン",
+      source: "模式図: Horsley Bridge / a16z の図を参考",
+      buckets: {
+        loss: "<1x",
+        low: "1-2x",
+        mid: "2-5x",
+        high: "5-10x",
+        moon: ">10x",
+      },
+    }
+  : {
+      title: "The VC Power Law Curve",
+      subtitle: "A few winners produce most of the returns",
+      chartTitle: "Venture investments by return bucket",
+      deals: "Deals done",
+      cost: "Cost of deals",
+      returns: "Share of total returns",
+      source: "Schematic after Horsley Bridge / a16z",
+      buckets: {
+        loss: "<1x",
+        low: "1-2x",
+        mid: "2-5x",
+        high: "5-10x",
+        moon: ">10x",
+      },
+    };
+
+const buckets = [
+  { key: "moon", label: labels.buckets.moon, color: "#f8fafc" },
+  { key: "high", label: labels.buckets.high, color: "#7dd3fc" },
+  { key: "mid", label: labels.buckets.mid, color: "#93c5fd" },
+  { key: "low", label: labels.buckets.low, color: "#f97316" },
+  { key: "loss", label: labels.buckets.loss, color: "#525252" },
+] as const;
+
+const bars = [
+  {
+    label: labels.deals,
+    values: { loss: 52, low: 19, mid: 16, high: 7, moon: 6 },
+    callout: { key: "moon", text: "6%" },
+  },
+  {
+    label: labels.cost,
+    values: { loss: 55, low: 19, mid: 16, high: 5, moon: 5 },
+    callout: { key: "moon", text: "5%" },
+  },
+  {
+    label: labels.returns,
+    values: { loss: 3, low: 8, mid: 15, high: 14, moon: 60 },
+    callout: { key: "moon", text: "60%" },
+  },
+] as const;
+---
+
+<figure class="vc-power-law" aria-label={labels.title}>
+  <div class="vc-header">
+    <strong>{labels.title}</strong>
+    <span>{labels.subtitle}</span>
+  </div>
+  <div class="vc-body">
+    <div class="vc-legend" aria-label="Return buckets">
+      {buckets.map((bucket) => (
+        <span>
+          <i style={`--swatch:${bucket.color}`}></i>
+          {bucket.label}
+        </span>
+      ))}
+    </div>
+    <div class="vc-chart">
+      <div class="vc-chart-title">{labels.chartTitle}</div>
+      <div class="vc-grid" aria-hidden="true">
+        {Array.from({ length: 11 }).map((_, index) => (
+          <span style={`bottom:${index * 10}%`}>
+            <b>{index * 10}%</b>
+          </span>
+        ))}
+      </div>
+      <div class="vc-bars">
+        {bars.map((bar) => (
+          <div class="vc-bar-wrap">
+            <div class="vc-bar" role="img" aria-label={bar.label}>
+              {buckets.slice().reverse().map((bucket) => (
+                <span
+                  class={`vc-segment vc-${bucket.key}`}
+                  style={`height:${bar.values[bucket.key]}%; --segment:${bucket.color}`}
+                >
+                  {bar.callout.key === bucket.key && <b>{bar.callout.text}</b>}
+                </span>
+              ))}
+            </div>
+            <span class="vc-bar-label">{bar.label}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+  <figcaption>{labels.source}</figcaption>
+</figure>
+
+<style>
+  .vc-power-law {
+    width: min(100%, 50rem);
+    margin: 0.65rem auto 0;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .vc-header {
+    display: grid;
+    gap: 0.12rem;
+    margin-bottom: 0.45rem;
+  }
+  .vc-header strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: clamp(1.05rem, 2.8vw, 1.55rem);
+    line-height: 1.05;
+  }
+  .vc-header span {
+    color: var(--post-caption, #737373);
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .vc-body {
+    display: grid;
+    grid-template-columns: 8.4rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: end;
+    padding: 0.8rem 0 0.2rem;
+    border-top: 1px solid var(--post-separator, #bbb);
+    border-bottom: 1px solid var(--post-separator, #bbb);
+  }
+  .vc-legend {
+    display: grid;
+    gap: 0.42rem;
+    align-self: center;
+    color: var(--post-caption, #737373);
+    font-size: 0.72rem;
+    font-weight: 800;
+  }
+  .vc-legend span {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    white-space: nowrap;
+  }
+  .vc-legend i {
+    width: 0.65rem;
+    height: 0.65rem;
+    display: inline-block;
+    background: var(--swatch);
+    border: 1px solid color-mix(in srgb, var(--post-caption, #737373) 40%, transparent);
+  }
+  .vc-chart {
+    position: relative;
+    min-height: 15.5rem;
+    padding: 1.5rem 0.4rem 1.75rem 2.7rem;
+  }
+  .vc-chart-title {
+    position: absolute;
+    left: 2.7rem;
+    top: 0;
+    color: var(--post-caption, #737373);
+    font-size: 0.76rem;
+    font-weight: 900;
+  }
+  .vc-grid {
+    position: absolute;
+    inset: 1.5rem 0.4rem 1.75rem 2.7rem;
+    pointer-events: none;
+  }
+  .vc-grid span {
+    position: absolute;
+    left: 0;
+    right: 0;
+    border-top: 1px dotted color-mix(in srgb, var(--post-caption, #737373) 42%, transparent);
+  }
+  .vc-grid b {
+    position: absolute;
+    left: -2.45rem;
+    top: -0.42rem;
+    width: 2rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.63rem;
+    font-weight: 800;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+  .vc-bars {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(4rem, 1fr));
+    gap: clamp(1rem, 6vw, 4.2rem);
+    height: 100%;
+    min-height: 12.25rem;
+    align-items: end;
+  }
+  .vc-bar-wrap {
+    display: grid;
+    gap: 0.42rem;
+    justify-items: center;
+    align-self: end;
+  }
+  .vc-bar {
+    width: min(5.2rem, 100%);
+    height: 11.2rem;
+    display: flex;
+    flex-direction: column-reverse;
+    overflow: hidden;
+    background: color-mix(in srgb, var(--post-separator, #bbb) 30%, transparent);
+    border: 1px solid color-mix(in srgb, var(--post-caption, #737373) 30%, transparent);
+  }
+  .vc-segment {
+    position: relative;
+    display: block;
+    min-height: 1px;
+    background: var(--segment);
+  }
+  .vc-segment + .vc-segment {
+    border-bottom: 1px solid color-mix(in srgb, #000 18%, transparent);
+  }
+  .vc-segment b {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 900;
+    text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+  }
+  .vc-moon b {
+    color: #111827;
+    text-shadow: none;
+  }
+  .vc-bar-label {
+    color: var(--post-caption, #737373);
+    font-size: 0.72rem;
+    font-weight: 900;
+    text-align: center;
+  }
+  .vc-power-law figcaption {
+    margin-top: 0.3rem;
+    color: var(--post-caption, #737373);
+    font-size: 0.58rem;
+    text-align: right;
+  }
+  @media (max-width: 720px) {
+    .vc-body {
+      grid-template-columns: 1fr;
+      gap: 0.55rem;
+    }
+    .vc-legend {
+      grid-template-columns: repeat(5, auto);
+      justify-content: start;
+      gap: 0.35rem 0.7rem;
+      font-size: 0.62rem;
+    }
+    .vc-chart {
+      padding-left: 2.45rem;
+    }
+    .vc-chart-title {
+      left: 2.45rem;
+    }
+    .vc-grid {
+      left: 2.45rem;
+    }
+    .vc-bars {
+      gap: 0.7rem;
+    }
+  }
+</style>
