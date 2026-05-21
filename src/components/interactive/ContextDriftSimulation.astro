@@ -1,0 +1,632 @@
+---
+interface Props {
+  locale?: 'en' | 'ja';
+}
+
+const { locale = 'en' } = Astro.props;
+---
+
+<div class="context-drift" data-locale={locale}>
+  <canvas class="cd-canvas" width="920" height="455" aria-label="Bounded-confidence context drift simulation"></canvas>
+
+  <div class="cd-controls">
+    <div class="cd-modes" role="group" aria-label="simulation mode">
+      <button type="button" data-mode="dyad" class="is-active">one dyad</button>
+      <button type="button" data-mode="paired">all paired</button>
+    </div>
+    <label class="cd-slider">
+      <span><b data-lambda-label>lambda</b> = <output data-lambda-out>1.20</output></span>
+      <span class="cd-slider-wrap">
+        <input data-lambda type="range" min="0.20" max="2.40" step="0.01" value="1.20" />
+        <i></i>
+      </span>
+    </label>
+    <div class="cd-readout">
+      <span>shared component</span>
+      <strong data-shared>100%</strong>
+    </div>
+    <div class="cd-readout">
+      <span>clusters</span>
+      <strong data-clusters>1</strong>
+    </div>
+    <div class="cd-actions">
+      <button type="button" data-pause>pause</button>
+      <button type="button" data-reset>reset</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  .context-drift {
+    width: min(100%, 1000px);
+    margin: 0 auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .context-drift .cd-canvas {
+    width: 100%;
+    aspect-ratio: 920 / 455;
+    display: block;
+    border: 1px solid var(--post-separator, #bbb);
+    background: var(--post-code-bg, #f5f5f5);
+  }
+  .context-drift .cd-controls {
+    display: grid;
+    grid-template-columns: auto minmax(170px, 1fr) 0.72fr 0.48fr auto;
+    gap: 0.65rem;
+    align-items: end;
+    margin-top: 0.62rem;
+    font-size: 0.72rem;
+  }
+  .context-drift button {
+    border: 1px solid var(--post-separator, #bbb);
+    background: transparent;
+    color: var(--post-heading, #1a1a1a);
+    border-radius: 0.25rem;
+    padding: 0.34rem 0.56rem;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .context-drift button.is-active {
+    background: var(--post-heading, #1a1a1a);
+    border-color: var(--post-heading, #1a1a1a);
+    color: var(--post-code-bg, #f5f5f5);
+  }
+  .context-drift .cd-modes,
+  .context-drift .cd-actions {
+    display: flex;
+    gap: 0.38rem;
+    min-width: 0;
+  }
+  .context-drift .cd-slider,
+  .context-drift .cd-readout {
+    display: flex;
+    flex-direction: column;
+    justify-content: end;
+    gap: 0.16rem;
+    min-width: 0;
+    color: var(--post-caption, #737373);
+  }
+  .context-drift .cd-slider b,
+  .context-drift .cd-slider output,
+  .context-drift .cd-readout strong {
+    color: var(--post-heading, #1a1a1a);
+    font-size: 1rem;
+    line-height: 1.05;
+    font-variant-numeric: tabular-nums;
+  }
+  .context-drift .cd-slider-wrap {
+    position: relative;
+    display: block;
+    height: 1.1rem;
+  }
+  .context-drift .cd-slider input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    accent-color: #f97316;
+  }
+  .context-drift .cd-slider i {
+    position: absolute;
+    top: 0.13rem;
+    bottom: 0.13rem;
+    left: 40.91%;
+    width: 1px;
+    background: var(--post-caption, #737373);
+    pointer-events: none;
+  }
+  .context-drift .cd-readout {
+    border-bottom: 1px solid var(--post-separator, #bbb);
+  }
+  @media (max-width: 820px) {
+    .context-drift .cd-controls {
+      grid-template-columns: 1fr 1fr;
+    }
+    .context-drift .cd-modes,
+    .context-drift .cd-actions {
+      flex-wrap: wrap;
+    }
+  }
+</style>
+
+<script>
+  type Mode = "dyad" | "paired";
+  type Agent = {
+    x: number;
+    y: number;
+    pair: number;
+    hue: number;
+    dyad: boolean;
+  };
+  type Pair = {
+    a: number;
+    b: number;
+    ux: number;
+    uy: number;
+    trail: Array<{ x: number; y: number }>;
+  };
+  type Edge = {
+    a: number;
+    b: number;
+    pair: boolean;
+  };
+
+  const root = document.querySelector(".context-drift") as HTMLElement | null;
+  if (!root) throw new Error("context drift root not found");
+
+  const locale = root.dataset.locale || "en";
+  const labels = locale === "ja" ? {
+    one: "一つのペア",
+    all: "全員ペア",
+    lambda: "λ 局所フィードバック / 接地",
+    shared: "最大共有成分",
+    clusters: "文脈クラスター",
+    pause: "停止",
+    play: "再開",
+    reset: "リセット",
+    reality: "現実アンカー",
+    epsilon: "信頼半径 ε",
+    grounded: "接地された母集団",
+    dyad: "高頻度ペア",
+    paired: "私的なペア文脈",
+    bloc: "共有文脈を保つプレイヤー",
+    stable: "λ < 1: 接地",
+    critical: "λ = 1: 分岐",
+    fragmented: "λ > 1: 断片化",
+    copyRule: "半径ε内だけで模倣",
+    rewireRule: "不一致は同類へ張り替え",
+    dyadRule: "ペア内ノイズが蓄積",
+  } : {
+    one: "one dyad",
+    all: "all paired",
+    lambda: "λ local feedback / grounding",
+    shared: "largest shared component",
+    clusters: "context clusters",
+    pause: "pause",
+    play: "play",
+    reset: "reset",
+    reality: "reality anchor",
+    epsilon: "confidence radius ε",
+    grounded: "grounded population",
+    dyad: "high-frequency dyad",
+    paired: "private pair contexts",
+    bloc: "shared-context players",
+    stable: "λ < 1: grounded",
+    critical: "λ = 1: bifurcation",
+    fragmented: "λ > 1: fragmented",
+    copyRule: "copy inside ε",
+    rewireRule: "homophily rewiring",
+    dyadRule: "dyadic noise accumulates",
+  };
+
+  const canvas = root.querySelector(".cd-canvas") as HTMLCanvasElement | null;
+  const ctx = canvas?.getContext("2d");
+  const lambdaInput = root.querySelector<HTMLInputElement>("[data-lambda]");
+  const lambdaOut = root.querySelector<HTMLOutputElement>("[data-lambda-out]");
+  const lambdaLabel = root.querySelector<HTMLElement>("[data-lambda-label]");
+  const sharedOut = root.querySelector<HTMLElement>("[data-shared]");
+  const clustersOut = root.querySelector<HTMLElement>("[data-clusters]");
+  const pauseButton = root.querySelector<HTMLButtonElement>("[data-pause]");
+  const resetButton = root.querySelector<HTMLButtonElement>("[data-reset]");
+  const modeButtons = Array.from(root.querySelectorAll<HTMLButtonElement>("[data-mode]"));
+
+  if (!canvas || !ctx) throw new Error("context drift canvas not found");
+
+  const N = 60;
+  const EPS = 0.34;
+  const GROUND = 0.012;
+  const MU = 0.085;
+  const CORE = 6;
+
+  let mode: Mode = "dyad";
+  let agents: Agent[] = [];
+  let edges: Edge[] = [];
+  let pairs: Pair[] = [];
+  let frame = 0;
+  let running = true;
+  let raf = 0;
+
+  function randn(scale = 1) {
+    return (Math.random() + Math.random() + Math.random() + Math.random() - 2) * scale;
+  }
+
+  function cssVar(name: string, fallback: string) {
+    const value = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return value || fallback;
+  }
+
+  function lambda() {
+    return parseFloat(lambdaInput?.value || "1.2");
+  }
+
+  function setLabels() {
+    const one = modeButtons.find(b => b.dataset.mode === "dyad");
+    const all = modeButtons.find(b => b.dataset.mode === "paired");
+    if (one) one.textContent = labels.one;
+    if (all) all.textContent = labels.all;
+    if (lambdaLabel) lambdaLabel.textContent = labels.lambda;
+    const spans = root.querySelectorAll(".cd-readout span");
+    if (spans[0]) spans[0].textContent = labels.shared;
+    if (spans[1]) spans[1].textContent = labels.clusters;
+    if (pauseButton) pauseButton.textContent = running ? labels.pause : labels.play;
+    if (resetButton) resetButton.textContent = labels.reset;
+  }
+
+  function addEdge(a: number, b: number, pair = false) {
+    if (a === b) return;
+    if (a > b) [a, b] = [b, a];
+    if (edges.some(e => e.a === a && e.b === b)) return;
+    edges.push({ a, b, pair });
+  }
+
+  function nearestSimilar(i: number) {
+    const a = agents[i];
+    let best = -1;
+    let bestD = Infinity;
+    for (let j = 0; j < agents.length; j++) {
+      if (i === j) continue;
+      if (mode === "dyad" && (i < 2 || j < 2)) continue;
+      const b = agents[j];
+      const d = Math.hypot(a.x - b.x, a.y - b.y) + Math.random() * 0.08;
+      if (d < bestD) {
+        bestD = d;
+        best = j;
+      }
+    }
+    return best;
+  }
+
+  function reset() {
+    frame = 0;
+    agents = [];
+    edges = [];
+    pairs = [];
+
+    for (let i = 0; i < N; i++) {
+      agents.push({
+        x: randn(0.055),
+        y: randn(0.055),
+        pair: -1,
+        hue: 210,
+        dyad: false,
+      });
+    }
+
+    for (let i = 0; i < CORE; i++) {
+      const angle = (i / CORE) * Math.PI * 2;
+      agents[i].x = Math.cos(angle) * 0.045;
+      agents[i].y = Math.sin(angle) * 0.045;
+      agents[i].hue = 0;
+    }
+
+    for (let i = 0; i < N; i++) {
+      addEdge(i, (i + 1) % N);
+      addEdge(i, (i + 7) % N);
+    }
+
+    if (mode === "dyad") {
+      agents[CORE].dyad = true;
+      agents[CORE + 1].dyad = true;
+      agents[CORE].pair = 0;
+      agents[CORE + 1].pair = 0;
+      agents[CORE].hue = 24;
+      agents[CORE + 1].hue = 24;
+      pairs.push({ a: CORE, b: CORE + 1, ux: 0.82, uy: -0.56, trail: [] });
+      addEdge(CORE, CORE + 1, true);
+    } else {
+      edges = [];
+      for (let i = 0; i < CORE; i++) {
+        addEdge(i, (i + 1) % CORE);
+        addEdge(i, (i + 2) % CORE);
+      }
+      let pairIndex = 0;
+      for (let i = CORE; i < N - 1; i += 2) {
+        const angle = (pairIndex / ((N - CORE) / 2)) * Math.PI * 2;
+        const hue = (pairIndex * 41 + 20) % 360;
+        agents[i].pair = pairIndex;
+        agents[i + 1].pair = pairIndex;
+        agents[i].dyad = true;
+        agents[i + 1].dyad = true;
+        agents[i].hue = hue;
+        agents[i + 1].hue = hue;
+        pairs.push({ a: i, b: i + 1, ux: Math.cos(angle), uy: Math.sin(angle), trail: [] });
+        addEdge(i, i + 1, true);
+        pairIndex++;
+      }
+      for (let i = CORE; i < N; i += 4) addEdge(i, Math.floor(Math.random() * CORE));
+    }
+  }
+
+  function boundedConfidence(e: Edge, rate: number) {
+    const a = agents[e.a];
+    const b = agents[e.b];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const d = Math.hypot(dx, dy);
+    if (d <= EPS || e.pair) {
+      const pull = MU * rate;
+      a.x += dx * pull;
+      a.y += dy * pull;
+      b.x -= dx * pull;
+      b.y -= dy * pull;
+      return true;
+    }
+    return false;
+  }
+
+  function rewireSomeEdges() {
+    for (let k = 0; k < 2; k++) {
+      const candidates = edges
+        .map((e, index) => ({ e, index }))
+        .filter(({ e }) => !e.pair && Math.hypot(agents[e.a].x - agents[e.b].x, agents[e.a].y - agents[e.b].y) > EPS);
+      if (candidates.length === 0) return;
+      const pick = candidates[Math.floor(Math.random() * candidates.length)];
+      const keep = Math.random() < 0.5 ? pick.e.a : pick.e.b;
+      const other = nearestSimilar(keep);
+      if (other >= 0) {
+        edges.splice(pick.index, 1);
+        addEdge(keep, other);
+      }
+    }
+  }
+
+  function privatePairUpdate(p: Pair) {
+    const l = lambda();
+    const a = agents[p.a];
+    const b = agents[p.b];
+    boundedConfidence({ a: p.a, b: p.b, pair: true }, 1.35);
+
+    const centerX = (a.x + b.x) * 0.5;
+    const centerY = (a.y + b.y) * 0.5;
+    const radial = Math.hypot(centerX, centerY);
+    const tangent = Math.sin(frame * 0.013 + p.a) * 0.22;
+    const ux = p.ux * Math.cos(tangent) - p.uy * Math.sin(tangent);
+    const uy = p.ux * Math.sin(tangent) + p.uy * Math.cos(tangent);
+    const escape = Math.max(0, l - 1) * 0.0065 + l * 0.001;
+    const noise = l * 0.0015;
+    const lostCommonGround = radial > EPS ? 1.6 : 1.0;
+    const fx = ux * escape * lostCommonGround + randn(noise);
+    const fy = uy * escape * lostCommonGround + randn(noise);
+
+    a.x += fx;
+    a.y += fy;
+    b.x += fx;
+    b.y += fy;
+
+    if (frame % 4 === 0) {
+      p.trail.push({ x: (a.x + b.x) * 0.5, y: (a.y + b.y) * 0.5 });
+      if (p.trail.length > 62) p.trail.shift();
+    }
+  }
+
+  function step() {
+    frame++;
+
+    for (let i = 0; i < agents.length; i++) {
+      const a = agents[i];
+      const protectedBloc = i < CORE;
+      const ground = protectedBloc ? GROUND * 2.2 : GROUND;
+      a.x += -a.x * ground + randn(0.00045);
+      a.y += -a.y * ground + randn(0.00045);
+    }
+
+    const globalSteps = mode === "dyad" ? 18 : 7;
+    for (let k = 0; k < globalSteps; k++) {
+      const e = edges[Math.floor(Math.random() * edges.length)];
+      if (e && !e.pair) boundedConfidence(e, 1);
+    }
+
+    const pairSteps = mode === "dyad" ? Math.round(4 + lambda() * 9) : Math.round(2 + lambda() * 4);
+    for (let k = 0; k < pairSteps; k++) {
+      const p = pairs[Math.floor(Math.random() * pairs.length)];
+      if (p) privatePairUpdate(p);
+    }
+
+    if (frame % 10 === 0) rewireSomeEdges();
+
+    for (const a of agents) {
+      const r = Math.hypot(a.x, a.y);
+      if (r > 1.08) {
+        a.x = (a.x / r) * 1.08;
+        a.y = (a.y / r) * 1.08;
+      }
+    }
+  }
+
+  function components() {
+    const parent = Array.from({ length: agents.length }, (_, i) => i);
+    const find = (x: number): number => parent[x] === x ? x : (parent[x] = find(parent[x]));
+    const unite = (a: number, b: number) => {
+      const ra = find(a);
+      const rb = find(b);
+      if (ra !== rb) parent[rb] = ra;
+    };
+    for (const e of edges) {
+      if (Math.hypot(agents[e.a].x - agents[e.b].x, agents[e.a].y - agents[e.b].y) <= EPS || e.pair) unite(e.a, e.b);
+    }
+    const sizes = new Map<number, number>();
+    for (let i = 0; i < agents.length; i++) {
+      const r = find(i);
+      sizes.set(r, (sizes.get(r) || 0) + 1);
+    }
+    return Array.from(sizes.values()).sort((a, b) => b - a);
+  }
+
+  function metrics() {
+    const sizes = components();
+    const largest = sizes[0] || 0;
+    const clusters = sizes.filter(size => size >= 2).length;
+    return {
+      shared: Math.round((largest / agents.length) * 100),
+      clusters,
+    };
+  }
+
+  function worldToCanvas(x: number, y: number) {
+    const w = canvas.width;
+    const h = canvas.height;
+    const scale = Math.min(w, h) * 0.36;
+    return { x: w * 0.43 + x * scale, y: h * 0.52 + y * scale };
+  }
+
+  function drawText(text: string, x: number, y: number, color: string, size = 12, align: CanvasTextAlign = "center", weight = 700) {
+    ctx.font = `${weight} ${size}px ui-sans-serif, system-ui, sans-serif`;
+    ctx.textAlign = align;
+    ctx.textBaseline = "middle";
+    ctx.fillStyle = color;
+    ctx.fillText(text, x, y);
+  }
+
+  function draw() {
+    const w = canvas.width;
+    const h = canvas.height;
+    const text = cssVar("--post-heading", "#1a1a1a");
+    const caption = cssVar("--post-caption", "#737373");
+    const sep = cssVar("--post-separator", "#bbb");
+    const bg = cssVar("--post-code-bg", "#f5f5f5");
+
+    ctx.clearRect(0, 0, w, h);
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, 0, w, h);
+
+    const origin = worldToCanvas(0, 0);
+    const radius = Math.min(w, h) * 0.36 * EPS;
+    ctx.strokeStyle = sep;
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 0.7;
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([4, 4]);
+    ctx.beginPath();
+    ctx.arc(origin.x, origin.y, Math.min(w, h) * 0.36, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    drawText(labels.reality, origin.x, origin.y - radius - 15, caption, 11);
+    drawText(labels.epsilon, origin.x + radius + 8, origin.y - 5, caption, 10, "left", 600);
+
+    for (const p of pairs) {
+      if (p.trail.length < 2) continue;
+      ctx.beginPath();
+      p.trail.forEach((pt, i) => {
+        const c = worldToCanvas(pt.x, pt.y);
+        if (i === 0) ctx.moveTo(c.x, c.y);
+        else ctx.lineTo(c.x, c.y);
+      });
+      ctx.strokeStyle = mode === "dyad" ? "#f97316" : `hsl(${agents[p.a].hue} 72% 52%)`;
+      ctx.globalAlpha = mode === "dyad" ? 0.58 : 0.26;
+      ctx.lineWidth = mode === "dyad" ? 3 : 1.1;
+      ctx.stroke();
+    }
+
+    for (const e of edges) {
+      const a = agents[e.a];
+      const b = agents[e.b];
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const ca = worldToCanvas(a.x, a.y);
+      const cb = worldToCanvas(b.x, b.y);
+      ctx.beginPath();
+      ctx.moveTo(ca.x, ca.y);
+      ctx.lineTo(cb.x, cb.y);
+      ctx.strokeStyle = e.pair ? "#f97316" : d <= EPS ? "#60a5fa" : sep;
+      ctx.globalAlpha = e.pair ? 0.76 : d <= EPS ? 0.22 : 0.08;
+      ctx.lineWidth = e.pair ? 2.2 : 0.8;
+      ctx.stroke();
+    }
+
+    ctx.globalAlpha = 1;
+    for (let i = 0; i < agents.length; i++) {
+      const a = agents[i];
+      const p = worldToCanvas(a.x, a.y);
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, i < CORE ? 5.4 : a.dyad ? 5.1 : 4.1, 0, Math.PI * 2);
+      ctx.fillStyle = i < CORE
+        ? text
+        : a.dyad
+          ? mode === "dyad" ? "#f97316" : `hsl(${a.hue} 72% 52%)`
+          : "#60a5fa";
+      ctx.fill();
+      ctx.strokeStyle = bg;
+      ctx.lineWidth = 1.1;
+      ctx.stroke();
+    }
+
+    const m = metrics();
+    const phase = lambda() < 0.96 ? labels.stable : lambda() < 1.08 ? labels.critical : labels.fragmented;
+    const phaseColor = lambda() < 0.96 ? "#10b981" : lambda() < 1.08 ? "#f59e0b" : "#ef4444";
+    drawText(phase, w - 204, 42, phaseColor, 14, "left");
+    drawText(labels.copyRule, w - 204, 70, caption, 11, "left", 600);
+    drawText(labels.rewireRule, w - 204, 90, caption, 11, "left", 600);
+    drawText(labels.dyadRule, w - 204, 110, caption, 11, "left", 600);
+
+    const boxX = w - 205;
+    const boxY = h - 120;
+    ctx.globalAlpha = 0.95;
+    ctx.strokeStyle = text;
+    ctx.fillStyle = text;
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < CORE; i++) {
+      const angle = (i / CORE) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(boxX + Math.cos(angle) * 16, boxY + Math.sin(angle) * 11, 3.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.arc(boxX, boxY, 28, 0, Math.PI * 2);
+    ctx.stroke();
+    drawText(labels.bloc, boxX, boxY + 42, caption, 11);
+
+    if (mode === "dyad") {
+      const p = pairs[0];
+      const center = worldToCanvas((agents[p.a].x + agents[p.b].x) * 0.5, (agents[p.a].y + agents[p.b].y) * 0.5);
+      drawText(labels.dyad, center.x + 12, center.y - 16, "#f97316", 11, "left");
+      drawText(labels.grounded, origin.x - radius - 12, origin.y + 18, caption, 11, "right", 600);
+    } else {
+      drawText(labels.paired, origin.x, h - 23, caption, 11, "center", 600);
+    }
+
+    if (lambdaOut) lambdaOut.textContent = lambda().toFixed(2);
+    if (sharedOut) sharedOut.textContent = `${m.shared}%`;
+    if (clustersOut) clustersOut.textContent = String(m.clusters);
+    ctx.globalAlpha = 1;
+  }
+
+  function tick() {
+    if (running) {
+      for (let i = 0; i < 2; i++) step();
+      draw();
+    }
+    raf = requestAnimationFrame(tick);
+  }
+
+  modeButtons.forEach(button => {
+    button.addEventListener("click", () => {
+      mode = (button.dataset.mode || "dyad") as Mode;
+      modeButtons.forEach(b => b.classList.toggle("is-active", b === button));
+      reset();
+      draw();
+    });
+  });
+  lambdaInput?.addEventListener("input", draw);
+  pauseButton?.addEventListener("click", () => {
+    running = !running;
+    if (pauseButton) pauseButton.textContent = running ? labels.pause : labels.play;
+  });
+  resetButton?.addEventListener("click", () => {
+    reset();
+    draw();
+  });
+
+  setLabels();
+  reset();
+  draw();
+  tick();
+
+  document.addEventListener("visibilitychange", () => {
+    running = !document.hidden;
+    if (pauseButton) pauseButton.textContent = running ? labels.pause : labels.play;
+  });
+  window.addEventListener("beforeunload", () => cancelAnimationFrame(raf));
+</script>

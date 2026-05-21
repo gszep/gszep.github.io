@@ -15,8 +15,8 @@ import ForestFireSOC from '../../../components/interactive/ForestFireSOC.astro';
 import PreferentialAttachment from '../../../components/interactive/PreferentialAttachment.astro';
 import VCPowerLawFigure from '../../../components/interactive/VCPowerLawFigure.astro';
 import ValleyShape from '../../../components/interactive/ValleyShape.astro';
+import ContextDriftSimulation from '../../../components/interactive/ContextDriftSimulation.astro';
 import RaceEquilibrium from '../../../components/interactive/RaceEquilibrium.astro';
-import PrivateVsSocial from '../../../components/interactive/PrivateVsSocial.astro';
 
 # ゲーム理論とAI安全性
 
@@ -225,25 +225,13 @@ VCは正規分布のゲームをしていない。サンクトペテルブルク
 
 ---
 
-## エコーチェンバーとドリフト
+## 技術的フォリ・ア・ドゥ
 
-二つのエージェントの対話：
+高頻度の局所的フィードバックは、低頻度の現実への接地を上回りうる。
 
-1. 自己一貫性が真実より優先される
-2. 共有された信念が増幅し、少数意見が減衰する
-3. 初期位置からの累積的なドリフト
+すべてのエージェントが私的なペアを作ると、文脈は断片化する。集団は共有された現実を失い、共有文脈を保つプレイヤーが有利になる。
 
-どちらのエージェントも意図していないのに、対話は動いていく。
-
----
-
-## AIサイコーシス
-
-人間とAIの相互作用が現実から離れていくスパイラル。
-
-AIがユーザーの信念との整合性を正確さよりも優先すると、両者が共有された妄想へとドリフトする。
-
-**共有された知識は力である。個別化された知識は集団的なリスクである。**
+<ContextDriftSimulation locale="ja" />
 
 ---
 
