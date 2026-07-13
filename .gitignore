@@ -13,3 +13,5 @@ Thumbs.db
 # Environment
 .env
 .env.*
+# Chi local state and sensitive artifacts (runtime state lives under ~/.chi)
+.chi/
