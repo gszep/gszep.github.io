@@ -4,6 +4,8 @@ import site from '../data/site.json';
 
 export type Locale = 'en' | 'ja';
 
+export const PROVENANCE_TEST_MARKER = 'chi-provenance-smoke-test';
+
 const dicts = { en, ja } as Record<string, Record<string, string>>;
 
 export function t(lang: Locale, key: string): string {
