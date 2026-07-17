@@ -16,6 +16,7 @@
     "@astrojs/sitemap": "^3.7.0",
     "@astrojs/tailwind": "^6.0.0",
     "astro": "^5.0.0",
+    "firebase": "^12.16.0",
     "katex": "^0.16.0",
     "lil-gui": "^0.21.0",
     "react": "^19.0.0",

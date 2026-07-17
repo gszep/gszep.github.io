@@ -1,0 +1,21 @@
+---
+// Standalone family app served at gszep.com/piri-piri-wingdings.
+// Not part of the i18n blog system — an unlisted, noindexed React island.
+// The component ships all its own styles in an injected <style> tag.
+import App from "../components/PiriPiriWingding.jsx";
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Piri-Piri Wingding · Algarve 2026</title>
+    <meta name="description" content="A shared holiday wish board for the Algarve, 15–22 August 2026." />
+    <meta name="robots" content="noindex, nofollow" />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Ccircle cx='12' cy='12' r='5' fill='%23F2A93B'/%3E%3C/svg%3E" />
+  </head>
+  <body>
+    <App client:only="react" />
+  </body>
+</html>

@@ -34,6 +34,9 @@ export default defineConfig({
     }),
     tailwind(),
     react(),
-    sitemap(),
+    sitemap({
+      // Keep the unlisted family app out of the sitemap (it's noindex).
+      filter: (page) => !page.includes('/piri-piri-wingdings'),
+    }),
   ],
 });

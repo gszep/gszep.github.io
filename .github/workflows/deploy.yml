@@ -32,6 +32,9 @@ jobs:
 
       - name: Build Astro site
         run: npm run build
+        env:
+          # Public Firebase web key (referrer-locked); kept out of source.
+          PUBLIC_FB_API_KEY: ${{ vars.PUBLIC_FB_API_KEY }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
