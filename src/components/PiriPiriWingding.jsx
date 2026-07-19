@@ -51,6 +51,14 @@ const SEED_IDEAS = [
   { id: "w5", cat: "water", title: "Jet-ski & parasailing", note: "Adrenaline add-ons from Albufeira marina.", suits: "Grown-ups / teens", shade: false, source: "starter" },
 ];
 
+/* Stable display order. Cards are deliberately NOT sorted by reaction count —
+   re-ranking on every tap made items jump out from under your finger. Starter
+   ideas keep their authored order; anything added later lands at the end
+   (ids are "u<timestamp>", so they stay in the order they were added). */
+const SEED_ORDER = new Map(SEED_IDEAS.map((i, idx) => [i.id, idx]));
+const displayOrder = (i) =>
+  SEED_ORDER.has(i.id) ? SEED_ORDER.get(i.id) : SEED_ORDER.size;
+
 const WEEK = [
   { id: "d15", day: "Sat 15", kind: "easy", title: "Arrival", desc: "Everyone lands through the day. Settle in, pool time, and an easy villa supper." },
   { id: "d16", day: "Sun 16", kind: "easy", title: "Settling in", desc: "A gentle beach morning at Olhos de Água, then a lazy afternoon by the pool." },
@@ -186,17 +194,7 @@ function personColor(name) {
 }
 const initials = (n) => n.trim().split(/\s+/).map((p) => p[0]).slice(0, 2).join("").toUpperCase();
 
-/* ---- unified reactions: counts, reactors, and a shared bar ---- */
-function reactionCount(reactions, id) {
-  const r = (reactions && reactions[id]) || {};
-  return REACTIONS.reduce((s, em) => s + Object.keys(r[em] || {}).length, 0);
-}
-function reactorNames(reactions, id) {
-  const r = (reactions && reactions[id]) || {};
-  const set = new Set();
-  REACTIONS.forEach((em) => Object.keys(r[em] || {}).forEach((n) => set.add(n)));
-  return [...set];
-}
+/* ---- shared reaction bar (per-emoji counts live on each button) ---- */
 function ReactionBar({ id, reactions, user, onReact, stop }) {
   const r = (reactions && reactions[id]) || {};
   return (
@@ -337,12 +335,13 @@ function Header({ user }) {
 
 /* ------------------------------ Ideas view ------------------------------ */
 function IdeasView({ data, user, filter, setFilter, onReact, addIdea, onOpen }) {
-  const ranked = useMemo(() => {
+  // Stable order — intentionally independent of reaction counts, so a card
+  // never moves when you react to it.
+  const visible = useMemo(() => {
     return [...data.ideas]
-      .map((i) => ({ ...i, score: reactionCount(data.reactions, i.id) }))
       .filter((i) => filter === "all" ? true : i.cat === filter)
-      .sort((a, b) => b.score - a.score || a.title.localeCompare(b.title));
-  }, [data, filter]);
+      .sort((a, b) => displayOrder(a) - displayOrder(b) || a.id.localeCompare(b.id));
+  }, [data.ideas, filter]);
 
   const counts = useMemo(() => {
     const c = { all: data.ideas.length, chill: 0, active: 0, water: 0 };
@@ -354,7 +353,7 @@ function IdeasView({ data, user, filter, setFilter, onReact, addIdea, onOpen }) 
     <section className="activities">
       <div className="activities-intro">
         <h2 className="mh">Activities we'd like to do</h2>
-        <p className="msub">React to anything you fancy with an emoji — the most-loved float to the top, and the faces show who's keen. Tap a card for photos, details and booking links, or add your own below.</p>
+        <p className="msub">React to anything you fancy with an emoji — the counts show how keen everyone is. Tap a card for photos, details and booking links, or add your own below.</p>
       </div>
       <div className="chips">
         <Chip on={filter === "all"} onClick={() => setFilter("all")} label={`Everything · ${counts.all}`} color="#0E5A6E" />
@@ -364,8 +363,8 @@ function IdeasView({ data, user, filter, setFilter, onReact, addIdea, onOpen }) 
       </div>
 
       <div className="grid">
-        {ranked.map((i, idx) => (
-          <IdeaCard key={i.id} idea={i} rank={filter === "all" && i.score !== 0 ? idx + 1 : null} user={user} reactions={data.reactions} onReact={onReact} onOpen={onOpen} />
+        {visible.map((i) => (
+          <IdeaCard key={i.id} idea={i} user={user} reactions={data.reactions} onReact={onReact} onOpen={onOpen} />
         ))}
       </div>
 
@@ -374,7 +373,7 @@ function IdeasView({ data, user, filter, setFilter, onReact, addIdea, onOpen }) 
   );
 }
 
-function IdeaCard({ idea, rank, user, reactions, onReact, onOpen }) {
+function IdeaCard({ idea, user, reactions, onReact, onOpen }) {
   const cat = CAT[idea.cat];
   return (
     <article className="card clickable" style={{ "--cat": cat.color }} role="button" tabIndex={0}
@@ -383,7 +382,6 @@ function IdeaCard({ idea, rank, user, reactions, onReact, onOpen }) {
       <div className="card-top">
         <span className="tag" style={{ color: cat.ink, background: cat.color + "22", borderColor: cat.color + "55" }}>{cat.label}</span>
         {idea.shade && <span className="shade" title="Has good shade / indoor option">☂ shade</span>}
-        {rank && <span className="rank">#{rank}</span>}
       </div>
 
       <h3 className="card-title">{idea.title}</h3>
@@ -470,7 +468,8 @@ function AddIdea({ onAdd }) {
 
 /* ------------------------------ Meals view ------------------------------ */
 function MealsView({ data, user, onReact }) {
-  const restRanked = [...RESTAURANTS].sort((a, b) => reactionCount(data.reactions, b.id) - reactionCount(data.reactions, a.id));
+  // Fixed order, for the same reason as the activity cards.
+  const restaurants = RESTAURANTS;
 
   return (
     <section className="meals">
@@ -500,11 +499,11 @@ function MealsView({ data, user, onReact }) {
 
       <div className="meals-intro">
         <h2 className="mh">Favourite spots for the big table</h2>
-        <p className="msub">React to the places you'd most like to book — the top pick is what we'll reserve for Monday (and any other night we head out). Tap a name for its map, menu and reviews.</p>
+        <p className="msub">React to the places you'd most like to book — whichever gets the most love is what we'll reserve for Monday (and any other night we head out). Tap a name for its map, menu and reviews.</p>
       </div>
 
       <div className="rlist">
-        {restRanked.map((r) => (
+        {restaurants.map((r) => (
           <div key={r.id} className="rrow">
             <div className="rinfo">
               <a className="rname" href={r.maps} target="_blank" rel="noreferrer">{r.name} <span className="mapspin">📍</span></a>
