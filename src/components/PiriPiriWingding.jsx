@@ -26,10 +26,10 @@ const SEED_IDEAS = [
   // CHILL
   { id: "c1", cat: "chill", title: "Town-beach morning", note: "Praia dos Olhos de Água — calm, shallow, walkable from the villa.", suits: "All ages", shade: false, source: "starter" },
   { id: "c2", cat: "chill", title: "Lazy villa & pool day", note: "No driving, no plans. Floats, books, a long lunch in.", suits: "All ages", shade: true, source: "starter" },
-  { id: "c3", cat: "chill", title: "Long lunch: Restaurante Olhos d'Água", note: "Authentic Portuguese in the village. Book ahead for 12.", suits: "All ages", shade: true, source: "starter" },
-  { id: "c4", cat: "chill", title: "Sunset fish dinner: O Pássaro Azul", note: "Right on the beach at dusk — mind the tide with a buggy.", suits: "All ages", shade: false, source: "starter" },
+  // Note: the village restaurants (Olhos d'Água, O Pássaro Azul, By the Sea)
+  // live in RESTAURANTS below — the "big table" section — not here, so they
+  // aren't listed twice.
   { id: "c5", cat: "chill", title: "Ice cream & seafront stroll", note: "Easy evening potter through the old fishing village.", suits: "All ages", shade: false, source: "starter" },
-  { id: "c6", cat: "chill", title: "Brunch at By the Sea", note: "Relaxed daytime spot, brilliant with the little ones.", suits: "All ages", shade: true, source: "starter" },
 
   // ACTIVE
   { id: "a1", cat: "active", title: "Zoomarine", note: "Dolphins, shows, water area & rides. Guia, ~20 min. Under 1m free.", suits: "Ages 4–10", shade: false, source: "starter" },
@@ -83,10 +83,10 @@ const REACTIONS = ["👍", "😍", "🎉", "🏖️", "😴"];
 
 const RESTAURANTS = [
   { id: "r1", name: "A Lagosteira", note: "Roomy & well-run — best for a table of 12. Lobster tank.", maps: "https://maps.google.com/?cid=678385334939657228" },
-  { id: "r2", name: "Restaurante Olhos d'Água", note: "Authentic Portuguese in the village.", maps: "https://maps.google.com/?cid=1586534743399575749" },
+  { id: "r2", name: "Restaurante Olhos d'Água", note: "Authentic Portuguese in the village — a 30-year institution. Book ahead for 12.", maps: "https://maps.google.com/?cid=1586534743399575749" },
   { id: "r3", name: "Calheiros", note: "Piri-piri chicken & steak, buzzy.", maps: "https://maps.google.com/?cid=12357573707303470301" },
-  { id: "r4", name: "O Pássaro Azul", note: "Beach-side sunset fish dinner.", maps: "https://maps.google.com/?cid=14253802638507826338" },
-  { id: "r5", name: "By the Sea", note: "Casual, easy with kids.", maps: "https://www.google.com/maps/search/?api=1&query=By%20the%20Sea%20Olhos%20de%20Agua&query_place_id=ChIJjwKEM9vLGg0RkTatUXqcw5o" },
+  { id: "r4", name: "O Pássaro Azul", note: "Beach-side sunset fish dinner, ordered by weight. Mind the tide with a buggy.", maps: "https://maps.google.com/?cid=14253802638507826338" },
+  { id: "r5", name: "By the Sea", note: "Relaxed brunch and cocktails on the seafront — brilliant with the little ones.", maps: "https://www.google.com/maps/search/?api=1&query=By%20the%20Sea%20Olhos%20de%20Agua&query_place_id=ChIJjwKEM9vLGg0RkTatUXqcw5o" },
 ];
 
 /* ---- link helpers ---- */
@@ -97,8 +97,6 @@ const pmaps = (name, pid) => "https://www.google.com/maps/search/?api=1&query=" 
 /* Google Places photos (representative, one per place) */
 const IMG = {
   beach: "https://lh3.googleusercontent.com/place-photos/AJRVUZPQIiEPgEaAYKmzsuMEz3L2NRLnhV3kk-qp1jd8jwEJPp6NjXNFlHKlzCKpcFaJwDEOXY17MBa5e9UldGd5suEydalSLfc0iTFjDSxCWP-96CbY5dJb4s2inJ9LgusDI6E6aBB3dv7DiQFTHQ=s1600-w800-h600",
-  restOlhos: "https://lh3.googleusercontent.com/place-photos/AJRVUZPZ0mIMJFeJo2te8auUFCm7V7c9kMPfI7_mJN0nmaoEM5QV61-RIPCyLzHfcvxIo6Jrz4CQsCgbnZVeUSup1faRukEiVg5n7A1sHqPMiMZjp428ILsshLE-JiVTs43CzhO7AKbb5dEnsM94QA=s1600-w800-h600",
-  passaro: "https://lh3.googleusercontent.com/place-photos/AJRVUZMaSqKXJjecBylRpBI9StrIvSj5dIiGVIT966qxzwilPY4lhO77QY1xJrwUR1BmGR93ChyCnxoveyInK-mPpGbEHlyJfiJjPCez6UZK4pMpmANfwREt7k6y_DDS88cP5e4Bb5UOmwdAijbou7o=s1600-w800-h600",
   zoomarine: "https://lh3.googleusercontent.com/place-photos/AJRVUZMrAtTGErlcQmuqsM04ZLGJGhMRiWYEVGFGCGX7O22CMCJCXNxO7MmupM5E7R3Bbin4wbvEH5HlJ_n9NSGbMCUWlPk9ySZ2wkROiKd4zAhb9BYaW2FH4pDjuOBWlh0C_nrWi1OwSknTCbjS=s1600-w800-h600",
   aquashow: "https://lh3.googleusercontent.com/place-photos/AJRVUZOq2M83YTiZBtIsz4vs4dvENrJ6rEbH8aIA5hA4Om7JR5Y5tkQQpvSJ6tqN8JZ7igGSLPE1z_lNeR59RFFzQbggWXaCrCKPSiL_7iJ8xcomopPtwqnWyHVEac4NUz8tvn9wsXUNUW5bzdyuMA=s1600-w800-h600",
   falesia: "https://lh3.googleusercontent.com/place-photos/AJRVUZNj5FJNLhZ_zxLBprEIi9syJQtwjcGArXhkhoR0IB6azopHyGEBLLqjrMCmBWbpxUlDgZiu2NeKsf_En7LPDXNh1LPY_s2nEo7eO428XasdT6R6XxDI-zgwdcOAY51fjnHyXTm2OYuhdfgi-w=s1600-w800-h600",
@@ -112,10 +110,7 @@ const IMG = {
 const DETAILS = {
   c1: { img: IMG.beach, maps: cid("15274520669397784669"), desc: "The village's own cove: soft sand, shallow water, and the freshwater springs that bubble up through the beach at low tide. Sunbeds, showers and cafés right there, and an easy walk from the villa — ideal with the 1- and 4-year-olds." },
   c2: { noMaps: true, desc: "A do-nothing day at base. Pool, shade, snacks and naps for the littles — the recovery day that keeps everyone sane between outings." },
-  c3: { img: IMG.restOlhos, maps: cid("1586534743399575749"), desc: "A village institution for about 30 years — grilled fish and sweet prawns, peppercorn steak, warm service. Buzzy and well-priced; book ahead for a table of 12." },
-  c4: { img: IMG.passaro, maps: cid("14253802638507826338"), web: "http://passaroazul.pt/", desc: "Fresh fish almost on the sand, best at sunset — order by weight from the counter. Mind the tide: sometimes it's the steps rather than the beach walk, so watch the buggy." },
   c5: { img: IMG.beach, maps: qmaps("Olhos de Agua village Algarve"), desc: "An easy evening: wander the seafront, watch the fishing boats come in, grab a gelato. No plan required." },
-  c6: { maps: pmaps("By the Sea Olhos de Agua", "ChIJjwKEM9vLGg0RkTatUXqcw5o"), desc: "Relaxed brunch-and-cocktails spot on the seafront — toasties, poke bowls, burgers, and staff who are great with kids." },
 
   a1: { img: IMG.zoomarine, maps: cid("10157786535580481711"), web: "https://www.zoomarine.pt/", desc: "The region's marine theme park: dolphin, sea-lion and bird-of-prey shows, a water-play area, fairground rides and a 4D cinema. Best all-rounder for ages 4–10. Under 1m tall is free; grab a show schedule on arrival and plan the day around it." },
   a2: { img: IMG.aquashow, maps: cid("18292645273975041217"), web: "https://aquashowpark.com/", desc: "Portugal's biggest water park — a genuine water roller-coaster and steep slides for the 7 & 9s, plus Aquakids and Aqualandia splash zones for the little ones. Slides have height limits (~1.10–1.40m), so measure the kids first." },
@@ -335,19 +330,30 @@ function Header({ user }) {
 
 /* ------------------------------ Ideas view ------------------------------ */
 function IdeasView({ data, user, filter, setFilter, onReact, addIdea, onOpen }) {
-  // Stable order — intentionally independent of reaction counts, so a card
-  // never moves when you react to it.
-  const visible = useMemo(() => {
+  // SEED_IDEAS is the source of truth for starter content: a starter idea that
+  // has been retired in code (e.g. moved into the restaurants section) is
+  // hidden even though its row still exists in the database from an earlier
+  // seeding. Ideas people added themselves are always kept.
+  //
+  // Order is stable and intentionally independent of reaction counts, so a
+  // card never moves when you react to it.
+  const live = useMemo(() => {
     return [...data.ideas]
-      .filter((i) => filter === "all" ? true : i.cat === filter)
+      .filter((i) => i.source !== "starter" || SEED_ORDER.has(i.id))
       .sort((a, b) => displayOrder(a) - displayOrder(b) || a.id.localeCompare(b.id));
-  }, [data.ideas, filter]);
+  }, [data.ideas]);
 
+  const visible = useMemo(
+    () => live.filter((i) => (filter === "all" ? true : i.cat === filter)),
+    [live, filter],
+  );
+
+  // Counts come from `live`, so the chips never advertise retired ideas.
   const counts = useMemo(() => {
-    const c = { all: data.ideas.length, chill: 0, active: 0, water: 0 };
-    data.ideas.forEach((i) => c[i.cat]++);
+    const c = { all: live.length, chill: 0, active: 0, water: 0 };
+    live.forEach((i) => c[i.cat]++);
     return c;
-  }, [data]);
+  }, [live]);
 
   return (
     <section className="activities">
