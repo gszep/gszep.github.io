@@ -467,8 +467,8 @@ function projectTemporalRodFromTangents(path,rod,centerStrength=.02){
 function spatialBinKey(x,y){
   return x>=-8192&&x<8192&&y>=-8192&&y<8192?(x+8192)*16384+(y+8192):`${x},${y}`;
 }
-function scheduleAllDigitFrame(fn){return setTimeout(fn,16);}
-function cancelAllDigitFrame(id){clearTimeout(id);}
+function scheduleAllDigitFrame(fn){return (globalThis.requestAnimationFrame||(f=>setTimeout(f,16)))(fn);}
+function cancelAllDigitFrame(id){(globalThis.cancelAnimationFrame||clearTimeout)(id);}
 function continuousStats(opts={}){
   ensureContinuousAngles();
   const rod=ensureContinuousRod();let active=0;
