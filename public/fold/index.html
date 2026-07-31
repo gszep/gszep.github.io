@@ -1,0 +1,2383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Topology-Sampled Digit Folds</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ECEDE3; --paper-2:#E3E5D8; --ink:#222a2e; --ink-soft:#5d6760;
+    --grid:#cfd2c4; --rule:#d4d7ca;
+    --vermilion:#c8472f; --amber:#cf8a2b; --green:#5f7a4e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--ink);font-family:'Inter',system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;padding:32px 24px 64px}
+  .wrap{width:100%;max-width:none;margin:0 auto}
+  header{border-bottom:1.5px solid var(--ink);padding-bottom:18px;margin-bottom:22px}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-soft)}
+  h1{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(26px,4.6vw,40px);line-height:1.03;margin:6px 0 10px;letter-spacing:-.01em}
+  .lede{max-width:68ch;color:var(--ink-soft);font-size:15px}
+  .lede b{color:var(--ink);font-weight:600}
+
+  .bar{display:flex;gap:8px;align-items:center;margin-top:16px;flex-wrap:wrap}
+  .range-ctl{display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-soft);border:1px solid var(--rule);padding:5px 8px;background:var(--paper-2)}
+  .range-ctl input{width:112px;accent-color:var(--vermilion)}
+  .range-ctl input[type=number]{width:74px;accent-color:var(--vermilion);border:1px solid var(--rule);background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono';font-size:12px;padding:3px 5px}
+  .range-ctl select{border:1px solid var(--rule);background:var(--paper);color:var(--ink);font-family:'IBM Plex Mono';font-size:12px;padding:3px 5px}
+  .range-ctl b{color:var(--ink);font-weight:500;min-width:76px}
+  button{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--ink);background:var(--paper);border:1.5px solid var(--ink);padding:7px 12px;cursor:pointer;letter-spacing:.02em;transition:background .12s,color .12s}
+  button:hover{background:var(--ink);color:var(--paper)}
+  button:active{transform:translateY(1px)}
+  button:focus-visible{outline:2px solid var(--vermilion);outline-offset:2px}
+  button.primary{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+  button.primary:hover{background:#a93922}
+
+  .layout{display:grid;grid-template-columns:minmax(0,1fr);gap:24px;margin-top:22px;align-items:start}
+  @media(max-width:760px),(orientation:portrait){.layout{grid-template-columns:1fr}}
+  .card{border:1.5px solid var(--ink);background:var(--paper-2);display:flex;flex-direction:column;min-width:0;width:100%}
+  .card h3{font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin:0;padding:10px 14px;border-bottom:1px solid var(--rule);color:var(--ink-soft);font-weight:500}
+  .card h3 b{color:var(--ink);font-weight:600;text-transform:none;letter-spacing:0;font-family:'Space Grotesk'}
+  .card .body{padding:14px}
+
+  .digit-board{display:block;width:100%;aspect-ratio:1/1;border:1.5px solid var(--rule);background:rgba(255,255,255,.22);margin:0 auto}
+  .seq{font-family:'IBM Plex Mono',monospace;font-size:12px;text-align:center;margin-top:6px;color:var(--ink-soft)}
+
+  .prog{height:15px;background:var(--paper);border:1.5px solid var(--ink);margin-top:14px;position:relative}
+  .prog-bar{height:100%;background:var(--green);width:5%;transition:width .12s}
+  .prog-lbl{font-family:'IBM Plex Mono';font-size:11px;color:var(--ink-soft);margin-top:5px;display:flex;justify-content:space-between}
+  .prog-lbl b{color:var(--ink);font-weight:500}
+
+  .stats{display:grid;grid-template-columns:1fr;gap:1px;background:var(--rule);border:1px solid var(--rule);margin-top:14px}
+  .stat{background:var(--paper-2);padding:8px 10px;display:flex;align-items:baseline;justify-content:space-between;gap:12px;min-width:0}
+  .stat .n{font-family:'Space Grotesk';font-weight:700;font-size:20px;line-height:1;text-align:right;overflow-wrap:anywhere;min-width:0}
+  .stat .l{font-family:'IBM Plex Mono';font-size:9.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin-top:0;white-space:nowrap}
+  .stat .n.v{color:var(--vermilion)} .stat .n.t{color:var(--green)} .stat .n.a{color:var(--amber)}
+
+  footer{margin-top:34px;border-top:1px solid var(--rule);padding-top:16px;font-size:13.5px;color:var(--ink-soft);max-width:78ch}
+  footer b{color:var(--ink)} footer code{font-family:'IBM Plex Mono';background:var(--paper-2);padding:1px 5px;border:1px solid var(--rule);font-size:12px}
+  body.fold-mobile{padding:0;overflow:hidden;width:100vw;height:100vh;height:100dvh;background:var(--paper);touch-action:manipulation}
+  .fold-mobile header,.fold-mobile footer,.fold-mobile .card h3,.fold-mobile .seq,.fold-mobile .prog,.fold-mobile .prog-lbl,.fold-mobile .stats{display:none!important}
+  .fold-mobile .wrap,.fold-mobile .layout,.fold-mobile .card,.fold-mobile .card .body{width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;background:transparent;display:block}
+  .fold-mobile .wrap{display:none!important}
+  .fold-mobile .digit-board{display:block;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border:0;background:var(--paper);margin:0;outline:0}
+  #mobile-key-capture{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;background:transparent;color:transparent}
+</style>
+</head>
+<body class="fold-mobile">
+<input id="mobile-key-capture" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-hidden="true">
+<canvas class="digit-board" id="digit-board" aria-hidden="true"></canvas>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">webgpu topology sampler · curvature folding</div>
+    <h1>Topology-sampled digit folds</h1>
+    <p class="lede">This scaffold batches legal hex-grid paths through all ten digit masks, then bakes each path into a rod with rest lengths <b>ell(s)</b>, natural bend angles <b>kappa(s)</b>, and a two-sided hydropathy pattern. It is the current conformer generator and shared-soup testbed on the path toward many unfolded filaments where a keypress activates one selected fold. The temporal mode shows fixed-step overdamped angle dynamics driven by intrinsic curvature, thermal noise if enabled, soft excluded volume on all segments, and field-based hydropathy.</p>
+    <div class="bar">
+      <button id="run" class="primary">sample</button>
+      <button id="reset">reset</button>
+      <label class="range-ctl">Spacing <input id="grid-n" type="range" min="5" max="30" step="1" value="20"><b id="grid-n-label">hex20 digits 0-9</b></label>
+      <span class="range-ctl">Dynamics <b>temporal intrinsic + hydrophobic</b></span>
+      <label class="range-ctl">Noise <input id="dynamics-temp" type="number" min="0" max="4" step="0.05" value="1.5"></label>
+      <label class="range-ctl">Field <input id="density-field" type="number" min="0" max="2" step="0.05" value="0"></label>
+      <span id="status" style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-soft)"></span>
+    </div>
+  </header>
+
+  <div class="layout">
+    <div class="card">
+      <h3>Run · <b id="sel-name">—</b></h3>
+      <div class="body">
+        <canvas class="digit-board" id="digit-board-hidden"></canvas>
+        <div class="seq" id="seq"></div>
+        <div class="seq" id="debug"></div>
+        <div class="prog"><div class="prog-bar" id="prog-bar"></div></div>
+        <div class="prog-lbl"><span><b id="prog-pct">5%</b> discovered</span><span><b id="prog-moves">0</b> / <b id="prog-max">sat</b> moves</span></div>
+        <div class="stats">
+          <div class="stat"><div class="n v" id="s-moves">0</div><div class="l">moves</div></div>
+          <div class="stat"><div class="n t" id="s-found">1</div><div class="l" id="s-found-label">unique states</div></div>
+          <div class="stat"><div class="n" id="s-total">276</div><div class="l" id="s-total-label">total states</div></div>
+          <div class="stat"><div class="n a" id="s-waste">0</div><div class="l">wasted moves</div></div>
+          <div class="stat"><div class="n" id="s-angle">0.00</div><div class="l">rod energy</div></div>
+          <div class="stat"><div class="n" id="s-turn">0.0%</div><div class="l">mean strain</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <b>What this shows.</b> The discrete stage chooses a topology: a single non-branching path through each digit domain. The selected temporal mode uses the baked material program directly: segment angles relax toward <b>kappa(s)</b>, positions are reconstructed from fixed <b>ell(s)</b>, both-side hydrophobic segments are blue, both-side hydrophilic amber, and mixed amphipathic segments green. Side samples apply field forces with a force couple: blue segments are buried, amber segments are exposed, and green segments rotate until their hydrophobic side faces inward and their hydrophilic side faces outward.
+  </footer>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+const cssv=v=>getComputedStyle(document.documentElement).getPropertyValue(v.replace('var(','').replace(')','')).trim();
+const nowMs=()=>globalThis.performance?.now?.()??Date.now();
+const fmtCount=v=>typeof v==='bigint'?v.toString():String(v);
+let SAMPLE_N=20, SAMPLE_CELLS=SAMPLE_N*SAMPLE_N, sampleSteps=0;
+function renderTotalStateBox(total){const el=$('s-total'),lab=$('s-total-label');if(total===Infinity){el.textContent='?';lab.textContent='total unknown';return;}el.textContent=fmtCount(total);lab.textContent='total states';}
+
+/* ---- WebGPU repair-explore topology sampler and folding dynamics ---- */
+
+const WGPU_MAX_CELLS=256, WGPU_MAX_EDGE_SLOTS=1024, WGPU_ADJ_WORDS=8, WGPU_WORKGROUP_SIZE=64, WGPU_DIGIT_CHAINS=64, WGPU_DIGIT_EXPLORE_STEPS=0, DIGIT_SAMPLE_POOL_TARGET=128;
+let sampleDigitMask='0', sampleActiveMask=[], sampleDomain=null, continuousDrag=null;
+let wgpuDevice=null, wgpuPipeline=null, wgpuReady=null;
+let wgpuValidSamples=0, wgpuRepairAttempts=0, wgpuBatches=0, wgpuSelectedPath=[], wgpuLastBatchMs=0;
+let runtimeTelemetry={frameMs:0,simMs:0,renderMs:0,fieldMs:0,fieldGpuMs:0,fieldReadbackMs:0,fieldPackMs:0,materializeMs:0,activeNodes:0,fieldSize:0,pendingField:false};
+const TAU=Math.PI*2, CONT_ROD_KS=.22, CONT_DESCENT_DT=.72, CONT_STEP_LIMIT=1.35, CONT_GAUGE=.18, CONT_LANGEVIN_DAMP=.72, CONT_KAPPA_BEND=48;
+let rodNoiseState=0x9e3779b9;
+let continuousAngles=[], continuousRod=null;
+const TEMPORAL_HYDRO_SPEED=4;
+const SMOOTH_ROD_SUBDIV=2;
+let GPU_ROD_SOLVER_ENABLED=false;
+const GPU_ROD_MAX_EDGES=512;
+let foldParams={lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:true,temporalHydroSubstepAnneal:true,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
+let allDigitMode=true, allDigitStates=[], allDigitFrame=0, allDigitLoopToken=0, allDigitLoading=false, allDigitLoadingN=0, allDigitEpoch=0, allDigitGridTimer=0, allDigitStatsCache=null, allDigitStatsTick=0, wgpuDigitBatchCache=null, allDigitPool=[], allDigitPoolFill=null, allDigitPoolN=0, allDigitPoolSeed=null, allDigitPrefetchError='', allDigitSharedFieldStats={nodes:0,active:0,maxForce:0}, allDigitSharedFieldPending=null, allDigitSharedSoa=null, soupWorldSize=400;
+function invalidateSharedSoupBuffers(){allDigitSharedSoa=null;}
+function telemetrySet(key,value,alpha=.28){if(Number.isFinite(value))runtimeTelemetry[key]=runtimeTelemetry[key]?runtimeTelemetry[key]*(1-alpha)+value*alpha:value;}
+function telemetryText(){
+  const t=runtimeTelemetry,pending=t.pendingField?'pending':'idle';
+  return `perf · nodes ${Math.round(t.activeNodes||0)} · field ${Math.round(t.fieldSize||0)}^2 ${pending} · frame ${t.frameMs.toFixed(1)}ms · sim ${t.simMs.toFixed(1)}ms · render ${t.renderMs.toFixed(1)}ms · field ${t.fieldMs.toFixed(1)}ms (gpu ${t.fieldGpuMs.toFixed(1)} read ${t.fieldReadbackMs.toFixed(1)} pack ${t.fieldPackMs.toFixed(1)}) · materialize ${t.materializeMs.toFixed(1)}ms`;
+}
+function allDigitLabel(n=SAMPLE_N){return `hex${n} digits 0-9`;}
+function sampleCellValid(i){return i>=0&&i<SAMPLE_N*SAMPLE_N;}
+function defaultSampleMask(){return Array.from({length:SAMPLE_N*SAMPLE_N},(_,i)=>sampleCellValid(i));}
+function sampleRandomU32(){
+  if(crypto?.getRandomValues){const a=new Uint32Array(1);crypto.getRandomValues(a);return a[0]>>>0;}
+  return ((Date.now()*1664525+Math.floor(performance.now()*1000))>>>0);
+}
+function sampleGridCenter(i,n=SAMPLE_N){const r=Math.floor(i/n),c=i%n,pad=34,xStep=Math.min((400-2*pad)/Math.max(1,n-.5),(400-2*pad)/Math.max(1,(n-1)*.86)),yStep=xStep*.86,x0=(400-(n-.5)*xStep)/2,y0=(400-(n-1)*yStep)/2;return [x0+(c+(r&1)*.5)*xStep,y0+r*yStep,xStep];}
+function wrapAngle(a){a%=TAU;return a<0?a+TAU:a;}
+function angleDelta(a,b){let d=wrapAngle(a-b);return d>Math.PI?d-TAU:d;}
+function rodRand(){rodNoiseState=(rodNoiseState+0x6D2B79F5)>>>0;let t=rodNoiseState;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;}
+function rodNormal(){const u=Math.max(1e-9,rodRand()),v=rodRand();return Math.sqrt(-2*Math.log(u))*Math.cos(TAU*v);}
+function rodSeedMix(...vals){let h=0x9e3779b9;for(const v of vals){h=Math.imul(h^(v>>>0),0x85ebca6b)>>>0;h^=h>>>13;}return h||0x9e3779b9;}
+function setRodNoiseSeed(seed){rodNoiseState=(seed>>>0)||0x9e3779b9;}
+function rodDynamics(overrides={}){
+  const mode='temporal-hydro';
+  const temp=overrides.temperature??Math.max(0,+($('dynamics-temp')?.value||0));
+  const field=overrides.field??Math.max(0,+($('density-field')?.value||0));
+  return {mode,temperature:temp,field,dt:overrides.dt??CONT_DESCENT_DT,stepLimit:overrides.stepLimit??CONT_STEP_LIMIT,damp:overrides.damp??CONT_LANGEVIN_DAMP,gauge:overrides.gauge??CONT_GAUGE};
+}
+function dynamicsRunLabel(mode=rodDynamics().mode){
+  return GPU_ROD_SOLVER_ENABLED?'GPU temporal intrinsic + hydrophobic':'temporal intrinsic + hydrophobic';
+}
+function newContinuousState(i){const [x,y,cell]=sampleGridCenter(i);return {x,y,vx:0,vy:0,tx:0,ty:0,cell};}
+function resetContinuousAngles(){
+  continuousRod=null;rodNoiseState=0x9e3779b9;
+  continuousAngles=Array.from({length:SAMPLE_N*SAMPLE_N},(_,i)=>sampleActiveMask[i]?newContinuousState(i):null);
+}
+function ensureContinuousAngles(){
+  if(continuousAngles.length<SAMPLE_N*SAMPLE_N)resetContinuousAngles();
+  for(let i=0;i<SAMPLE_N*SAMPLE_N;i++){
+    if(sampleActiveMask[i]&&!continuousAngles[i])continuousAngles[i]=newContinuousState(i);
+    if(!sampleActiveMask[i])continuousAngles[i]=null;
+  }
+}
+function rodRestPoint(i){const [x,y]=sampleGridCenter(i);return [x,y];}
+function rodBendAngleAt(points,i){
+  const ax=points[i][0]-points[i-1][0],ay=points[i][1]-points[i-1][1],bx=points[i+1][0]-points[i][0],by=points[i+1][1]-points[i][1];
+  return Math.atan2(ax*by-ay*bx,ax*bx+ay*by);
+}
+function pathKey(path){return `hex:${SAMPLE_N}:${sampleDigitMask}:${path.join('-')}`;}
+function smoothCurveSample(points,i,t){
+  const p0=points[Math.max(0,i-1)],p1=points[i],p2=points[i+1],p3=points[Math.min(points.length-1,i+2)];
+  const c1x=p1[0]+(p2[0]-p0[0])/6,c1y=p1[1]+(p2[1]-p0[1])/6,c2x=p2[0]-(p3[0]-p1[0])/6,c2y=p2[1]-(p3[1]-p1[1])/6,u=1-t;
+  return [u*u*u*p1[0]+3*u*u*t*c1x+3*u*t*t*c2x+t*t*t*p2[0],u*u*u*p1[1]+3*u*u*t*c1y+3*u*t*t*c2y+t*t*t*p2[1]];
+}
+function smoothRestPathFromCenters(rest,subdiv=SMOOTH_ROD_SUBDIV){
+  if(rest.length<2)return rest.slice();
+  const out=[rest[0].slice()];
+  for(let i=0;i<rest.length-1;i++)for(let s=1;s<=subdiv;s++)out.push(smoothCurveSample(rest,i,s/subdiv));
+  return out;
+}
+function rodSimulationPath(path=wgpuSelectedPath,rod=ensureContinuousRod()){
+  return rod?.simPath?.length?rod.simPath:path;
+}
+function installSmoothRodNodes(rod,{reset=false}={}){
+  if(!rod?.simPath?.length)return;
+  for(let k=0;k<rod.simPath.length;k++){
+    const idx=rod.simPath[k],p=rod.rest[k];
+    let st=continuousAngles[idx];
+    if(!st){st={x:p[0],y:p[1],vx:0,vy:0,tx:0,ty:0,cell:rod.meanEll||1,virtual:true};continuousAngles[idx]=st;}
+    if(reset){st.x=p[0];st.y=p[1];st.vx=0;st.vy=0;}
+    st.cell=rod.meanEll||1;st.virtual=true;
+  }
+}
+function restHydropathyLabels(rest,meanEll){
+  const n=rest.length;if(!n)return [];
+  const cutoff=Math.max(1,meanEll*2.55),binSize=cutoff,bins=new Map(),rho=new Float64Array(n);
+  const put=(i)=>{
+    const p=rest[i],k=spatialBinKey(Math.floor(p[0]/binSize),Math.floor(p[1]/binSize));
+    let list=bins.get(k);if(!list)bins.set(k,list=[]);list.push(i);
+  };
+  for(let i=0;i<n;i++)put(i);
+  for(let i=0;i<n;i++){
+    const p=rest[i],bx=Math.floor(p[0]/binSize),by=Math.floor(p[1]/binSize);
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+      const list=bins.get(spatialBinKey(bx+ox,by+oy));if(!list)continue;
+      for(const j of list){
+        if(j<=i||Math.abs(j-i)<=2)continue;
+        const q=rest[j],d=Math.hypot(q[0]-p[0],q[1]-p[1]);
+        if(d>=cutoff)continue;
+        const w=(1-d/cutoff)**2;rho[i]+=w;rho[j]+=w;
+      }
+    }
+  }
+  const sorted=Array.from(rho).sort((a,b)=>a-b),lo=sorted[Math.floor((n-1)*.34)],hi=sorted[Math.floor((n-1)*.66)];
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,cx=0,cy=0;
+  for(const p of rest){minX=Math.min(minX,p[0]);minY=Math.min(minY,p[1]);maxX=Math.max(maxX,p[0]);maxY=Math.max(maxY,p[1]);cx+=p[0];cy+=p[1];}
+  cx/=n;cy/=n;
+  const maxR=Math.max(1,...rest.map(p=>Math.hypot(p[0]-cx,p[1]-cy)));
+  return rest.map((p,i)=>{
+    if(hi>lo){
+      if(rho[i]>=hi)return 1;
+      if(rho[i]<=lo)return -.75;
+      return 0;
+    }
+    const r=Math.hypot(p[0]-cx,p[1]-cy)/maxR;
+    return r<.55?1:r>.82?-.75:0;
+  });
+}
+function restSideHydropathyLabels(rest,meanEll){
+  if(rest.length<2)return [];
+  const cutoff=Math.max(1,meanEll*2.7),sideOffset=meanEll*.5;
+  const binSize=cutoff,bins=new Map();
+  let cx=0,cy=0;
+  for(const p of rest){cx+=p[0];cy+=p[1];}
+  cx/=rest.length;cy/=rest.length;
+  const maxR=Math.max(1,...rest.map(p=>Math.hypot(p[0]-cx,p[1]-cy)));
+  for(let i=0;i<rest.length;i++){
+    const p=rest[i],k=spatialBinKey(Math.floor(p[0]/binSize),Math.floor(p[1]/binSize));
+    let list=bins.get(k);if(!list)bins.set(k,list=[]);list.push(i);
+  }
+  function rhoAt(x,y,skipA=-1,skipB=-1){
+    let rho=0,bx=Math.floor(x/binSize),by=Math.floor(y/binSize);
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+      const list=bins.get(spatialBinKey(bx+ox,by+oy));if(!list)continue;
+      for(const i of list){
+        if(i===skipA||i===skipB)continue;
+        const p=rest[i],d=Math.hypot(p[0]-x,p[1]-y);
+        if(d>=cutoff)continue;
+        const q=1-d/cutoff;rho+=q*q;
+      }
+    }
+    return rho;
+  }
+  const raw=[];
+  for(let k=0;k<rest.length-1;k++){
+    const a=rest[k],b=rest[k+1],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,mx=(a[0]+b[0])*.5,my=(a[1]+b[1])*.5;
+    raw.push({
+      lx:mx+nx*sideOffset,ly:my+ny*sideOffset,rx:mx-nx*sideOffset,ry:my-ny*sideOffset,
+      left:rhoAt(mx+nx*sideOffset,my+ny*sideOffset,k,k+1),
+      right:rhoAt(mx-nx*sideOffset,my-ny*sideOffset,k,k+1)
+    });
+  }
+  const vals=raw.flatMap(s=>[s.left,s.right]).sort((a,b)=>a-b),lo=vals.length?vals[Math.floor((vals.length-1)*.08)]:0,hi=vals.length?vals[Math.floor((vals.length-1)*.92)]:0;
+  function sideLabel(v,x,y){
+    if(hi-lo>1e-6)return Math.max(0,Math.min(1,(v-lo)/(hi-lo)));
+    const r=Math.hypot(x-cx,y-cy)/maxR;
+    return Math.max(0,Math.min(1,1-r/.9));
+  }
+  return raw.map(s=>({left:sideLabel(s.left,s.lx,s.ly),right:sideLabel(s.right,s.rx,s.ry)}));
+}
+function restContactWeights(rest,meanEll,topologyMeanEll=meanEll){
+  if(rest.length<2)return [];
+  const topoEll=Math.max(1,topologyMeanEll||meanEll||1),radius=topoEll*1.15,sideOffset=topoEll*.32,binSize=radius;
+  const skip=Math.max(2,SMOOTH_ROD_SUBDIV*3),bins=new Map();
+  for(let i=0;i<rest.length;i++){
+    const p=rest[i],k=spatialBinKey(Math.floor(p[0]/binSize),Math.floor(p[1]/binSize));
+    let list=bins.get(k);if(!list)bins.set(k,list=[]);list.push(i);
+  }
+  function contactAt(x,y,k){
+    let rho=0,bx=Math.floor(x/binSize),by=Math.floor(y/binSize);
+    for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+      const list=bins.get(spatialBinKey(bx+ox,by+oy));if(!list)continue;
+      for(const i of list){
+        if(Math.abs(i-k)<=skip||Math.abs(i-(k+1))<=skip)continue;
+        const p=rest[i],d=Math.hypot(p[0]-x,p[1]-y);
+        if(d>=radius)continue;
+        const q=1-d/radius;rho+=q*q;
+      }
+    }
+    return Math.max(0,Math.min(1,Math.sqrt(rho)));
+  }
+  const out=[];
+  for(let k=0;k<rest.length-1;k++){
+    const a=rest[k],b=rest[k+1],dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,mx=(a[0]+b[0])*.5,my=(a[1]+b[1])*.5;
+    out.push({left:contactAt(mx+nx*sideOffset,my+ny*sideOffset,k),right:contactAt(mx-nx*sideOffset,my-ny*sideOffset,k)});
+  }
+  return out;
+}
+function hydroSigned(v){
+  return Math.max(-1,Math.min(1,2*(v??.5)-1));
+}
+function rodTargetKappa(rod,k){
+  return rod.kappa[k]*(rod.kappaScale??1);
+}
+function bakeContinuousRod(path){
+  const coarseRest=path.map(rodRestPoint),rest=smoothRestPathFromCenters(coarseRest),ell=[],kappa=[];
+  let topologyMeanEll=1;
+  if(coarseRest.length>1){
+    let total=0;
+    for(let i=0;i<coarseRest.length-1;i++)total+=Math.hypot(coarseRest[i+1][0]-coarseRest[i][0],coarseRest[i+1][1]-coarseRest[i][1]);
+    topologyMeanEll=total/(coarseRest.length-1);
+  }
+  for(let i=0;i<rest.length-1;i++)ell.push(Math.max(1e-3,Math.hypot(rest[i+1][0]-rest[i][0],rest[i+1][1]-rest[i][1])));
+  for(let i=1;i<rest.length-1;i++)kappa.push(rodBendAngleAt(rest,i));
+  const meanKappa=kappa.length?kappa.reduce((a,b)=>a+Math.abs(b),0)/kappa.length:0;
+  const meanEll=ell.length?ell.reduce((a,b)=>a+b,0)/ell.length:1;
+  const bendW=kappa.map((_,k)=>{
+    const dual=.5*((ell[k]||1)+(ell[k+1]||ell[k]||1));
+    return Math.max(.35,Math.min(2.5,meanEll/Math.max(1e-6,dual)));
+  });
+  const base=SAMPLE_N*SAMPLE_N,simPath=rest.map((_,i)=>base+i);
+  const hydro=restHydropathyLabels(rest,meanEll),sideHydro=restSideHydropathyLabels(rest,meanEll),restContactWeight=restContactWeights(rest,meanEll,topologyMeanEll);
+  continuousRod={key:pathKey(path),path:path.slice(),coarsePath:path.slice(),simPath,rest,coarseRest,ell,kappa,bendW,hydro,sideHydro,restContactWeight,theta:[],omega:[],solveScratch:null,projectScratch:null,kappaScale:0,foldRamp:true,temporalHydroTick:0,temporalHydroTime:0,guideTheta:null,energy:0,meanKappa,meanEll,topologyMeanEll,meanStrain:0,maxStrain:0,curvErr:0,statsFresh:false,restErr:null,hydroEnergy:0,hydroMeanRho:0};
+  installSmoothRodNodes(continuousRod,{reset:true});
+  return continuousRod;
+}
+function materializeSampleRod(path){
+  ensureContinuousAngles();
+  for(const i of path){
+    const st=continuousAngles[i];if(!st)continue;
+    const [x,y,cell]=sampleGridCenter(i);st.x=x;st.y=y;st.vx=0;st.vy=0;st.cell=cell;
+  }
+  continuousRod=null;bakeContinuousRod(path);updateRodEnergy(path);
+}
+function ensureContinuousRod(){
+  const path=wgpuSelectedPath;
+  if(path.length<2){continuousRod=null;return null;}
+  const key=pathKey(path);
+  const rod=continuousRod&&continuousRod.key===key?continuousRod:bakeContinuousRod(path);
+  installSmoothRodNodes(rod);
+  return rod;
+}
+function updateRodEnergy(path=wgpuSelectedPath){
+  const rod=ensureContinuousRod();if(!rod)return;
+  path=rodSimulationPath(path,rod);
+  let eStretch=0,eBend=0,strain=0,maxStrain=0,strainN=0,curvSum=0,curvN=0;
+  const bendBase=rodEnergyBendBase();
+  for(let k=0;k<path.length-1;k++){
+    const a=continuousAngles[path[k]],b=continuousAngles[path[k+1]];if(!a||!b)continue;
+    const target=rod.ell[k],dx=b.x-a.x,dy=b.y-a.y,L=Math.hypot(dx,dy)||1e-6,dL=L-target,edgeStrain=Math.abs(dL)/Math.max(1e-6,target);
+    eStretch+=.5*CONT_ROD_KS*dL*dL;strain+=edgeStrain;maxStrain=Math.max(maxStrain,edgeStrain);strainN++;
+  }
+  for(let k=1;k<path.length-1;k++){
+    const a=continuousAngles[path[k-1]],b=continuousAngles[path[k]],c=continuousAngles[path[k+1]];if(!a||!b||!c)continue;
+    const ux=b.x-a.x,uy=b.y-a.y,vx=c.x-b.x,vy=c.y-b.y,beta=Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy),dB=angleDelta(beta,rodTargetKappa(rod,k-1));
+    eBend+=.5*rodBendWeight(rod,k-1,bendBase)*dB*dB;
+    curvSum+=dB*dB;curvN++;
+  }
+  rod.energy=eStretch+eBend;rod.meanStrain=strainN?strain/strainN:0;rod.maxStrain=maxStrain;rod.curvErr=curvN?Math.sqrt(curvSum/curvN):0;rod.statsFresh=true;rod.restErr=null;
+}
+function rodEnergyBendBase(){
+  return foldParams.energyBend??foldParams.kappaBend??CONT_KAPPA_BEND;
+}
+function rodBendWeight(rod,k,base=(foldParams.kappaBend??CONT_KAPPA_BEND)){
+  return base*(rod.bendW?.[k]??1);
+}
+function domainDisplayCentroid(){
+  const domain=sampleDomain||buildSampleDomain();
+  if(domain.centroid)return domain.centroid;
+  let x=0,y=0,n=0;
+  for(const i of domain.denseToGrid){const p=sampleGridCenter(i);x+=p[0];y+=p[1];n++;}
+  return n?[x/n,y/n]:[200,200];
+}
+function syncRodTangents(path=wgpuSelectedPath){
+  const rod=ensureContinuousRod();if(!rod||path.length<2)return;
+  if(rod.theta.length===path.length-1)return;
+  rod.theta=[];rod.omega=[];
+  for(let k=0;k<path.length-1;k++){
+    const a=continuousAngles[path[k]],b=continuousAngles[path[k+1]];
+    rod.theta[k]=a&&b?Math.atan2(b.y-a.y,b.x-a.x):(rod.guideTheta??0);
+    rod.omega[k]=0;
+  }
+}
+function resetRodTangentsFromGeometry(path=wgpuSelectedPath,clearOmega=true){
+  const rod=ensureContinuousRod();if(!rod||path.length<2)return;
+  rod.theta=[];if(clearOmega)rod.omega=[];
+  for(let k=0;k<path.length-1;k++){
+    const a=continuousAngles[path[k]],b=continuousAngles[path[k+1]];
+    rod.theta[k]=a&&b?Math.atan2(b.y-a.y,b.x-a.x):(rod.guideTheta??0);
+    if(clearOmega)rod.omega[k]=0;
+  }
+  rod.statsFresh=false;rod.restErr=null;
+}
+function ensureRodSolveScratch(rod,n){
+  const s=rod.solveScratch;
+  if(s&&s.n>=n)return s;
+  return rod.solveScratch={n,lo:new Float64Array(n),diag:new Float64Array(n),hi:new Float64Array(n),rhs:new Float64Array(n),theta:new Float64Array(n),cp:new Float64Array(n),dp:new Float64Array(n),sol:new Float64Array(n),ld:new Float64Array(n),lsub:new Float64Array(n),therm:new Float64Array(n),cosTheta:new Float64Array(n),sinTheta:new Float64Array(n),factorKey:null};
+}
+function unwrapRodThetasInto(theta,out,n){
+  if(!n)return;
+  out[0]=theta[0]||0;
+  for(let k=1;k<n;k++)out[k]=out[k-1]+angleDelta(theta[k]||0,theta[k-1]||0);
+}
+function factorTridiagonalScratch(s,n,key=null){
+  if(key!=null&&s.factorKey===key)return;
+  const {lo,diag,ld,lsub}=s;
+  ld[0]=Math.abs(diag[0])<1e-9?(diag[0]<0?-1e-9:1e-9):diag[0];
+  lsub[0]=0;
+  for(let i=1;i<n;i++){
+    lsub[i]=lo[i]/ld[i-1];
+    let den=diag[i]-lsub[i]*lsub[i]*ld[i-1];
+    if(Math.abs(den)<1e-9)den=den<0?-1e-9:1e-9;
+    ld[i]=den;
+  }
+  s.factorKey=key??Symbol();
+}
+function solveTridiagonalScratch(s,n,key=null){
+  factorTridiagonalScratch(s,n,key);
+  const {rhs,dp,sol,ld,lsub}=s;
+  dp[0]=rhs[0];
+  for(let i=1;i<n;i++)dp[i]=rhs[i]-lsub[i]*dp[i-1];
+  for(let i=0;i<n;i++)dp[i]/=ld[i];
+  sol[n-1]=dp[n-1];
+  for(let i=n-2;i>=0;i--)sol[i]=dp[i]-lsub[i+1]*sol[i+1];
+  return sol;
+}
+function ensureRodProjectScratch(rod,n){
+  const s=rod.projectScratch;
+  if(s&&s.n>=n)return s;
+  return rod.projectScratch={n,x:new Float64Array(n),y:new Float64Array(n)};
+}
+function projectTemporalRodFromTangents(path,rod,centerStrength=.02){
+  if(!rod||path.length<2||continuousDrag)return;
+  const n=path.length,pts=ensureRodProjectScratch(rod,n),pxs=pts.x,pys=pts.y;
+  let cx=0,cy=0,x=0,y=0,px=0,py=0;
+  for(let k=0;k<n;k++){const st=continuousAngles[path[k]];if(!st)continue;cx+=st.x;cy+=st.y;}
+  cx/=n;cy/=n;pxs[0]=0;pys[0]=0;
+  for(let k=0;k<rod.theta.length;k++){
+    x+=Math.cos(rod.theta[k])*rod.ell[k];y+=Math.sin(rod.theta[k])*rod.ell[k];
+    pxs[k+1]=x;pys[k+1]=y;px+=x;py+=y;
+  }
+  px/=n;py/=n;
+  const c=sampleDomain?.centroid||domainDisplayCentroid(),targetCx=cx+(c[0]-cx)*centerStrength,targetCy=cy+(c[1]-cy)*centerStrength;
+  for(let k=0;k<n;k++){
+    const st=continuousAngles[path[k]];if(!st)continue;
+    const gx=targetCx+pxs[k]-px,gy=targetCy+pys[k]-py;
+    st.vx=gx-st.x;st.vy=gy-st.y;st.x=gx;st.y=gy;
+  }
+}
+function spatialBinKey(x,y){
+  return x>=-8192&&x<8192&&y>=-8192&&y<8192?(x+8192)*16384+(y+8192):`${x},${y}`;
+}
+function scheduleAllDigitFrame(fn){return setTimeout(fn,16);}
+function cancelAllDigitFrame(id){clearTimeout(id);}
+function continuousStats(opts={}){
+  ensureContinuousAngles();
+  const rod=ensureContinuousRod();let active=0;
+  if(rod&&(opts.fresh!==false||!rod.statsFresh))updateRodEnergy();
+  for(let i=0;i<continuousAngles.length;i++)if(continuousAngles[i])active++;
+  const path=rodSimulationPath(wgpuSelectedPath,rod);
+  return {active,rodEnergy:rod?rod.energy:0,meanKappa:rod?rod.meanKappa:0,meanStrain:rod?rod.meanStrain:0,maxStrain:rod?rod.maxStrain||0:0,restError:rodRestShapeError(path,opts),targeted:path.length};
+}
+function rodCurvatureError(path=wgpuSelectedPath){
+  const rod=ensureContinuousRod();if(!rod||path.length<2)return 0;
+  path=rodSimulationPath(path,rod);
+  let sum=0,n=0;
+  for(let k=1;k<path.length-1;k++){
+    const a=continuousAngles[path[k-1]],b=continuousAngles[path[k]],c=continuousAngles[path[k+1]];if(!a||!b||!c)continue;
+    const ux=b.x-a.x,uy=b.y-a.y,vx=c.x-b.x,vy=c.y-b.y,beta=Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy);
+    const d=angleDelta(beta,rodTargetKappa(rod,k-1));sum+=d*d;n++;
+  }
+  return n?Math.sqrt(sum/n):0;
+}
+function rodRestShapeError(path=wgpuSelectedPath,opts={}){
+  const rod=ensureContinuousRod();if(!rod)return 0;
+  path=rodSimulationPath(path,rod);
+  if(!rod||path.length<2||rod.rest.length!==path.length)return 0;
+  if(opts.fresh===false&&rod.restErr!=null)return rod.restErr;
+  let cx=0,cy=0,rx=0,ry=0,n=0;
+  for(let k=0;k<path.length;k++){
+    const st=continuousAngles[path[k]],rp=rod.rest[k];if(!st||!rp)continue;
+    cx+=st.x;cy+=st.y;rx+=rp[0];ry+=rp[1];n++;
+  }
+  if(!n)return 0;cx/=n;cy/=n;rx/=n;ry/=n;
+  let dot=0,cross=0;
+  for(let k=0;k<path.length;k++){
+    const st=continuousAngles[path[k]],rp=rod.rest[k];if(!st||!rp)continue;
+    const px=rp[0]-rx,py=rp[1]-ry,qx=st.x-cx,qy=st.y-cy;
+    dot+=px*qx+py*qy;cross+=px*qy-py*qx;
+  }
+  const ang=Math.atan2(cross,dot),ca=Math.cos(ang),sa=Math.sin(ang);
+  let sum=0,m=0;
+  for(let k=0;k<path.length;k++){
+    const st=continuousAngles[path[k]],rp=rod.rest[k];if(!st||!rp)continue;
+    const px=rp[0]-rx,py=rp[1]-ry,ax=ca*px-sa*py,ay=sa*px+ca*py,dx=(st.x-cx)-ax,dy=(st.y-cy)-ay;
+    sum+=dx*dx+dy*dy;m++;
+  }
+  const err=m?Math.sqrt(sum/m):0;
+  rod.restErr=err;
+  return err;
+}
+function initializeCurrentRodFromLine({render=true,start=true,seed=null}={}){
+  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return false;
+  const cx=200,y=200,restLen=rod.ell.reduce((a,b)=>a+b,0)||316,x0=cx-restLen/2,x1=cx+restLen/2;
+  for(let k=0;k<path.length;k++){
+    const st=continuousAngles[path[k]];if(!st)continue;
+    const t=k/(path.length-1||1);st.x=x0+(x1-x0)*t;st.y=y;st.vx=0;st.vy=0;st.tx=0;st.ty=0;
+  }
+  rod.kappaScale=0;rod.foldRamp=true;rod.temporalHydroTick=0;rod.temporalHydroTime=0;rod.guideTheta=Math.atan2(0,x1-x0);rod.theta=rod.ell.map(()=>rod.guideTheta);
+  rodNoiseState=(seed!=null?((seed>>>0)||0x7f4a7c15):(((Date.now()^Math.floor(performance.now()*1000)^Math.imul(sampleSteps+1,2654435761))>>>0)||0x7f4a7c15));
+  const jitter=Math.min(5,Math.max(1.6,(path.length?sampleGridCenter(path[0])[2]:16)*.22))*(foldParams.lineJitter??1);
+  if(jitter){
+    for(let k=1;k<path.length-1;k++){
+      const st=continuousAngles[path[k]],t=k/(path.length-1||1);if(!st)continue;
+      const envelope=Math.sin(Math.PI*t);
+      st.y+=rodNormal()*jitter*envelope;
+      st.x+=rodNormal()*jitter*.18*envelope;
+    }
+  }
+  const omegaJitter=foldParams.omegaJitter??1;
+  rod.omega=rod.ell.map((_,k)=>k?rodNormal()*.075*omegaJitter:0);
+  updateRodEnergy();if(render)renderAllDigitBoard({forceStats:true});
+  if(render)$('status').textContent=`folding from ${jitter||omegaJitter?'noisy':'straight'} line · ${path.length} rod nodes · E ${continuousStats().rodEnergy.toFixed(1)}`;
+  if(start)startAllDigitLoop();
+  return true;
+}
+function rodPoint(i){const st=continuousAngles[i];return st?[st.x,st.y]:sampleGridCenter(i);}
+function hydroColor(h){
+  h=Math.max(0,Math.min(1,(h+1)*.5));
+  const stops=[[213,155,47],[63,143,107],[47,111,159]],t=h*2,i=Math.min(1,Math.floor(t)),f=t-i,a=stops[i],b=stops[i+1];
+  return `rgb(${Math.round(a[0]*(1-f)+b[0]*f)},${Math.round(a[1]*(1-f)+b[1]*f)},${Math.round(a[2]*(1-f)+b[2]*f)})`;
+}
+function hydroSegmentColor(rod,k){
+  const side=rod?.sideHydro?.[k];
+  if(side){
+    return hydroColor(((side.left??.5)+(side.right??.5)-1));
+  }
+  const h=((rod?.hydro?.[k]??0)+(rod?.hydro?.[k+1]??rod?.hydro?.[k]??0))*.5;
+  return hydroColor(h);
+}
+function hydroSideBucketColor(v,buckets=31){
+  const h=hydroSigned(v),u=Math.round(Math.max(0,Math.min(1,(h+1)*.5))*(buckets-1))/(buckets-1);
+  return hydroColor(u*2-1);
+}
+function rodOffsetNormals(pts){
+  return pts.map((p,i)=>{
+    const a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],tx=b[0]-a[0],ty=b[1]-a[1],len=Math.hypot(tx,ty)||1;
+    return [-ty/len,tx/len];
+  });
+}
+function digitSampleMasks(n=SAMPLE_N){
+  const canvas=document.createElement?.('canvas');if(!canvas?.getContext)return Array.from({length:10},()=>defaultSampleMask());
+  canvas.width=4000;canvas.height=400;const ctx=canvas.getContext('2d');ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#000';ctx.textAlign='center';ctx.textBaseline='middle';ctx.font='900 330px Arial, Helvetica, sans-serif';
+  for(let d=0;d<10;d++)ctx.fillText(String(d),d*400+200,212);
+  const alpha=ctx.getImageData(0,0,canvas.width,canvas.height).data,masks=Array.from({length:10},()=>Array(n*n).fill(false)),probes=[[0,0],[.35,0],[-.35,0],[0,.35],[0,-.35],[.24,.24],[-.24,-.24]];
+  for(let d=0;d<10;d++)for(let i=0;i<n*n;i++){
+    if(!sampleCellValid(i))continue;
+    const [x,y,cell]=sampleGridCenter(i,n);let hit=0;
+    for(const [dx,dy] of probes){
+      const px=Math.max(0,Math.min(399,Math.round(x+dx*cell))),py=Math.max(0,Math.min(399,Math.round(y+dy*cell)));
+      if(alpha[(py*canvas.width+d*400+px)*4+3]>64)hit++;
+    }
+    masks[d][i]=hit>=2;
+  }
+  return masks;
+}
+function buildSampleDomain(){
+  const gridToDense=Array(SAMPLE_N*SAMPLE_N).fill(-1),denseToGrid=[],edges=[];
+  for(let i=0;i<sampleActiveMask.length;i++)if(sampleCellValid(i)&&sampleActiveMask[i]){gridToDense[i]=denseToGrid.length;denseToGrid.push(i);}
+  for(let r=0;r<SAMPLE_N;r++)for(let c=0;c<SAMPLE_N;c++){
+    const a=gridToDense[r*SAMPLE_N+c];if(a<0)continue;
+    if(c+1<SAMPLE_N){const b=gridToDense[r*SAMPLE_N+c+1];if(b>=0)edges.push([a,b]);}
+    if(r+1<SAMPLE_N){const b=gridToDense[(r+1)*SAMPLE_N+c];if(b>=0)edges.push([a,b]);}
+    if(r+1<SAMPLE_N){const cc=(r&1)?c+1:c-1;if(cc>=0&&cc<SAMPLE_N){const b=gridToDense[(r+1)*SAMPLE_N+cc];if(b>=0)edges.push([a,b]);}}
+  }
+  const adj=Array.from({length:denseToGrid.length},()=>[]);
+  for(const [a,b] of edges){adj[a].push(b);adj[b].push(a);}
+  let connected=denseToGrid.length>0;
+  if(connected){const seen=new Set([0]),q=[0];for(let qi=0;qi<q.length;qi++)for(const nb of adj[q[qi]])if(!seen.has(nb)){seen.add(nb);q.push(nb);}connected=seen.size===denseToGrid.length;}
+  const adjBits=new Uint32Array(WGPU_MAX_CELLS*WGPU_ADJ_WORDS);
+  for(let a=0;a<adj.length;a++)for(const b of adj[a])adjBits[a*WGPU_ADJ_WORDS+(b>>>5)]|=1<<(b&31);
+  const edgeData=new Uint32Array(WGPU_MAX_EDGE_SLOTS*2);
+  edges.slice(0,WGPU_MAX_EDGE_SLOTS).forEach(([a,b],i)=>{edgeData[i*2]=a;edgeData[i*2+1]=b;});
+  let cx=0,cy=0;
+  for(const i of denseToGrid){const p=sampleGridCenter(i);cx+=p[0];cy+=p[1];}
+  const centroid=denseToGrid.length?[cx/denseToGrid.length,cy/denseToGrid.length]:[200,200];
+  return {cells:denseToGrid.length,edges,adj,adjBits,edgeData,gridToDense,denseToGrid,connected,centroid};
+}
+function cloneAngles(src=continuousAngles){return src.map(st=>st?{...st}:null);}
+function cloneRod(src=continuousRod){
+  return src?{
+    key:src.key,path:src.path?.slice()||[],coarsePath:src.coarsePath?.slice()||[],simPath:src.simPath?.slice()||[],rest:src.rest?.map(p=>p.slice())||[],coarseRest:src.coarseRest?.map(p=>p.slice())||[],ell:src.ell?.slice()||[],kappa:src.kappa?.slice()||[],bendW:src.bendW?.slice()||[],hydro:src.hydro?.slice()||[],topologyMeanEll:src.topologyMeanEll??src.meanEll??1,
+    sideHydro:src.sideHydro?.map(s=>({...s}))||[],
+    restContactWeight:src.restContactWeight?.map(s=>({...s}))||[],
+    theta:src.theta?.slice()||[],omega:src.omega?.slice()||[],solveScratch:null,projectScratch:null,kappaScale:src.kappaScale??1,foldRamp:!!src.foldRamp,
+    hydroEnergy:src.hydroEnergy??0,hydroMeanRho:src.hydroMeanRho??0,temporalHydroTick:src.temporalHydroTick??0,temporalHydroTime:src.temporalHydroTime??0,guideTheta:src.guideTheta??null,energy:src.energy??0,curvErr:src.curvErr??0,restErr:src.restErr??null,statsFresh:!!src.statsFresh,meanKappa:src.meanKappa??0,meanEll:src.meanEll??1,meanStrain:src.meanStrain??0,maxStrain:src.maxStrain??0
+  }:null;
+}
+function pathUsesDomainEdges(path,domain=sampleDomain){
+  if(!domain||path.length!==domain.cells)return false;
+  const active=new Set(domain.denseToGrid),edges=new Set(domain.edges.map(([a,b])=>`${Math.min(domain.denseToGrid[a],domain.denseToGrid[b])}-${Math.max(domain.denseToGrid[a],domain.denseToGrid[b])}`)),seen=new Set();
+  for(const v of path){if(!active.has(v)||seen.has(v))return false;seen.add(v);}
+  for(let i=0;i<path.length-1;i++){const a=path[i],b=path[i+1];if(!edges.has(`${Math.min(a,b)}-${Math.max(a,b)}`))return false;}
+  return true;
+}
+function selectedDensePath(sp,domain){
+  if(!sp||sp[0]!==1||!domain)return [];
+  const path=[];
+  for(let i=0;i<domain.cells;i++){const dense=sp[i+1];if(dense<domain.denseToGrid.length)path.push(domain.denseToGrid[dense]);}
+  return path;
+}
+function withDigitState(st,fn){
+  const epoch=allDigitEpoch;
+  const saved={digit:sampleDigitMask,mask:sampleActiveMask,domain:sampleDomain,path:wgpuSelectedPath,angles:continuousAngles,rod:continuousRod};
+  sampleDigitMask=st.digit;sampleActiveMask=st.mask;sampleDomain=st.domain;wgpuSelectedPath=st.path;continuousAngles=st.angles;continuousRod=st.rod;
+  const restore=()=>{
+    const stillOwnsGlobals=sampleDigitMask===st.digit&&sampleActiveMask===st.mask&&sampleDomain===st.domain&&wgpuSelectedPath===st.path&&continuousAngles===st.angles&&continuousRod===st.rod;
+    if(epoch===allDigitEpoch){
+      st.path=wgpuSelectedPath;st.angles=continuousAngles;st.rod=continuousRod;st.domain=sampleDomain;
+      sampleDigitMask=saved.digit;sampleActiveMask=saved.mask;sampleDomain=saved.domain;wgpuSelectedPath=saved.path;continuousAngles=saved.angles;continuousRod=saved.rod;
+    }else if(stillOwnsGlobals){
+      sampleDigitMask=saved.digit;sampleActiveMask=saved.mask;sampleDomain=saved.domain;wgpuSelectedPath=saved.path;continuousAngles=saved.angles;continuousRod=saved.rod;
+    }
+  };
+  try{
+    const out=fn(st);
+    if(out&&typeof out.then==='function')return out.finally(restore);
+    restore();return out;
+  }catch(err){
+    restore();throw err;
+  }
+}
+function addTemporalModeNoise(delta,E,temp,dt){
+  if(!(temp>0)||E<3)return;
+  const modes=Math.min(5,Math.max(2,Math.floor(Math.sqrt(E)*.7)));
+  for(let m=1;m<=modes;m++){
+    const amp=rodNormal()*Math.sqrt(2*temp*dt)*.055/(m*m);
+    const phase=rodRand()*TAU;
+    for(let k=0;k<E;k++){
+      const x=(k+.5)/E;
+      delta[k]+=amp*Math.sin(Math.PI*m*x+phase);
+    }
+  }
+}
+async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
+  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<3)return;
+  if(continuousDrag){resetRodTangentsFromGeometry(path,false);return;}
+  rod.statsFresh=false;
+  syncRodTangents(path);
+  const dyn=baseDyn||rodDynamics(),E=rod.theta.length,baseTemp=Math.max(0,dyn.temperature);
+  const curv0=rod.curvErr??rodCurvatureError(path);
+  const scheduleTime=rod.temporalHydroTime??0,useScheduleTime=foldParams.temporalHydroUseTime===true;
+  const anneal=foldParams.temporalHydroAnneal===true&&baseTemp>0,annealAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
+  const annealTau=Math.max(1e-6,useScheduleTime?(foldParams.temporalHydroAnnealTauTime??(foldParams.temporalHydroAnnealTau??28)*4*(foldParams.temporalHydroDt??.035)):(foldParams.temporalHydroAnnealTau??28));
+  const annealFloor=foldParams.temporalHydroAnnealFloor??.08;
+  const tempAt=age=>anneal?baseTemp*(annealFloor+(1-annealFloor)*Math.exp(-age/annealTau)):baseTemp;
+  const temp=tempAt(annealAge);
+  const defaultSubsteps=temp>0?4:5,lateAt=useScheduleTime?(foldParams.temporalHydroLateSubstepsTime??(foldParams.temporalHydroLateSubstepsTick??Infinity)*4*(foldParams.temporalHydroDt??.035)):(foldParams.temporalHydroLateSubstepsTick??Infinity),scheduleAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
+  let baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroSubsteps??defaultSubsteps));
+  if(scheduleAge>=lateAt&&rod.kappaScale>=1&&Number.isFinite(foldParams.temporalHydroLateSubsteps))baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroLateSubsteps));
+  const smoothScale=rod.simPath?.length?1:TEMPORAL_HYDRO_SPEED,substeps=baseSubsteps*smoothScale,dt=foldParams.temporalHydroDt??.035,angleMobility=foldParams.temporalHydroMobility??.10,maxAngleStep=foldParams.temporalHydroMaxAngleStep??(temp>0?.14:.09),bendBase=foldParams.temporalHydroBend??18,inertia=foldParams.temporalHydroInertia??.40;
+  const bendDtScale=foldParams.temporalHydroScaleBendDt===false?1:dt/(foldParams.temporalHydroRefDt??.035);
+  const substepKappaRamp=foldParams.temporalHydroSubstepKappaRamp===true;
+  let kappaRampStep=0;
+  if(rod.foldRamp){
+    const rampBase=Number.isFinite(foldParams.temporalHydroKappaRate)?Math.max(1e-4,foldParams.temporalHydroKappaRate):(curv0<foldParams.fastErr?foldParams.fast:curv0<foldParams.midErr?foldParams.mid:foldParams.slow);
+    const refSubsteps=foldParams.temporalHydroKappaRefSubsteps??(baseTemp>0?4:5),refDt=foldParams.temporalHydroRefDt??.035;
+    const rampStep=foldParams.temporalHydroScaleKappaDt===false?rampBase:rampBase*(substeps*dt)/Math.max(1e-6,refSubsteps*refDt);
+    kappaRampStep=substepKappaRamp?rampStep/Math.max(1,substeps):rampStep;
+    if(!substepKappaRamp)rod.kappaScale=Math.min(1,(rod.kappaScale??0)+kappaRampStep);
+    if(rod.kappaScale>=1){rod.kappaScale=1;rod.foldRamp=false;}
+  }
+  const scratch=ensureRodSolveScratch(rod,E+1),{lo,diag,hi,rhs,theta,sol}=scratch,noiseDelta=scratch.cosTheta;
+  for(let s=0;s<substeps;s++){
+    if(substepKappaRamp&&rod.foldRamp){
+      rod.kappaScale=Math.min(1,(rod.kappaScale??0)+kappaRampStep);
+      if(rod.kappaScale>=1){rod.kappaScale=1;rod.foldRamp=false;}
+    }
+    unwrapRodThetasInto(rod.theta,theta,E);
+    lo.fill(0,0,E);hi.fill(0,0,E);diag.fill(inertia,0,E);rhs.fill(0,0,E);
+    const stepAge=foldParams.temporalHydroSubstepAnneal===true?(useScheduleTime?scheduleTime+s*dt:(rod.temporalHydroTick??0)+s/Math.max(1,substeps)):annealAge;
+    const stepTemp=tempAt(stepAge);
+    noiseDelta.fill(0,0,E);
+    if(stepTemp>0)addTemporalModeNoise(noiseDelta,E,stepTemp,dt);
+    const sigma=stepTemp>0?Math.sqrt(2*angleMobility*stepTemp*.018*dt):0;
+    for(let k=0;k<E;k++)rhs[k]=inertia*(theta[k]+noiseDelta[k]+(sigma?rodNormal()*sigma:0));
+    for(let k=0;k<E-1;k++){
+      const c=rodBendWeight(rod,k,bendBase)*bendDtScale;
+      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*rodTargetKappa(rod,k);rhs[k+1]+=c*rodTargetKappa(rod,k);
+    }
+    solveTridiagonalScratch(scratch,E,foldParams.cacheFactor===false?null:`temporal|${E}|${bendBase}|${inertia}`);
+    for(let k=0;k<E;k++){
+      let d=angleDelta(sol[k],theta[k]);
+      if(d>maxAngleStep)d=maxAngleStep;else if(d<-maxAngleStep)d=-maxAngleStep;
+      rod.omega[k]=d;rod.theta[k]=wrapAngle((rod.theta[k]||0)+d);
+    }
+    projectTemporalRodFromTangents(path,rod,.02);
+  }
+  updateRodEnergy(path);
+  rod.hydroEnergy=0;rod.hydroMeanRho=0;
+  rod.temporalHydroTick=(rod.temporalHydroTick??0)+1;
+  rod.temporalHydroTime=(rod.temporalHydroTime??0)+substeps*dt;
+}
+async function stepCurrentRodDynamics(base){
+  const rod=ensureContinuousRod();if(!rod||wgpuSelectedPath.length<2)return;
+  await stepTemporalIntrinsicHydrophobicDynamics(base);
+}
+const GPU_ROD_SHADER=`
+@group(0) @binding(0) var<storage,read> cfg:array<f32>;
+@group(0) @binding(1) var<storage,read_write> pts:array<vec4f>;
+@group(0) @binding(2) var<storage,read> ell:array<f32>;
+@group(0) @binding(3) var<storage,read> kappa:array<f32>;
+@group(0) @binding(4) var<storage,read> bendW:array<f32>;
+@group(0) @binding(5) var<storage,read_write> theta:array<f32>;
+@group(0) @binding(6) var<storage,read_write> scratch:array<f32>;
+fn n_nodes()->u32{return u32(cfg[0]);}
+fn n_edges()->u32{return select(0u,n_nodes()-1u,n_nodes()>0u);}
+fn wrap_angle(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a<0.0){a=a+tau;}return a;}
+fn angle_delta(a:f32,b:f32)->f32{let tau=6.28318530718;var d=wrap_angle(a-b);if(d>3.14159265359){d=d-tau;}return d;}
+fn s_theta(i:u32)->u32{return i;}
+fn s_lo(i:u32)->u32{return n_edges()+i;}
+fn s_diag(i:u32)->u32{return n_edges()*2u+i;}
+fn s_hi(i:u32)->u32{return n_edges()*3u+i;}
+fn s_rhs(i:u32)->u32{return n_edges()*4u+i;}
+fn s_sol(i:u32)->u32{return n_edges()*5u+i;}
+@compute @workgroup_size(1)
+fn solve(@builtin(global_invocation_id) gid:vec3u){
+  if(gid.x!=0u){return;}
+  let n=n_nodes();let e=n_edges();
+  if(n<2u||e==0u){return;}
+  scratch[s_theta(0u)]=theta[0u];
+  for(var i=1u;i<512u;i++){
+    if(i>=e){break;}
+    scratch[s_theta(i)]=scratch[s_theta(i-1u)]+angle_delta(theta[i],theta[i-1u]);
+  }
+  let inertia=max(cfg[4],1e-6);let bendBase=cfg[2];let bendDtScale=cfg[3];let kappaScale=cfg[1];
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    scratch[s_lo(i)]=0.0;scratch[s_hi(i)]=0.0;scratch[s_diag(i)]=inertia;scratch[s_rhs(i)]=inertia*scratch[s_theta(i)];
+  }
+  for(var i=0u;i<512u;i++){
+    if(i+1u>=e){break;}
+    let c=bendW[i]*bendBase*bendDtScale;
+    scratch[s_diag(i)]=scratch[s_diag(i)]+c;scratch[s_diag(i+1u)]=scratch[s_diag(i+1u)]+c;
+    scratch[s_hi(i)]=scratch[s_hi(i)]-c;scratch[s_lo(i+1u)]=scratch[s_lo(i+1u)]-c;
+    let targetKappa=kappa[i]*kappaScale;
+    scratch[s_rhs(i)]=scratch[s_rhs(i)]-c*targetKappa;scratch[s_rhs(i+1u)]=scratch[s_rhs(i+1u)]+c*targetKappa;
+  }
+  for(var i=1u;i<512u;i++){
+    if(i>=e){break;}
+    var den=scratch[s_diag(i-1u)];
+    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
+    let m=scratch[s_lo(i)]/den;
+    scratch[s_diag(i)]=scratch[s_diag(i)]-m*scratch[s_hi(i-1u)];
+    scratch[s_rhs(i)]=scratch[s_rhs(i)]-m*scratch[s_rhs(i-1u)];
+  }
+  let last=e-1u;
+  var lastDen=scratch[s_diag(last)];
+  if(abs(lastDen)<1e-6){lastDen=select(-1e-6,1e-6,lastDen>=0.0);}
+  scratch[s_sol(last)]=scratch[s_rhs(last)]/lastDen;
+  for(var back=0u;back<512u;back++){
+    if(back+1u>=e){break;}
+    let i=last-1u-back;
+    var den=scratch[s_diag(i)];
+    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
+    scratch[s_sol(i)]=(scratch[s_rhs(i)]-scratch[s_hi(i)]*scratch[s_sol(i+1u)])/den;
+  }
+  let maxAngleStep=max(0.0,cfg[5]);
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    var d=angle_delta(scratch[s_sol(i)],scratch[s_theta(i)]);
+    d=clamp(d,-maxAngleStep,maxAngleStep);
+    theta[i]=wrap_angle(theta[i]+d);
+  }
+  var cx=0.0;var cy=0.0;
+  for(var i=0u;i<512u;i++){
+    if(i>=n){break;}
+    cx=cx+pts[i].x;cy=cy+pts[i].y;
+  }
+  cx=cx/f32(n);cy=cy/f32(n);
+  var x=0.0;var y=0.0;var px=0.0;var py=0.0;
+  pts[0u]=vec4f(pts[0u].xy,0.0,0.0);
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    x=x+cos(theta[i])*ell[i];y=y+sin(theta[i])*ell[i];
+    pts[i+1u]=vec4f(pts[i+1u].xy,x,y);
+    px=px+x;py=py+y;
+  }
+  px=px/f32(n);py=py/f32(n);
+  let centerStrength=cfg[6];let tx=cx+(cfg[7]-cx)*centerStrength;let ty=cy+(cfg[8]-cy)*centerStrength;
+  for(var i=0u;i<512u;i++){
+    if(i>=n){break;}
+    let local=pts[i].zw;pts[i]=vec4f(tx+local.x-px,ty+local.y-py,0.0,0.0);
+  }
+}
+`;
+const GPU_ROD_BATCH_SHADER=`
+@group(0) @binding(0) var<storage,read> cfg:array<f32>;
+@group(0) @binding(1) var<storage,read> rodMeta:array<vec4u>;
+@group(0) @binding(2) var<storage,read> params:array<vec4f>;
+@group(0) @binding(3) var<storage,read_write> pts:array<vec4f>;
+@group(0) @binding(4) var<storage,read> ell:array<f32>;
+@group(0) @binding(5) var<storage,read> kappa:array<f32>;
+@group(0) @binding(6) var<storage,read> bendW:array<f32>;
+@group(0) @binding(7) var<storage,read_write> theta:array<f32>;
+@group(0) @binding(8) var<storage,read_write> scratch:array<f32>;
+fn wrap_angle(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a<0.0){a=a+tau;}return a;}
+fn angle_delta(a:f32,b:f32)->f32{let tau=6.28318530718;var d=wrap_angle(a-b);if(d>3.14159265359){d=d-tau;}return d;}
+fn hash_u32(x0:u32)->u32{var x=x0+0x9e3779b9u;x=(x^(x>>16u))*0x85ebca6bu;x=(x^(x>>13u))*0xc2b2ae35u;return x^(x>>16u);}
+fn rand01(seed:u32,rodId:u32,substep:u32,i:u32,channel:u32)->f32{
+  let h=hash_u32(seed^hash_u32(rodId+0x632be59bu)^hash_u32(substep+0x85157af5u)^hash_u32(i+channel*0x9e3779b9u));
+  return (f32(h)+0.5)/4294967296.0;
+}
+fn rand_normal(seed:u32,rodId:u32,substep:u32,i:u32,channel:u32)->f32{
+  let u=max(1e-9,rand01(seed,rodId,substep,i,channel));let v=rand01(seed,rodId,substep,i,channel+17u);
+  return sqrt(-2.0*log(u))*cos(6.28318530718*v);
+}
+fn s_theta(base:u32,e:u32,i:u32)->u32{return base+i;}
+fn s_lo(base:u32,e:u32,i:u32)->u32{return base+e+i;}
+fn s_diag(base:u32,e:u32,i:u32)->u32{return base+e*2u+i;}
+fn s_hi(base:u32,e:u32,i:u32)->u32{return base+e*3u+i;}
+fn s_rhs(base:u32,e:u32,i:u32)->u32{return base+e*4u+i;}
+fn s_sol(base:u32,e:u32,i:u32)->u32{return base+e*5u+i;}
+fn s_lx(base:u32,e:u32,i:u32)->u32{return base+e*6u+i;}
+fn s_ly(base:u32,e:u32,n:u32,i:u32)->u32{return base+e*6u+n+i;}
+@compute @workgroup_size(1)
+fn solve(@builtin(global_invocation_id) gid:vec3u){
+  let rodId=gid.x;let rodCount=u32(cfg[0]);
+  if(rodId>=rodCount){return;}
+  let m=rodMeta[rodId];let node0=m.x;let n=m.y;let edge0=m.z;let scratch0=m.w;
+  if(n<2u){return;}
+  let e=n-1u;
+  if(e>512u){return;}
+  scratch[s_theta(scratch0,e,0u)]=theta[edge0];
+  for(var i=1u;i<512u;i++){
+    if(i>=e){break;}
+    scratch[s_theta(scratch0,e,i)]=scratch[s_theta(scratch0,e,i-1u)]+angle_delta(theta[edge0+i],theta[edge0+i-1u]);
+  }
+  let p=params[rodId];let kappaScale=p.x;let stepTemp=max(0.0,p.w);
+  let bendBase=cfg[1];let bendDtScale=cfg[2];let inertia=max(cfg[3],1e-6);let maxAngleStep=max(0.0,cfg[4]);
+  let angleMobility=cfg[6];let dt=cfg[7];let seed=u32(cfg[8]);let substepId=u32(cfg[9]);
+  let modeCount=min(5u,max(2u,u32(floor(sqrt(f32(e))*0.7))));
+  let modeAmpScale=sqrt(2.0*stepTemp*dt)*0.055;
+  let sigma=select(0.0,sqrt(2.0*angleMobility*stepTemp*0.018*dt),stepTemp>0.0);
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    var noiseDelta=0.0;
+    if(stepTemp>0.0&&e>=3u){
+      for(var mode=1u;mode<=5u;mode++){
+        if(mode>modeCount){break;}
+        let mf=f32(mode);
+        let amp=rand_normal(seed,rodId,substepId,mode,3u)*modeAmpScale/(mf*mf);
+        let phase=rand01(seed,rodId,substepId,mode,29u)*6.28318530718;
+        noiseDelta=noiseDelta+amp*sin(3.14159265359*mf*((f32(i)+0.5)/f32(e))+phase);
+      }
+    }
+    let edgeNoise=select(0.0,rand_normal(seed,rodId,substepId,i,53u)*sigma,stepTemp>0.0);
+    scratch[s_lo(scratch0,e,i)]=0.0;scratch[s_hi(scratch0,e,i)]=0.0;
+    scratch[s_diag(scratch0,e,i)]=inertia;scratch[s_rhs(scratch0,e,i)]=inertia*(scratch[s_theta(scratch0,e,i)]+noiseDelta+edgeNoise);
+  }
+  for(var i=0u;i<512u;i++){
+    if(i+1u>=e){break;}
+    let c=bendW[edge0+i]*bendBase*bendDtScale;
+    scratch[s_diag(scratch0,e,i)]=scratch[s_diag(scratch0,e,i)]+c;
+    scratch[s_diag(scratch0,e,i+1u)]=scratch[s_diag(scratch0,e,i+1u)]+c;
+    scratch[s_hi(scratch0,e,i)]=scratch[s_hi(scratch0,e,i)]-c;
+    scratch[s_lo(scratch0,e,i+1u)]=scratch[s_lo(scratch0,e,i+1u)]-c;
+    let targetKappa=kappa[edge0+i]*kappaScale;
+    scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-c*targetKappa;
+    scratch[s_rhs(scratch0,e,i+1u)]=scratch[s_rhs(scratch0,e,i+1u)]+c*targetKappa;
+  }
+  for(var i=1u;i<512u;i++){
+    if(i>=e){break;}
+    var den=scratch[s_diag(scratch0,e,i-1u)];
+    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
+    let mval=scratch[s_lo(scratch0,e,i)]/den;
+    scratch[s_diag(scratch0,e,i)]=scratch[s_diag(scratch0,e,i)]-mval*scratch[s_hi(scratch0,e,i-1u)];
+    scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-mval*scratch[s_rhs(scratch0,e,i-1u)];
+  }
+  let last=e-1u;
+  var lastDen=scratch[s_diag(scratch0,e,last)];
+  if(abs(lastDen)<1e-6){lastDen=select(-1e-6,1e-6,lastDen>=0.0);}
+  scratch[s_sol(scratch0,e,last)]=scratch[s_rhs(scratch0,e,last)]/lastDen;
+  for(var back=0u;back<512u;back++){
+    if(back+1u>=e){break;}
+    let i=last-1u-back;
+    var den=scratch[s_diag(scratch0,e,i)];
+    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
+    scratch[s_sol(scratch0,e,i)]=(scratch[s_rhs(scratch0,e,i)]-scratch[s_hi(scratch0,e,i)]*scratch[s_sol(scratch0,e,i+1u)])/den;
+  }
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    var d=angle_delta(scratch[s_sol(scratch0,e,i)],scratch[s_theta(scratch0,e,i)]);
+    d=clamp(d,-maxAngleStep,maxAngleStep);
+    theta[edge0+i]=wrap_angle(theta[edge0+i]+d);
+  }
+  var cx=0.0;var cy=0.0;
+  for(var i=0u;i<513u;i++){
+    if(i>=n){break;}
+    let q=pts[node0+i];cx=cx+q.x;cy=cy+q.y;
+  }
+  cx=cx/f32(n);cy=cy/f32(n);
+  var x=0.0;var y=0.0;var px=0.0;var py=0.0;
+  scratch[s_lx(scratch0,e,0u)]=0.0;scratch[s_ly(scratch0,e,n,0u)]=0.0;
+  for(var i=0u;i<512u;i++){
+    if(i>=e){break;}
+    x=x+cos(theta[edge0+i])*ell[edge0+i];y=y+sin(theta[edge0+i])*ell[edge0+i];
+    scratch[s_lx(scratch0,e,i+1u)]=x;scratch[s_ly(scratch0,e,n,i+1u)]=y;
+    px=px+x;py=py+y;
+  }
+  px=px/f32(n);py=py/f32(n);
+  let centerStrength=cfg[5];let tx=cx+(p.y-cx)*centerStrength;let ty=cy+(p.z-cy)*centerStrength;
+  for(var i=0u;i<513u;i++){
+    if(i>=n){break;}
+    let local=vec2f(scratch[s_lx(scratch0,e,i)],scratch[s_ly(scratch0,e,n,i)]);
+    let old=pts[node0+i];pts[node0+i]=vec4f(tx+local.x-px,ty+local.y-py,old.z,old.w);
+  }
+}
+`;
+let gpuRodSolver=null;
+let gpuRodBatchSolver=null;
+function gpuRodSchedule(path,rod,dynOverrides={}){
+  const baseTemp=Math.max(0,dynOverrides.temperature??0);
+  const dt=foldParams.temporalHydroDt??.035,bendBase=foldParams.temporalHydroBend??18,inertia=foldParams.temporalHydroInertia??.40,bendDtScale=foldParams.temporalHydroScaleBendDt===false?1:dt/(foldParams.temporalHydroRefDt??.035);
+  const anneal=foldParams.temporalHydroAnneal===true&&baseTemp>0,scheduleTime=rod.temporalHydroTime??0,useScheduleTime=foldParams.temporalHydroUseTime===true,annealAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
+  const annealTau=Math.max(1e-6,useScheduleTime?(foldParams.temporalHydroAnnealTauTime??(foldParams.temporalHydroAnnealTau??28)*4*dt):(foldParams.temporalHydroAnnealTau??28));
+  const annealFloor=foldParams.temporalHydroAnnealFloor??.08,tempAt=age=>anneal?baseTemp*(annealFloor+(1-annealFloor)*Math.exp(-age/annealTau)):baseTemp,temp=tempAt(annealAge);
+  const maxAngleStep=foldParams.temporalHydroMaxAngleStep??(temp>0?.14:.09),curv0=rod.curvErr??rodCurvatureError(path);
+  const defaultSubsteps=temp>0?4:5,lateAt=useScheduleTime?(foldParams.temporalHydroLateSubstepsTime??(foldParams.temporalHydroLateSubstepsTick??Infinity)*4*dt):(foldParams.temporalHydroLateSubstepsTick??Infinity),scheduleAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
+  let baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroSubsteps??defaultSubsteps));
+  if(scheduleAge>=lateAt&&rod.kappaScale>=1&&Number.isFinite(foldParams.temporalHydroLateSubsteps))baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroLateSubsteps));
+  const smoothScale=rod.simPath?.length?1:TEMPORAL_HYDRO_SPEED,substeps=baseSubsteps*smoothScale,angleMobility=foldParams.temporalHydroMobility??.10;
+  const rampBase=Number.isFinite(foldParams.temporalHydroKappaRate)?Math.max(1e-4,foldParams.temporalHydroKappaRate):(curv0<foldParams.fastErr?foldParams.fast:curv0<foldParams.midErr?foldParams.mid:foldParams.slow);
+  const refSubsteps=foldParams.temporalHydroKappaRefSubsteps??(baseTemp>0?4:5),refDt=foldParams.temporalHydroRefDt??.035,rampStepBase=foldParams.temporalHydroScaleKappaDt===false?rampBase:rampBase*(substeps*dt)/Math.max(1e-6,refSubsteps*refDt);
+  const rampStep=foldParams.temporalHydroSubstepKappaRamp===true?rampStepBase/Math.max(1,substeps):rampStepBase;
+  return {dt,bendBase,inertia,bendDtScale,maxAngleStep,substeps,rampStep,centerStrength:.02,center:sampleDomain?.centroid||domainDisplayCentroid(),angleMobility,baseTemp,tempAt,scheduleTime,useScheduleTime,annealAge};
+}
+async function ensureGpuRodSolver(n){
+  await ensureWgpu();
+  if(!gpuRodSolver){
+    const module=wgpuDevice.createShaderModule({code:GPU_ROD_SHADER});
+    const layout=wgpuDevice.createBindGroupLayout({entries:[
+      {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:1,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:2,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:4,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:5,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}}
+    ]});
+    const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
+    gpuRodSolver={layout,pipeline:await wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:'solve'}}),n:0};
+  }
+  if(!gpuRodSolver.bindGroup||gpuRodSolver.n<n){
+    for(const key of ['cfg','pts','ell','kappa','bendW','theta','scratch','ptsRead','thetaRead'])gpuRodSolver[key]?.destroy?.();
+    const e=Math.max(1,n-1),scratchN=e*6;
+    gpuRodSolver.n=n;
+    gpuRodSolver.cfg=wgpuDevice.createBuffer({size:16*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.pts=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    gpuRodSolver.ell=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.kappa=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.bendW=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.theta=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    gpuRodSolver.scratch=wgpuDevice.createBuffer({size:Math.max(4,scratchN*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.thetaRead=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    gpuRodSolver.bindGroup=wgpuDevice.createBindGroup({layout:gpuRodSolver.layout,entries:[
+      {binding:0,resource:{buffer:gpuRodSolver.cfg}},{binding:1,resource:{buffer:gpuRodSolver.pts}},
+      {binding:2,resource:{buffer:gpuRodSolver.ell}},{binding:3,resource:{buffer:gpuRodSolver.kappa}},
+      {binding:4,resource:{buffer:gpuRodSolver.bendW}},{binding:5,resource:{buffer:gpuRodSolver.theta}},
+      {binding:6,resource:{buffer:gpuRodSolver.scratch}}
+    ]});
+  }
+  return gpuRodSolver;
+}
+async function runGpuRodDeterministicStep(path,rod,dynOverrides={}){
+  if(!GPU_ROD_SOLVER_ENABLED&&dynOverrides.force!==true)throw new Error('GPU rod solver is audit-only; pass {force:true} to run it.');
+  path=rodSimulationPath(path,rod);syncRodTangents(path);
+  const n=path.length,E=Math.max(0,n-1);if(n<2||E>GPU_ROD_MAX_EDGES)throw new Error(`GPU rod audit supports 2..${GPU_ROD_MAX_EDGES+1} nodes, got ${n}`);
+  const gpu=await ensureGpuRodSolver(n),ptData=new Float32Array(n*4),thetaData=new Float32Array(E),ellData=new Float32Array(E),kappaData=new Float32Array(E),bendWData=new Float32Array(E);
+  for(let i=0;i<n;i++){const p=continuousAngles[path[i]],j=i*4;ptData[j]=p.x;ptData[j+1]=p.y;}
+  for(let i=0;i<E;i++){thetaData[i]=rod.theta[i]||0;ellData[i]=rod.ell[i]||1;kappaData[i]=rod.kappa[i]||0;bendWData[i]=rod.bendW?.[i]??1;}
+  const sched=gpuRodSchedule(path,rod,dynOverrides);
+  if(sched.baseTemp>0)throw new Error('Single GPU rod audit is deterministic only; use batch solver for stochastic GPU rod steps.');
+  const {bendBase,inertia,dt,bendDtScale,maxAngleStep,substeps,rampStep,centerStrength,center}=sched;
+  let kappaScale=rod.kappaScale??0,foldRamp=!!rod.foldRamp;
+  const cfg=new Float32Array(16);
+  wgpuDevice.queue.writeBuffer(gpu.pts,0,ptData);wgpuDevice.queue.writeBuffer(gpu.theta,0,thetaData);wgpuDevice.queue.writeBuffer(gpu.ell,0,ellData);wgpuDevice.queue.writeBuffer(gpu.kappa,0,kappaData);wgpuDevice.queue.writeBuffer(gpu.bendW,0,bendWData);
+  const gpuStart=nowMs();
+  for(let s=0;s<substeps;s++){
+    if(foldRamp){kappaScale=Math.min(1,kappaScale+rampStep);if(kappaScale>=1){kappaScale=1;foldRamp=false;}}
+    cfg[0]=n;cfg[1]=kappaScale;cfg[2]=bendBase;cfg[3]=bendDtScale;cfg[4]=inertia;cfg[5]=maxAngleStep;cfg[6]=centerStrength;cfg[7]=center[0];cfg[8]=center[1];
+    wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);
+    const enc=wgpuDevice.createCommandEncoder(),pass=enc.beginComputePass();
+    pass.setPipeline(gpu.pipeline);pass.setBindGroup(0,gpu.bindGroup);pass.dispatchWorkgroups(1);pass.end();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
+  }
+  const enc=wgpuDevice.createCommandEncoder();enc.copyBufferToBuffer(gpu.pts,0,gpu.ptsRead,0,n*4*4);enc.copyBufferToBuffer(gpu.theta,0,gpu.thetaRead,0,E*4);wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
+  await gpu.ptsRead.mapAsync(GPUMapMode.READ);const ptsOut=new Float32Array(gpu.ptsRead.getMappedRange()).slice(0,n*4);gpu.ptsRead.unmap();
+  await gpu.thetaRead.mapAsync(GPUMapMode.READ);const thetaOut=new Float32Array(gpu.thetaRead.getMappedRange()).slice(0,E);gpu.thetaRead.unmap();
+  for(let i=0;i<n;i++){const p=continuousAngles[path[i]],j=i*4;p.vx=ptsOut[j]-p.x;p.vy=ptsOut[j+1]-p.y;p.x=ptsOut[j];p.y=ptsOut[j+1];}
+  for(let i=0;i<E;i++){rod.theta[i]=thetaOut[i];rod.omega[i]=angleDelta(thetaOut[i],thetaData[i]||0);}
+  rod.kappaScale=kappaScale;rod.foldRamp=foldRamp;rod.temporalHydroTick=(rod.temporalHydroTick??0)+1;rod.temporalHydroTime=(rod.temporalHydroTime??0)+substeps*dt;updateRodEnergy(path);
+  return {gpuMs:nowMs()-gpuStart,n,E,substeps,kappaScale};
+}
+async function ensureGpuRodBatchSolver(rodCount,totalNodes,totalEdges,scratchCount){
+  await ensureWgpu();
+  if(!gpuRodBatchSolver){
+    const module=wgpuDevice.createShaderModule({code:GPU_ROD_BATCH_SHADER});
+    const layout=wgpuDevice.createBindGroupLayout({entries:[
+      {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:1,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:2,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:4,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:5,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
+      {binding:7,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}}
+    ]});
+    const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
+    gpuRodBatchSolver={layout,pipeline:await wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:'solve'}}),rodCount:0,totalNodes:0,totalEdges:0,scratchCount:0};
+  }
+  const need=!gpuRodBatchSolver.bindGroup||gpuRodBatchSolver.rodCount<rodCount||gpuRodBatchSolver.totalNodes<totalNodes||gpuRodBatchSolver.totalEdges<totalEdges||gpuRodBatchSolver.scratchCount<scratchCount;
+  if(need){
+    for(const key of ['cfg','meta','params','pts','hydroSeg','ell','kappa','bendW','theta','scratch','ptsRead','thetaRead'])gpuRodBatchSolver[key]?.destroy?.();
+    gpuRodBatchSolver.rodCount=rodCount;gpuRodBatchSolver.totalNodes=totalNodes;gpuRodBatchSolver.totalEdges=totalEdges;gpuRodBatchSolver.scratchCount=scratchCount;
+    gpuRodBatchSolver.cfg=wgpuDevice.createBuffer({size:16*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.meta=wgpuDevice.createBuffer({size:Math.max(16,rodCount*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.params=wgpuDevice.createBuffer({size:Math.max(16,rodCount*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.pts=wgpuDevice.createBuffer({size:Math.max(16,totalNodes*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    gpuRodBatchSolver.hydroSeg=wgpuDevice.createBuffer({size:Math.max(16,Math.max(1,totalNodes-1)*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.ell=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.kappa=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.bendW=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.theta=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    gpuRodBatchSolver.scratch=wgpuDevice.createBuffer({size:Math.max(4,scratchCount*4),usage:GPUBufferUsage.STORAGE});
+    gpuRodBatchSolver.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,totalNodes*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.thetaRead=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    gpuRodBatchSolver.bindGroup=wgpuDevice.createBindGroup({layout:gpuRodBatchSolver.layout,entries:[
+      {binding:0,resource:{buffer:gpuRodBatchSolver.cfg}},{binding:1,resource:{buffer:gpuRodBatchSolver.meta}},
+      {binding:2,resource:{buffer:gpuRodBatchSolver.params}},{binding:3,resource:{buffer:gpuRodBatchSolver.pts}},
+      {binding:4,resource:{buffer:gpuRodBatchSolver.ell}},{binding:5,resource:{buffer:gpuRodBatchSolver.kappa}},
+      {binding:6,resource:{buffer:gpuRodBatchSolver.bendW}},{binding:7,resource:{buffer:gpuRodBatchSolver.theta}},
+      {binding:8,resource:{buffer:gpuRodBatchSolver.scratch}}
+    ]});
+  }
+  return gpuRodBatchSolver;
+}
+function buildGpuRodBatch(states=allDigitStates,dynOverrides={}){
+  const rods=[];let totalNodes=0,totalEdges=0,scratchCount=0;
+  for(const st of states){
+    if(!st.loaded)continue;
+    withDigitState(st,()=>{
+      const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
+      syncRodTangents(path);
+      const E=path.length-1;if(E>GPU_ROD_MAX_EDGES)throw new Error(`digit ${st.digit} has ${E} edges; GPU rod batch cap is ${GPU_ROD_MAX_EDGES}`);
+      const schedule=gpuRodSchedule(path,rod,dynOverrides),pointRefs=path.map(i=>continuousAngles[i]);
+      rods.push({st,rod,path:path.slice(),pointRefs,node0:totalNodes,edge0:totalEdges,scratch0:scratchCount,n:path.length,E,schedule,kappaScale:rod.kappaScale??0,foldRamp:!!rod.foldRamp});
+      totalNodes+=path.length;totalEdges+=E;scratchCount+=E*6+path.length*2;
+    });
+  }
+  if(!rods.length)return null;
+  const first=rods[0].schedule;
+  for(const r of rods){
+    for(const key of ['bendBase','bendDtScale','inertia','maxAngleStep','centerStrength','substeps','dt']){
+      if(Math.abs((r.schedule[key]??0)-(first[key]??0))>1e-9)throw new Error(`GPU rod batch requires common ${key}; digit ${r.st.digit} differs`);
+    }
+  }
+  const meta=new Uint32Array(rods.length*4),params=new Float32Array(rods.length*4),pts=new Float32Array(totalNodes*4),theta=new Float32Array(totalEdges),ell=new Float32Array(totalEdges),kappa=new Float32Array(totalEdges),bendW=new Float32Array(totalEdges);
+  for(let ri=0;ri<rods.length;ri++){
+    const r=rods[ri];meta[ri*4]=r.node0;meta[ri*4+1]=r.n;meta[ri*4+2]=r.edge0;meta[ri*4+3]=r.scratch0;
+    const topoEll=Math.max(1,r.rod.topologyMeanEll||r.rod.meanEll||1);
+    for(let i=0;i<r.n;i++){
+      const p=r.pointRefs[i],j=(r.node0+i)*4,prev=i>0?(r.rod.ell[i-1]||r.rod.meanEll||1):0,next=i<r.E?(r.rod.ell[i]||r.rod.meanEll||1):0;
+      pts[j]=p.x;pts[j+1]=p.y;pts[j+2]=((prev+next)*.5)/topoEll;pts[j+3]=i<r.E?next/topoEll:0;
+    }
+    for(let i=0;i<r.E;i++){const j=r.edge0+i;theta[j]=r.rod.theta[i]||0;ell[j]=r.rod.ell[i]||1;kappa[j]=r.rod.kappa[i]||0;bendW[j]=r.rod.bendW?.[i]??1;}
+  }
+  return {rods,meta,params,pts,theta,ell,kappa,bendW,totalNodes,totalEdges,scratchCount,schedule:first};
+}
+async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverrides={}){
+  if(!GPU_ROD_SOLVER_ENABLED&&dynOverrides.force!==true)throw new Error('GPU rod batch solver is audit-only; pass {force:true} to run it.');
+  const batch=buildGpuRodBatch(states,dynOverrides);if(!batch)return {gpuMs:0,readbackMs:0,rodCount:0,totalNodes:0,totalEdges:0,substeps:0};
+  const gpu=await ensureGpuRodBatchSolver(batch.rods.length,batch.totalNodes,batch.totalEdges,batch.scratchCount),cfg=new Float32Array(16),{schedule}=batch;
+  const noiseSeed=((dynOverrides.seed==null?sampleRandomU32():dynOverrides.seed>>>0)&0xffffff)||0x3779b9;
+  cfg[0]=batch.rods.length;cfg[1]=schedule.bendBase;cfg[2]=schedule.bendDtScale;cfg[3]=schedule.inertia;cfg[4]=schedule.maxAngleStep;cfg[5]=schedule.centerStrength;cfg[6]=schedule.angleMobility;cfg[7]=schedule.dt;cfg[8]=noiseSeed;
+  wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);wgpuDevice.queue.writeBuffer(gpu.meta,0,batch.meta);wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);wgpuDevice.queue.writeBuffer(gpu.theta,0,batch.theta);wgpuDevice.queue.writeBuffer(gpu.ell,0,batch.ell);wgpuDevice.queue.writeBuffer(gpu.kappa,0,batch.kappa);wgpuDevice.queue.writeBuffer(gpu.bendW,0,batch.bendW);
+  const gpuStart=nowMs();
+  let fieldStats=null;
+  if(dynOverrides.applyField===true){
+    const body=prepareGpuRodBatchHydroBody(batch),pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
+    wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);
+    wgpuDevice.queue.writeBuffer(gpu.hydroSeg,0,body.segData.subarray(0,Math.max(1,body.segCount)*4));
+    fieldStats=await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
+      ptsBuffer:gpu.pts,
+      segBuffer:gpu.hydroSeg,
+      uploadPts:false,
+      uploadSeg:false,
+      readback:false
+    }));
+  }
+  for(let s=0;s<schedule.substeps;s++){
+    for(let ri=0;ri<batch.rods.length;ri++){
+      const r=batch.rods[ri],j=ri*4;
+      if(r.foldRamp){r.kappaScale=Math.min(1,r.kappaScale+r.schedule.rampStep);if(r.kappaScale>=1){r.kappaScale=1;r.foldRamp=false;}}
+      const stepAge=foldParams.temporalHydroSubstepAnneal===true?(r.schedule.useScheduleTime?r.schedule.scheduleTime+s*r.schedule.dt:(r.rod.temporalHydroTick??0)+s/Math.max(1,r.schedule.substeps)):r.schedule.annealAge;
+      batch.params[j]=r.kappaScale;batch.params[j+1]=r.schedule.center[0];batch.params[j+2]=r.schedule.center[1];batch.params[j+3]=r.schedule.tempAt(stepAge);
+    }
+    cfg[9]=s;
+    wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);
+    wgpuDevice.queue.writeBuffer(gpu.params,0,batch.params);
+    const enc=wgpuDevice.createCommandEncoder(),pass=enc.beginComputePass();
+    pass.setPipeline(gpu.pipeline);pass.setBindGroup(0,gpu.bindGroup);pass.dispatchWorkgroups(batch.rods.length);pass.end();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
+  }
+  const enc=wgpuDevice.createCommandEncoder();enc.copyBufferToBuffer(gpu.pts,0,gpu.ptsRead,0,batch.totalNodes*4*4);enc.copyBufferToBuffer(gpu.theta,0,gpu.thetaRead,0,batch.totalEdges*4);wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
+  const gpuMs=nowMs()-gpuStart,readStart=nowMs();
+  await gpu.ptsRead.mapAsync(GPUMapMode.READ);const ptsOut=new Float32Array(gpu.ptsRead.getMappedRange()).slice(0,batch.totalNodes*4);gpu.ptsRead.unmap();
+  await gpu.thetaRead.mapAsync(GPUMapMode.READ);const thetaOut=new Float32Array(gpu.thetaRead.getMappedRange()).slice(0,batch.totalEdges);gpu.thetaRead.unmap();
+  const readbackMs=nowMs()-readStart;
+  for(const r of batch.rods){
+    for(let i=0;i<r.n;i++){const p=r.pointRefs[i],j=(r.node0+i)*4;p.vx=ptsOut[j]-p.x;p.vy=ptsOut[j+1]-p.y;p.x=ptsOut[j];p.y=ptsOut[j+1];}
+    for(let i=0;i<r.E;i++){const t=thetaOut[r.edge0+i];r.rod.theta[i]=t;r.rod.omega[i]=angleDelta(t,batch.theta[r.edge0+i]||0);}
+    r.rod.kappaScale=r.kappaScale;r.rod.foldRamp=r.foldRamp;r.rod.temporalHydroTick=(r.rod.temporalHydroTick??0)+1;r.rod.temporalHydroTime=(r.rod.temporalHydroTime??0)+r.schedule.substeps*r.schedule.dt;
+    withDigitState(r.st,()=>updateRodEnergy(r.path));
+  }
+  return {gpuMs,readbackMs,rodCount:batch.rods.length,totalNodes:batch.totalNodes,totalEdges:batch.totalEdges,substeps:schedule.substeps,fieldStats};
+}
+function snapshotLoadedDigitPoints(states=allDigitStates){
+  return states.filter(s=>s.loaded).map(st=>withDigitState(st,()=>{
+    const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);
+    return {digit:st.digit,n:path.length,energy:rod?.energy??0,kappaScale:rod?.kappaScale??0,pts:path.map(i=>{const p=continuousAngles[i];return [p.x,p.y];})};
+  }));
+}
+function compareDigitPointSnapshots(cpu,gpu){
+  let totalSq=0,totalN=0,max=0;
+  const perDigit=cpu.map((a,idx)=>{
+    const b=gpu[idx]||{pts:[]};let sq=0,n=Math.min(a.pts.length,b.pts.length),localMax=0;
+    for(let i=0;i<n;i++){const d=Math.hypot(a.pts[i][0]-b.pts[i][0],a.pts[i][1]-b.pts[i][1]);sq+=d*d;localMax=Math.max(localMax,d);}
+    totalSq+=sq;totalN+=n;max=Math.max(max,localMax);
+    return {digit:a.digit,n,rms:Math.sqrt(sq/Math.max(1,n)),max:localMax,cpuEnergy:a.energy,gpuEnergy:b.energy??0};
+  });
+  return {rms:Math.sqrt(totalSq/Math.max(1,totalN)),max,n:totalN,perDigit};
+}
+function gpuSharedFieldOptions(extra={}){
+  return {
+    excluded:1.15,
+    hydroAttract:.28,
+    philicExpose:.08,
+    coreBias:.18,
+    exposureBias:.05,
+    interfaceBias:.12,
+    hydroSat:2.8,
+    hydroBlur:7,
+    envBlur:5,
+    hydroContactAttract:0,
+    hydroZeroNetForce:true,
+    applyToPts:true,
+    applyMobility:Math.min(.006,foldParams.sharedSoupMobility??.006),
+    applyMaxStep:Math.min(.18,foldParams.sharedSoupMaxStep??.18),
+    ...extra
+  };
+}
+function prepareGpuRodBatchHydroBody(batch){
+  const body=prepareAllDigitSharedSoupSoa();
+  if(!body||body.count!==batch.totalNodes)throw new Error('GPU rod field coupling needs matching shared-soup SoA order.');
+  for(const r of batch.rods)for(let i=0;i<r.n;i++)if(body.refs[r.node0+i]!==r.pointRefs[i])throw new Error(`shared-soup SoA order diverged at digit ${r.st.digit}`);
+  batch.pts.set(body.ptData.subarray(0,batch.totalNodes*4));
+  return body;
+}
+async function runGpuRodBatchFieldStep(states=allDigitStates,opts={}){
+  const batch=buildGpuRodBatch(states,{temperature:0,field:0});if(!batch)return {gpuMs:0,readbackMs:0,rodCount:0,totalNodes:0,totalEdges:0,fieldSize:0};
+  const body=prepareGpuRodBatchHydroBody(batch),gpu=await ensureGpuRodBatchSolver(batch.rods.length,batch.totalNodes,batch.totalEdges,batch.scratchCount);
+  const pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
+  wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);
+  wgpuDevice.queue.writeBuffer(gpu.hydroSeg,0,body.segData.subarray(0,Math.max(1,body.segCount)*4));
+  const stats=await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
+    ptsBuffer:gpu.pts,
+    segBuffer:gpu.hydroSeg,
+    uploadPts:false,
+    uploadSeg:false,
+    readback:opts.readback!==false
+  }));
+  return {...stats,rodCount:batch.rods.length,totalNodes:batch.totalNodes,totalEdges:batch.totalEdges};
+}
+async function auditGpuRodStep(){
+  const snap=cloneDigitStateList(),idx=allDigitStates.findIndex(s=>s.loaded);
+  if(idx<0)throw new Error('No loaded digit state to audit.');
+  const cpuSnap=cloneDigitStateList(snap),gpuSnap=cloneDigitStateList(snap);
+  const metric=pts=>{
+    let sx=0,sy=0,sm=0;for(let i=0;i<pts.length;i++){sx+=pts[i][0];sy+=pts[i][1];sm=Math.max(sm,Math.hypot(pts[i][0],pts[i][1]));}
+    return {sx,sy,sm};
+  };
+  try{
+    restoreDigitStateList(cpuSnap);
+    const cpuPts=await withDigitState(allDigitStates[idx],async()=>{await stepTemporalIntrinsicHydrophobicDynamics(rodDynamics({temperature:0,field:0}));const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);return path.map(i=>[continuousAngles[i].x,continuousAngles[i].y]);});
+    restoreDigitStateList(gpuSnap);
+    const gpuInfo=await withDigitState(allDigitStates[idx],async()=>{const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);const info=await runGpuRodDeterministicStep(path,rod,{force:true});return {info,pts:path.map(i=>[continuousAngles[i].x,continuousAngles[i].y])};});
+    let rms=0,max=0,n=Math.min(cpuPts.length,gpuInfo.pts.length);
+    for(let i=0;i<n;i++){const d=Math.hypot(cpuPts[i][0]-gpuInfo.pts[i][0],cpuPts[i][1]-gpuInfo.pts[i][1]);rms+=d*d;max=Math.max(max,d);}
+    rms=Math.sqrt(rms/Math.max(1,n));
+    return {digit:allDigitStates[idx]?.digit,n,rms,max,cpu:metric(cpuPts),gpu:metric(gpuInfo.pts),...gpuInfo.info};
+  }finally{
+    restoreDigitStateList(snap);
+  }
+}
+window.auditGpuRodStep=auditGpuRodStep;
+async function auditGpuRodBatchStep(steps=1){
+  const snap=cloneDigitStateList();
+  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
+  steps=Math.max(1,Math.min(64,Math.round(steps||1)));
+  const cpuSnap=cloneDigitStateList(snap),gpuSnap=cloneDigitStateList(snap),base=rodDynamics({temperature:0,field:0});
+  try{
+    restoreDigitStateList(cpuSnap);
+    for(let step=0;step<steps;step++)for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));
+    const cpu=snapshotLoadedDigitPoints();
+    restoreDigitStateList(gpuSnap);
+    let info=null,totalGpuMs=0,totalReadbackMs=0;
+    for(let step=0;step<steps;step++){
+      info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:0,field:0});
+      totalGpuMs+=info.gpuMs||0;totalReadbackMs+=info.readbackMs||0;
+    }
+    const gpu=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(cpu,gpu);
+    return {...cmp,...info,steps,totalGpuMs,totalReadbackMs};
+  }finally{
+    restoreDigitStateList(snap);
+  }
+}
+window.auditGpuRodBatchStep=auditGpuRodBatchStep;
+async function auditGpuRodTemperatureResponse(steps=8,temp=1.5,seed=0x6a09e667){
+  const snap=cloneDigitStateList();
+  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
+  steps=Math.max(1,Math.min(64,Math.round(steps||1)));
+  temp=Math.max(0,+temp||0);seed=(seed>>>0)||0x6a09e667;
+  const stepCpu=async base=>{for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));};
+  const stepGpu=async (baseTemp,step)=>runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:baseTemp,field:0,seed:rodSeedMix(seed,step,0x475055)});
+  try{
+    restoreDigitStateList(cloneDigitStateList(snap));
+    for(let i=0;i<steps;i++)await stepCpu(rodDynamics({temperature:0,field:0}));
+    const cpuCold=snapshotLoadedDigitPoints();
+    restoreDigitStateList(cloneDigitStateList(snap));
+    setRodNoiseSeed(seed);
+    for(let i=0;i<steps;i++)await stepCpu(rodDynamics({temperature:temp,field:0}));
+    const cpuWarm=snapshotLoadedDigitPoints();
+    restoreDigitStateList(cloneDigitStateList(snap));
+    let gpuInfo=null;
+    for(let i=0;i<steps;i++)gpuInfo=await stepGpu(0,i);
+    const gpuCold=snapshotLoadedDigitPoints();
+    restoreDigitStateList(cloneDigitStateList(snap));
+    let totalGpuMs=0,totalReadbackMs=0;
+    for(let i=0;i<steps;i++){gpuInfo=await stepGpu(temp,i);totalGpuMs+=gpuInfo.gpuMs||0;totalReadbackMs+=gpuInfo.readbackMs||0;}
+    const gpuWarm=snapshotLoadedDigitPoints();
+    return {
+      steps,temp,seed,
+      cpuThermal:compareDigitPointSnapshots(cpuCold,cpuWarm),
+      gpuThermal:compareDigitPointSnapshots(gpuCold,gpuWarm),
+      coldAgreement:compareDigitPointSnapshots(cpuCold,gpuCold),
+      gpuInfo:{...gpuInfo,totalGpuMs,totalReadbackMs}
+    };
+  }finally{
+    restoreDigitStateList(snap);
+  }
+}
+window.auditGpuRodTemperatureResponse=auditGpuRodTemperatureResponse;
+async function auditGpuRodFieldCouplingStep(){
+  const snap=cloneDigitStateList();
+  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
+  try{
+    restoreDigitStateList(cloneDigitStateList(snap));
+    await stepAllDigitSharedSoupField(allDigitEpoch);
+    const ref=snapshotLoadedDigitPoints();
+    restoreDigitStateList(cloneDigitStateList(snap));
+    const info=await runGpuRodBatchFieldStep(allDigitStates,{readback:true});
+    const got=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(ref,got);
+    return {...cmp,...info};
+  }finally{
+    restoreDigitStateList(snap);
+  }
+}
+window.auditGpuRodFieldCouplingStep=auditGpuRodFieldCouplingStep;
+async function auditGpuRodFieldThenRodStep(steps=1){
+  const snap=cloneDigitStateList();
+  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
+  steps=Math.max(1,Math.min(16,Math.round(steps||1)));
+  const base=rodDynamics({temperature:0,field:0});
+  try{
+    restoreDigitStateList(cloneDigitStateList(snap));
+    for(let step=0;step<steps;step++){
+      await stepAllDigitSharedSoupField(allDigitEpoch);
+      for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));
+    }
+    const ref=snapshotLoadedDigitPoints();
+    restoreDigitStateList(cloneDigitStateList(snap));
+    let info=null,totalGpuMs=0,totalReadbackMs=0,totalFieldGpuMs=0;
+    for(let step=0;step<steps;step++){
+      info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:0,field:0,applyField:true});
+      totalGpuMs+=info.gpuMs||0;totalReadbackMs+=info.readbackMs||0;totalFieldGpuMs+=info.fieldStats?.gpuMs||0;
+    }
+    const got=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(ref,got);
+    return {...cmp,...info,steps,totalGpuMs,totalReadbackMs,totalFieldGpuMs};
+  }finally{
+    restoreDigitStateList(snap);
+  }
+}
+window.auditGpuRodFieldThenRodStep=auditGpuRodFieldThenRodStep;
+function setGpuRodVisibleMode(on=true){
+  GPU_ROD_SOLVER_ENABLED=!!on;
+  allDigitStatsCache=null;
+  wakeAllDigitRods();
+  renderAllDigitBoard({forceStats:true});
+  startAllDigitLoop();
+  return {gpuRodVisible:GPU_ROD_SOLVER_ENABLED};
+}
+window.setGpuRodVisibleMode=setGpuRodVisibleMode;
+window.runGpuRodBatchStep=runGpuRodBatchDeterministicStep;
+window.runGpuRodBatchDeterministicStep=runGpuRodBatchDeterministicStep;
+function digitGpuStateFromPath(digit,mask,domain,path,error=''){
+  sampleDigitMask=String(digit);sampleActiveMask=mask.slice();sampleDomain=domain;resetContinuousAngles();wgpuSelectedPath=path.slice();
+  if(!pathUsesDomainEdges(wgpuSelectedPath,sampleDomain))return {digit:String(digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:[],angles:cloneAngles(),rod:null,loaded:false,error:error||'no valid GPU chain'};
+  materializeSampleRod(wgpuSelectedPath);
+  initializeCurrentRodFromLine({render:false,start:false});
+  placeCurrentDigitInSoup(digit);
+  return {digit:String(digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:wgpuSelectedPath.slice(),angles:cloneAngles(),rod:cloneRod(),loaded:wgpuSelectedPath.length>1};
+}
+function digitBatchDomain(digit,mask){
+  sampleDigitMask=String(digit);sampleActiveMask=mask.slice();sampleDomain=buildSampleDomain();
+  return sampleDomain;
+}
+function digitMaskSignature(masks){return `hex:${SAMPLE_N}:`+masks.map(mask=>mask.map(v=>v?'1':'0').join('')).join('|');}
+function destroyWgpuDigitBatchCache(){
+  if(!wgpuDigitBatchCache)return;
+  for(const job of wgpuDigitBatchCache.jobs||[])for(const key of ['config','summary','selected','hll','summaryRead','selectedRead','edges','adj'])job[key]?.destroy?.();
+  wgpuDigitBatchCache=null;
+}
+function clearAllDigitSamplePool(){allDigitPool=[];allDigitPoolN=0;allDigitPoolSeed=null;allDigitPrefetchError='';}
+async function ensureWgpuDigitBatchCache(masks){
+  await ensureWgpu();
+  const key=digitMaskSignature(masks);
+  if(wgpuDigitBatchCache?.key===key&&wgpuDigitBatchCache.device===wgpuDevice)return wgpuDigitBatchCache;
+  destroyWgpuDigitBatchCache();
+  const jobs=masks.map((mask,digit)=>{
+    const domain=digitBatchDomain(digit,mask),job={digit,mask:mask.slice(),domain,path:[],error:'',summary:null};
+    if(!domain.connected||domain.cells<2){job.error='disconnected';return job;}
+    if(domain.cells>WGPU_MAX_CELLS||domain.edges.length>WGPU_MAX_EDGE_SLOTS){job.error='above GPU cap';return job;}
+    const config=wgpuDevice.createBuffer({size:48,usage:GPUBufferUsage.UNIFORM|GPUBufferUsage.COPY_DST});
+    const summary=wgpuDevice.createBuffer({size:24,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST});
+    const selected=wgpuDevice.createBuffer({size:(WGPU_MAX_CELLS+1)*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST});
+    const hll=wgpuDevice.createBuffer({size:4,usage:GPUBufferUsage.STORAGE});
+    const summaryRead=wgpuDevice.createBuffer({size:24,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    const selectedRead=wgpuDevice.createBuffer({size:(WGPU_MAX_CELLS+1)*4,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    const edges=createWgpuBuffer(wgpuDevice,domain.edgeData,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST);
+    const adj=createWgpuBuffer(wgpuDevice,domain.adjBits,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST);
+    const bindGroup=wgpuDevice.createBindGroup({layout:wgpuPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:config}},{binding:1,resource:{buffer:edges}},{binding:2,resource:{buffer:adj}},{binding:3,resource:{buffer:summary}},{binding:4,resource:{buffer:hll}},{binding:5,resource:{buffer:selected}}]});
+    return {...job,config,summary,selected,hll,summaryRead,selectedRead,edges,adj,bindGroup};
+  });
+  wgpuDigitBatchCache={key,device:wgpuDevice,jobs};
+  return wgpuDigitBatchCache;
+}
+async function runWgpuDigitBatchPool(masks,count=DIGIT_SAMPLE_POOL_TARGET,opts={}){
+  const cache=await ensureWgpuDigitBatchCache(masks);
+  const chains=WGPU_DIGIT_CHAINS,totalChains=chains*count,deterministic=opts.seed!=null,slotSize=WGPU_MAX_CELLS+1,slotsPerDigit=deterministic?totalChains:count,totalSlots=slotsPerDigit*10,selectedWords=totalSlots*slotSize,selectedClear=new Uint32Array(selectedWords);selectedClear.fill(0xffffffff);
+  const selected=wgpuDevice.createBuffer({size:selectedWords*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC|GPUBufferUsage.COPY_DST});
+  const selectedRead=wgpuDevice.createBuffer({size:selectedWords*4,usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+  wgpuDevice.queue.writeBuffer(selected,0,selectedClear);
+  const baseJobs=cache.jobs,work=baseJobs.map(base=>({base,error:base.error||''})),runnable=work.filter(j=>j.base.bindGroup);
+  if(runnable.length){
+    for(const job of runnable){
+      const base=job.base,chainOffset=base.digit*totalChains,outputOffset=base.digit*slotsPerDigit*slotSize,seed=(opts.seed==null?sampleRandomU32()^Math.imul(base.digit+1,0x9e3779b9):rodSeedMix(opts.seed,base.digit,count,0xD1617))>>>0,selectedFlag=deterministic?0xfffffffe:0xffffffff,cfg=new Uint32Array([base.domain.cells,base.domain.edges.length,totalChains,chainOffset,seed,200,WGPU_DIGIT_EXPLORE_STEPS,16,selectedFlag,0,count,outputOffset]);
+      wgpuDevice.queue.writeBuffer(base.config,0,cfg);wgpuDevice.queue.writeBuffer(base.summary,0,new Uint32Array(6));
+      job.bindGroup=wgpuDevice.createBindGroup({layout:wgpuPipeline.getBindGroupLayout(0),entries:[{binding:0,resource:{buffer:base.config}},{binding:1,resource:{buffer:base.edges}},{binding:2,resource:{buffer:base.adj}},{binding:3,resource:{buffer:base.summary}},{binding:4,resource:{buffer:base.hll}},{binding:5,resource:{buffer:selected}}]});
+    }
+    const enc=wgpuDevice.createCommandEncoder(),pass=enc.beginComputePass();
+    pass.setPipeline(wgpuPipeline);
+    for(const job of runnable){pass.setBindGroup(0,job.bindGroup);pass.dispatchWorkgroups(Math.ceil(totalChains/WGPU_WORKGROUP_SIZE));}
+    pass.end();
+    enc.copyBufferToBuffer(selected,0,selectedRead,0,selectedWords*4);
+    const t0=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
+    await selectedRead.mapAsync(GPUMapMode.READ);
+    wgpuLastBatchMs=nowMs()-t0;
+  }
+  const items=Array.from({length:count},()=>[]);
+  const words=new Uint32Array(selectedRead.getMappedRange()).slice();selectedRead.unmap();
+  for(let sample=0;sample<count;sample++)for(const base of baseJobs){
+    let path=[],error=base.error||'';
+    if(base.bindGroup){
+      if(deterministic){
+        for(let local=0;local<chains&&!path.length;local++){
+          const off=base.digit*slotsPerDigit*slotSize+(sample*chains+local)*slotSize,sp=words.subarray(off,off+slotSize),cand=selectedDensePath(sp,base.domain);
+          if(pathUsesDomainEdges(cand,base.domain))path=cand;
+        }
+      }else{
+        const off=base.digit*slotsPerDigit*slotSize+sample*slotSize,sp=words.subarray(off,off+slotSize);
+        path=selectedDensePath(sp,base.domain);
+      }
+      if(!pathUsesDomainEdges(path,base.domain))error='no valid GPU chain';
+      else error='';
+    }
+    items[sample].push({digit:base.digit,mask:base.mask,domain:base.domain,path,error});
+  }
+  selected.destroy();selectedRead.destroy();
+  wgpuBatches+=count;wgpuValidSamples+=count*10*chains;wgpuRepairAttempts+=count*10*chains;sampleSteps=wgpuValidSamples;
+  return items;
+}
+function materializeDigitPoolItem(item){
+  const t0=nowMs(),states=item.slice().sort((a,b)=>+a.digit-+b.digit).map(job=>digitGpuStateFromPath(job.digit,job.mask,job.domain,job.path,job.error));
+  telemetrySet('materializeMs',nowMs()-t0,.55);
+  return states;
+}
+function setupDigitCanvas(){
+  const canvas=$('digit-board');if(!canvas)return null;
+  const rect=canvas.getBoundingClientRect(),cssW=Math.max(1,rect.width||canvas.clientWidth||760),cssH=Math.max(1,rect.height||cssW),dpr=Math.max(1,Math.min(2,window.devicePixelRatio||1));
+  const w=Math.round(cssW*dpr),h=Math.round(cssH*dpr);
+  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.clearRect(0,0,cssW,cssH);
+  const size=Math.min(cssW,cssH),ox=(cssW-size)*.5,oy=(cssH-size)*.5;
+  updateSoupWorldSize(Math.max(240,Math.round(size)));
+  return {canvas,ctx,w:cssW,h:cssH,size,ox,oy,scale:size/soupWorldSize,world:true};
+}
+const DIGIT_SOUP_ROWS=[[0,1,2],[3,4,5,6],[7,8,9]];
+function scalePointList(points,s){if(!points)return points;for(const p of points){if(p){p[0]*=s;p[1]*=s;}}return points;}
+function scaleSoupRod(rod,s){
+  if(!rod)return;
+  scalePointList(rod.rest,s);scalePointList(rod.coarseRest,s);
+  rod.ell=rod.ell?.map(v=>v*s)||[];rod.meanEll=(rod.meanEll||1)*s;rod.topologyMeanEll=(rod.topologyMeanEll||rod.meanEll||1)*s;
+  rod.hydro=restHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.sideHydro=restSideHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.restContactWeight=restContactWeights(rod.rest,rod.meanEll||1,rod.topologyMeanEll||rod.meanEll||1);
+  rod.statsFresh=false;rod.restErr=null;
+}
+function updateSoupWorldSize(next){
+  next=Math.max(240,Math.round(next||400));
+  if(Math.abs(next-soupWorldSize)<1)return;
+  const s=next/soupWorldSize;
+  for(const st of allDigitStates){
+    if(!st)continue;
+    for(const p of st.angles||[])if(p){p.x*=s;p.y*=s;p.vx=(p.vx||0)*s;p.vy=(p.vy||0)*s;p.cell=(p.cell||1)*s;}
+    if(st.domain?.centroid){st.domain.centroid[0]*=s;st.domain.centroid[1]*=s;}
+    scaleSoupRod(st.rod,s);
+  }
+  soupWorldSize=next;allDigitStatsCache=null;invalidateSharedSoupBuffers();
+}
+function digitSoupPlacement(digit){
+  digit=+digit;
+  const row=DIGIT_SOUP_ROWS.findIndex(r=>r.includes(digit)),cols=DIGIT_SOUP_ROWS[row]||DIGIT_SOUP_ROWS[0],i=Math.max(0,cols.indexOf(digit));
+  const W=soupWorldSize,xGap=W*.24,yGap=W*.345,cx=W*.5-(cols.length-1)*xGap*.5+i*xGap,cy=W*.155+row*yGap;
+  return {cx,cy,row,i,scale:W/400*.33};
+}
+function transformSoupPoint(x,y,place){return [place.cx+(x-200)*place.scale,place.cy+(y-200)*place.scale];}
+function placeCurrentDigitInSoup(digit){
+  const rod=ensureContinuousRod();if(!rod)return;
+  const place=digitSoupPlacement(digit),tx=p=>transformSoupPoint(p[0],p[1],place);
+  if(sampleDomain){
+    sampleDomain.localCentroid=sampleDomain.localCentroid||sampleDomain.centroid?.slice?.()||[200,200];
+    sampleDomain.centroid=transformSoupPoint(sampleDomain.localCentroid[0],sampleDomain.localCentroid[1],place);
+  }
+  for(const st of continuousAngles){
+    if(!st)continue;
+    const [x,y]=transformSoupPoint(st.x,st.y,place);
+    st.x=x;st.y=y;st.vx=(st.vx||0)*place.scale;st.vy=(st.vy||0)*place.scale;st.cell=(st.cell||1)*place.scale;
+  }
+  rod.rest=rod.rest.map(tx);
+  rod.coarseRest=rod.coarseRest.map(tx);
+  rod.ell=rod.ell.map(v=>v*place.scale);
+  rod.meanEll*=place.scale;rod.topologyMeanEll*=place.scale;
+  rod.hydro=restHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.sideHydro=restSideHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.restContactWeight=restContactWeights(rod.rest,rod.meanEll||1,rod.topologyMeanEll||rod.meanEll||1);
+  rod.statsFresh=false;updateRodEnergy();
+}
+function canvasRodPoint(pt,view){return [view.ox+pt[0]*view.scale,view.oy+pt[1]*view.scale];}
+function canvasBezierSegment(ctx,pts,normals,k,view,side=0,offset=0){
+  const n0=normals[Math.max(0,k-1)],n1=normals[k],n2=normals[k+1],n3=normals[Math.min(pts.length-1,k+2)];
+  const p0=pts[Math.max(0,k-1)],p1=pts[k],p2=pts[k+1],p3=pts[Math.min(pts.length-1,k+2)],o=offset*side;
+  const q0=[p0[0]+n0[0]*o,p0[1]+n0[1]*o],q1=[p1[0]+n1[0]*o,p1[1]+n1[1]*o],q2=[p2[0]+n2[0]*o,p2[1]+n2[1]*o],q3=[p3[0]+n3[0]*o,p3[1]+n3[1]*o];
+  const a=canvasRodPoint(q1,view),b=canvasRodPoint(q2,view),c1=canvasRodPoint([q1[0]+(q2[0]-q0[0])/6,q1[1]+(q2[1]-q0[1])/6],view),c2=canvasRodPoint([q2[0]-(q3[0]-q1[0])/6,q2[1]-(q3[1]-q1[1])/6],view);
+  ctx.moveTo(a[0],a[1]);ctx.bezierCurveTo(c1[0],c1[1],c2[0],c2[1],b[0],b[1]);
+}
+function drawDigitRodCanvas(ctx,st,view){
+  const place=digitSoupPlacement(st.digit);
+  if(!st.loaded){
+    ctx.fillStyle=cssv('--ink-soft');ctx.font='14px "IBM Plex Mono"';ctx.textAlign='center';ctx.textBaseline='middle';
+    const p=canvasRodPoint([place.cx,place.cy],view);
+    ctx.fillText(st.error||'sampling',p[0],p[1]);
+    return;
+  }
+  withDigitState(st,()=>{
+    if(wgpuSelectedPath.length<2)return;
+    const rod=ensureContinuousRod(),drawPath=rodSimulationPath(wgpuSelectedPath,rod);
+    if(!rod||drawPath.length<2)return;
+    const pts=drawPath.map(rodPoint),normals=rodOffsetNormals(pts),offset=3.2*.32,E=Math.max(0,drawPath.length-1);
+    ctx.save();ctx.beginPath();ctx.rect(view.ox,view.oy,view.size,view.size);ctx.clip();
+    ctx.lineCap='round';ctx.lineJoin='round';
+    ctx.globalAlpha=.12;ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(1.1,4.2*view.scale);
+    ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
+    ctx.globalAlpha=.98;ctx.lineWidth=Math.max(1,2.3*view.scale);
+    const groups=new Map(),add=(color,k,side)=>{
+      let g=groups.get(color);if(!g){g=[];groups.set(color,g);}
+      g.push([k,side]);
+    };
+    for(let k=0;k<E;k++){
+      const side=rod?.sideHydro?.[k],fallback=((rod?.hydro?.[k]??0)+(rod?.hydro?.[k+1]??rod?.hydro?.[k]??0))*.5*.5+.5;
+      add(hydroSideBucketColor(side?.left??fallback),k,1);
+      add(hydroSideBucketColor(side?.right??fallback),k,-1);
+    }
+    for(const [color,segs] of groups){
+      ctx.strokeStyle=color;ctx.beginPath();
+      for(const [k,side] of segs)canvasBezierSegment(ctx,pts,normals,k,view,side,offset);
+      ctx.stroke();
+    }
+    const first=canvasRodPoint(pts[0],view),last=canvasRodPoint(pts[pts.length-1],view),r=Math.max(2.2,5*view.scale);
+    ctx.globalAlpha=1;ctx.fillStyle=cssv('--vermilion');ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(1,1.2*view.scale);
+    for(const p of [first,last]){ctx.beginPath();ctx.arc(p[0],p[1],r,0,TAU);ctx.fill();ctx.stroke();}
+    ctx.restore();
+  });
+}
+function renderDigitCanvas(){
+  const setup=setupDigitCanvas();if(!setup)return;
+  const {ctx,w,h}=setup,ink=cssv('--ink'),soft=cssv('--ink-soft'),rule=cssv('--rule'),paper=cssv('--paper-2');
+  ctx.fillStyle=paper;ctx.fillRect(0,0,w,h);
+  ctx.strokeStyle=rule;ctx.lineWidth=1.5;ctx.strokeRect(setup.ox+.75,setup.oy+.75,setup.size-1.5,setup.size-1.5);
+  ctx.globalAlpha=.28;ctx.strokeStyle=rule;ctx.lineWidth=1;
+  const gridStep=soupWorldSize/8;
+  for(let v=gridStep;v<soupWorldSize;v+=gridStep){
+    const a=canvasRodPoint([v,0],setup),b=canvasRodPoint([v,soupWorldSize],setup),c=canvasRodPoint([0,v],setup),d=canvasRodPoint([soupWorldSize,v],setup);
+    ctx.beginPath();ctx.moveTo(a[0],a[1]);ctx.lineTo(b[0],b[1]);ctx.moveTo(c[0],c[1]);ctx.lineTo(d[0],d[1]);ctx.stroke();
+  }
+  ctx.globalAlpha=1;
+  for(const row of DIGIT_SOUP_ROWS)for(const d of row){
+    const st=allDigitStates.find(s=>String(s.digit)===String(d))||{digit:String(d),loaded:false};
+    drawDigitRodCanvas(ctx,st,setup);
+  }
+}
+function buildAllDigitSharedSoupSoa(){
+  const refs=[],segEll=[],sideHydro=[],restContactWeight=[],realEll=[];
+  for(const st of allDigitStates){
+    if(!st.loaded)continue;
+    withDigitState(st,()=>{
+      const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
+      for(let k=0;k<path.length;k++){
+        const src=continuousAngles[path[k]];if(!src)continue;
+        if(refs.length&&k===0){segEll.push(1e-6);sideHydro.push({left:.5,right:.5});restContactWeight.push({left:0,right:0});}
+        else if(k>0){
+          const e=rod.ell[k-1]||rod.meanEll||1;
+          segEll.push(e);realEll.push(e);
+          sideHydro.push(rod.sideHydro?.[k-1]||{left:.5,right:.5});
+          restContactWeight.push(rod.restContactWeight?.[k-1]||{left:1,right:1});
+        }
+        refs.push(src);
+      }
+    });
+  }
+  if(refs.length<2)return null;
+  const meanEll=realEll.length?realEll.reduce((a,b)=>a+b,0)/realEll.length:2;
+  const count=refs.length,E=Math.max(0,count-1),ellArray=new Float32Array(Math.max(1,E)),ptData=new Float32Array(count*4),segData=new Float32Array(Math.max(1,E)*4);
+  let activeHydro=0;
+  for(let k=0;k<E;k++){
+    const e=segEll[k]||meanEll,side=sideHydro[k]||{left:.5,right:.5},contact=restContactWeight[k]||{left:1,right:1};
+    const left=hydroSigned(side.left),right=hydroSigned(side.right);
+    ellArray[k]=e;segData[k*4]=left;segData[k*4+1]=right;segData[k*4+2]=left>0?left*Math.max(0,contact.left??1):0;segData[k*4+3]=right>0?right*Math.max(0,contact.right??1):0;
+    if(left>0)activeHydro++;if(right>0)activeHydro++;
+  }
+  const nodeWeight=new Float32Array(count),topologyMeanEll=meanEll;
+  for(let i=0;i<count;i++)nodeWeight[i]=(((i>0?(ellArray[i-1]||meanEll):0)+(i<E?(ellArray[i]||meanEll):0))*.5)/Math.max(1,topologyMeanEll);
+  return {epoch:allDigitEpoch,worldSize:soupWorldSize,count,segCount:E,refs,ell:ellArray,nodeWeight,ptData,segData,meanEll,topologyMeanEll,activeHydro};
+}
+function prepareAllDigitSharedSoupSoa(){
+  if(!allDigitSharedSoa||allDigitSharedSoa.epoch!==allDigitEpoch||allDigitSharedSoa.worldSize!==soupWorldSize)allDigitSharedSoa=buildAllDigitSharedSoupSoa();
+  const body=allDigitSharedSoa;if(!body)return null;
+  for(let i=0;i<body.count;i++){
+    const ref=body.refs[i],j=i*4,e=i<body.segCount?(body.ell[i]||body.meanEll):0;
+    body.ptData[j]=ref.x;body.ptData[j+1]=ref.y;body.ptData[j+2]=body.nodeWeight[i];body.ptData[j+3]=e/Math.max(1,body.topologyMeanEll);
+  }
+  return body;
+}
+async function stepAllDigitSharedSoupField(expectedEpoch=allDigitEpoch){
+  const t0=nowMs(),packStart=nowMs(),body=prepareAllDigitSharedSoupSoa();
+  telemetrySet('fieldPackMs',nowMs()-packStart);
+  if(!body)return;
+  runtimeTelemetry.activeNodes=body.count;
+  const pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
+  const stats=await addHydropathyFieldForcesGpu(pseudoRod,body,{
+    excluded:1.15,
+    hydroAttract:.28,
+    philicExpose:.08,
+    coreBias:.18,
+    exposureBias:.05,
+    interfaceBias:.12,
+    hydroSat:2.8,
+    hydroBlur:7,
+    envBlur:5,
+    hydroContactAttract:0,
+    hydroZeroNetForce:true,
+    applyToPts:true,
+    applyMobility:Math.min(.006,foldParams.sharedSoupMobility??.006),
+    applyMaxStep:Math.min(.18,foldParams.sharedSoupMaxStep??.18)
+  });
+  telemetrySet('fieldMs',nowMs()-t0);
+  telemetrySet('fieldGpuMs',stats.gpuMs||0);
+  telemetrySet('fieldReadbackMs',stats.readbackMs||0);
+  runtimeTelemetry.fieldSize=stats.fieldSize||runtimeTelemetry.fieldSize||0;
+  if(expectedEpoch!==allDigitEpoch)return;
+  allDigitSharedFieldStats={nodes:body.count,active:stats.hydroActive||0,maxMove:stats.maxMove||0,net:stats.forceBalance||0,fieldSize:stats.fieldSize||0,gpu:true,applied:!!stats.applied};
+}
+function maybeLaunchAllDigitSharedSoupField(){
+  if(allDigitSharedFieldPending)return allDigitSharedFieldPending;
+  const epoch=allDigitEpoch;
+  runtimeTelemetry.pendingField=true;
+  allDigitSharedFieldPending=stepAllDigitSharedSoupField(epoch).catch(err=>{
+    $('status').textContent=`WebGPU shared field error: ${err.message||err}`;
+  }).finally(()=>{allDigitSharedFieldPending=null;runtimeTelemetry.pendingField=false;});
+  return allDigitSharedFieldPending;
+}
+function computeAllDigitBoardStats(loaded){
+  const stats=allDigitStates.filter(s=>s.loaded).map(s=>withDigitState(s,()=>{
+    const st=continuousStats({fresh:false});
+    return {energy:st.rodEnergy,strain:st.meanStrain,rest:st.restError};
+  }));
+  const e=stats.length?stats.reduce((a,b)=>a+b.energy,0)/stats.length:0,strain=stats.length?stats.reduce((a,b)=>a+b.strain,0)/stats.length:0;
+  const rest=stats.length?stats.reduce((a,b)=>a+b.rest,0)/stats.length:0;
+  const hydro=allDigitStates.filter(s=>s.loaded).map(s=>s.rod?.hydroEnergy||0),hydroE=hydro.length?hydro.reduce((a,b)=>a+b,0)/hydro.length:0;
+  return {loaded,e,strain,rest,hydroE};
+}
+function renderAllDigitBoard(opts={}){
+  const renderStart=nowMs();
+  renderDigitCanvas();
+  telemetrySet('renderMs',nowMs()-renderStart);
+  const loaded=allDigitStates.filter(s=>s.loaded).length;
+  const dyn=rodDynamics(),statInterval=dyn.mode==='temporal-hydro'?48:4;
+  if(opts.forceStats||!allDigitStatsCache||allDigitStatsCache.loaded!==loaded||allDigitStatsTick++%statInterval===0)allDigitStatsCache=computeAllDigitBoardStats(loaded);
+  runtimeTelemetry.activeNodes=allDigitSharedFieldStats?.nodes||activeDigitNodeCount();
+  runtimeTelemetry.fieldSize=allDigitSharedFieldStats?.fieldSize||runtimeTelemetry.fieldSize||0;
+  runtimeTelemetry.pendingField=!!allDigitSharedFieldPending;
+  const {e,strain,rest,hydroE}=allDigitStatsCache;
+  const dynLabel=dynamicsRunLabel(dyn.mode);
+  $('sel-name').textContent=`${allDigitLabel()} topology samples -> ${dynLabel} folds`;
+  const next=allDigitPool.length?`${allDigitPool.length} ready`:allDigitPoolFill?'filling pool':'pool empty';
+  const hydroTxt=` · hydro field E ${hydroE.toFixed(2)}`;
+  const shared=allDigitSharedFieldStats?.nodes?` · shared field ${allDigitSharedFieldStats.nodes} nodes`:``;
+  $('seq').textContent=`${loaded}/10 digits in ${Math.round(soupWorldSize)}x${Math.round(soupWorldSize)} soup world · 3/4/3 centered layout${shared} · WebGPU topology batch · ${WGPU_DIGIT_CHAINS} chains/digit · ${wgpuLastBatchMs.toFixed(1)}ms · ${next} · ${dynLabel} T${dyn.temperature.toFixed(2)} F${dyn.field.toFixed(2)} · rest ${rest.toFixed(2)}px · mean E ${e.toFixed(2)}${hydroTxt} · strain ${(strain*100).toFixed(2)}%`;
+  $('debug').textContent=telemetryText();
+  $('prog-bar').style.width=`${Math.max(2,loaded*10)}%`;$('prog-pct').textContent=`${loaded}/10 digits`;$('prog-moves').textContent=fmtCount(wgpuValidSamples);$('prog-max').textContent=allDigitLoading?'loading':'live';
+  $('s-moves').textContent=fmtCount(wgpuValidSamples);$('s-found').textContent=String(loaded);$('s-found-label').textContent='digits loaded';renderTotalStateBox(Infinity);$('s-waste').textContent=String(10-loaded);$('s-angle').textContent=e.toFixed(2);$('s-turn').textContent=`${(strain*100).toFixed(1)}%`;
+}
+function updateRunButton(){
+  const btn=$('run');if(!btn)return;
+  btn.disabled=!!allDigitLoading;
+  btn.textContent=allDigitLoading?'sampling...':allDigitPool.length?`sample (${allDigitPool.length})`:'sample';
+}
+function activeDigitNodeCount(){
+  let n=0;
+  for(const st of allDigitStates)if(st.loaded)n+=st.path?.length||st.rod?.rest?.length||0;
+  return n;
+}
+function wakeAllDigitRods(){
+  for(const st of allDigitStates)if(st.loaded)withDigitState(st,()=>{
+    const rod=ensureContinuousRod();if(!rod)return;
+    rod.statsFresh=false;rod.restErr=null;
+  });
+}
+function startAllDigitLoop(){
+  if(allDigitFrame)return;
+  let stepping=false, sharedTick=0;
+  const loopToken=++allDigitLoopToken;
+  const loopEpoch=allDigitEpoch;
+  const frame=async()=>{
+    if(loopToken!==allDigitLoopToken)return;
+    if(stepping)return;
+    stepping=true;
+    const frameStart=nowMs();
+    allDigitFrame=0;if(!allDigitMode||loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken){stepping=false;return;}
+    const base=rodDynamics();
+    try{
+      const simStart=nowMs();
+      const sharedInterval=Math.max(1,Math.round(foldParams.sharedSoupInterval??2)),applyShared=sharedTick++%sharedInterval===0;
+      if(GPU_ROD_SOLVER_ENABLED){
+        const info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:base.temperature,field:base.field,seed:sampleRandomU32(),applyField:applyShared});
+        if(info.fieldStats)allDigitSharedFieldStats={nodes:info.totalNodes,active:info.fieldStats.hydroActive||0,maxMove:info.fieldStats.maxMove||0,net:info.fieldStats.forceBalance||0,fieldSize:info.fieldStats.fieldSize||0,gpu:true,applied:!!info.fieldStats.applied};
+      }else{
+        for(const st of allDigitStates){
+          if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
+          if(st.loaded)await withDigitState(st,()=>stepCurrentRodDynamics(base));
+        }
+      }
+      telemetrySet('simMs',nowMs()-simStart);
+      if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
+      if(!GPU_ROD_SOLVER_ENABLED&&applyShared&&!allDigitSharedFieldPending)maybeLaunchAllDigitSharedSoupField();
+      if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
+      renderAllDigitBoard();
+      telemetrySet('frameMs',nowMs()-frameStart);
+      if(loopToken===allDigitLoopToken)allDigitFrame=scheduleAllDigitFrame(frame);
+    }catch(err){
+      $('status').textContent=`WebGPU fold error: ${err.message||err}`;
+      renderAllDigitBoard();
+    }finally{
+      stepping=false;
+    }
+  };
+  allDigitFrame=scheduleAllDigitFrame(frame);
+}
+function stopAllDigitLoop(){allDigitLoopToken++;if(allDigitFrame)cancelAllDigitFrame(allDigitFrame);allDigitFrame=0;}
+function cloneDigitStateList(states=allDigitStates){
+  return states.map(s=>({digit:s.digit,loaded:!!s.loaded,error:s.error||'',mask:s.mask?.slice()||[],domain:s.domain,path:s.path?.slice()||[],angles:s.angles?.map(a=>a?{...a}:null)||[],rod:cloneRod(s.rod)}));
+}
+function restoreDigitStateList(snap){
+  allDigitStates=snap.map(s=>({digit:s.digit,loaded:!!s.loaded,error:s.error||'',mask:s.mask.slice(),domain:s.domain,path:s.path.slice(),angles:s.angles.map(a=>a?{...a}:null),rod:cloneRod(s.rod)}));
+  allDigitStatsCache=null;invalidateSharedSoupBuffers();
+}
+const HYDRO_GPU_SHADER=`
+@group(0) @binding(0) var<storage, read> cfg: array<f32>;
+@group(0) @binding(1) var<storage, read_write> pts: array<vec4f>;
+@group(0) @binding(2) var<storage, read> seg: array<vec4f>;
+@group(0) @binding(3) var<storage, read_write> rawTotal: array<atomic<i32>>;
+@group(0) @binding(4) var<storage, read_write> rawHydro: array<atomic<i32>>;
+@group(0) @binding(5) var<storage, read_write> rawAdhere: array<atomic<i32>>;
+@group(0) @binding(6) var<storage, read_write> total: array<f32>;
+@group(0) @binding(7) var<storage, read_write> env: array<f32>;
+@group(0) @binding(8) var<storage, read_write> hydro: array<f32>;
+@group(0) @binding(9) var<storage, read_write> adhere: array<f32>;
+@group(0) @binding(10) var<storage, read_write> tmp: array<f32>;
+@group(0) @binding(11) var<storage, read_write> nodeForce: array<vec2f>;
+@group(0) @binding(12) var<storage, read_write> segForce: array<vec4f>;
+
+fn n_nodes()->u32{return u32(cfg[0]);}
+fn grid_n()->u32{return u32(cfg[1]);}
+fn n_seg()->u32{return select(0u,n_nodes()-1u,n_nodes()>0u);}
+fn fp()->f32{return cfg[16];}
+fn world_size()->f32{return max(1.0,cfg[17]);}
+fn clamp_cell(v:i32,g:u32)->u32{return u32(clamp(v,0i,i32(g)-1i));}
+fn cell(x:u32,y:u32,g:u32)->u32{return y*g+x;}
+fn read_field(field:u32,i:u32)->f32{
+  if(field==0u){return total[i];}
+  if(field==1u){return env[i];}
+  if(field==2u){return hydro[i];}
+  return adhere[i];
+}
+fn write_field(field:u32,i:u32,v:f32){
+  if(field==0u){total[i]=v;}else if(field==1u){env[i]=v;}else if(field==2u){hydro[i]=v;}else{adhere[i]=v;}
+}
+fn atomic_deposit_total(x:f32,y:f32,w:f32){
+  let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
+  let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
+  let s=fp();
+  atomicAdd(&rawTotal[cell(x0,y0,g)],i32((1.0-tx)*(1.0-ty)*w*s));
+  atomicAdd(&rawTotal[cell(x1,y0,g)],i32(tx*(1.0-ty)*w*s));
+  atomicAdd(&rawTotal[cell(x0,y1,g)],i32((1.0-tx)*ty*w*s));
+  atomicAdd(&rawTotal[cell(x1,y1,g)],i32(tx*ty*w*s));
+}
+fn atomic_deposit_side(x:f32,y:f32,wh:f32,wc:f32){
+  let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
+  let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
+  let w=array<f32,4>((1.0-tx)*(1.0-ty),tx*(1.0-ty),(1.0-tx)*ty,tx*ty);
+  let c=array<u32,4>(cell(x0,y0,g),cell(x1,y0,g),cell(x0,y1,g),cell(x1,y1,g));
+  let s=fp();
+  for(var k=0u;k<4u;k++){
+    if(wh>0.0){atomicAdd(&rawHydro[c[k]],i32(w[k]*wh*s));}
+    if(wc>0.0){atomicAdd(&rawAdhere[c[k]],i32(w[k]*wc*s));}
+  }
+}
+fn grad(field:u32,x:f32,y:f32)->vec3f{
+  let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
+  let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
+  let f00=read_field(field,cell(x0,y0,g));let f10=read_field(field,cell(x1,y0,g));let f01=read_field(field,cell(x0,y1,g));let f11=read_field(field,cell(x1,y1,g));
+  let val=(f00*(1.0-tx)+f10*tx)*(1.0-ty)+(f01*(1.0-tx)+f11*tx)*ty;
+  let gx=((f10-f00)*(1.0-ty)+(f11-f01)*ty)*scale;
+  let gy=((f01-f00)*(1.0-tx)+(f11-f10)*tx)*scale;
+  return vec3f(val,gx,gy);
+}
+fn side_force(k:u32,side_offset:f32,fx:f32,fy:f32)->vec4f{
+  let a=pts[k].xy;let b=pts[k+1u].xy;let d=b-a;let L=max(length(d),1e-9);let n=vec2f(-d.y/L,d.x/L);
+  let moment=(-d.y/L*side_offset)*fy-(d.x/L*side_offset)*fx;let c=moment/L;let f=vec2f(fx,fy);
+  let fa=f*0.5-c*n;let fb=f*0.5+c*n;
+  return vec4f(fa,fb);
+}
+@compute @workgroup_size(64)
+fn clear(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;let cells=grid_n()*grid_n();
+  if(i<cells){atomicStore(&rawTotal[i],0);atomicStore(&rawHydro[i],0);atomicStore(&rawAdhere[i],0);total[i]=0.0;env[i]=0.0;hydro[i]=0.0;adhere[i]=0.0;tmp[i]=0.0;}
+  if(i<n_nodes()){nodeForce[i]=vec2f(0.0);}
+  if(i<n_seg()){segForce[i]=vec4f(0.0);}
+}
+@compute @workgroup_size(64)
+fn deposit(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;let ell=max(1.0,cfg[3]);let topo=max(1.0,cfg[2]);
+  if(i<n_nodes()){atomic_deposit_total(pts[i].x,pts[i].y,pts[i].z);}
+  if(i<n_seg()){
+    let a=pts[i].xy;let b=pts[i+1u].xy;let d=b-a;let L=max(length(d),1e-9);let n=vec2f(-d.y/L,d.x/L);let m=(a+b)*0.5;let off=topo*0.32;
+    let s=seg[i];let left=s.x;let right=s.y;let lc=s.z;let rc=s.w;let w=max(0.0,pts[i].w);
+    if(left>0.0){atomic_deposit_side(m.x+n.x*off,m.y+n.y*off,left*w,lc*w);}
+    if(right>0.0){atomic_deposit_side(m.x-n.x*off,m.y-n.y*off,right*w,rc*w);}
+  }
+}
+@compute @workgroup_size(64)
+fn normalize(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;let cells=grid_n()*grid_n();if(i>=cells){return;}
+  let s=fp();let t=f32(atomicLoad(&rawTotal[i]))/s;total[i]=t;env[i]=t;hydro[i]=f32(atomicLoad(&rawHydro[i]))/s;adhere[i]=f32(atomicLoad(&rawAdhere[i]))/s;
+}
+fn blur_h_field(i:u32,field:u32){
+  let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let xm=select(x-1u,x,x==0u);let xp=min(g-1u,x+1u);
+  tmp[i]=(read_field(field,cell(xm,y,g))+2.0*read_field(field,i)+read_field(field,cell(xp,y,g)))*0.25;
+}
+fn blur_v_field(i:u32,field:u32){
+  let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let ym=select(y-1u,y,y==0u);let yp=min(g-1u,y+1u);
+  write_field(field,i,(tmp[cell(x,ym,g)]+2.0*tmp[i]+tmp[cell(x,yp,g)])*0.25);
+}
+fn blur2_h_field(i:u32,field:u32){
+  let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let xm2=u32(max(0,i32(x)-2));let xm1=u32(max(0,i32(x)-1));let xp1=min(g-1u,x+1u);let xp2=min(g-1u,x+2u);
+  tmp[i]=(read_field(field,cell(xm2,y,g))+4.0*read_field(field,cell(xm1,y,g))+6.0*read_field(field,i)+4.0*read_field(field,cell(xp1,y,g))+read_field(field,cell(xp2,y,g)))*0.0625;
+}
+fn blur2_v_field(i:u32,field:u32){
+  let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let ym2=u32(max(0,i32(y)-2));let ym1=u32(max(0,i32(y)-1));let yp1=min(g-1u,y+1u);let yp2=min(g-1u,y+2u);
+  write_field(field,i,(tmp[cell(x,ym2,g)]+4.0*tmp[cell(x,ym1,g)]+6.0*tmp[i]+4.0*tmp[cell(x,yp1,g)]+tmp[cell(x,yp2,g)])*0.0625);
+}
+@compute @workgroup_size(64) fn blur_h_total(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,0u);}
+@compute @workgroup_size(64) fn blur_v_total(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,0u);}
+@compute @workgroup_size(64) fn blur_h_env(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,1u);}
+@compute @workgroup_size(64) fn blur_v_env(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,1u);}
+@compute @workgroup_size(64) fn blur_h_hydro(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,2u);}
+@compute @workgroup_size(64) fn blur_v_hydro(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,2u);}
+@compute @workgroup_size(64) fn blur_h_adhere(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,3u);}
+@compute @workgroup_size(64) fn blur_v_adhere(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,3u);}
+@compute @workgroup_size(64) fn blur2_h_total(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,0u);}
+@compute @workgroup_size(64) fn blur2_v_total(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,0u);}
+@compute @workgroup_size(64) fn blur2_h_env(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,1u);}
+@compute @workgroup_size(64) fn blur2_v_env(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,1u);}
+@compute @workgroup_size(64) fn blur2_h_hydro(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,2u);}
+@compute @workgroup_size(64) fn blur2_v_hydro(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,2u);}
+@compute @workgroup_size(64) fn blur2_h_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,3u);}
+@compute @workgroup_size(64) fn blur2_v_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,3u);}
+@compute @workgroup_size(64)
+fn gather(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;let excluded=cfg[4];let hydroAttract=cfg[5];let philicExpose=cfg[6];let hydroSat=max(1e-6,cfg[7]);let coreBias=cfg[8];let exposureBias=cfg[9];let interfaceBias=cfg[10];let contactAttract=cfg[11];let contactSat=max(1e-6,cfg[12]);let selfH=cfg[13];let selfC=cfg[14];let topo=max(1.0,cfg[2]);
+  if(i<n_nodes()){
+    let p=pts[i];let t=grad(0u,p.x,p.y);
+    nodeForce[i]=vec2f(-excluded*t.x*t.y,-excluded*t.x*t.z);
+  }
+  if(i<n_seg()){
+    let a=pts[i].xy;let b=pts[i+1u].xy;let d=b-a;let L=max(length(d),1e-9);let n=vec2f(-d.y/L,d.x/L);let m=(a+b)*0.5;let off=topo*0.32;let sd=seg[i];let left=sd.x;let right=sd.y;let lc=sd.z;let rc=sd.w;let segW=max(0.0,pts[i].w);
+    var out=vec4f(0.0);let side_sum=left+right;
+    if(left>0.0&&right>0.0&&coreBias>0.0){let e=grad(1u,m.x,m.y);let gate=1.0/(1.0+e.x/max(1e-6,hydroSat*1.8));let w=max(0.1,side_sum*0.5);out+=side_force(i,0.0,coreBias*w*gate*e.y,coreBias*w*gate*e.z);}
+    if(left<0.0&&right<0.0&&exposureBias>0.0){let e=grad(1u,m.x,m.y);let w=max(0.1,-side_sum*0.5);out+=side_force(i,0.0,-exposureBias*w*e.x*e.y,-exposureBias*w*e.x*e.z);}
+    if(left*right<0.0&&interfaceBias>0.0){let hs=select(-1.0,1.0,left>right);let ps=-hs;let w=min(1.0,abs(left-right));let hf=grad(1u,m.x+n.x*off*hs,m.y+n.y*off*hs);let pf=grad(1u,m.x+n.x*off*ps,m.y+n.y*off*ps);out+=side_force(i,off*hs,interfaceBias*w*hf.y,interfaceBias*w*hf.z);out+=side_force(i,off*ps,-interfaceBias*w*pf.y,-interfaceBias*w*pf.z);}
+    if(left>0.0){let sx=m.x+n.x*off;let sy=m.y+n.y*off;let h=grad(2u,sx,sy);let hv=max(0.0,h.x-selfH*left*segW);let hg=1.0/(1.0+hv/hydroSat);out+=side_force(i,off,hydroAttract*left*hg*h.y,hydroAttract*left*hg*h.z);if(contactAttract>0.0&&lc>0.0){let c=grad(3u,sx,sy);let cv=max(0.0,c.x-selfC*lc*segW);let cg=1.0/(1.0+cv/contactSat);out+=side_force(i,off,contactAttract*lc*cg*c.y,contactAttract*lc*cg*c.z);}}
+    if(left<0.0&&philicExpose>0.0){let sx=m.x+n.x*off;let sy=m.y+n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,off,-philicExpose*(-left)*e.x*e.y,-philicExpose*(-left)*e.x*e.z);}
+    if(right>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let h=grad(2u,sx,sy);let hv=max(0.0,h.x-selfH*right*segW);let hg=1.0/(1.0+hv/hydroSat);out+=side_force(i,-off,hydroAttract*right*hg*h.y,hydroAttract*right*hg*h.z);if(contactAttract>0.0&&rc>0.0){let c=grad(3u,sx,sy);let cv=max(0.0,c.x-selfC*rc*segW);let cg=1.0/(1.0+cv/contactSat);out+=side_force(i,-off,contactAttract*rc*cg*c.y,contactAttract*rc*cg*c.z);}}
+    if(right<0.0&&philicExpose>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,-off,-philicExpose*(-right)*e.x*e.y,-philicExpose*(-right)*e.x*e.z);}
+    segForce[i]=out;
+  }
+}
+@compute @workgroup_size(64)
+fn apply_pts(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;if(i>=n_nodes()){return;}
+  var f=nodeForce[i];
+  if(i<n_seg()){let sf=segForce[i];f+=sf.xy;}
+  if(i>0u){let sf=segForce[i-1u];f+=sf.zw;}
+  let mobility=min(cfg[18],0.006);let maxStep=min(max(0.0,cfg[19]),0.18);var d=f*mobility;
+  d=clamp(d,vec2f(-maxStep),vec2f(maxStep));
+  let L=length(d);
+  if(maxStep>0.0&&L>maxStep){d=d/L*maxStep;}
+  var p=pts[i];p.x+=d.x;p.y+=d.y;pts[i]=p;
+}
+`;
+let hydroGpu=null;
+async function ensureHydroGpu(fieldSize,n){
+  await ensureWgpu();
+  if(!hydroGpu?.pipelines?.gather){
+    const module=wgpuDevice.createShaderModule({code:HYDRO_GPU_SHADER});
+    const entries=[
+      'clear','deposit','normalize',
+      'blur_h_total','blur_v_total',
+      'blur_h_env','blur_v_env',
+      'blur_h_hydro','blur_v_hydro',
+      'blur_h_adhere','blur_v_adhere',
+      'blur2_h_total','blur2_v_total',
+      'blur2_h_env','blur2_v_env',
+      'blur2_h_hydro','blur2_v_hydro',
+      'blur2_h_adhere','blur2_v_adhere',
+      'gather','apply_pts'
+    ];
+    const vis=GPUShaderStage.COMPUTE,bgEntries=[
+      {binding:0,visibility:vis,buffer:{type:'read-only-storage'}},
+      {binding:1,visibility:vis,buffer:{type:'storage'}},
+      {binding:2,visibility:vis,buffer:{type:'read-only-storage'}},
+      {binding:3,visibility:vis,buffer:{type:'storage'}},
+      {binding:4,visibility:vis,buffer:{type:'storage'}},
+      {binding:5,visibility:vis,buffer:{type:'storage'}},
+      {binding:6,visibility:vis,buffer:{type:'storage'}},
+      {binding:7,visibility:vis,buffer:{type:'storage'}},
+      {binding:8,visibility:vis,buffer:{type:'storage'}},
+      {binding:9,visibility:vis,buffer:{type:'storage'}},
+      {binding:10,visibility:vis,buffer:{type:'storage'}},
+      {binding:11,visibility:vis,buffer:{type:'storage'}},
+      {binding:12,visibility:vis,buffer:{type:'storage'}}
+    ];
+    const bindGroupLayout=wgpuDevice.createBindGroupLayout({entries:bgEntries}),layout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]});
+    hydroGpu={pipelines:Object.create(null),fieldSize:0,n:0,bindGroupLayout};
+    for(const e of entries)hydroGpu.pipelines[e]=await wgpuDevice.createComputePipelineAsync({layout,compute:{module,entryPoint:e}});
+  }
+  const cells=fieldSize*fieldSize,segN=Math.max(1,n-1),need=!hydroGpu.bindGroup||hydroGpu.fieldSize!==fieldSize||hydroGpu.n<n;
+  if(need){
+    for(const key of ['config','pts','seg','rawTotal','rawHydro','rawAdhere','total','env','hydro','adhere','tmp','nodeForce','segForce','ptsRead','nodeRead','segRead'])hydroGpu[key]?.destroy?.();
+    hydroGpu.fieldSize=fieldSize;hydroGpu.n=n;
+    hydroGpu.config=wgpuDevice.createBuffer({size:32*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    hydroGpu.pts=wgpuDevice.createBuffer({size:Math.max(4,n*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    hydroGpu.seg=wgpuDevice.createBuffer({size:Math.max(4,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    const rawUsage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST;
+    hydroGpu.rawTotal=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
+    hydroGpu.rawHydro=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
+    hydroGpu.rawAdhere=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
+    const fieldUsage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC;
+    hydroGpu.total=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.env=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.hydro=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.adhere=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.tmp=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.nodeForce=wgpuDevice.createBuffer({size:Math.max(8,n*2*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+    hydroGpu.segForce=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
+    hydroGpu.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    hydroGpu.nodeRead=wgpuDevice.createBuffer({size:Math.max(8,n*2*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    hydroGpu.segRead=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
+    const entries=[
+      {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:hydroGpu.pts}},{binding:2,resource:{buffer:hydroGpu.seg}},
+      {binding:3,resource:{buffer:hydroGpu.rawTotal}},{binding:4,resource:{buffer:hydroGpu.rawHydro}},{binding:5,resource:{buffer:hydroGpu.rawAdhere}},
+      {binding:6,resource:{buffer:hydroGpu.total}},{binding:7,resource:{buffer:hydroGpu.env}},{binding:8,resource:{buffer:hydroGpu.hydro}},{binding:9,resource:{buffer:hydroGpu.adhere}},
+      {binding:10,resource:{buffer:hydroGpu.tmp}},{binding:11,resource:{buffer:hydroGpu.nodeForce}},{binding:12,resource:{buffer:hydroGpu.segForce}}
+    ];
+    hydroGpu.bindGroup=wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries});
+  }
+  return hydroGpu;
+}
+async function addHydropathyFieldForcesGpu(rod,body,opts={}){
+  const refs=body?.refs||null,pts=body?.pts||[],count=body?.count??pts.length;if(!rod||!count)return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:0,field:true,gpu:true};
+  const ell=Math.max(1,body.meanEll||rod.meanEll||1),topoEll=Math.max(1,body.topologyMeanEll||rod.topologyMeanEll||ell),segEll=body.ell||rod.ell||[];
+  const worldSize=opts.worldSize||soupWorldSize||400,fieldSize=opts.fieldSize||Math.max(40,Math.min(128,Math.round(worldSize/(topoEll*.9))));
+  const gpu=await ensureHydroGpu(fieldSize,count),E=body?.segCount??Math.max(0,count-1);
+  let ptData=body?.ptData,segData=body?.segData,active=body?.activeHydro??0;
+  if(!ptData||!segData){
+    ptData=new Float32Array(count*4);segData=new Float32Array(Math.max(1,E)*4);
+    const nodeWeight=i=>(((i>0?(segEll[i-1]||ell):0)+(i<segEll.length?(segEll[i]||ell):0))*.5)/topoEll;
+    for(let i=0;i<count;i++){const p=pts[i];ptData[i*4]=p.x;ptData[i*4+1]=p.y;ptData[i*4+2]=nodeWeight(i);ptData[i*4+3]=i<E?(segEll[i]||ell)/topoEll:0;}
+    active=0;
+    for(let k=0;k<E;k++){
+      const side=body.sideHydro?.[k],contact=body.restContactWeight?.[k]||{left:1,right:1},floor=Math.max(0,opts.hydroContactFloor??1),boost=Math.max(0,opts.hydroContactRestBoost??0);
+      const left=side?hydroSigned(side.left):0,right=side?hydroSigned(side.right):0,leftContact=left>0?left*(floor+boost*Math.max(0,contact.left??1)):0,rightContact=right>0?right*(floor+boost*Math.max(0,contact.right??1)):0;
+      segData[k*4]=left;segData[k*4+1]=right;segData[k*4+2]=leftContact;segData[k*4+3]=rightContact;
+      if(left>0)active++;if(right>0)active++;
+    }
+  }
+  const cfg=new Float32Array(32);
+  cfg[0]=count;cfg[1]=fieldSize;cfg[2]=topoEll;cfg[3]=ell;cfg[4]=opts.excluded??2.2;cfg[5]=opts.hydroAttract??2.7;cfg[6]=opts.philicExpose??.75;cfg[7]=opts.hydroSat??2.2;cfg[8]=opts.coreBias??.65;cfg[9]=opts.exposureBias??.45;cfg[10]=opts.interfaceBias??.9;cfg[11]=opts.hydroContactAttract??0;cfg[12]=opts.hydroContactSat??1.2;cfg[13]=opts.hydroSelfSubtract??0;cfg[14]=opts.hydroContactSelfSubtract??0;cfg[15]=opts.hydroZeroNetForce?1:0;cfg[16]=4096;cfg[17]=worldSize;cfg[18]=opts.applyMobility??0;cfg[19]=opts.applyMaxStep??0;
+  const ptWrite=ptData.length===count*4?ptData:ptData.subarray(0,count*4),segWrite=segData.length===Math.max(1,E)*4?segData:segData.subarray(0,Math.max(1,E)*4);
+  const ptsBuffer=opts.ptsBuffer||gpu.pts,segBuffer=opts.segBuffer||gpu.seg;
+  const bindGroup=(opts.ptsBuffer||opts.segBuffer)?wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries:[
+    {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:ptsBuffer}},{binding:2,resource:{buffer:segBuffer}},
+    {binding:3,resource:{buffer:hydroGpu.rawTotal}},{binding:4,resource:{buffer:hydroGpu.rawHydro}},{binding:5,resource:{buffer:hydroGpu.rawAdhere}},
+    {binding:6,resource:{buffer:hydroGpu.total}},{binding:7,resource:{buffer:hydroGpu.env}},{binding:8,resource:{buffer:hydroGpu.hydro}},{binding:9,resource:{buffer:hydroGpu.adhere}},
+    {binding:10,resource:{buffer:hydroGpu.tmp}},{binding:11,resource:{buffer:hydroGpu.nodeForce}},{binding:12,resource:{buffer:hydroGpu.segForce}}
+  ]}):gpu.bindGroup;
+  wgpuDevice.queue.writeBuffer(gpu.config,0,cfg);
+  if(opts.uploadPts!==false)wgpuDevice.queue.writeBuffer(ptsBuffer,0,ptWrite);
+  if(opts.uploadSeg!==false)wgpuDevice.queue.writeBuffer(segBuffer,0,segWrite);
+  const cells=fieldSize*fieldSize,workCells=Math.ceil(Math.max(cells,count,E)/64),workNodes=Math.ceil(Math.max(count,E,1)/64);
+  const encodeDispatch=(enc,name,work=workCells)=>{const pass=enc.beginComputePass();pass.setPipeline(gpu.pipelines[name]);pass.setBindGroup(0,bindGroup);pass.dispatchWorkgroups(work);pass.end();};
+  let enc=wgpuDevice.createCommandEncoder();
+  encodeDispatch(enc,'clear');encodeDispatch(enc,'deposit',workNodes);encodeDispatch(enc,'normalize',Math.ceil(cells/64));
+  const blur=(prefix,passes)=>{
+    if(!(passes>0))return;
+    const pairs=Math.floor(passes/2);
+    for(let p=0;p<pairs;p++){
+      encodeDispatch(enc,`blur2_h_${prefix}`,Math.ceil(cells/64));
+      encodeDispatch(enc,`blur2_v_${prefix}`,Math.ceil(cells/64));
+    }
+    if(passes%2){
+      encodeDispatch(enc,`blur_h_${prefix}`,Math.ceil(cells/64));
+      encodeDispatch(enc,`blur_v_${prefix}`,Math.ceil(cells/64));
+    }
+  };
+  blur('total',1);
+  blur('env',opts.envBlur??Math.max(3,Math.round((opts.hydroBlur??7)*.75)));
+  blur('hydro',(opts.hydroAttract??0)>0?(opts.hydroBlur??7):0);
+  blur('adhere',(opts.hydroContactAttract??0)>0?(opts.hydroContactBlur??3):0);
+  encodeDispatch(enc,'gather',workNodes);
+  let gpuMs=0,readbackMs=0;
+  if(opts.applyToPts){
+    encodeDispatch(enc,'apply_pts',workNodes);
+    if(opts.readback===false){
+      const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
+      return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,maxMove:0,applied:true,gpuMs,readbackMs:0};
+    }
+    const ptsRead=gpu.ptsRead;
+    enc.copyBufferToBuffer(ptsBuffer,0,ptsRead,0,count*4*4);
+    const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
+    const readStart=nowMs();await ptsRead.mapAsync(GPUMapMode.READ);const pf=new Float32Array(ptsRead.getMappedRange()).slice(0,count*4);ptsRead.unmap();readbackMs=nowMs()-readStart;
+    let maxMove=0;
+    for(let i=0;i<count;i++){
+      const j=i*4,x=pf[j],y=pf[j+1],oldX=ptData[j],oldY=ptData[j+1],dx=x-oldX,dy=y-oldY;
+      if(refs?.[i]){const ref=refs[i];ref.x=x;ref.y=y;ref.vx=(ref.vx||0)+dx;ref.vy=(ref.vy||0)+dy;}
+      else if(pts[i]){const p=pts[i];p.x=x;p.y=y;p.vx=dx;p.vy=dy;}
+      ptData[j]=x;ptData[j+1]=y;maxMove=Math.max(maxMove,Math.hypot(dx,dy));
+    }
+    return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,maxMove,applied:true,gpuMs,readbackMs};
+  }
+  const nodeRead=gpu.nodeRead,segRead=gpu.segRead;
+  enc.copyBufferToBuffer(gpu.nodeForce,0,nodeRead,0,count*2*4);enc.copyBufferToBuffer(gpu.segForce,0,segRead,0,Math.max(1,E)*4*4);
+  const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
+  const readStart=nowMs();await nodeRead.mapAsync(GPUMapMode.READ);const nf=new Float32Array(nodeRead.getMappedRange()).slice(0,count*2);nodeRead.unmap();
+  await segRead.mapAsync(GPUMapMode.READ);const sf=new Float32Array(segRead.getMappedRange()).slice(0,Math.max(1,E)*4);segRead.unmap();readbackMs=nowMs()-readStart;
+  for(const p of pts){p.fx=0;p.fy=0;}
+  for(let i=0;i<pts.length;i++){pts[i].fx+=nf[i*2]||0;pts[i].fy+=nf[i*2+1]||0;}
+  for(let k=0;k<E;k++){const a=pts[k],b=pts[k+1];a.fx+=sf[k*4]||0;a.fy+=sf[k*4+1]||0;b.fx+=sf[k*4+2]||0;b.fy+=sf[k*4+3]||0;}
+  const rawForce=hydroBodyForceSummary(body);
+  if(opts.hydroZeroNetForce&&pts.length){
+    const dx=rawForce.fx/pts.length,dy=rawForce.fy/pts.length;
+    for(const p of pts){p.fx-=dx;p.fy-=dy;}
+  }
+  const force=opts.hydroZeroNetForce?hydroBodyForceSummary(body):rawForce;
+  return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,rawForceBalance:rawForce.net,forceBalance:force.net,maxForce:force.maxForce,rawNetRatio:rawForce.netRatio,netRatio:force.netRatio,gpuMs,readbackMs};
+}
+function hydroBodyForceSummary(body){
+  const pts=body?.pts||[];
+  let fx=0,fy=0,maxForce=0,cx=0,cy=0;
+  for(const p of pts){cx+=p.x||0;cy+=p.y||0;}
+  cx/=Math.max(1,pts.length);cy/=Math.max(1,pts.length);
+  let torque=0;
+  for(const p of pts){
+    const px=p.fx||0,py=p.fy||0;
+    fx+=px;fy+=py;maxForce=Math.max(maxForce,Math.hypot(px,py));
+    torque+=(p.x-cx)*py-(p.y-cy)*px;
+  }
+  const net=Math.hypot(fx,fy);
+  return {fx,fy,net,maxForce,netRatio:net/Math.max(1e-9,maxForce),torque,torqueRatio:Math.abs(torque)/Math.max(1e-9,maxForce*Math.max(1,body?.meanEll||1))};
+}
+function applyAllDigitStates(states,statusText=`folding ${allDigitLabel()} with temporal intrinsic/hydropathy dynamics`){
+  stopAllDigitLoop();
+  allDigitEpoch++;
+  allDigitStates=states;allDigitLoading=false;allDigitLoadingN=0;allDigitStatsCache=null;invalidateSharedSoupBuffers();renderAllDigitBoard({forceStats:true});
+  const failed=allDigitStates.filter(s=>!s.loaded).map(s=>s.digit);
+  $('status').textContent=failed.length?`GPU sampler did not find valid local-edge chains for digits ${failed.join(', ')}`:statusText;
+  updateRunButton();
+  startAllDigitLoop();
+}
+async function precomputeAllDigitPool(opts={}){
+  const n=SAMPLE_N,seed=opts.seed==null?null:opts.seed>>>0,epoch=opts.epoch??allDigitEpoch,poolKey=`${n}:${seed??'live'}:${epoch}`;
+  if(allDigitPool.length&&allDigitPoolN===n&&(seed==null||allDigitPoolSeed===seed))return null;
+  if(allDigitPoolFill?.key===poolKey)return allDigitPoolFill.promise;
+  allDigitPool=[];
+  allDigitPoolN=n;
+  allDigitPoolSeed=seed;
+  allDigitPrefetchError='';
+  const promise=(async()=> {
+    SAMPLE_N=n;SAMPLE_CELLS=n*n;
+    const masks=digitSampleMasks(n),started=nowMs(),items=await runWgpuDigitBatchPool(masks,DIGIT_SAMPLE_POOL_TARGET,{seed}),ms=nowMs()-started;
+    if(SAMPLE_N!==n||allDigitEpoch!==epoch)return;
+    const validItems=items.map((item,i)=>({item,ms,index:i})).filter(row=>row.item.every(job=>!job.error&&job.path.length));
+    allDigitPool=validItems;
+    const dropped=items.length-validItems.length;
+    if(!validItems.length)allDigitPrefetchError=`no complete ${allDigitLabel(n)} batches found`;
+    else if(dropped)allDigitPrefetchError=`dropped ${dropped} incomplete ${allDigitLabel(n)} batches`;
+  })().catch(err=>{
+    if(SAMPLE_N===n&&allDigitEpoch===epoch)allDigitPrefetchError=err.message||String(err);
+  }).finally(()=>{
+    if(allDigitPoolFill?.key===poolKey)allDigitPoolFill=null;
+    updateRunButton();
+    if(allDigitMode&&!allDigitLoading&&allDigitEpoch===epoch)renderAllDigitBoard();
+  });
+  allDigitPoolFill={n,seed,key:poolKey,promise};
+  return promise;
+}
+function consumeAllDigitPool(){
+  if(allDigitPoolN!==SAMPLE_N)allDigitPool=[];
+  const item=allDigitPool.shift();
+  if(!item)return false;
+  const digits=item.item?.map(job=>String(job.digit)).sort().join('');
+  if(digits!=='0123456789')return false;
+  applyAllDigitStates(materializeDigitPoolItem(item.item),`folding cached sample ${item.index+1}/${DIGIT_SAMPLE_POOL_TARGET} · precomputed in ${item.ms.toFixed(1)}ms · ${allDigitPool.length} cached`);
+  return true;
+}
+async function startAllDigitDemo(opts={}){
+  const requestedN=Math.max(5,Math.min(30,Math.round(SAMPLE_N)));
+  if(allDigitLoading&&allDigitLoadingN===requestedN)return;
+  const keepCurrent=!!opts.background&&allDigitStates.some(s=>s.loaded);
+  if(keepCurrent&&consumeAllDigitPool())return;
+  if(keepCurrent){
+    $('status').textContent=allDigitPrefetchError?`WebGPU digit pool error: ${allDigitPrefetchError}`:'sample pool is empty';
+    updateRunButton();
+    return;
+  }
+  const epoch=++allDigitEpoch;allDigitMode=true;if(!keepCurrent)stopAllDigitLoop();allDigitLoading=true;allDigitLoadingN=requestedN;
+    if(!keepCurrent)allDigitStates=Array.from({length:10},(_,d)=>({digit:String(d),loaded:false,mask:[],domain:null,path:[],angles:[],rod:null}));
+    allDigitStatsCache=null;invalidateSharedSoupBuffers();
+  SAMPLE_N=requestedN;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;$('grid-n').value=SAMPLE_N;$('grid-n-label').textContent=allDigitLabel();
+  updateRunButton();
+  renderAllDigitBoard();$('status').textContent=keepCurrent?'sampling next topology batch while current fold runs...':`batching ${allDigitLabel()} topology samples...`;
+  await new Promise(resolve=>setTimeout(resolve,0));
+  try{
+    await precomputeAllDigitPool({epoch});
+    if(epoch!==allDigitEpoch)return;
+    if(!consumeAllDigitPool())throw new Error(allDigitPrefetchError||'sample pool did not produce any valid batches');
+  }catch(err){
+    if(epoch!==allDigitEpoch)return;
+    allDigitLoading=false;allDigitLoadingN=0;
+    $('status').textContent=`WebGPU digit batch error: ${err.message||err}`;
+    updateRunButton();
+    renderAllDigitBoard();
+    if(keepCurrent)startAllDigitLoop();
+  }
+}
+const WGPU_SHADER=`
+const MAX_CELLS:u32=256u;
+const MAX_EDGES:u32=1024u;
+const ADJ_WORDS:u32=8u;
+const HLL_BITS:u32=20u;
+const HLL_MASK:u32=(1u<<HLL_BITS)-1u;
+const HLL_PACK:u32=8u;
+const SENT:u32=4294967295u;
+struct Config{cells:u32,edgeN:u32,chains:u32,chainOffset:u32,seed:u32,repairCap:u32,exploreSteps:u32,sampleStride:u32,selectedChain:u32,hllSamples:u32,poolCount:u32,outputOffset:u32};
+struct Summary{repaired:atomic<u32>,valid:atomic<u32>,invalid:atomic<u32>,repairAttempts:atomic<u32>,exploreMoves:atomic<u32>,selectedOk:atomic<u32>};
+@group(0) @binding(0) var<uniform> cfg:Config;
+@group(0) @binding(1) var<storage,read> edges:array<vec2u>;
+@group(0) @binding(2) var<storage,read> adjBits:array<u32>;
+@group(0) @binding(3) var<storage,read_write> summary:Summary;
+@group(0) @binding(4) var<storage,read_write> hll:array<atomic<u32>>;
+@group(0) @binding(5) var<storage,read_write> selectedPath:array<atomic<u32>>;
+fn mix32(x0:u32)->u32{var x=x0+0x9e3779b9u;x=(x^(x>>16u))*0x85ebca6bu;x=(x^(x>>13u))*0xc2b2ae35u;return x^(x>>16u);}
+fn rng_next(s:ptr<function,u32>)->u32{let x=mix32((*s)+0x9e3779b9u);*s=x;return x;}
+fn gcd(a0:u32,b0:u32)->u32{var a=a0;var b=b0;loop{if(b==0u){break;}let r=a%b;a=b;b=r;}return a;}
+fn adjacent(a:u32,b:u32)->bool{return (adjBits[a*ADJ_WORDS+(b>>5u)]&(1u<<(b&31u)))!=0u;}
+fn has_edge(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,a:u32,b:u32)->bool{return ((*deg)[a]>0u&&(*n0)[a]==b)||((*deg)[a]>1u&&(*n1)[a]==b);}
+fn add_edge(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,ec:ptr<function,u32>,a:u32,b:u32)->bool{if(a==b||(*deg)[a]>=2u||(*deg)[b]>=2u||has_edge(deg,n0,n1,a,b)){return false;}if((*deg)[a]==0u){(*n0)[a]=b;}else{(*n1)[a]=b;}(*deg)[a]=(*deg)[a]+1u;if((*deg)[b]==0u){(*n0)[b]=a;}else{(*n1)[b]=a;}(*deg)[b]=(*deg)[b]+1u;*ec=(*ec)+1u;return true;}
+fn remove_edge(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,ec:ptr<function,u32>,a:u32,b:u32)->bool{if(!has_edge(deg,n0,n1,a,b)){return false;}if((*n0)[a]==b){(*n0)[a]=(*n1)[a];}(*n1)[a]=SENT;(*deg)[a]=(*deg)[a]-1u;if((*n0)[b]==a){(*n0)[b]=(*n1)[b];}(*n1)[b]=SENT;(*deg)[b]=(*deg)[b]-1u;*ec=(*ec)-1u;return true;}
+fn random_cover(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,parent:ptr<function,array<u32,256>>,ec:ptr<function,u32>,rng:ptr<function,u32>){for(var i=0u;i<MAX_CELLS;i++){(*deg)[i]=0u;(*n0)[i]=SENT;(*n1)[i]=SENT;(*parent)[i]=i;}*ec=0u;if(cfg.edgeN==0u){return;}var start=rng_next(rng)%cfg.edgeN;var stride=1u;if(cfg.edgeN>1u){stride=1u+(rng_next(rng)%(cfg.edgeN-1u));loop{if(gcd(stride,cfg.edgeN)==1u){break;}stride=stride+1u;if(stride>=cfg.edgeN){stride=1u;}}}for(var oi=0u;oi<MAX_EDGES;oi++){if(oi>=cfg.edgeN){break;}let e=edges[(start+oi*stride)%cfg.edgeN];if((*deg)[e.x]>=2u||(*deg)[e.y]>=2u){continue;}var ra=e.x;var rb=e.y;loop{if((*parent)[ra]==ra){break;}ra=(*parent)[ra];}loop{if((*parent)[rb]==rb){break;}rb=(*parent)[rb];}if(ra==rb){continue;}if(add_edge(deg,n0,n1,ec,e.x,e.y)){(*parent)[rb]=ra;}}}
+fn recompute_components(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,comp:ptr<function,array<u32,256>>)->u32{for(var i=0u;i<MAX_CELLS;i++){(*comp)[i]=SENT;}var count=0u;for(var s=0u;s<MAX_CELLS;s++){if(s>=cfg.cells){break;}if((*comp)[s]!=SENT){continue;}(*comp)[s]=count;for(var dir=0u;dir<2u;dir++){if(dir>=(*deg)[s]){continue;}var prev=s;var cur=select((*n0)[s],(*n1)[s],dir==1u);loop{if(cur==SENT||(*comp)[cur]!=SENT){break;}(*comp)[cur]=count;var next=SENT;if((*deg)[cur]>0u&&(*n0)[cur]!=prev){next=(*n0)[cur];}if((*deg)[cur]>1u&&(*n1)[cur]!=prev){next=(*n1)[cur];}prev=cur;cur=next;}}count=count+1u;}return count;}
+fn path_from_state(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,ec:u32,path:ptr<function,array<u32,256>>)->bool{if(ec+1u!=cfg.cells){return false;}var e0=SENT;var e1=SENT;var ends=0u;for(var v=0u;v<MAX_CELLS;v++){if(v>=cfg.cells){break;}if((*deg)[v]==1u){if(ends==0u){e0=v;}else{e1=v;}ends=ends+1u;}else if((*deg)[v]!=2u){return false;}}if(ends!=2u){return false;}var seen:array<u32,256>;for(var i=0u;i<MAX_CELLS;i++){seen[i]=0u;}var prev=SENT;var cur=e0;for(var i=0u;i<MAX_CELLS;i++){if(i>=cfg.cells){break;}if(cur==SENT||cur>=cfg.cells||seen[cur]!=0u){return false;}seen[cur]=1u;(*path)[i]=cur;var next=SENT;if((*deg)[cur]>0u&&(*n0)[cur]!=prev){next=(*n0)[cur];}if((*deg)[cur]>1u&&(*n1)[cur]!=prev){next=(*n1)[cur];}prev=cur;cur=next;}return cur==SENT;}
+fn try_direct_join(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,comp:ptr<function,array<u32,256>>,ec:ptr<function,u32>,rng:ptr<function,u32>)->bool{var slots=0u;var pa=0u;var pb=0u;for(var i=0u;i<MAX_EDGES;i++){if(i>=cfg.edgeN){break;}let e=edges[i];if((*deg)[e.x]<2u&&(*deg)[e.y]<2u&&(*comp)[e.x]!=(*comp)[e.y]&&!has_edge(deg,n0,n1,e.x,e.y)){slots=slots+1u;if(rng_next(rng)%slots==0u){pa=e.x;pb=e.y;}}}if(slots==0u){return false;}return add_edge(deg,n0,n1,ec,pa,pb);}
+fn try_splice(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,comp:ptr<function,array<u32,256>>,ec:ptr<function,u32>,rng:ptr<function,u32>)->bool{var slots=0u;var pa=0u;var px=0u;var py=0u;for(var i=0u;i<MAX_EDGES;i++){if(i>=cfg.edgeN){break;}let e=edges[i];for(var side=0u;side<2u;side++){let a=select(e.x,e.y,side==1u);let x=select(e.y,e.x,side==1u);if((*deg)[a]>=2u||(*deg)[x]!=2u||(*comp)[a]==(*comp)[x]||has_edge(deg,n0,n1,a,x)){continue;}for(var k=0u;k<2u;k++){let y=select((*n0)[x],(*n1)[x],k==1u);if(y==SENT){continue;}slots=slots+1u;if(rng_next(rng)%slots==0u){pa=a;px=x;py=y;}}}}if(slots==0u){return false;}if(!remove_edge(deg,n0,n1,ec,px,py)){return false;}return add_edge(deg,n0,n1,ec,pa,px);}
+fn try_rotation(deg:ptr<function,array<u32,256>>,n0:ptr<function,array<u32,256>>,n1:ptr<function,array<u32,256>>,comp:ptr<function,array<u32,256>>,ec:ptr<function,u32>,rng:ptr<function,u32>)->bool{var slots=0u;var pa=0u;var px=0u;var py=0u;for(var i=0u;i<MAX_EDGES;i++){if(i>=cfg.edgeN){break;}let e=edges[i];for(var side=0u;side<2u;side++){let a=select(e.x,e.y,side==1u);let x=select(e.y,e.x,side==1u);if((*deg)[a]!=1u||(*deg)[x]!=2u||(*comp)[a]!=(*comp)[x]||has_edge(deg,n0,n1,a,x)){continue;}for(var k=0u;k<2u;k++){let y=select((*n0)[x],(*n1)[x],k==1u);if(y==SENT){continue;}slots=slots+1u;if(rng_next(rng)%slots==0u){pa=a;px=x;py=y;}}}}if(slots==0u){return false;}if(!remove_edge(deg,n0,n1,ec,px,py)){return false;}return add_edge(deg,n0,n1,ec,pa,px);}
+fn reverse_range(path:ptr<function,array<u32,256>>,lo0:u32,hi0:u32){var lo=lo0;var hi=hi0;loop{if(lo>=hi){break;}let t=(*path)[lo];(*path)[lo]=(*path)[hi];(*path)[hi]=t;lo=lo+1u;hi=hi-1u;}}
+fn edge_hash(path:ptr<function,array<u32,256>>)->vec2u{var h1=0x243f6a88u^cfg.cells;var h2=0x85a308d3u^(cfg.cells<<16u);for(var i=0u;i<MAX_CELLS;i++){if(i+1u>=cfg.cells){break;}let a=min((*path)[i],(*path)[i+1u]);let b=max((*path)[i],(*path)[i+1u]);let key=a*2003u+b;h1=h1^mix32(key^0x9e3779b9u);h2=h2^mix32(key^0xd1b54a35u);}return vec2u(h1,h2);}
+fn update_hll(fp:vec2u){let x=fp.x^(fp.y+0x9e3779b9u+(fp.x<<6u)+(fp.x>>2u));let idx=x&HLL_MASK;let w=x>>HLL_BITS;let rank=min(15u,select(32u-HLL_BITS+1u,countLeadingZeros(w)-HLL_BITS+1u,w!=0u));let word=idx/HLL_PACK;let shift=(idx&(HLL_PACK-1u))*4u;let mask=15u<<shift;loop{let old=atomicLoad(&hll[word]);let cur=(old>>shift)&15u;if(rank<=cur){break;}let next=(old&(~mask))|(rank<<shift);let res=atomicCompareExchangeWeak(&hll[word],old,next);if(res.exchanged){break;}}}
+fn backbite(path:ptr<function,array<u32,256>>,rng:ptr<function,u32>){var slots=0u;var pick=0u;var pickHead=false;let tail=(*path)[cfg.cells-1u];let head=(*path)[0u];for(var j=0u;j<MAX_CELLS;j++){if(j+2u>=cfg.cells){break;}if(adjacent(tail,(*path)[j])){slots=slots+1u;if(rng_next(rng)%slots==0u){pick=j;pickHead=false;}}}for(var j=0u;j<MAX_CELLS;j++){if(j+2u>=cfg.cells){break;}if(adjacent(head,(*path)[cfg.cells-1u-j])){slots=slots+1u;if(rng_next(rng)%slots==0u){pick=j;pickHead=true;}}}if(slots==0u){return;}if(!pickHead){reverse_range(path,pick+1u,cfg.cells-1u);}else{reverse_range(path,0u,cfg.cells-1u);reverse_range(path,pick+1u,cfg.cells-1u);}}
+@compute @workgroup_size(64)
+fn main(@builtin(global_invocation_id) gid:vec3u){let tid=gid.x;if(tid>=cfg.chains||cfg.cells<2u||cfg.cells>MAX_CELLS||cfg.edgeN>MAX_EDGES){return;}let pool=max(cfg.poolCount,1u);let chainsPerSample=max(cfg.chains/pool,1u);let sampleId=select(0u,tid/chainsPerSample,pool>1u);var deg:array<u32,256>;var n0:array<u32,256>;var n1:array<u32,256>;var comp:array<u32,256>;var path:array<u32,256>;var ec=0u;var rng=mix32(cfg.seed^((cfg.chainOffset+tid)*0x9e3779b9u)^0xd1b54a35u);random_cover(&deg,&n0,&n1,&comp,&ec,&rng);var ok=false;var repair=cfg.repairCap;for(var step=0u;step<=512u;step++){if(step>cfg.repairCap){break;}if(path_from_state(&deg,&n0,&n1,ec,&path)){ok=true;repair=step;break;}recompute_components(&deg,&n0,&n1,&comp);if(try_direct_join(&deg,&n0,&n1,&comp,&ec,&rng)){continue;}if(try_splice(&deg,&n0,&n1,&comp,&ec,&rng)){continue;}try_rotation(&deg,&n0,&n1,&comp,&ec,&rng);}atomicAdd(&summary.repairAttempts,repair);if(!ok){return;}atomicAdd(&summary.repaired,1u);atomicAdd(&summary.exploreMoves,cfg.exploreSteps);var valid=1u;if(cfg.hllSamples>0u){update_hll(edge_hash(&path));}for(var step=0u;step<4096u;step++){if(step>=cfg.exploreSteps){break;}backbite(&path,&rng);if(((step+1u)%cfg.sampleStride)==0u){valid=valid+1u;if(cfg.hllSamples>0u){update_hll(edge_hash(&path));}}}atomicAdd(&summary.valid,valid);let deterministic=cfg.selectedChain==0xfffffffeu;let slot=select(sampleId,tid,deterministic);let base=cfg.outputOffset+slot*(MAX_CELLS+1u);if(deterministic){atomicStore(&summary.selectedOk,1u);atomicStore(&selectedPath[base],1u);for(var i=0u;i<MAX_CELLS;i++){if(i>=cfg.cells){break;}atomicStore(&selectedPath[base+1u+i],path[i]);}}else{let claim=atomicCompareExchangeWeak(&selectedPath[base],SENT,1u);if((pool==1u&&tid==cfg.selectedChain)||claim.exchanged){atomicStore(&summary.selectedOk,1u);atomicStore(&selectedPath[base],1u);for(var i=0u;i<MAX_CELLS;i++){if(i>=cfg.cells){break;}atomicStore(&selectedPath[base+1u+i],path[i]);}}}}
+`;
+function createWgpuBuffer(device,data,usage){const buf=device.createBuffer({size:Math.max(4,data.byteLength),usage,mappedAtCreation:true});new data.constructor(buf.getMappedRange()).set(data);buf.unmap();return buf;}
+async function ensureWgpu(){
+  if(wgpuReady)return wgpuReady;
+  wgpuReady=(async()=>{if(!navigator.gpu)throw new Error('WebGPU is not available in this browser');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw new Error('No WebGPU adapter found');const requiredLimits={};if((adapter.limits?.maxStorageBuffersPerShaderStage||0)>=16)requiredLimits.maxStorageBuffersPerShaderStage=16;wgpuDevice=await adapter.requestDevice(Object.keys(requiredLimits).length?{requiredLimits}:undefined);
+    const module=wgpuDevice.createShaderModule({code:WGPU_SHADER});wgpuPipeline=await wgpuDevice.createComputePipelineAsync({layout:'auto',compute:{module,entryPoint:'main'}});
+    return true;})();return wgpuReady;
+}
+const MOBILE_HEX_N=23;
+const MOBILE_BACKGROUND_PER_DIGIT=8;
+const MOBILE_POOL_COUNT=12;
+let mobileJobsByDigit=Array.from({length:10},()=>[]);
+let mobileBackgroundStates=[];
+let mobileForegroundState=null;
+let mobileActiveDigit='8';
+let mobileDigitCursor=Array(10).fill(0);
+let mobileFrame=0;
+let mobileLoopToken=0;
+let mobileStepping=false;
+let mobileReady=false;
+
+function setupMobileCanvas(){
+  const canvas=$('digit-board');
+  const rect=canvas.getBoundingClientRect();
+  const cssW=Math.max(1,rect.width||innerWidth||360),cssH=Math.max(1,rect.height||innerHeight||640),dpr=Math.max(1,Math.min(2,devicePixelRatio||1));
+  const w=Math.round(cssW*dpr),h=Math.round(cssH*dpr);
+  if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {canvas,ctx,w:cssW,h:cssH,ox:0,oy:0,scale:1,size:Math.min(cssW,cssH),world:true};
+}
+
+function mobileTransformCurrentRod(cx,cy,scale){
+  const rod=ensureContinuousRod();if(!rod)return;
+  const tx=p=>[cx+(p[0]-200)*scale,cy+(p[1]-200)*scale];
+  if(sampleDomain){
+    sampleDomain.localCentroid=sampleDomain.localCentroid||sampleDomain.centroid?.slice?.()||[200,200];
+    sampleDomain.centroid=tx(sampleDomain.localCentroid);
+  }
+  for(const st of continuousAngles){
+    if(!st)continue;
+    const [x,y]=tx([st.x,st.y]);
+    st.x=x;st.y=y;st.vx=(st.vx||0)*scale;st.vy=(st.vy||0)*scale;st.cell=(st.cell||1)*scale;
+  }
+  rod.rest=rod.rest.map(tx);
+  rod.coarseRest=rod.coarseRest.map(tx);
+  rod.ell=rod.ell.map(v=>v*scale);
+  rod.meanEll*=scale;rod.topologyMeanEll*=scale;
+  rod.hydro=restHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.sideHydro=restSideHydropathyLabels(rod.rest,rod.meanEll||1);
+  rod.restContactWeight=restContactWeights(rod.rest,rod.meanEll||1,rod.topologyMeanEll||rod.meanEll||1);
+  rod.statsFresh=false;updateRodEnergy();
+}
+
+function mobileStateFromJob(job,{cx,cy,scale,line=false,seed=0}={}){
+  sampleDigitMask=String(job.digit);sampleActiveMask=job.mask.slice();sampleDomain=job.domain;resetContinuousAngles();wgpuSelectedPath=job.path.slice();
+  if(!pathUsesDomainEdges(wgpuSelectedPath,sampleDomain))return {digit:String(job.digit),loaded:false,error:job.error||'no path',mask:sampleActiveMask.slice(),domain:sampleDomain,path:[],angles:cloneAngles(),rod:null};
+  materializeSampleRod(wgpuSelectedPath);
+  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);
+  if(line){
+    initializeCurrentRodFromLine({render:false,start:false,seed});
+  }else if(rod){
+    resetRodTangentsFromGeometry(path,true);
+    rod.kappaScale=1;rod.foldRamp=false;rod.temporalHydroTick=0;rod.temporalHydroTime=0;
+    updateRodEnergy(path);
+  }
+  mobileTransformCurrentRod(cx,cy,scale);
+  return {digit:String(job.digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:wgpuSelectedPath.slice(),angles:cloneAngles(),rod:cloneRod(),loaded:wgpuSelectedPath.length>1};
+}
+
+function mobileBackgroundPlacement(view,digit,slot){
+  const cols=MOBILE_BACKGROUND_PER_DIGIT,rows=10;
+  const cellW=view.w/cols,cellH=view.h/rows;
+  const seed=rodSeedMix(0xF01D23,digit,slot);
+  const jx=(((seed&255)/255)-.5)*cellW*.28,jy=((((seed>>>8)&255)/255)-.5)*cellH*.28;
+  return {
+    cx:(slot+.5)*cellW+jx,
+    cy:(digit+.5)*cellH+jy,
+    scale:Math.min(cellW,cellH)/400*.82
+  };
+}
+
+function mobileForegroundPlacement(view){
+  return {cx:view.w*.5,cy:view.h*.50,scale:Math.min(view.w,view.h)/400*.84};
+}
+
+function rebuildMobileBackground(view=setupMobileCanvas()){
+  mobileBackgroundStates=[];
+  for(let d=0;d<10;d++){
+    const jobs=mobileJobsByDigit[d];if(!jobs.length)continue;
+    for(let s=0;s<MOBILE_BACKGROUND_PER_DIGIT;s++){
+      const job=jobs[s%jobs.length],place=mobileBackgroundPlacement(view,d,s);
+      mobileBackgroundStates.push(mobileStateFromJob(job,{...place,line:false,seed:rodSeedMix(0xBACE,d,s)}));
+    }
+  }
+}
+
+function mobileSelectDigit(digit,{relayout=false}={}){
+  digit=String(digit).replace(/\D/g,'').slice(-1);
+  if(!digit)return;
+  mobileActiveDigit=digit;
+  if(!mobileReady)return;
+  const d=+digit,jobs=mobileJobsByDigit[d];if(!jobs.length)return;
+  const view=setupMobileCanvas();
+  if(relayout||!mobileBackgroundStates.length)rebuildMobileBackground(view);
+  const job=jobs[mobileDigitCursor[d]++%jobs.length],place=mobileForegroundPlacement(view);
+  mobileForegroundState=mobileStateFromJob(job,{...place,line:true,seed:sampleRandomU32()});
+  allDigitEpoch++;allDigitStates=mobileForegroundState?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
+  GPU_ROD_SOLVER_ENABLED=true;
+  renderMobileFold();
+  startMobileLoop();
+}
+
+function drawMobileRod(ctx,st,view,{background=false}={}){
+  if(!st?.loaded)return;
+  withDigitState(st,()=>{
+    const rod=ensureContinuousRod(),drawPath=rodSimulationPath(wgpuSelectedPath,rod);
+    if(!rod||drawPath.length<2)return;
+    const pts=drawPath.map(rodPoint),normals=rodOffsetNormals(pts),E=Math.max(0,drawPath.length-1);
+    ctx.save();
+    ctx.lineCap='round';ctx.lineJoin='round';
+    if(background){
+      ctx.globalAlpha=.085;ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(.55,Math.min(view.w,view.h)*.0018);
+      ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
+      ctx.restore();return;
+    }
+    const offset=Math.max(1.1,Math.min(view.w,view.h)*.0032);
+    ctx.globalAlpha=.17;ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(3.2,Math.min(view.w,view.h)*.013);
+    ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
+    ctx.globalAlpha=.98;ctx.lineWidth=Math.max(1.6,Math.min(view.w,view.h)*.0065);
+    const groups=new Map(),add=(color,k,side)=>{
+      let g=groups.get(color);if(!g){g=[];groups.set(color,g);}
+      g.push([k,side]);
+    };
+    for(let k=0;k<E;k++){
+      const side=rod?.sideHydro?.[k],fallback=((rod?.hydro?.[k]??0)+(rod?.hydro?.[k+1]??rod?.hydro?.[k]??0))*.5*.5+.5;
+      add(hydroSideBucketColor(side?.left??fallback),k,1);
+      add(hydroSideBucketColor(side?.right??fallback),k,-1);
+    }
+    for(const [color,segs] of groups){
+      ctx.strokeStyle=color;ctx.beginPath();
+      for(const [k,side] of segs)canvasBezierSegment(ctx,pts,normals,k,view,side,offset);
+      ctx.stroke();
+    }
+    const first=canvasRodPoint(pts[0],view),last=canvasRodPoint(pts[pts.length-1],view),r=Math.max(2.5,Math.min(view.w,view.h)*.012);
+    ctx.globalAlpha=1;ctx.fillStyle=cssv('--vermilion');ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(1,Math.min(view.w,view.h)*.0024);
+    for(const p of [first,last]){ctx.beginPath();ctx.arc(p[0],p[1],r,0,TAU);ctx.fill();ctx.stroke();}
+    ctx.restore();
+  });
+}
+
+function renderMobileFold(){
+  const view=setupMobileCanvas(),{ctx,w,h}=view;
+  ctx.fillStyle=cssv('--paper');ctx.fillRect(0,0,w,h);
+  for(const st of mobileBackgroundStates)drawMobileRod(ctx,st,view,{background:true});
+  drawMobileRod(ctx,mobileForegroundState,view);
+}
+
+function stopMobileLoop(){
+  mobileLoopToken++;
+  if(mobileFrame)cancelAllDigitFrame(mobileFrame);
+  mobileFrame=0;mobileStepping=false;
+}
+
+function startMobileLoop(){
+  if(mobileFrame)return;
+  const token=++mobileLoopToken;
+  const frame=async()=>{
+    if(token!==mobileLoopToken)return;
+    if(mobileStepping){mobileFrame=scheduleAllDigitFrame(frame);return;}
+    mobileStepping=true;mobileFrame=0;
+    try{
+      if(mobileForegroundState?.loaded){
+        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:0,seed:sampleRandomU32(),applyField:false});
+      }
+      renderMobileFold();
+    }catch(err){
+      console.error('fold step failed',err);
+    }finally{
+      mobileStepping=false;
+      if(token===mobileLoopToken)mobileFrame=scheduleAllDigitFrame(frame);
+    }
+  };
+  mobileFrame=scheduleAllDigitFrame(frame);
+}
+
+async function initMobileFold(){
+  stopAllDigitLoop();stopMobileLoop();
+  SAMPLE_N=MOBILE_HEX_N;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;
+  GPU_ROD_SOLVER_ENABLED=true;
+  renderMobileFold();
+  try{
+    const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});
+    mobileJobsByDigit=Array.from({length:10},()=>[]);
+    for(const batch of batches)for(const job of batch){
+      if(!job.error&&job.path?.length&&mobileJobsByDigit[job.digit]?.length<MOBILE_BACKGROUND_PER_DIGIT)mobileJobsByDigit[job.digit].push(job);
+    }
+    mobileReady=true;
+    mobileSelectDigit(mobileActiveDigit,{relayout:true});
+  }catch(err){
+    console.error('fold init failed',err);
+  }
+}
+
+function mobileCaptureDigit(value){
+  const d=String(value||'').match(/[0-9](?!.*[0-9])/);
+  if(d)mobileSelectDigit(d[0]);
+}
+
+const mobileInput=$('mobile-key-capture');
+$('digit-board').addEventListener('pointerdown',()=>mobileInput?.focus?.({preventScroll:true}));
+mobileInput?.addEventListener('input',ev=>{mobileCaptureDigit(ev.target.value);ev.target.value='';});
+window.addEventListener?.('keydown',ev=>{
+  if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);}
+});
+window.addEventListener?.('resize',()=>{
+  if(!mobileReady){renderMobileFold();return;}
+  mobileSelectDigit(mobileActiveDigit,{relayout:true});
+});
+initMobileFold();
+</script>
+</body>
+</html>
