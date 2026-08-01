@@ -60,17 +60,35 @@
 
   footer{margin-top:34px;border-top:1px solid var(--rule);padding-top:16px;font-size:13.5px;color:var(--ink-soft);max-width:78ch}
   footer b{color:var(--ink)} footer code{font-family:'IBM Plex Mono';background:var(--paper-2);padding:1px 5px;border:1px solid var(--rule);font-size:12px}
-  body.fold-mobile{padding:0;overflow:hidden;width:100vw;height:100vh;height:100dvh;background:var(--paper);touch-action:manipulation}
-  .fold-mobile header,.fold-mobile footer,.fold-mobile .card h3,.fold-mobile .seq,.fold-mobile .prog,.fold-mobile .prog-lbl,.fold-mobile .stats{display:none!important}
-  .fold-mobile .wrap,.fold-mobile .layout,.fold-mobile .card,.fold-mobile .card .body{width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;background:transparent;display:block}
-  .fold-mobile .wrap{display:none!important}
-  .fold-mobile .digit-board{display:block;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border:0;background:var(--paper);margin:0;outline:0}
-  #mobile-key-capture{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;background:transparent;color:transparent}
+  body.fold-mobile{padding:0;overflow:hidden;width:100vw;height:100vh;height:100dvh;background:var(--paper);touch-action:manipulation;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px}
+  .fold-mobile header,.fold-mobile footer,.fold-mobile .card h3,.fold-mobile .seq,.fold-mobile .prog,.fold-mobile .prog-lbl,.fold-mobile .stats,.fold-mobile .wrap{display:none!important}
+  .fold-mobile .digit-board{display:block;width:min(100vw,calc(100dvh - 236px));height:auto;aspect-ratio:1/1;border:0;background:var(--paper);margin:0;outline:0;flex:none}
+  .fold-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(100vw,calc(100dvh - 236px));max-width:420px;padding:0 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box;flex:none;-webkit-user-select:none;user-select:none}
+  .fold-pad button{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(18px,5vw,24px);color:var(--ink);background:var(--paper-2);border:1.5px solid var(--rule);padding:12px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s,color .1s,border-color .1s}
+  .fold-pad button:active{transform:translateY(1px)}
+  .fold-pad button.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+  .fold-pad button.zero{grid-column:2}
+  .fold-loading{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 24px}
+  .fold-loading.hidden{display:none}
+  .fold-spinner{width:34px;height:34px;border:3px solid var(--rule);border-top-color:var(--vermilion);border-radius:50%;animation:fold-spin .8s linear infinite}
+  @keyframes fold-spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body class="fold-mobile">
-<input id="mobile-key-capture" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-hidden="true">
+<div id="fold-loading" class="fold-loading"><div class="fold-spinner"></div><div id="fold-loading-msg">sampling folding paths…</div></div>
 <canvas class="digit-board" id="digit-board" aria-hidden="true"></canvas>
+<nav id="fold-pad" class="fold-pad" aria-label="digit selector">
+  <button type="button" data-digit="1">1</button>
+  <button type="button" data-digit="2">2</button>
+  <button type="button" data-digit="3">3</button>
+  <button type="button" data-digit="4">4</button>
+  <button type="button" data-digit="5">5</button>
+  <button type="button" data-digit="6">6</button>
+  <button type="button" data-digit="7">7</button>
+  <button type="button" data-digit="8">8</button>
+  <button type="button" data-digit="9">9</button>
+  <button type="button" data-digit="0" class="zero">0</button>
+</nav>
 <div class="wrap">
   <header>
     <div class="eyebrow">webgpu topology sampler · curvature folding</div>
@@ -2349,6 +2367,7 @@ async function initMobileFold(){
   SAMPLE_N=MOBILE_HEX_N;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;
   GPU_ROD_SOLVER_ENABLED=true;
   renderMobileFold();
+  setFoldLoading(true,'sampling folding paths…');
   try{
     const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});
     mobileJobsByDigit=Array.from({length:10},()=>[]);
@@ -2357,26 +2376,34 @@ async function initMobileFold(){
     }
     mobileReady=true;
     mobileSelectDigit(mobileActiveDigit,{relayout:true});
+    setFoldLoading(false);
   }catch(err){
     console.error('fold init failed',err);
+    setFoldLoading(true,`could not start · ${err?.message||err}`);
   }
 }
 
-function mobileCaptureDigit(value){
-  const d=String(value||'').match(/[0-9](?!.*[0-9])/);
-  if(d)mobileSelectDigit(d[0]);
+function setFoldLoading(on,msg){
+  const el=$('fold-loading');if(!el)return;
+  if(msg){const m=$('fold-loading-msg');if(m)m.textContent=msg;}
+  el.classList.toggle('hidden',!on);
 }
-
-const mobileInput=$('mobile-key-capture');
-$('digit-board').addEventListener('pointerdown',()=>mobileInput?.focus?.({preventScroll:true}));
-mobileInput?.addEventListener('input',ev=>{mobileCaptureDigit(ev.target.value);ev.target.value='';});
+function updatePadActive(digit){
+  const pad=$('fold-pad');if(!pad)return;
+  for(const b of pad.querySelectorAll('button[data-digit]'))b.classList.toggle('active',b.dataset.digit===String(digit));
+}
+$('fold-pad')?.addEventListener('click',ev=>{
+  const b=ev.target.closest?.('button[data-digit]');if(!b)return;
+  mobileSelectDigit(b.dataset.digit);updatePadActive(b.dataset.digit);
+});
 window.addEventListener?.('keydown',ev=>{
-  if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);}
+  if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);updatePadActive(ev.key);}
 });
 window.addEventListener?.('resize',()=>{
   if(!mobileReady){renderMobileFold();return;}
   mobileSelectDigit(mobileActiveDigit,{relayout:true});
 });
+updatePadActive(mobileActiveDigit);
 initMobileFold();
 </script>
 </body>
