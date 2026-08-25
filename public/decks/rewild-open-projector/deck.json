@@ -1,0 +1,24 @@
+{
+  "name": "Rewild_the_Internet",
+  "documentId": "cWN86JFbp-7dzkk-lX8qb6BQfD-t22kv",
+  "theme": "chibatech",
+  "slides": [
+    "title",
+    "room-check",
+    "spectrum",
+    "secret-tunnel",
+    "secret-tunnel-live",
+    "mosaic",
+    "mosaic-live",
+    "age-of-empires",
+    "decks",
+    "kotoma",
+    "jam",
+    "aps",
+    "chi",
+    "ecosystem"
+  ],
+  "locales": ["en"],
+  "defaultLocale": "en",
+  "frameSources": ["https://gszep.com", "https://www.instagram.com"]
+}
