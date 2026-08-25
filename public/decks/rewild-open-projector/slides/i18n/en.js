@@ -4,7 +4,7 @@ window.I18N = {
   "brand": "REWILD / 反乱",
   "check.eyebrow": "01 / The room, in tools",
   "check.foot": "Each hand is one vote. The room redraws itself after every answer.",
-  "check.h2": "No confessions. Just: what do we actually use?",
+  "check.h2": "Survey of the room. What do we use?",
   "check.lede": "Evidence from every repo on this laptop, Phreaking’s artist profiles and festival programme—not every library inside them. Green = ownable; outline = rented edge; grey = maybe yours.",
   "check.legend.ghost": "not mine / room?",
   "check.legend.mixed": "mixed / rented edge",
@@ -126,6 +126,10 @@ window.I18N = {
   "title.sticker": "unfinished / forkable / alive"
 };
 window.I18N_META = {
+  "check.h2": {
+    "modified": "2026-08-25T18:19:58Z",
+    "author": "contact"
+  },
   "ecosystem.h2": {
     "modified": "2026-08-25T18:09:11Z",
     "author": "contact"

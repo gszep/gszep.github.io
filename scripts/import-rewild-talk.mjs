@@ -3,8 +3,8 @@ import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
-// Pinned source snapshot. This commit contains f27f4b9 and is the private-hosting revert.
-const SOURCE_COMMIT = '23697faa0d4517f00b5f0fa13db23c80a92e5f70';
+// Pinned source snapshot. This commit reconciles the latest hosted designer edits.
+const SOURCE_COMMIT = '275e53b863b5bda8d8fae07359cae3bb4e01e532';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sourceRoot = path.resolve(here, '../../decks');
 const outputRoot = path.resolve(here, '../public');
