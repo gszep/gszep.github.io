@@ -104,7 +104,7 @@
       <label class="range-ctl">Spacing <input id="grid-n" type="range" min="5" max="30" step="1" value="20"><b id="grid-n-label">hex20 digits 0-9</b></label>
       <span class="range-ctl">Dynamics <b>temporal intrinsic + hydrophobic</b></span>
       <label class="range-ctl">Noise <input id="dynamics-temp" type="number" min="0" max="4" step="0.05" value="1.5"></label>
-      <label class="range-ctl">Field <input id="density-field" type="number" min="0" max="2" step="0.05" value="1"></label>
+      <label class="range-ctl">Field <input id="density-field" type="number" min="0" max="2" step="0.05" value="0.1"></label>
 
       <span id="status" style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-soft)"></span>
     </div>
@@ -1214,7 +1214,10 @@ async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverride
       uploadPts:false,
       uploadSeg:false,
       readback:false,
-      combineForces:true
+      combineForces:true,
+      // hydroChannels:false keeps excluded volume (baseline sterics) but zeroes
+      // the hydropathy/amphipathic channels: the harness 'excluded' condition.
+      ...(dynOverrides.hydroChannels===false?{hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0}:{})
     }));
     const fenc=wgpuDevice.createCommandEncoder();
     fenc.copyBufferToBuffer(hydroGpu.nodeForce,0,gpu.force,0,batch.totalNodes*2*4);
@@ -2457,8 +2460,10 @@ function startMobileLoop(){
     mobileStepping=true;mobileFrame=0;
     try{
       if(mobileForegroundState?.loaded){
-        const fieldGain=hydroForcesOn?Math.max(0,+($('density-field')?.value||0)):0;
-        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:fieldGain,seed:sampleRandomU32(),applyField:hydroForcesOn&&fieldGain>0});
+        // excluded volume is baseline physics (always on); the hydro toggle
+        // adds/removes only the hydropathy channels on top of it.
+        const fieldGain=Math.max(0,+($('density-field')?.value||0));
+        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:fieldGain,seed:sampleRandomU32(),applyField:fieldGain>0,hydroChannels:hydroForcesOn});
       }
       renderMobileFold();
     }catch(err){
