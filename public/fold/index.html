@@ -92,6 +92,8 @@
   <button type="button" id="hydro-toggle" class="aux" title="toggle shared-field forces (excluded volume + hydropathy) acting on the fold">hydro off</button>
   <button type="button" data-digit="0" class="zero">0</button>
   <button type="button" id="start-toggle" class="aux" title="fold from a straight line or a crumpled compact coil">line</button>
+  <button type="button" id="code-toggle" class="aux" title="local code fidelity: full = exact curvature program; noisy = 5% registration noise + soft bend (underspecified local code)">code full</button>
+  <button type="button" id="guide-toggle" class="aux" title="nonlocal guidance: typed = 4-letter contact alphabet field (colored sites attract same color)">guide off</button>
 </nav>
 <div class="wrap">
   <header>
@@ -162,6 +164,13 @@ const GPU_ROD_MAX_EDGES=512;
 // The toggles below expose the field-coupled solver (excluded volume +
 // hydropathy projected onto angle torques) and the compact-coil start.
 let hydroForcesOn=false,mobileStartMode='line';
+// Local-vs-nonlocal comparison state: mobileCodeNoisy corrupts the global
+// registration of the local curvature code (frozen 5% noise, seeded) and
+// softens bend stiffness (x0.4); mobileGuide 'typed' adds the 4-letter typed
+// adhesion field (harness typed4 condition: fieldTorque-equivalent 0.3,
+// typedAttract 10). Toggles refold the SAME topology with the SAME seed so
+// the comparison is a true A/B.
+let mobileCodeNoisy=false,mobileGuide='off',mobileLastJob={},mobileLastSeed=0;
 let foldParams={temporalHydroFieldTorque:.05,lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:true,temporalHydroSubstepAnneal:true,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
 let allDigitMode=true, allDigitStates=[], allDigitFrame=0, allDigitLoopToken=0, allDigitLoading=false, allDigitLoadingN=0, allDigitEpoch=0, allDigitGridTimer=0, allDigitStatsCache=null, allDigitStatsTick=0, wgpuDigitBatchCache=null, allDigitPool=[], allDigitPoolFill=null, allDigitPoolN=0, allDigitPoolSeed=null, allDigitPrefetchError='', allDigitSharedFieldStats={nodes:0,active:0,maxForce:0}, allDigitSharedFieldPending=null, allDigitSharedSoa=null, soupWorldSize=400;
 function invalidateSharedSoupBuffers(){allDigitSharedSoa=null;}
@@ -1217,7 +1226,8 @@ async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverride
       combineForces:true,
       // hydroChannels:false keeps excluded volume (baseline sterics) but zeroes
       // the hydropathy/amphipathic channels: the harness 'excluded' condition.
-      ...(dynOverrides.hydroChannels===false?{hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0}:{})
+      ...(dynOverrides.hydroChannels===false?{hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0}:{}),
+      ...(dynOverrides.typedAttract>0?{typedAttract:dynOverrides.typedAttract,typedBlur:3}:{})
     }));
     const fenc=wgpuDevice.createCommandEncoder();
     fenc.copyBufferToBuffer(hydroGpu.nodeForce,0,gpu.force,0,batch.totalNodes*2*4);
@@ -1655,20 +1665,50 @@ function renderDigitCanvas(){
     drawDigitRodCanvas(ctx,st,setup);
   }
 }
+// Typed adhesion code for one rest segment side pair: color from a spatial
+// supercell hash of the REST-space side position, weighted by native contact
+// weight. foldParams.typedPlanes: 1 => 2-letter alphabet, 2 => 4-letter.
+function computeRestSegCode(rod,k){
+  const rest=rod.rest;if(!rest||!rest[k]||!rest[k+1])return [0,0,0,0];
+  const contact=rod.restContactWeight?.[k];if(!contact)return [0,0,0,0];
+  const planes=Math.max(1,Math.min(2,foldParams.typedPlanes??2));
+  const ax=rest[k][0],ay=rest[k][1],bx=rest[k+1][0],by=rest[k+1][1];
+  const dx=bx-ax,dy=by-ay,L=Math.max(1e-9,Math.hypot(dx,dy)),nx=-dy/L,ny=dx/L;
+  const topoEll=Math.max(1,rod.topologyMeanEll||rod.meanEll||1),off=topoEll*.32,cs=Math.max(1e-6,topoEll*(foldParams.typedCellScale??2.6));
+  const mx=(ax+bx)*.5,my=(ay+by)*.5;
+  const codeAt=(x,y,w)=>{
+    if(!(w>0))return [0,0];
+    const h=rodSeedMix(Math.floor(x/cs),Math.floor(y/cs),0xC0DE);
+    return [((h&1)?1:-1)*w,planes>1?((h&2)?1:-1)*w:0];
+  };
+  const l=codeAt(mx+nx*off,my+ny*off,Math.max(0,contact.left??0));
+  const r=codeAt(mx-nx*off,my-ny*off,Math.max(0,contact.right??0));
+  return [l[0],l[1],r[0],r[1]];
+}
+function rodSegCodes(rod){
+  if(!rod)return null;
+  const key=`${rod.key}|${foldParams.typedPlanes??2}`;
+  if(rod.segCodeCache?.key===key)return rod.segCodeCache.codes;
+  const codes=[];
+  for(let k=0;k<Math.max(0,(rod.rest?.length||0)-1);k++)codes.push(computeRestSegCode(rod,k));
+  rod.segCodeCache={key,codes};
+  return codes;
+}
 function buildAllDigitSharedSoupSoa(){
-  const refs=[],segEll=[],sideHydro=[],restContactWeight=[],realEll=[];
+  const refs=[],segEll=[],sideHydro=[],restContactWeight=[],segCodes=[],realEll=[];
   for(const st of allDigitStates){
     if(!st.loaded)continue;
     withDigitState(st,()=>{
       const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
       for(let k=0;k<path.length;k++){
         const src=continuousAngles[path[k]];if(!src)continue;
-        if(refs.length&&k===0){segEll.push(1e-6);sideHydro.push({left:.5,right:.5});restContactWeight.push({left:0,right:0});}
+        if(refs.length&&k===0){segEll.push(1e-6);sideHydro.push({left:.5,right:.5});restContactWeight.push({left:0,right:0});segCodes.push([0,0,0,0]);}
         else if(k>0){
           const e=rod.ell[k-1]||rod.meanEll||1;
           segEll.push(e);realEll.push(e);
           sideHydro.push(rod.sideHydro?.[k-1]||{left:.5,right:.5});
           restContactWeight.push(rod.restContactWeight?.[k-1]||{left:1,right:1});
+          segCodes.push(computeRestSegCode(rod,k-1));
         }
         refs.push(src);
       }
@@ -1676,17 +1716,19 @@ function buildAllDigitSharedSoupSoa(){
   }
   if(refs.length<2)return null;
   const meanEll=realEll.length?realEll.reduce((a,b)=>a+b,0)/realEll.length:2;
-  const count=refs.length,E=Math.max(0,count-1),ellArray=new Float32Array(Math.max(1,E)),ptData=new Float32Array(count*4),segData=new Float32Array(Math.max(1,E)*4);
+  const count=refs.length,E=Math.max(0,count-1),ellArray=new Float32Array(Math.max(1,E)),ptData=new Float32Array(count*4),segData=new Float32Array(Math.max(1,E)*4),segCodeData=new Float32Array(Math.max(1,E)*4);
   let activeHydro=0;
   for(let k=0;k<E;k++){
     const e=segEll[k]||meanEll,side=sideHydro[k]||{left:.5,right:.5},contact=restContactWeight[k]||{left:1,right:1};
     const left=hydroSigned(side.left),right=hydroSigned(side.right);
     ellArray[k]=e;segData[k*4]=left;segData[k*4+1]=right;segData[k*4+2]=left>0?left*Math.max(0,contact.left??1):0;segData[k*4+3]=right>0?right*Math.max(0,contact.right??1):0;
+    const code=segCodes[k]||[0,0,0,0];
+    segCodeData[k*4]=code[0];segCodeData[k*4+1]=code[1];segCodeData[k*4+2]=code[2];segCodeData[k*4+3]=code[3];
     if(left>0)activeHydro++;if(right>0)activeHydro++;
   }
   const nodeWeight=new Float32Array(count),topologyMeanEll=meanEll;
   for(let i=0;i<count;i++)nodeWeight[i]=(((i>0?(ellArray[i-1]||meanEll):0)+(i<E?(ellArray[i]||meanEll):0))*.5)/Math.max(1,topologyMeanEll);
-  return {epoch:allDigitEpoch,worldSize:soupWorldSize,count,segCount:E,refs,ell:ellArray,nodeWeight,ptData,segData,meanEll,topologyMeanEll,activeHydro};
+  return {epoch:allDigitEpoch,worldSize:soupWorldSize,count,segCount:E,refs,ell:ellArray,nodeWeight,ptData,segData,segCodeData,meanEll,topologyMeanEll,activeHydro};
 }
 function prepareAllDigitSharedSoupSoa(){
   if(!allDigitSharedSoa||allDigitSharedSoa.epoch!==allDigitEpoch||allDigitSharedSoa.worldSize!==soupWorldSize)allDigitSharedSoa=buildAllDigitSharedSoupSoa();
@@ -1835,13 +1877,16 @@ const HYDRO_GPU_SHADER=`
 @group(0) @binding(0) var<storage, read> cfg: array<f32>;
 @group(0) @binding(1) var<storage, read_write> pts: array<vec4f>;
 @group(0) @binding(2) var<storage, read> seg: array<vec4f>;
-// raw: 3 atomic deposit planes [total|hydro|adhere], each grid_n^2 cells.
+// raw: 5 atomic deposit planes [total|hydro|adhere|sig0|sig1], each grid_n^2.
 @group(0) @binding(3) var<storage, read_write> raw: array<atomic<i32>>;
-// fields: 5 f32 planes [total|env|hydro|adhere|tmp], each grid_n^2 cells.
+// fields: 7 f32 planes [total|env|hydro|adhere|sig0|sig1|tmp], each grid_n^2.
 // Merged to stay within maxStorageBuffersPerShaderStage on Metal/compat.
 @group(0) @binding(4) var<storage, read_write> fields: array<f32>;
 @group(0) @binding(5) var<storage, read_write> nodeForce: array<vec2f>;
 @group(0) @binding(6) var<storage, read_write> segForce: array<vec4f>;
+// Typed adhesion codes [leftC0,leftC1,rightC0,rightC1]: signed contact
+// weights on two planes = 4-letter contact alphabet (same code attracts).
+@group(0) @binding(7) var<storage, read> segCode: array<vec4f>;
 
 fn n_nodes()->u32{return u32(cfg[0]);}
 fn grid_n()->u32{return u32(cfg[1]);}
@@ -1853,8 +1898,8 @@ fn clamp_cell(v:i32,g:u32)->u32{return u32(clamp(v,0i,i32(g)-1i));}
 fn cell(x:u32,y:u32,g:u32)->u32{return y*g+x;}
 fn read_field(field:u32,i:u32)->f32{return fields[field*n_cells()+i];}
 fn write_field(field:u32,i:u32,v:f32){fields[field*n_cells()+i]=v;}
-fn read_tmp(i:u32)->f32{return fields[4u*n_cells()+i];}
-fn write_tmp(i:u32,v:f32){fields[4u*n_cells()+i]=v;}
+fn read_tmp(i:u32)->f32{return fields[6u*n_cells()+i];}
+fn write_tmp(i:u32,v:f32){fields[6u*n_cells()+i]=v;}
 fn atomic_deposit_total(x:f32,y:f32,w:f32){
   let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
   let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
@@ -1863,6 +1908,17 @@ fn atomic_deposit_total(x:f32,y:f32,w:f32){
   atomicAdd(&raw[cell(x1,y0,g)],i32(tx*(1.0-ty)*w*s));
   atomicAdd(&raw[cell(x0,y1,g)],i32((1.0-tx)*ty*w*s));
   atomicAdd(&raw[cell(x1,y1,g)],i32(tx*ty*w*s));
+}
+fn atomic_deposit_signed(x:f32,y:f32,w0:f32,w1:f32){
+  let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
+  let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
+  let w=array<f32,4>((1.0-tx)*(1.0-ty),tx*(1.0-ty),(1.0-tx)*ty,tx*ty);
+  let c=array<u32,4>(cell(x0,y0,g),cell(x1,y0,g),cell(x0,y1,g),cell(x1,y1,g));
+  let s=fp();let cells=n_cells();
+  for(var k=0u;k<4u;k++){
+    if(w0!=0.0){atomicAdd(&raw[3u*cells+c[k]],i32(w[k]*w0*s));}
+    if(w1!=0.0){atomicAdd(&raw[4u*cells+c[k]],i32(w[k]*w1*s));}
+  }
 }
 fn atomic_deposit_side(x:f32,y:f32,wh:f32,wc:f32){
   let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
@@ -1895,8 +1951,8 @@ fn side_force(k:u32,side_offset:f32,fx:f32,fy:f32)->vec4f{
 fn clear(@builtin(global_invocation_id) gid:vec3u){
   let i=gid.x;let cells=n_cells();
   if(i<cells){
-    atomicStore(&raw[i],0);atomicStore(&raw[cells+i],0);atomicStore(&raw[2u*cells+i],0);
-    for(var f=0u;f<5u;f++){fields[f*cells+i]=0.0;}
+    for(var r=0u;r<5u;r++){atomicStore(&raw[r*cells+i],0);}
+    for(var f=0u;f<7u;f++){fields[f*cells+i]=0.0;}
   }
   if(i<n_nodes()){nodeForce[i]=vec2f(0.0);}
   if(i<n_seg()){segForce[i]=vec4f(0.0);}
@@ -1910,6 +1966,9 @@ fn deposit(@builtin(global_invocation_id) gid:vec3u){
     let s=seg[i];let left=s.x;let right=s.y;let lc=s.z;let rc=s.w;let w=max(0.0,pts[i].w);
     if(left>0.0){atomic_deposit_side(m.x+n.x*off,m.y+n.y*off,left*w,lc*w);}
     if(right>0.0){atomic_deposit_side(m.x-n.x*off,m.y-n.y*off,right*w,rc*w);}
+    let code=segCode[i];
+    if(code.x!=0.0||code.y!=0.0){atomic_deposit_signed(m.x+n.x*off,m.y+n.y*off,code.x*w,code.y*w);}
+    if(code.z!=0.0||code.w!=0.0){atomic_deposit_signed(m.x-n.x*off,m.y-n.y*off,code.z*w,code.w*w);}
   }
 }
 @compute @workgroup_size(64)
@@ -1919,6 +1978,8 @@ fn normalize(@builtin(global_invocation_id) gid:vec3u){
   write_field(0u,i,t);write_field(1u,i,t);
   write_field(2u,i,f32(atomicLoad(&raw[cells+i]))/s);
   write_field(3u,i,f32(atomicLoad(&raw[2u*cells+i]))/s);
+  write_field(4u,i,f32(atomicLoad(&raw[3u*cells+i]))/s);
+  write_field(5u,i,f32(atomicLoad(&raw[4u*cells+i]))/s);
 }
 fn blur_h_field(i:u32,field:u32){
   let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let xm=select(x-1u,x,x==0u);let xp=min(g-1u,x+1u);
@@ -1952,6 +2013,14 @@ fn blur2_v_field(i:u32,field:u32){
 @compute @workgroup_size(64) fn blur2_v_hydro(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,2u);}
 @compute @workgroup_size(64) fn blur2_h_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,3u);}
 @compute @workgroup_size(64) fn blur2_v_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,3u);}
+@compute @workgroup_size(64) fn blur_h_sig0(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur_v_sig0(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur_h_sig1(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur_v_sig1(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur2_h_sig0(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur2_v_sig0(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur2_h_sig1(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur2_v_sig1(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,5u);}
 @compute @workgroup_size(64)
 fn gather(@builtin(global_invocation_id) gid:vec3u){
   let i=gid.x;let excluded=cfg[4];let hydroAttract=cfg[5];let philicExpose=cfg[6];let hydroSat=max(1e-6,cfg[7]);let coreBias=cfg[8];let exposureBias=cfg[9];let interfaceBias=cfg[10];let contactAttract=cfg[11];let contactSat=max(1e-6,cfg[12]);let selfH=cfg[13];let selfC=cfg[14];let topo=max(1.0,cfg[2]);
@@ -1969,6 +2038,18 @@ fn gather(@builtin(global_invocation_id) gid:vec3u){
     if(left<0.0&&philicExpose>0.0){let sx=m.x+n.x*off;let sy=m.y+n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,off,-philicExpose*(-left)*e.x*e.y,-philicExpose*(-left)*e.x*e.z);}
     if(right>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let h=grad(2u,sx,sy);let hv=max(0.0,h.x-selfH*right*segW);let hg=1.0/(1.0+hv/hydroSat);out+=side_force(i,-off,hydroAttract*right*hg*h.y,hydroAttract*right*hg*h.z);if(contactAttract>0.0&&rc>0.0){let c=grad(3u,sx,sy);let cv=max(0.0,c.x-selfC*rc*segW);let cg=1.0/(1.0+cv/contactSat);out+=side_force(i,-off,contactAttract*rc*cg*c.y,contactAttract*rc*cg*c.z);}}
     if(right<0.0&&philicExpose>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,-off,-philicExpose*(-right)*e.x*e.y,-philicExpose*(-right)*e.x*e.z);}
+    let typedAttract=cfg[20];
+    if(typedAttract>0.0){
+      let code=segCode[i];
+      if(code.x!=0.0||code.y!=0.0){
+        let sx=m.x+n.x*off;let sy=m.y+n.y*off;let g0=grad(4u,sx,sy);let g1=grad(5u,sx,sy);
+        out+=side_force(i,off,typedAttract*(code.x*g0.y+code.y*g1.y),typedAttract*(code.x*g0.z+code.y*g1.z));
+      }
+      if(code.z!=0.0||code.w!=0.0){
+        let sx=m.x-n.x*off;let sy=m.y-n.y*off;let g0=grad(4u,sx,sy);let g1=grad(5u,sx,sy);
+        out+=side_force(i,-off,typedAttract*(code.z*g0.y+code.w*g1.y),typedAttract*(code.z*g0.z+code.w*g1.z));
+      }
+    }
     segForce[i]=out;
   }
 }
@@ -2010,7 +2091,9 @@ async function ensureHydroGpu(fieldSize,n){
       'blur2_h_env','blur2_v_env',
       'blur2_h_hydro','blur2_v_hydro',
       'blur2_h_adhere','blur2_v_adhere',
-      'gather','apply_pts','combine_forces'
+      'gather','apply_pts','combine_forces',
+      'blur_h_sig0','blur_v_sig0','blur_h_sig1','blur_v_sig1',
+      'blur2_h_sig0','blur2_v_sig0','blur2_h_sig1','blur2_v_sig1'
     ];
     const vis=GPUShaderStage.COMPUTE,bgEntries=[
       {binding:0,visibility:vis,buffer:{type:'read-only-storage'}},
@@ -2019,7 +2102,8 @@ async function ensureHydroGpu(fieldSize,n){
       {binding:3,visibility:vis,buffer:{type:'storage'}},
       {binding:4,visibility:vis,buffer:{type:'storage'}},
       {binding:5,visibility:vis,buffer:{type:'storage'}},
-      {binding:6,visibility:vis,buffer:{type:'storage'}}
+      {binding:6,visibility:vis,buffer:{type:'storage'}},
+      {binding:7,visibility:vis,buffer:{type:'read-only-storage'}}
     ];
     const bindGroupLayout=wgpuDevice.createBindGroupLayout({entries:bgEntries}),layout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]});
     hydroGpu={pipelines:Object.create(null),fieldSize:0,n:0,bindGroupLayout};
@@ -2027,13 +2111,14 @@ async function ensureHydroGpu(fieldSize,n){
   }
   const cells=fieldSize*fieldSize,segN=Math.max(1,n-1),need=!hydroGpu.bindGroup||hydroGpu.fieldSize!==fieldSize||hydroGpu.n<n;
   if(need){
-    for(const key of ['config','pts','seg','raw','fields','nodeForce','segForce','ptsRead','nodeRead','segRead'])hydroGpu[key]?.destroy?.();
+    for(const key of ['config','pts','seg','raw','fields','nodeForce','segForce','segCode','ptsRead','nodeRead','segRead'])hydroGpu[key]?.destroy?.();
     hydroGpu.fieldSize=fieldSize;hydroGpu.n=n;
     hydroGpu.config=wgpuDevice.createBuffer({size:32*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     hydroGpu.pts=wgpuDevice.createBuffer({size:Math.max(4,n*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
     hydroGpu.seg=wgpuDevice.createBuffer({size:Math.max(4,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    hydroGpu.raw=wgpuDevice.createBuffer({size:cells*3*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    hydroGpu.fields=wgpuDevice.createBuffer({size:cells*5*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    hydroGpu.raw=wgpuDevice.createBuffer({size:cells*5*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    hydroGpu.fields=wgpuDevice.createBuffer({size:cells*7*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    hydroGpu.segCode=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     hydroGpu.nodeForce=wgpuDevice.createBuffer({size:Math.max(8,n*2*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
     hydroGpu.segForce=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
     hydroGpu.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
@@ -2042,7 +2127,8 @@ async function ensureHydroGpu(fieldSize,n){
     const entries=[
       {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:hydroGpu.pts}},{binding:2,resource:{buffer:hydroGpu.seg}},
       {binding:3,resource:{buffer:hydroGpu.raw}},{binding:4,resource:{buffer:hydroGpu.fields}},
-      {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}}
+      {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}},
+      {binding:7,resource:{buffer:hydroGpu.segCode}}
     ];
     hydroGpu.bindGroup=wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries});
   }
@@ -2067,17 +2153,27 @@ async function addHydropathyFieldForcesGpu(rod,body,opts={}){
     }
   }
   const cfg=new Float32Array(32);
-  cfg[0]=count;cfg[1]=fieldSize;cfg[2]=topoEll;cfg[3]=ell;cfg[4]=opts.excluded??2.2;cfg[5]=opts.hydroAttract??2.7;cfg[6]=opts.philicExpose??.75;cfg[7]=opts.hydroSat??2.2;cfg[8]=opts.coreBias??.65;cfg[9]=opts.exposureBias??.45;cfg[10]=opts.interfaceBias??.9;cfg[11]=opts.hydroContactAttract??0;cfg[12]=opts.hydroContactSat??1.2;cfg[13]=opts.hydroSelfSubtract??0;cfg[14]=opts.hydroContactSelfSubtract??0;cfg[15]=opts.hydroZeroNetForce?1:0;cfg[16]=4096;cfg[17]=worldSize;cfg[18]=opts.applyMobility??0;cfg[19]=opts.applyMaxStep??0;
+  cfg[0]=count;cfg[1]=fieldSize;cfg[2]=topoEll;cfg[3]=ell;cfg[4]=opts.excluded??2.2;cfg[5]=opts.hydroAttract??2.7;cfg[6]=opts.philicExpose??.75;cfg[7]=opts.hydroSat??2.2;cfg[8]=opts.coreBias??.65;cfg[9]=opts.exposureBias??.45;cfg[10]=opts.interfaceBias??.9;cfg[11]=opts.hydroContactAttract??0;cfg[12]=opts.hydroContactSat??1.2;cfg[13]=opts.hydroSelfSubtract??0;cfg[14]=opts.hydroContactSelfSubtract??0;cfg[15]=opts.hydroZeroNetForce?1:0;cfg[16]=4096;cfg[17]=worldSize;cfg[18]=opts.applyMobility??0;cfg[19]=opts.applyMaxStep??0;cfg[20]=opts.typedAttract??0;
   const ptWrite=ptData.length===count*4?ptData:ptData.subarray(0,count*4),segWrite=segData.length===Math.max(1,E)*4?segData:segData.subarray(0,Math.max(1,E)*4);
   const ptsBuffer=opts.ptsBuffer||gpu.pts,segBuffer=opts.segBuffer||gpu.seg;
   const bindGroup=(opts.ptsBuffer||opts.segBuffer)?wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries:[
     {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:ptsBuffer}},{binding:2,resource:{buffer:segBuffer}},
     {binding:3,resource:{buffer:hydroGpu.raw}},{binding:4,resource:{buffer:hydroGpu.fields}},
-    {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}}
+    {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}},
+    {binding:7,resource:{buffer:hydroGpu.segCode}}
   ]}):gpu.bindGroup;
   wgpuDevice.queue.writeBuffer(gpu.config,0,cfg);
   if(opts.uploadPts!==false)wgpuDevice.queue.writeBuffer(ptsBuffer,0,ptWrite);
   if(opts.uploadSeg!==false)wgpuDevice.queue.writeBuffer(segBuffer,0,segWrite);
+  {
+    const codeLen=Math.max(1,E)*4;
+    let codeWrite=body?.segCodeData&&body.segCodeData.length>=codeLen?body.segCodeData.subarray(0,codeLen):null;
+    if(!codeWrite){
+      if(!hydroGpu.zeroCodes||hydroGpu.zeroCodes.length<codeLen)hydroGpu.zeroCodes=new Float32Array(codeLen);
+      codeWrite=hydroGpu.zeroCodes.subarray(0,codeLen);
+    }
+    wgpuDevice.queue.writeBuffer(gpu.segCode,0,codeWrite);
+  }
   const cells=fieldSize*fieldSize,workCells=Math.ceil(Math.max(cells,count,E)/64),workNodes=Math.ceil(Math.max(count,E,1)/64);
   const encodeDispatch=(enc,name,work=workCells)=>{const pass=enc.beginComputePass();pass.setPipeline(gpu.pipelines[name]);pass.setBindGroup(0,bindGroup);pass.dispatchWorkgroups(work);pass.end();};
   let enc=wgpuDevice.createCommandEncoder();
@@ -2098,6 +2194,8 @@ async function addHydropathyFieldForcesGpu(rod,body,opts={}){
   blur('env',opts.envBlur??Math.max(3,Math.round((opts.hydroBlur??7)*.75)));
   blur('hydro',(opts.hydroAttract??0)>0?(opts.hydroBlur??7):0);
   blur('adhere',(opts.hydroContactAttract??0)>0?(opts.hydroContactBlur??3):0);
+  blur('sig0',(opts.typedAttract??0)>0?(opts.typedBlur??3):0);
+  blur('sig1',(opts.typedAttract??0)>0?(opts.typedBlur??3):0);
   encodeDispatch(enc,'gather',workNodes);
   let gpuMs=0,readbackMs=0;
   if(opts.applyToPts){
@@ -2381,7 +2479,7 @@ function rebuildMobileBackground(view=setupMobileCanvas()){
   }
 }
 
-function mobileSelectDigit(digit,{relayout=false}={}){
+function mobileSelectDigit(digit,{relayout=false,keep=false}={}){
   digit=String(digit).replace(/\D/g,'').slice(-1);
   if(!digit)return;
   mobileActiveDigit=digit;
@@ -2392,14 +2490,39 @@ function mobileSelectDigit(digit,{relayout=false}={}){
   const wantWorld=Math.max(400,Math.ceil(Math.max(view.w,view.h)));
   if(wantWorld!==soupWorldSize){soupWorldSize=wantWorld;invalidateSharedSoupBuffers();}
   if(relayout||!mobileBackgroundStates.length)rebuildMobileBackground(view);
-  const job=jobs[mobileDigitCursor[d]++%jobs.length],place=mobileForegroundPlacement(view);
-  mobileForegroundState=mobileStateFromJob(job,{...place,line:true,seed:sampleRandomU32()});
+  // keep=true refolds the SAME topology with the SAME seed (A/B comparisons);
+  // digit presses advance to the next cached topology sample.
+  let jobIdx,seed;
+  if(keep&&mobileLastJob[d]!=null){jobIdx=mobileLastJob[d];seed=mobileLastSeed;}
+  else{jobIdx=mobileDigitCursor[d]++%jobs.length;seed=sampleRandomU32();mobileLastJob[d]=jobIdx;mobileLastSeed=seed;}
+  const job=jobs[jobIdx],place=mobileForegroundPlacement(view);
+  mobileForegroundState=mobileStateFromJob(job,{...place,line:true,seed});
+  if(mobileCodeNoisy&&mobileForegroundState?.loaded)withDigitState(mobileForegroundState,()=>{
+    const rod=ensureContinuousRod();if(!rod)return;
+    setRodNoiseSeed(rodSeedMix(seed,0xC0DE));
+    for(let k=0;k<rod.kappa.length;k++)rod.kappa[k]*=1+.05*rodNormal();
+    if(rod.bendW)for(let k=0;k<rod.bendW.length;k++)rod.bendW[k]*=.4;
+  });
   allDigitEpoch++;allDigitStates=mobileForegroundState?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
   GPU_ROD_SOLVER_ENABLED=true;
   renderMobileFold();
   startMobileLoop();
 }
 
+// Backbone color scheme: local vs nonlocal information. Neutral gray-ink =
+// purely local material (no native contacts; only the intrinsic curvature
+// code acts there). Colored = nonlocal contact sites, hue = typed-field
+// letter (same hue attracts same hue), saturation = contact weight.
+const CODE_COLORS={'1,1':[193,74,43],'1,-1':[47,111,159],'-1,1':[63,143,107],'-1,-1':[122,84,158]};
+function codeSideColor(c0,c1){
+  const w=Math.max(Math.abs(c0),Math.abs(c1));
+  if(!(w>0))return 'rgba(70,72,68,0.45)';
+  const key=`${Math.sign(c0)||1},${Math.sign(c1)||1}`;
+  const rgb=CODE_COLORS[key]||[70,72,68];
+  const t=Math.min(1,Math.sqrt(w)*1.5); // contact weights are mostly <0.5; lift saturation
+  const mix=v=>Math.round(v*t+128*(1-t));
+  return `rgb(${mix(rgb[0])},${mix(rgb[1])},${mix(rgb[2])})`;
+}
 function drawMobileRod(ctx,st,view,{background=false}={}){
   if(!st?.loaded)return;
   withDigitState(st,()=>{
@@ -2421,10 +2544,13 @@ function drawMobileRod(ctx,st,view,{background=false}={}){
       let g=groups.get(color);if(!g){g=[];groups.set(color,g);}
       g.push([k,side]);
     };
+    // local-vs-nonlocal backbone scheme: gray = purely local material,
+    // hue = typed contact letter, saturation = native contact weight.
+    const codes=rodSegCodes(rod);
     for(let k=0;k<E;k++){
-      const side=rod?.sideHydro?.[k],fallback=((rod?.hydro?.[k]??0)+(rod?.hydro?.[k+1]??rod?.hydro?.[k]??0))*.5*.5+.5;
-      add(hydroSideBucketColor(side?.left??fallback),k,1);
-      add(hydroSideBucketColor(side?.right??fallback),k,-1);
+      const code=codes?.[k];
+      add(codeSideColor(code?.[0]??0,code?.[1]??0),k,1);
+      add(codeSideColor(code?.[2]??0,code?.[3]??0),k,-1);
     }
     for(const [color,segs] of groups){
       ctx.strokeStyle=color;ctx.beginPath();
@@ -2461,9 +2587,11 @@ function startMobileLoop(){
     try{
       if(mobileForegroundState?.loaded){
         // excluded volume is baseline physics (always on); the hydro toggle
-        // adds/removes only the hydropathy channels on top of it.
-        const fieldGain=Math.max(0,+($('density-field')?.value||0));
-        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:fieldGain,seed:sampleRandomU32(),applyField:fieldGain>0,hydroChannels:hydroForcesOn});
+        // adds/removes only the hydropathy channels; guide 'typed' matches the
+        // harness typed4 condition (gain-equivalent 0.3, typedAttract 10).
+        const typed=mobileGuide==='typed';
+        const fieldGain=typed?6:Math.max(0,+($('density-field')?.value||0));
+        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:fieldGain,seed:sampleRandomU32(),applyField:fieldGain>0,hydroChannels:hydroForcesOn||typed,typedAttract:typed?10:0});
       }
       renderMobileFold();
     }catch(err){
@@ -2509,6 +2637,16 @@ function updatePadActive(digit){
 $('hydro-toggle')?.addEventListener('click',()=>{
   hydroForcesOn=!hydroForcesOn;
   const b=$('hydro-toggle');b.textContent=`hydro ${hydroForcesOn?'on':'off'}`;b.classList.toggle('active',hydroForcesOn);
+});
+$('code-toggle')?.addEventListener('click',()=>{
+  mobileCodeNoisy=!mobileCodeNoisy;
+  const b=$('code-toggle');b.textContent=`code ${mobileCodeNoisy?'noisy':'full'}`;b.classList.toggle('active',mobileCodeNoisy);
+  if(mobileReady)mobileSelectDigit(mobileActiveDigit,{keep:true});
+});
+$('guide-toggle')?.addEventListener('click',()=>{
+  mobileGuide=mobileGuide==='off'?'typed':'off';
+  const b=$('guide-toggle');b.textContent=`guide ${mobileGuide}`;b.classList.toggle('active',mobileGuide!=='off');
+  if(mobileReady)mobileSelectDigit(mobileActiveDigit,{keep:true});
 });
 $('start-toggle')?.addEventListener('click',()=>{
   mobileStartMode=mobileStartMode==='line'?'coil':'line';
