@@ -72,6 +72,7 @@
   .fold-pad button.aux.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
   .fold-loading{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 24px}
   .fold-loading.hidden{display:none}
+  #fold-stats{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);letter-spacing:.02em;padding:0 12px;text-align:center;min-height:15px;flex:none}
   .fold-spinner{width:34px;height:34px;border:3px solid var(--rule);border-top-color:var(--vermilion);border-radius:50%;animation:fold-spin .8s linear infinite}
   @keyframes fold-spin{to{transform:rotate(360deg)}}
 </style>
@@ -79,6 +80,7 @@
 <body class="fold-mobile">
 <div id="fold-loading" class="fold-loading"><div class="fold-spinner"></div><div id="fold-loading-msg">sampling folding paths…</div></div>
 <canvas class="digit-board" id="digit-board" aria-hidden="true"></canvas>
+<div id="fold-stats" aria-live="polite"></div>
 <nav id="fold-pad" class="fold-pad" aria-label="digit selector">
   <button type="button" data-digit="1">1</button>
   <button type="button" data-digit="2">2</button>
@@ -2497,6 +2499,21 @@ function mobileSelectDigit(digit,{relayout=false,keep=false}={}){
   else{jobIdx=mobileDigitCursor[d]++%jobs.length;seed=sampleRandomU32();mobileLastJob[d]=jobIdx;mobileLastSeed=seed;}
   const job=jobs[jobIdx],place=mobileForegroundPlacement(view);
   mobileForegroundState=mobileStateFromJob(job,{...place,line:true,seed});
+  // Path descriptor for the live readout: relative contact order (mean chain
+  // separation of rest contacts / chain length) - measured to predict path
+  // difficulty (r=+0.50 within-digit) and typed-guidance benefit (r=-0.34).
+  if(mobileForegroundState?.loaded)withDigitState(mobileForegroundState,()=>{
+    const rod=ensureContinuousRod();if(!rod?.rest)return;
+    const rest=rod.rest,n=rest.length,skip=Math.max(2,SMOOTH_ROD_SUBDIV*3);
+    const radius=(rod.topologyMeanEll||rod.meanEll||1)*1.15,r2=radius*radius;
+    let contacts=0,orderSum=0;
+    for(let a=0;a<n;a++)for(let b=a+skip+1;b<n;b++){
+      const dx=rest[a][0]-rest[b][0],dy=rest[a][1]-rest[b][1];
+      if(dx*dx+dy*dy<r2){contacts++;orderSum+=b-a;}
+    }
+    mobileForegroundState.pathCO=contacts?orderSum/contacts/n:0;
+    mobileForegroundState.pathContacts=contacts;
+  });
   if(mobileCodeNoisy&&mobileForegroundState?.loaded)withDigitState(mobileForegroundState,()=>{
     const rod=ensureContinuousRod();if(!rod)return;
     setRodNoiseSeed(rodSeedMix(seed,0xC0DE));
@@ -2569,6 +2586,12 @@ function renderMobileFold(){
   ctx.fillStyle=cssv('--paper');ctx.fillRect(0,0,w,h);
   for(const st of mobileBackgroundStates)drawMobileRod(ctx,st,view,{background:true});
   drawMobileRod(ctx,mobileForegroundState,view);
+  const el=$('fold-stats');
+  if(el&&mobileForegroundState?.loaded){
+    const st=mobileForegroundState;
+    const err=withDigitState(st,()=>continuousStats({fresh:true}).restError);
+    el.textContent=`digit ${st.digit} · contact order ${(st.pathCO??0).toFixed(2)} · err ${err.toFixed(1)}px · code ${mobileCodeNoisy?'noisy':'full'} · guide ${mobileGuide}`;
+  }
 }
 
 function stopMobileLoop(){
