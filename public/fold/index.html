@@ -96,6 +96,7 @@
   <button type="button" id="start-toggle" class="aux" title="fold from a straight line or a crumpled compact coil">line</button>
   <button type="button" id="code-toggle" class="aux" title="local code fidelity: full = exact curvature program; noisy = 5% registration noise + soft bend (underspecified local code)">code full</button>
   <button type="button" id="guide-toggle" class="aux" title="nonlocal guidance: typed = 4-letter contact alphabet field (colored sites attract same color)">guide off</button>
+  <button type="button" id="widen-toggle" class="aux" title="loosen the local code: allow each turn angle a flat-bottom band [kappa-w, kappa+w] with no restoring force inside. Watch the fold drift apart - free play at every joint integrates into a large global misplacement, not a local fix.">widen off</button>
 </nav>
 <div class="wrap">
   <header>
@@ -172,6 +173,7 @@ let hydroForcesOn=false,mobileStartMode='line';
 // adhesion field (harness typed4 condition: fieldTorque-equivalent 0.3,
 // typedAttract 10). Toggles refold the SAME topology with the SAME seed so
 // the comparison is a true A/B.
+let mobileWiden=false; // flat-bottom curvature band width toggle (0 or 0.1 rad)
 let mobileCodeNoisy=false,mobileGuide='off',mobileLastJob={},mobileLastSeed=0;
 let foldParams={temporalHydroFieldTorque:.05,lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:true,temporalHydroSubstepAnneal:true,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
 let allDigitMode=true, allDigitStates=[], allDigitFrame=0, allDigitLoopToken=0, allDigitLoading=false, allDigitLoadingN=0, allDigitEpoch=0, allDigitGridTimer=0, allDigitStatsCache=null, allDigitStatsTick=0, wgpuDigitBatchCache=null, allDigitPool=[], allDigitPoolFill=null, allDigitPoolN=0, allDigitPoolSeed=null, allDigitPrefetchError='', allDigitSharedFieldStats={nodes:0,active:0,maxForce:0}, allDigitSharedFieldPending=null, allDigitSharedSoa=null, soupWorldSize=400;
@@ -788,9 +790,18 @@ async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
       const g=fieldGain*angleMobility*dt;
       for(let k=0;k<E;k++)rhs[k]+=g*(rod.ell[k]||1)*(Math.cos(theta[k])*sfy[k]-Math.sin(theta[k])*sfx[k]);
     }
+    // Flat-bottom curvature bands: an underspecified/loosened local code
+    // constrains the turn angle only to a RANGE [kappa-w, kappa+w] (global
+    // foldParams.kappaBandWidth; w=0 = exact code). Inside the band the bend
+    // force vanishes (target := current turn angle) so the chain is free to
+    // drift there - the 'widen' toggle exposes the catastrophic effect on the
+    // distributed curvature-scale deficit misfolds.
+    const bandW=foldParams.kappaBandWidth??0;
     for(let k=0;k<E-1;k++){
       const c=rodBendWeight(rod,k,bendBase)*bendDtScale;
-      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*rodTargetKappa(rod,k);rhs[k+1]+=c*rodTargetKappa(rod,k);
+      let tk=rodTargetKappa(rod,k);
+      if(bandW>0){const cur=theta[k+1]-theta[k];tk=cur<tk-bandW?tk-bandW:cur>tk+bandW?tk+bandW:cur;}
+      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*tk;rhs[k+1]+=c*tk;
     }
     solveTridiagonalScratch(scratch,E,foldParams.cacheFactor===false?null:`temporal|${E}|${bendBase}|${inertia}`);
     for(let k=0;k<E;k++){
@@ -990,7 +1001,12 @@ fn solve(@builtin(global_invocation_id) gid:vec3u){
     scratch[s_diag(scratch0,e,i+1u)]=scratch[s_diag(scratch0,e,i+1u)]+c;
     scratch[s_hi(scratch0,e,i)]=scratch[s_hi(scratch0,e,i)]-c;
     scratch[s_lo(scratch0,e,i+1u)]=scratch[s_lo(scratch0,e,i+1u)]-c;
-    let targetKappa=kappa[edge0+i]*kappaScale;
+    var targetKappa=kappa[edge0+i]*kappaScale;
+    // flat-bottom curvature band [kappa-w, kappa+w]: no restoring force inside
+    // (the 'widen' toggle; w = cfg[11]). Frees each joint, so the deficit
+    // drifts into a large global misplacement rather than a local correction.
+    let bandW=cfg[11];
+    if(bandW>0.0){let cur=scratch[s_theta(scratch0,e,i+1u)]-scratch[s_theta(scratch0,e,i)];targetKappa=clamp(cur,targetKappa-bandW,targetKappa+bandW);}
     scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-c*targetKappa;
     scratch[s_rhs(scratch0,e,i+1u)]=scratch[s_rhs(scratch0,e,i+1u)]+c*targetKappa;
   }
@@ -1212,6 +1228,7 @@ async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverride
   const noiseSeed=((dynOverrides.seed==null?sampleRandomU32():dynOverrides.seed>>>0)&0xffffff)||0x3779b9;
   cfg[0]=batch.rods.length;cfg[1]=schedule.bendBase;cfg[2]=schedule.bendDtScale;cfg[3]=schedule.inertia;cfg[4]=schedule.maxAngleStep;cfg[5]=schedule.centerStrength;cfg[6]=schedule.angleMobility;cfg[7]=schedule.dt;cfg[8]=noiseSeed;
   cfg[10]=Math.max(0,dynOverrides.field??0)*(foldParams.temporalHydroFieldTorque??1);
+  cfg[11]=foldParams.kappaBandWidth??0; // flat-bottom band width (widen toggle)
   wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);wgpuDevice.queue.writeBuffer(gpu.meta,0,batch.meta);wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);wgpuDevice.queue.writeBuffer(gpu.theta,0,batch.theta);wgpuDevice.queue.writeBuffer(gpu.ell,0,batch.ell);wgpuDevice.queue.writeBuffer(gpu.kappa,0,batch.kappa);wgpuDevice.queue.writeBuffer(gpu.bendW,0,batch.bendW);
   const gpuStart=nowMs();
   let fieldStats=null;
@@ -2590,7 +2607,7 @@ function renderMobileFold(){
   if(el&&mobileForegroundState?.loaded){
     const st=mobileForegroundState;
     const err=withDigitState(st,()=>continuousStats({fresh:true}).restError);
-    el.textContent=`digit ${st.digit} · contact order ${(st.pathCO??0).toFixed(2)} · err ${err.toFixed(1)}px · code ${mobileCodeNoisy?'noisy':'full'} · guide ${mobileGuide}`;
+    el.textContent=`digit ${st.digit} · contact order ${(st.pathCO??0).toFixed(2)} · err ${err.toFixed(1)}px · code ${mobileCodeNoisy?'noisy':'full'} · guide ${mobileGuide} · widen ${mobileWiden?'0.1':'off'}`;
   }
 }
 
@@ -2675,6 +2692,12 @@ $('start-toggle')?.addEventListener('click',()=>{
   mobileStartMode=mobileStartMode==='line'?'coil':'line';
   const b=$('start-toggle');b.textContent=mobileStartMode;b.classList.toggle('active',mobileStartMode==='coil');
   if(mobileReady)mobileSelectDigit(mobileActiveDigit);
+});
+$('widen-toggle')?.addEventListener('click',()=>{
+  mobileWiden=!mobileWiden;
+  const b=$('widen-toggle');b.textContent=`widen ${mobileWiden?'0.1':'off'}`;b.classList.toggle('active',mobileWiden);
+  foldParams.kappaBandWidth=mobileWiden?0.1:0;
+  if(mobileReady)mobileSelectDigit(mobileActiveDigit,{keep:true}); // refold SAME topology+seed: clean A/B
 });
 $('fold-pad')?.addEventListener('click',ev=>{
   const b=ev.target.closest?.('button[data-digit]');if(!b)return;
