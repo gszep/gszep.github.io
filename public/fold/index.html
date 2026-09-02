@@ -60,17 +60,40 @@
 
   footer{margin-top:34px;border-top:1px solid var(--rule);padding-top:16px;font-size:13.5px;color:var(--ink-soft);max-width:78ch}
   footer b{color:var(--ink)} footer code{font-family:'IBM Plex Mono';background:var(--paper-2);padding:1px 5px;border:1px solid var(--rule);font-size:12px}
-  body.fold-mobile{padding:0;overflow:hidden;width:100vw;height:100vh;height:100dvh;background:var(--paper);touch-action:manipulation}
-  .fold-mobile header,.fold-mobile footer,.fold-mobile .card h3,.fold-mobile .seq,.fold-mobile .prog,.fold-mobile .prog-lbl,.fold-mobile .stats{display:none!important}
-  .fold-mobile .wrap,.fold-mobile .layout,.fold-mobile .card,.fold-mobile .card .body{width:100vw;height:100vh;height:100dvh;max-width:none;margin:0;padding:0;border:0;background:transparent;display:block}
-  .fold-mobile .wrap{display:none!important}
-  .fold-mobile .digit-board{display:block;width:100vw;height:100vh;height:100dvh;aspect-ratio:auto;border:0;background:var(--paper);margin:0;outline:0}
-  #mobile-key-capture{position:fixed;left:0;top:0;width:1px;height:1px;opacity:0;pointer-events:none;border:0;background:transparent;color:transparent}
+  body.fold-mobile{padding:0;overflow:hidden;width:100vw;height:100vh;height:100dvh;background:var(--paper);touch-action:manipulation;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:10px}
+  .fold-mobile header,.fold-mobile footer,.fold-mobile .card h3,.fold-mobile .seq,.fold-mobile .prog,.fold-mobile .prog-lbl,.fold-mobile .stats,.fold-mobile .wrap{display:none!important}
+  .fold-mobile .digit-board{display:block;width:min(100vw,calc(100dvh - 236px));height:auto;aspect-ratio:1/1;border:0;background:var(--paper);margin:0;outline:0;flex:none}
+  .fold-pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;width:min(100vw,calc(100dvh - 236px));max-width:420px;padding:0 12px calc(8px + env(safe-area-inset-bottom));box-sizing:border-box;flex:none;-webkit-user-select:none;user-select:none}
+  .fold-pad button{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:clamp(18px,5vw,24px);color:var(--ink);background:var(--paper-2);border:1.5px solid var(--rule);padding:12px 0;cursor:pointer;-webkit-tap-highlight-color:transparent;transition:background .1s,color .1s,border-color .1s}
+  .fold-pad button:active{transform:translateY(1px)}
+  .fold-pad button.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+  .fold-pad button.zero{grid-column:2}
+  .fold-pad button.cycle{grid-column:1/-1;font-size:clamp(13px,3.4vw,16px);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;color:var(--ink-soft)}
+  .fold-pad button.cycle.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+  .fold-loading{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 24px}
+  .fold-loading.hidden{display:none}
+  #fold-stats{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);letter-spacing:.02em;padding:0 12px;text-align:center;min-height:15px;flex:none}
+  .fold-spinner{width:34px;height:34px;border:3px solid var(--rule);border-top-color:var(--vermilion);border-radius:50%;animation:fold-spin .8s linear infinite}
+  @keyframes fold-spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body class="fold-mobile">
-<input id="mobile-key-capture" inputmode="numeric" pattern="[0-9]*" autocomplete="off" aria-hidden="true">
+<div id="fold-loading" class="fold-loading"><div class="fold-spinner"></div><div id="fold-loading-msg">sampling folding paths…</div></div>
 <canvas class="digit-board" id="digit-board" aria-hidden="true"></canvas>
+<div id="fold-stats" aria-live="polite"></div>
+<nav id="fold-pad" class="fold-pad" aria-label="digit selector">
+  <button type="button" data-digit="1">1</button>
+  <button type="button" data-digit="2">2</button>
+  <button type="button" data-digit="3">3</button>
+  <button type="button" data-digit="4">4</button>
+  <button type="button" data-digit="5">5</button>
+  <button type="button" data-digit="6">6</button>
+  <button type="button" data-digit="7">7</button>
+  <button type="button" data-digit="8">8</button>
+  <button type="button" data-digit="9">9</button>
+  <button type="button" data-digit="0" class="zero">0</button>
+  <button type="button" id="cycle-toggle" class="cycle" title="heat the folded filament until it denatures, then cool it and watch it refold">denature → refold</button>
+</nav>
 <div class="wrap">
   <header>
     <div class="eyebrow">webgpu topology sampler · curvature folding</div>
@@ -82,7 +105,8 @@
       <label class="range-ctl">Spacing <input id="grid-n" type="range" min="5" max="30" step="1" value="20"><b id="grid-n-label">hex20 digits 0-9</b></label>
       <span class="range-ctl">Dynamics <b>temporal intrinsic + hydrophobic</b></span>
       <label class="range-ctl">Noise <input id="dynamics-temp" type="number" min="0" max="4" step="0.05" value="1.5"></label>
-      <label class="range-ctl">Field <input id="density-field" type="number" min="0" max="2" step="0.05" value="0"></label>
+      <label class="range-ctl">Field <input id="density-field" type="number" min="0" max="2" step="0.05" value="0.1"></label>
+
       <span id="status" style="font-family:'IBM Plex Mono';font-size:12px;color:var(--ink-soft)"></span>
     </div>
   </header>
@@ -135,7 +159,9 @@ const TEMPORAL_HYDRO_SPEED=4;
 const SMOOTH_ROD_SUBDIV=2;
 let GPU_ROD_SOLVER_ENABLED=false;
 const GPU_ROD_MAX_EDGES=512;
-let foldParams={lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:true,temporalHydroSubstepAnneal:true,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
+// Active story: exact local geometry + calibrated excluded volume. No
+// hydropathy, typed guidance, curvature corruption, or widened code.
+let foldParams={temporalHydroFieldTorque:.3,wcaEpsilon:.75,wcaTorqueGain:.3,lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:false,temporalHydroSubstepAnneal:false,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
 let allDigitMode=true, allDigitStates=[], allDigitFrame=0, allDigitLoopToken=0, allDigitLoading=false, allDigitLoadingN=0, allDigitEpoch=0, allDigitGridTimer=0, allDigitStatsCache=null, allDigitStatsTick=0, wgpuDigitBatchCache=null, allDigitPool=[], allDigitPoolFill=null, allDigitPoolN=0, allDigitPoolSeed=null, allDigitPrefetchError='', allDigitSharedFieldStats={nodes:0,active:0,maxForce:0}, allDigitSharedFieldPending=null, allDigitSharedSoa=null, soupWorldSize=400;
 function invalidateSharedSoupBuffers(){allDigitSharedSoa=null;}
 function telemetrySet(key,value,alpha=.28){if(Number.isFinite(value))runtimeTelemetry[key]=runtimeTelemetry[key]?runtimeTelemetry[key]*(1-alpha)+value*alpha:value;}
@@ -467,8 +493,8 @@ function projectTemporalRodFromTangents(path,rod,centerStrength=.02){
 function spatialBinKey(x,y){
   return x>=-8192&&x<8192&&y>=-8192&&y<8192?(x+8192)*16384+(y+8192):`${x},${y}`;
 }
-function scheduleAllDigitFrame(fn){return setTimeout(fn,16);}
-function cancelAllDigitFrame(id){clearTimeout(id);}
+function scheduleAllDigitFrame(fn){return (globalThis.requestAnimationFrame||(f=>setTimeout(f,16)))(fn);}
+function cancelAllDigitFrame(id){(globalThis.cancelAnimationFrame||clearTimeout)(id);}
 function continuousStats(opts={}){
   ensureContinuousAngles();
   const rod=ensureContinuousRod();let active=0;
@@ -541,6 +567,134 @@ function initializeCurrentRodFromLine({render=true,start=true,seed=null}={}){
   if(start)startAllDigitLoop();
   return true;
 }
+// Compact-start initialization: a crumpled persistent random walk confined to
+// a disc around the digit's slot, with exact rest segment lengths. This is the
+// hard fold problem (disentangle + order) versus the trivially foldable line.
+function initializeCurrentRodFromCoil({render=true,start=true,seed=null,turnSigma=.85,radiusScale=1.15}={}){
+  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return false;
+  rodNoiseState=(seed!=null?((seed>>>0)||0x7f4a7c15):(((Date.now()^Math.floor(performance.now()*1000))>>>0)||0x7f4a7c15));
+  const c=sampleDomain?.centroid||domainDisplayCentroid(),L=rod.ell.reduce((a,b)=>a+b,0)||316,meanEll=rod.meanEll||L/Math.max(1,rod.ell.length);
+  const R=Math.sqrt(L*meanEll/Math.PI)*radiusScale;
+  let x=c[0]+(rodRand()-.5)*R,y=c[1]+(rodRand()-.5)*R,heading=rodRand()*TAU;
+  for(let k=0;k<path.length;k++){
+    const st=continuousAngles[path[k]];
+    if(st){st.x=x;st.y=y;st.vx=0;st.vy=0;st.tx=0;st.ty=0;}
+    if(k<rod.ell.length){
+      heading=wrapAngle(heading+rodNormal()*turnSigma);
+      const nx=x+Math.cos(heading)*rod.ell[k],ny=y+Math.sin(heading)*rod.ell[k];
+      if(Math.hypot(nx-c[0],ny-c[1])>R){
+        const toC=Math.atan2(c[1]-y,c[0]-x);
+        heading=wrapAngle(heading+angleDelta(toC,heading)*.65);
+      }
+      x+=Math.cos(heading)*rod.ell[k];y+=Math.sin(heading)*rod.ell[k];
+    }
+  }
+  resetRodTangentsFromGeometry(path,true);
+  rod.kappaScale=0;rod.foldRamp=true;rod.temporalHydroTick=0;rod.temporalHydroTime=0;rod.guideTheta=null;
+  updateRodEnergy();
+  if(start)startAllDigitLoop();
+  return true;
+}
+window.initializeCurrentRodFromCoil=initializeCurrentRodFromCoil;
+// --- Biologically plausible initializations -------------------------------
+// Two protocols that avoid the self-intersecting compact-coil ensemble (which
+// can lock in physically unreachable topologies under sterics):
+//  (1) GROW: vectorial N->C co-translational synthesis. Bake the full native
+//      rod once (so intrinsic curvature / contacts are the COMPLETE-structure
+//      code), then expose only a growing prefix: fold F steps, extrude the
+//      next monomer at the tip, repeat. Excluded volume is on throughout, so
+//      the chain can never self-intersect. F ~ 2-3x the local relaxation time
+//      keeps each added segment locally equilibrated while global folding
+//      trails synthesis - the co-translational regime (see README rate note).
+//  (2) DENATURE: high-T unfold of a straight chain with the fold drive off
+//      (kappaScale=0) but sterics on, swelling a crossing-free self-avoiding
+//      coil, then quench (fold ramp + anneal) - the refolding-from-denatured
+//      ensemble, crossing-free by construction.
+// Both are driven by applyInitProtocol(rod), called once per step; a rod with
+// neither rod.growth nor rod.denature is completely unaffected.
+function growRodPrefix(rod,add){
+  const F=rod._full;if(!F)return;
+  const old=rod.active,next=Math.min(F.N,old+add);
+  for(let k=old;k<next;k++){
+    rod.rest[k]=F.rest[k];rod.simPath[k]=F.simPath[k];
+    if(F.hydro)rod.hydro[k]=F.hydro[k];
+    if(k>=1){
+      rod.ell[k-1]=F.ell[k-1];
+      if(F.sideHydro&&F.sideHydro[k-1])rod.sideHydro[k-1]=F.sideHydro[k-1];
+      if(F.restContactWeight&&F.restContactWeight[k-1])rod.restContactWeight[k-1]=F.restContactWeight[k-1];
+      // extrude the new node at the tip along the last edge direction (a
+      // nascent residue emerging straight, then curled by the fold dynamics)
+      const tipSt=continuousAngles[rod.simPath[k-1]];
+      const ang=(k>=2&&rod.theta[k-2]!==undefined)?rod.theta[k-2]:(rod.guideTheta||0);
+      const nx=(tipSt?.x||0)+Math.cos(ang)*(rod.ell[k-1]||rod.meanEll||1),ny=(tipSt?.y||0)+Math.sin(ang)*(rod.ell[k-1]||rod.meanEll||1);
+      let st=continuousAngles[rod.simPath[k]];
+      if(!st){st={x:nx,y:ny,vx:0,vy:0,tx:0,ty:0,cell:rod.meanEll||1,virtual:true};continuousAngles[rod.simPath[k]]=st;}
+      else{st.x=nx;st.y=ny;st.vx=0;st.vy=0;}
+      rod.theta[k-1]=ang;rod.omega[k-1]=0;
+    }
+    if(k>=2){rod.kappa[k-2]=F.kappa[k-2];rod.bendW[k-2]=F.bendW[k-2];}
+  }
+  rod.active=next;rod.statsFresh=false;rod.restErr=null;
+  if(next>=F.N)rod.growth.done=true;
+}
+function applyInitProtocol(rod){
+  rod._constTemp=null;
+  if(rod.growth&&!rod.growth.done){
+    const g=rod.growth;g.tick++;
+    if(g.tick>=g.nextAdd){growRodPrefix(rod,g.chunk);g.nextAdd=g.tick+g.foldSteps;}
+    // on the tick growth completes, reset the anneal clock so the finished
+    // chain gets a fresh cooling quench over the remaining (equilibration) steps
+    if(rod.growth.done){rod.temporalHydroTick=0;rod.temporalHydroTime=0;}
+  }else if(rod.denature&&rod.denature.stepsLeft>0){
+    rod.denature.stepsLeft--;
+    rod.kappaScale=0;rod.foldRamp=false;rod._constTemp=rod.denature.temp;
+    if(rod.denature.stepsLeft===0){rod.foldRamp=true;rod.kappaScale=0;rod.temporalHydroTick=0;rod.temporalHydroTime=0;}
+  }
+}
+function initializeCurrentRodGrow({render=true,start=true,seed=null,foldSteps=25,chunk=2,seedLen=4}={}){
+  if(wgpuSelectedPath.length<2)return false;
+  continuousRod=null;const rod=bakeContinuousRod(wgpuSelectedPath);
+  if(!rod||rod.rest.length<seedLen+2)return false;
+  rodNoiseState=(seed!=null?((seed>>>0)||0x7f4a7c15):(((Date.now()^Math.floor(performance.now()*1000))>>>0)||0x7f4a7c15));
+  rod._full={rest:rod.rest,simPath:rod.simPath,ell:rod.ell,kappa:rod.kappa,bendW:rod.bendW,hydro:rod.hydro,sideHydro:rod.sideHydro,restContactWeight:rod.restContactWeight,N:rod.rest.length};
+  const S=Math.max(3,Math.min(seedLen,rod.rest.length));
+  rod.rest=rod._full.rest.slice(0,S);rod.simPath=rod._full.simPath.slice(0,S);
+  rod.ell=rod._full.ell.slice(0,S-1);
+  rod.kappa=rod._full.kappa.slice(0,Math.max(0,S-2));rod.bendW=rod._full.bendW.slice(0,Math.max(0,S-2));
+  rod.hydro=rod._full.hydro?rod._full.hydro.slice(0,S):rod.hydro;
+  rod.sideHydro=rod._full.sideHydro?rod._full.sideHydro.slice(0,S-1):rod.sideHydro;
+  rod.restContactWeight=rod._full.restContactWeight?rod._full.restContactWeight.slice(0,S-1):rod.restContactWeight;
+  rod.active=S;
+  // seed: a short straight segment anchored at the digit centroid (the fixed
+  // synthesis point), extruded along +x; the fold dynamics curl it thereafter
+  const c=sampleDomain?.centroid||domainDisplayCentroid(),meanEll=rod.meanEll||1,x0=c[0]-(S-1)*meanEll*.5,y0=c[1];
+  rod.theta=[];rod.omega=[];
+  for(let k=0;k<S;k++){
+    const x=x0+k*meanEll;let st=continuousAngles[rod.simPath[k]];
+    if(!st){st={x,y:y0,vx:0,vy:0,tx:0,ty:0,cell:meanEll,virtual:true};continuousAngles[rod.simPath[k]]=st;}
+    else{st.x=x;st.y=y0;st.vx=0;st.vy=0;}
+    if(k<S-1){rod.theta[k]=0;rod.omega[k]=0;}
+  }
+  rod.kappaScale=0;rod.foldRamp=true;rod.temporalHydroTick=0;rod.temporalHydroTime=0;rod.guideTheta=0;
+  rod.growth={foldSteps,chunk,tick:0,nextAdd:foldSteps,done:false};rod.denature=null;
+  rod.statsFresh=false;rod.restErr=null;updateRodEnergy();
+  if(render)renderAllDigitBoard({forceStats:true});
+  if(render)$('status').textContent=`co-translational growth · seed ${S}/${rod._full.N} monomers · F=${foldSteps}`;
+  if(start)startAllDigitLoop();
+  return true;
+}
+function initializeCurrentRodDenature({render=true,start=true,seed=null,denatureSteps=200,denatureTemp=2.5}={}){
+  if(!initializeCurrentRodFromLine({render:false,start:false,seed}))return false;
+  const rod=ensureContinuousRod();if(!rod)return false;
+  rod.kappaScale=0;rod.foldRamp=false;rod.temporalHydroTick=0;rod.temporalHydroTime=0;
+  rod.denature={stepsLeft:denatureSteps,temp:denatureTemp};rod._full=null;rod.growth=null;
+  rod.statsFresh=false;rod.restErr=null;updateRodEnergy();
+  if(render)renderAllDigitBoard({forceStats:true});
+  if(render)$('status').textContent=`denaturing · ${denatureSteps} steps @ T${denatureTemp}, then quench`;
+  if(start)startAllDigitLoop();
+  return true;
+}
+window.initializeCurrentRodGrow=initializeCurrentRodGrow;window.initializeCurrentRodDenature=initializeCurrentRodDenature;
 function rodPoint(i){const st=continuousAngles[i];return st?[st.x,st.y]:sampleGridCenter(i);}
 function hydroColor(h){
   h=Math.max(0,Math.min(1,(h+1)*.5));
@@ -611,7 +765,9 @@ function cloneRod(src=continuousRod){
     sideHydro:src.sideHydro?.map(s=>({...s}))||[],
     restContactWeight:src.restContactWeight?.map(s=>({...s}))||[],
     theta:src.theta?.slice()||[],omega:src.omega?.slice()||[],solveScratch:null,projectScratch:null,kappaScale:src.kappaScale??1,foldRamp:!!src.foldRamp,
-    hydroEnergy:src.hydroEnergy??0,hydroMeanRho:src.hydroMeanRho??0,temporalHydroTick:src.temporalHydroTick??0,temporalHydroTime:src.temporalHydroTime??0,guideTheta:src.guideTheta??null,energy:src.energy??0,curvErr:src.curvErr??0,restErr:src.restErr??null,statsFresh:!!src.statsFresh,meanKappa:src.meanKappa??0,meanEll:src.meanEll??1,meanStrain:src.meanStrain??0,maxStrain:src.maxStrain??0
+    hydroEnergy:src.hydroEnergy??0,hydroMeanRho:src.hydroMeanRho??0,temporalHydroTick:src.temporalHydroTick??0,temporalHydroTime:src.temporalHydroTime??0,guideTheta:src.guideTheta??null,energy:src.energy??0,curvErr:src.curvErr??0,restErr:src.restErr??null,statsFresh:!!src.statsFresh,meanKappa:src.meanKappa??0,meanEll:src.meanEll??1,meanStrain:src.meanStrain??0,maxStrain:src.maxStrain??0,
+    active:src.active??src.rest?.length??0,growth:src.growth?{...src.growth}:null,denature:src.denature?{...src.denature}:null,
+    _full:src._full?{rest:src._full.rest.map(p=>p.slice()),simPath:src._full.simPath.slice(),ell:src._full.ell.slice(),kappa:src._full.kappa.slice(),bendW:src._full.bendW.slice(),hydro:src._full.hydro?.slice()||[],sideHydro:src._full.sideHydro?.map(s=>({...s}))||[],restContactWeight:src._full.restContactWeight?.map(s=>({...s}))||[],N:src._full.N}:null
   }:null;
 }
 function pathUsesDomainEdges(path,domain=sampleDomain){
@@ -661,7 +817,8 @@ function addTemporalModeNoise(delta,E,temp,dt){
   }
 }
 async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
-  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<3)return;
+  const rod=ensureContinuousRod();if(rod)applyInitProtocol(rod);
+  const path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<3)return;
   if(continuousDrag){resetRodTangentsFromGeometry(path,false);return;}
   rod.statsFresh=false;
   syncRodTangents(path);
@@ -689,6 +846,21 @@ async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
     if(rod.kappaScale>=1){rod.kappaScale=1;rod.foldRamp=false;}
   }
   const scratch=ensureRodSolveScratch(rod,E+1),{lo,diag,hi,rhs,theta,sol}=scratch,noiseDelta=scratch.cosTheta;
+  // Field->angle coupling: project per-node shared-field forces (stored on node
+  // refs by the async field pass with forceReadback) onto edge-angle torques.
+  // tau_k = ell_k * tperp_k . (S_k - S0*(n-1-k)/n), suffix sums S_k=sum_{i>k}F_i.
+  const fieldGain=Math.max(0,dyn.field??0)*(foldParams.temporalHydroFieldTorque??1);
+  const sfx=scratch.cp,sfy=scratch.sinTheta;
+  let useFieldTorque=false;
+  if(fieldGain>0){
+    const n=path.length;let sx=0,sy=0;
+    for(let i=n-1;i>=1;i--){const st=continuousAngles[path[i]];sx+=st?.fx||0;sy+=st?.fy||0;sfx[i-1]=sx;sfy[i-1]=sy;}
+    const st0=continuousAngles[path[0]],s0x=sx+(st0?.fx||0),s0y=sy+(st0?.fy||0);
+    for(let k=0;k<E;k++){
+      const w=(n-1-k)/n;sfx[k]-=s0x*w;sfy[k]-=s0y*w;
+      if(!useFieldTorque&&(sfx[k]!==0||sfy[k]!==0))useFieldTorque=true;
+    }
+  }
   for(let s=0;s<substeps;s++){
     if(substepKappaRamp&&rod.foldRamp){
       rod.kappaScale=Math.min(1,(rod.kappaScale??0)+kappaRampStep);
@@ -702,9 +874,22 @@ async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
     if(stepTemp>0)addTemporalModeNoise(noiseDelta,E,stepTemp,dt);
     const sigma=stepTemp>0?Math.sqrt(2*angleMobility*stepTemp*.018*dt):0;
     for(let k=0;k<E;k++)rhs[k]=inertia*(theta[k]+noiseDelta[k]+(sigma?rodNormal()*sigma:0));
+    if(useFieldTorque){
+      const g=fieldGain*angleMobility*dt;
+      for(let k=0;k<E;k++)rhs[k]+=g*(rod.ell[k]||1)*(Math.cos(theta[k])*sfy[k]-Math.sin(theta[k])*sfx[k]);
+    }
+    // Flat-bottom curvature bands: an underspecified/loosened local code
+    // constrains the turn angle only to a RANGE [kappa-w, kappa+w] (global
+    // foldParams.kappaBandWidth; w=0 = exact code). Inside the band the bend
+    // force vanishes (target := current turn angle) so the chain is free to
+    // drift there - the 'widen' toggle exposes the catastrophic effect on the
+    // distributed curvature-scale deficit misfolds.
+    const bandW=foldParams.kappaBandWidth??0;
     for(let k=0;k<E-1;k++){
       const c=rodBendWeight(rod,k,bendBase)*bendDtScale;
-      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*rodTargetKappa(rod,k);rhs[k+1]+=c*rodTargetKappa(rod,k);
+      let tk=rodTargetKappa(rod,k);
+      if(bandW>0){const cur=theta[k+1]-theta[k];tk=cur<tk-bandW?tk-bandW:cur>tk+bandW?tk+bandW:cur;}
+      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*tk;rhs[k+1]+=c*tk;
     }
     solveTridiagonalScratch(scratch,E,foldParams.cacheFactor===false?null:`temporal|${E}|${bendBase}|${inertia}`);
     for(let k=0;k<E;k++){
@@ -822,6 +1007,9 @@ const GPU_ROD_BATCH_SHADER=`
 @group(0) @binding(6) var<storage,read> bendW:array<f32>;
 @group(0) @binding(7) var<storage,read_write> theta:array<f32>;
 @group(0) @binding(8) var<storage,read_write> scratch:array<f32>;
+// Combined per-node shared-field forces (hydro combine_forces output),
+// projected onto edge-angle torques below.
+@group(0) @binding(9) var<storage,read> force:array<vec2f>;
 fn wrap_angle(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a<0.0){a=a+tau;}return a;}
 fn angle_delta(a:f32,b:f32)->f32{let tau=6.28318530718;var d=wrap_angle(a-b);if(d>3.14159265359){d=d-tau;}return d;}
 fn hash_u32(x0:u32)->u32{var x=x0+0x9e3779b9u;x=(x^(x>>16u))*0x85ebca6bu;x=(x^(x>>13u))*0xc2b2ae35u;return x^(x>>16u);}
@@ -856,7 +1044,16 @@ fn solve(@builtin(global_invocation_id) gid:vec3u){
   }
   let p=params[rodId];let kappaScale=p.x;let stepTemp=max(0.0,p.w);
   let bendBase=cfg[1];let bendDtScale=cfg[2];let inertia=max(cfg[3],1e-6);let maxAngleStep=max(0.0,cfg[4]);
-  let angleMobility=cfg[6];let dt=cfg[7];let seed=u32(cfg[8]);let substepId=u32(cfg[9]);
+  let angleMobility=cfg[6];let dt=cfg[7];let seed=u32(cfg[8]);let substepId=u32(cfg[9]);let fieldGain=cfg[10];
+  if(fieldGain!=0.0){
+    var sx=0.0;var sy=0.0;
+    for(var back=0u;back<512u;back++){
+      if(back>=e){break;}
+      let i=e-back;
+      let f=force[node0+i];sx=sx+f.x;sy=sy+f.y;
+      scratch[s_lx(scratch0,e,i-1u)]=sx;scratch[s_ly(scratch0,e,n,i-1u)]=sy;
+    }
+  }
   let modeCount=min(5u,max(2u,u32(floor(sqrt(f32(e))*0.7))));
   let modeAmpScale=sqrt(2.0*stepTemp*dt)*0.055;
   let sigma=select(0.0,sqrt(2.0*angleMobility*stepTemp*0.018*dt),stepTemp>0.0);
@@ -873,8 +1070,17 @@ fn solve(@builtin(global_invocation_id) gid:vec3u){
       }
     }
     let edgeNoise=select(0.0,rand_normal(seed,rodId,substepId,i,53u)*sigma,stepTemp>0.0);
+    var fieldTau=0.0;
+    if(fieldGain!=0.0){
+      let w=f32(n-1u-i)/f32(n);
+      let f0=force[node0];
+      let s0x=scratch[s_lx(scratch0,e,0u)]+f0.x;let s0y=scratch[s_ly(scratch0,e,n,0u)]+f0.y;
+      let ax=scratch[s_lx(scratch0,e,i)]-s0x*w;let ay=scratch[s_ly(scratch0,e,n,i)]-s0y*w;
+      let th=scratch[s_theta(scratch0,e,i)];
+      fieldTau=fieldGain*angleMobility*dt*ell[edge0+i]*(cos(th)*ay-sin(th)*ax);
+    }
     scratch[s_lo(scratch0,e,i)]=0.0;scratch[s_hi(scratch0,e,i)]=0.0;
-    scratch[s_diag(scratch0,e,i)]=inertia;scratch[s_rhs(scratch0,e,i)]=inertia*(scratch[s_theta(scratch0,e,i)]+noiseDelta+edgeNoise);
+    scratch[s_diag(scratch0,e,i)]=inertia;scratch[s_rhs(scratch0,e,i)]=inertia*(scratch[s_theta(scratch0,e,i)]+noiseDelta+edgeNoise)+fieldTau;
   }
   for(var i=0u;i<512u;i++){
     if(i+1u>=e){break;}
@@ -883,7 +1089,12 @@ fn solve(@builtin(global_invocation_id) gid:vec3u){
     scratch[s_diag(scratch0,e,i+1u)]=scratch[s_diag(scratch0,e,i+1u)]+c;
     scratch[s_hi(scratch0,e,i)]=scratch[s_hi(scratch0,e,i)]-c;
     scratch[s_lo(scratch0,e,i+1u)]=scratch[s_lo(scratch0,e,i+1u)]-c;
-    let targetKappa=kappa[edge0+i]*kappaScale;
+    var targetKappa=kappa[edge0+i]*kappaScale;
+    // flat-bottom curvature band [kappa-w, kappa+w]: no restoring force inside
+    // (the 'widen' toggle; w = cfg[11]). Frees each joint, so the deficit
+    // drifts into a large global misplacement rather than a local correction.
+    let bandW=cfg[11];
+    if(bandW>0.0){let cur=scratch[s_theta(scratch0,e,i+1u)]-scratch[s_theta(scratch0,e,i)];targetKappa=clamp(cur,targetKappa-bandW,targetKappa+bandW);}
     scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-c*targetKappa;
     scratch[s_rhs(scratch0,e,i+1u)]=scratch[s_rhs(scratch0,e,i+1u)]+c*targetKappa;
   }
@@ -1033,14 +1244,15 @@ async function ensureGpuRodBatchSolver(rodCount,totalNodes,totalEdges,scratchCou
       {binding:5,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
       {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
       {binding:7,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}}
+      {binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
+      {binding:9,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}}
     ]});
     const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
     gpuRodBatchSolver={layout,pipeline:await wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:'solve'}}),rodCount:0,totalNodes:0,totalEdges:0,scratchCount:0};
   }
   const need=!gpuRodBatchSolver.bindGroup||gpuRodBatchSolver.rodCount<rodCount||gpuRodBatchSolver.totalNodes<totalNodes||gpuRodBatchSolver.totalEdges<totalEdges||gpuRodBatchSolver.scratchCount<scratchCount;
   if(need){
-    for(const key of ['cfg','meta','params','pts','hydroSeg','ell','kappa','bendW','theta','scratch','ptsRead','thetaRead'])gpuRodBatchSolver[key]?.destroy?.();
+    for(const key of ['cfg','meta','params','pts','hydroSeg','ell','kappa','bendW','theta','scratch','force','ptsRead','thetaRead'])gpuRodBatchSolver[key]?.destroy?.();
     gpuRodBatchSolver.rodCount=rodCount;gpuRodBatchSolver.totalNodes=totalNodes;gpuRodBatchSolver.totalEdges=totalEdges;gpuRodBatchSolver.scratchCount=scratchCount;
     gpuRodBatchSolver.cfg=wgpuDevice.createBuffer({size:16*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     gpuRodBatchSolver.meta=wgpuDevice.createBuffer({size:Math.max(16,rodCount*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
@@ -1052,6 +1264,7 @@ async function ensureGpuRodBatchSolver(rodCount,totalNodes,totalEdges,scratchCou
     gpuRodBatchSolver.bendW=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     gpuRodBatchSolver.theta=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
     gpuRodBatchSolver.scratch=wgpuDevice.createBuffer({size:Math.max(4,scratchCount*4),usage:GPUBufferUsage.STORAGE});
+    gpuRodBatchSolver.force=wgpuDevice.createBuffer({size:Math.max(8,totalNodes*2*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     gpuRodBatchSolver.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,totalNodes*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
     gpuRodBatchSolver.thetaRead=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
     gpuRodBatchSolver.bindGroup=wgpuDevice.createBindGroup({layout:gpuRodBatchSolver.layout,entries:[
@@ -1059,7 +1272,7 @@ async function ensureGpuRodBatchSolver(rodCount,totalNodes,totalEdges,scratchCou
       {binding:2,resource:{buffer:gpuRodBatchSolver.params}},{binding:3,resource:{buffer:gpuRodBatchSolver.pts}},
       {binding:4,resource:{buffer:gpuRodBatchSolver.ell}},{binding:5,resource:{buffer:gpuRodBatchSolver.kappa}},
       {binding:6,resource:{buffer:gpuRodBatchSolver.bendW}},{binding:7,resource:{buffer:gpuRodBatchSolver.theta}},
-      {binding:8,resource:{buffer:gpuRodBatchSolver.scratch}}
+      {binding:8,resource:{buffer:gpuRodBatchSolver.scratch}},{binding:9,resource:{buffer:gpuRodBatchSolver.force}}
     ]});
   }
   return gpuRodBatchSolver;
@@ -1102,6 +1315,8 @@ async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverride
   const gpu=await ensureGpuRodBatchSolver(batch.rods.length,batch.totalNodes,batch.totalEdges,batch.scratchCount),cfg=new Float32Array(16),{schedule}=batch;
   const noiseSeed=((dynOverrides.seed==null?sampleRandomU32():dynOverrides.seed>>>0)&0xffffff)||0x3779b9;
   cfg[0]=batch.rods.length;cfg[1]=schedule.bendBase;cfg[2]=schedule.bendDtScale;cfg[3]=schedule.inertia;cfg[4]=schedule.maxAngleStep;cfg[5]=schedule.centerStrength;cfg[6]=schedule.angleMobility;cfg[7]=schedule.dt;cfg[8]=noiseSeed;
+  cfg[10]=Math.max(0,dynOverrides.field??0)*(foldParams.temporalHydroFieldTorque??1);
+  cfg[11]=foldParams.kappaBandWidth??0; // flat-bottom band width (widen toggle)
   wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);wgpuDevice.queue.writeBuffer(gpu.meta,0,batch.meta);wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);wgpuDevice.queue.writeBuffer(gpu.theta,0,batch.theta);wgpuDevice.queue.writeBuffer(gpu.ell,0,batch.ell);wgpuDevice.queue.writeBuffer(gpu.kappa,0,batch.kappa);wgpuDevice.queue.writeBuffer(gpu.bendW,0,batch.bendW);
   const gpuStart=nowMs();
   let fieldStats=null;
@@ -1114,8 +1329,16 @@ async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverride
       segBuffer:gpu.hydroSeg,
       uploadPts:false,
       uploadSeg:false,
-      readback:false
+      readback:false,
+      combineForces:true,
+      // hydroChannels:false keeps excluded volume (baseline sterics) but zeroes
+      // the hydropathy/amphipathic channels: the harness 'excluded' condition.
+      ...(dynOverrides.hydroChannels===false?{hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0}:{}),
+      ...(dynOverrides.typedAttract>0?{typedAttract:dynOverrides.typedAttract,typedBlur:3}:{})
     }));
+    const fenc=wgpuDevice.createCommandEncoder();
+    fenc.copyBufferToBuffer(hydroGpu.nodeForce,0,gpu.force,0,batch.totalNodes*2*4);
+    wgpuDevice.queue.submit([fenc.finish()]);
   }
   for(let s=0;s<schedule.substeps;s++){
     for(let ri=0;ri<batch.rods.length;ri++){
@@ -1549,20 +1772,50 @@ function renderDigitCanvas(){
     drawDigitRodCanvas(ctx,st,setup);
   }
 }
+// Typed adhesion code for one rest segment side pair: color from a spatial
+// supercell hash of the REST-space side position, weighted by native contact
+// weight. foldParams.typedPlanes: 1 => 2-letter alphabet, 2 => 4-letter.
+function computeRestSegCode(rod,k){
+  const rest=rod.rest;if(!rest||!rest[k]||!rest[k+1])return [0,0,0,0];
+  const contact=rod.restContactWeight?.[k];if(!contact)return [0,0,0,0];
+  const planes=Math.max(1,Math.min(2,foldParams.typedPlanes??2));
+  const ax=rest[k][0],ay=rest[k][1],bx=rest[k+1][0],by=rest[k+1][1];
+  const dx=bx-ax,dy=by-ay,L=Math.max(1e-9,Math.hypot(dx,dy)),nx=-dy/L,ny=dx/L;
+  const topoEll=Math.max(1,rod.topologyMeanEll||rod.meanEll||1),off=topoEll*.32,cs=Math.max(1e-6,topoEll*(foldParams.typedCellScale??2.6));
+  const mx=(ax+bx)*.5,my=(ay+by)*.5;
+  const codeAt=(x,y,w)=>{
+    if(!(w>0))return [0,0];
+    const h=rodSeedMix(Math.floor(x/cs),Math.floor(y/cs),0xC0DE);
+    return [((h&1)?1:-1)*w,planes>1?((h&2)?1:-1)*w:0];
+  };
+  const l=codeAt(mx+nx*off,my+ny*off,Math.max(0,contact.left??0));
+  const r=codeAt(mx-nx*off,my-ny*off,Math.max(0,contact.right??0));
+  return [l[0],l[1],r[0],r[1]];
+}
+function rodSegCodes(rod){
+  if(!rod)return null;
+  const key=`${rod.key}|${foldParams.typedPlanes??2}`;
+  if(rod.segCodeCache?.key===key)return rod.segCodeCache.codes;
+  const codes=[];
+  for(let k=0;k<Math.max(0,(rod.rest?.length||0)-1);k++)codes.push(computeRestSegCode(rod,k));
+  rod.segCodeCache={key,codes};
+  return codes;
+}
 function buildAllDigitSharedSoupSoa(){
-  const refs=[],segEll=[],sideHydro=[],restContactWeight=[],realEll=[];
+  const refs=[],segEll=[],sideHydro=[],restContactWeight=[],segCodes=[],realEll=[];
   for(const st of allDigitStates){
     if(!st.loaded)continue;
     withDigitState(st,()=>{
       const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
       for(let k=0;k<path.length;k++){
         const src=continuousAngles[path[k]];if(!src)continue;
-        if(refs.length&&k===0){segEll.push(1e-6);sideHydro.push({left:.5,right:.5});restContactWeight.push({left:0,right:0});}
+        if(refs.length&&k===0){segEll.push(1e-6);sideHydro.push({left:.5,right:.5});restContactWeight.push({left:0,right:0});segCodes.push([0,0,0,0]);}
         else if(k>0){
           const e=rod.ell[k-1]||rod.meanEll||1;
           segEll.push(e);realEll.push(e);
           sideHydro.push(rod.sideHydro?.[k-1]||{left:.5,right:.5});
           restContactWeight.push(rod.restContactWeight?.[k-1]||{left:1,right:1});
+          segCodes.push(computeRestSegCode(rod,k-1));
         }
         refs.push(src);
       }
@@ -1570,17 +1823,19 @@ function buildAllDigitSharedSoupSoa(){
   }
   if(refs.length<2)return null;
   const meanEll=realEll.length?realEll.reduce((a,b)=>a+b,0)/realEll.length:2;
-  const count=refs.length,E=Math.max(0,count-1),ellArray=new Float32Array(Math.max(1,E)),ptData=new Float32Array(count*4),segData=new Float32Array(Math.max(1,E)*4);
+  const count=refs.length,E=Math.max(0,count-1),ellArray=new Float32Array(Math.max(1,E)),ptData=new Float32Array(count*4),segData=new Float32Array(Math.max(1,E)*4),segCodeData=new Float32Array(Math.max(1,E)*4);
   let activeHydro=0;
   for(let k=0;k<E;k++){
     const e=segEll[k]||meanEll,side=sideHydro[k]||{left:.5,right:.5},contact=restContactWeight[k]||{left:1,right:1};
     const left=hydroSigned(side.left),right=hydroSigned(side.right);
     ellArray[k]=e;segData[k*4]=left;segData[k*4+1]=right;segData[k*4+2]=left>0?left*Math.max(0,contact.left??1):0;segData[k*4+3]=right>0?right*Math.max(0,contact.right??1):0;
+    const code=segCodes[k]||[0,0,0,0];
+    segCodeData[k*4]=code[0];segCodeData[k*4+1]=code[1];segCodeData[k*4+2]=code[2];segCodeData[k*4+3]=code[3];
     if(left>0)activeHydro++;if(right>0)activeHydro++;
   }
   const nodeWeight=new Float32Array(count),topologyMeanEll=meanEll;
   for(let i=0;i<count;i++)nodeWeight[i]=(((i>0?(ellArray[i-1]||meanEll):0)+(i<E?(ellArray[i]||meanEll):0))*.5)/Math.max(1,topologyMeanEll);
-  return {epoch:allDigitEpoch,worldSize:soupWorldSize,count,segCount:E,refs,ell:ellArray,nodeWeight,ptData,segData,meanEll,topologyMeanEll,activeHydro};
+  return {epoch:allDigitEpoch,worldSize:soupWorldSize,count,segCount:E,refs,ell:ellArray,nodeWeight,ptData,segData,segCodeData,meanEll,topologyMeanEll,activeHydro};
 }
 function prepareAllDigitSharedSoupSoa(){
   if(!allDigitSharedSoa||allDigitSharedSoa.epoch!==allDigitEpoch||allDigitSharedSoa.worldSize!==soupWorldSize)allDigitSharedSoa=buildAllDigitSharedSoupSoa();
@@ -1610,6 +1865,7 @@ async function stepAllDigitSharedSoupField(expectedEpoch=allDigitEpoch){
     hydroContactAttract:0,
     hydroZeroNetForce:true,
     applyToPts:true,
+    forceReadback:true,
     applyMobility:Math.min(.006,foldParams.sharedSoupMobility??.006),
     applyMaxStep:Math.min(.18,foldParams.sharedSoupMaxStep??.18)
   });
@@ -1728,41 +1984,48 @@ const HYDRO_GPU_SHADER=`
 @group(0) @binding(0) var<storage, read> cfg: array<f32>;
 @group(0) @binding(1) var<storage, read_write> pts: array<vec4f>;
 @group(0) @binding(2) var<storage, read> seg: array<vec4f>;
-@group(0) @binding(3) var<storage, read_write> rawTotal: array<atomic<i32>>;
-@group(0) @binding(4) var<storage, read_write> rawHydro: array<atomic<i32>>;
-@group(0) @binding(5) var<storage, read_write> rawAdhere: array<atomic<i32>>;
-@group(0) @binding(6) var<storage, read_write> total: array<f32>;
-@group(0) @binding(7) var<storage, read_write> env: array<f32>;
-@group(0) @binding(8) var<storage, read_write> hydro: array<f32>;
-@group(0) @binding(9) var<storage, read_write> adhere: array<f32>;
-@group(0) @binding(10) var<storage, read_write> tmp: array<f32>;
-@group(0) @binding(11) var<storage, read_write> nodeForce: array<vec2f>;
-@group(0) @binding(12) var<storage, read_write> segForce: array<vec4f>;
+// raw: 5 atomic deposit planes [total|hydro|adhere|sig0|sig1], each grid_n^2.
+@group(0) @binding(3) var<storage, read_write> raw: array<atomic<i32>>;
+// fields: 7 f32 planes [total|env|hydro|adhere|sig0|sig1|tmp], each grid_n^2.
+// Merged to stay within maxStorageBuffersPerShaderStage on Metal/compat.
+@group(0) @binding(4) var<storage, read_write> fields: array<f32>;
+@group(0) @binding(5) var<storage, read_write> nodeForce: array<vec2f>;
+@group(0) @binding(6) var<storage, read_write> segForce: array<vec4f>;
+// Typed adhesion codes [leftC0,leftC1,rightC0,rightC1]: signed contact
+// weights on two planes = 4-letter contact alphabet (same code attracts).
+@group(0) @binding(7) var<storage, read> segCode: array<vec4f>;
 
 fn n_nodes()->u32{return u32(cfg[0]);}
 fn grid_n()->u32{return u32(cfg[1]);}
+fn n_cells()->u32{return grid_n()*grid_n();}
 fn n_seg()->u32{return select(0u,n_nodes()-1u,n_nodes()>0u);}
 fn fp()->f32{return cfg[16];}
 fn world_size()->f32{return max(1.0,cfg[17]);}
 fn clamp_cell(v:i32,g:u32)->u32{return u32(clamp(v,0i,i32(g)-1i));}
 fn cell(x:u32,y:u32,g:u32)->u32{return y*g+x;}
-fn read_field(field:u32,i:u32)->f32{
-  if(field==0u){return total[i];}
-  if(field==1u){return env[i];}
-  if(field==2u){return hydro[i];}
-  return adhere[i];
-}
-fn write_field(field:u32,i:u32,v:f32){
-  if(field==0u){total[i]=v;}else if(field==1u){env[i]=v;}else if(field==2u){hydro[i]=v;}else{adhere[i]=v;}
-}
+fn read_field(field:u32,i:u32)->f32{return fields[field*n_cells()+i];}
+fn write_field(field:u32,i:u32,v:f32){fields[field*n_cells()+i]=v;}
+fn read_tmp(i:u32)->f32{return fields[6u*n_cells()+i];}
+fn write_tmp(i:u32,v:f32){fields[6u*n_cells()+i]=v;}
 fn atomic_deposit_total(x:f32,y:f32,w:f32){
   let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
   let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
   let s=fp();
-  atomicAdd(&rawTotal[cell(x0,y0,g)],i32((1.0-tx)*(1.0-ty)*w*s));
-  atomicAdd(&rawTotal[cell(x1,y0,g)],i32(tx*(1.0-ty)*w*s));
-  atomicAdd(&rawTotal[cell(x0,y1,g)],i32((1.0-tx)*ty*w*s));
-  atomicAdd(&rawTotal[cell(x1,y1,g)],i32(tx*ty*w*s));
+  atomicAdd(&raw[cell(x0,y0,g)],i32((1.0-tx)*(1.0-ty)*w*s));
+  atomicAdd(&raw[cell(x1,y0,g)],i32(tx*(1.0-ty)*w*s));
+  atomicAdd(&raw[cell(x0,y1,g)],i32((1.0-tx)*ty*w*s));
+  atomicAdd(&raw[cell(x1,y1,g)],i32(tx*ty*w*s));
+}
+fn atomic_deposit_signed(x:f32,y:f32,w0:f32,w1:f32){
+  let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
+  let x0=u32(floor(u));let y0=u32(floor(v));let x1=min(g-1u,x0+1u);let y1=min(g-1u,y0+1u);let tx=u-f32(x0);let ty=v-f32(y0);
+  let w=array<f32,4>((1.0-tx)*(1.0-ty),tx*(1.0-ty),(1.0-tx)*ty,tx*ty);
+  let c=array<u32,4>(cell(x0,y0,g),cell(x1,y0,g),cell(x0,y1,g),cell(x1,y1,g));
+  let s=fp();let cells=n_cells();
+  for(var k=0u;k<4u;k++){
+    if(w0!=0.0){atomicAdd(&raw[3u*cells+c[k]],i32(w[k]*w0*s));}
+    if(w1!=0.0){atomicAdd(&raw[4u*cells+c[k]],i32(w[k]*w1*s));}
+  }
 }
 fn atomic_deposit_side(x:f32,y:f32,wh:f32,wc:f32){
   let g=grid_n();let scale=(f32(g)-1.0)/world_size();let u=clamp(x*scale,0.0,f32(g)-1.0);let v=clamp(y*scale,0.0,f32(g)-1.0);
@@ -1770,9 +2033,10 @@ fn atomic_deposit_side(x:f32,y:f32,wh:f32,wc:f32){
   let w=array<f32,4>((1.0-tx)*(1.0-ty),tx*(1.0-ty),(1.0-tx)*ty,tx*ty);
   let c=array<u32,4>(cell(x0,y0,g),cell(x1,y0,g),cell(x0,y1,g),cell(x1,y1,g));
   let s=fp();
+  let cells=n_cells();
   for(var k=0u;k<4u;k++){
-    if(wh>0.0){atomicAdd(&rawHydro[c[k]],i32(w[k]*wh*s));}
-    if(wc>0.0){atomicAdd(&rawAdhere[c[k]],i32(w[k]*wc*s));}
+    if(wh>0.0){atomicAdd(&raw[cells+c[k]],i32(w[k]*wh*s));}
+    if(wc>0.0){atomicAdd(&raw[2u*cells+c[k]],i32(w[k]*wc*s));}
   }
 }
 fn grad(field:u32,x:f32,y:f32)->vec3f{
@@ -1792,8 +2056,11 @@ fn side_force(k:u32,side_offset:f32,fx:f32,fy:f32)->vec4f{
 }
 @compute @workgroup_size(64)
 fn clear(@builtin(global_invocation_id) gid:vec3u){
-  let i=gid.x;let cells=grid_n()*grid_n();
-  if(i<cells){atomicStore(&rawTotal[i],0);atomicStore(&rawHydro[i],0);atomicStore(&rawAdhere[i],0);total[i]=0.0;env[i]=0.0;hydro[i]=0.0;adhere[i]=0.0;tmp[i]=0.0;}
+  let i=gid.x;let cells=n_cells();
+  if(i<cells){
+    for(var r=0u;r<5u;r++){atomicStore(&raw[r*cells+i],0);}
+    for(var f=0u;f<7u;f++){fields[f*cells+i]=0.0;}
+  }
   if(i<n_nodes()){nodeForce[i]=vec2f(0.0);}
   if(i<n_seg()){segForce[i]=vec4f(0.0);}
 }
@@ -1806,28 +2073,36 @@ fn deposit(@builtin(global_invocation_id) gid:vec3u){
     let s=seg[i];let left=s.x;let right=s.y;let lc=s.z;let rc=s.w;let w=max(0.0,pts[i].w);
     if(left>0.0){atomic_deposit_side(m.x+n.x*off,m.y+n.y*off,left*w,lc*w);}
     if(right>0.0){atomic_deposit_side(m.x-n.x*off,m.y-n.y*off,right*w,rc*w);}
+    let code=segCode[i];
+    if(code.x!=0.0||code.y!=0.0){atomic_deposit_signed(m.x+n.x*off,m.y+n.y*off,code.x*w,code.y*w);}
+    if(code.z!=0.0||code.w!=0.0){atomic_deposit_signed(m.x-n.x*off,m.y-n.y*off,code.z*w,code.w*w);}
   }
 }
 @compute @workgroup_size(64)
 fn normalize(@builtin(global_invocation_id) gid:vec3u){
-  let i=gid.x;let cells=grid_n()*grid_n();if(i>=cells){return;}
-  let s=fp();let t=f32(atomicLoad(&rawTotal[i]))/s;total[i]=t;env[i]=t;hydro[i]=f32(atomicLoad(&rawHydro[i]))/s;adhere[i]=f32(atomicLoad(&rawAdhere[i]))/s;
+  let i=gid.x;let cells=n_cells();if(i>=cells){return;}
+  let s=fp();let t=f32(atomicLoad(&raw[i]))/s;
+  write_field(0u,i,t);write_field(1u,i,t);
+  write_field(2u,i,f32(atomicLoad(&raw[cells+i]))/s);
+  write_field(3u,i,f32(atomicLoad(&raw[2u*cells+i]))/s);
+  write_field(4u,i,f32(atomicLoad(&raw[3u*cells+i]))/s);
+  write_field(5u,i,f32(atomicLoad(&raw[4u*cells+i]))/s);
 }
 fn blur_h_field(i:u32,field:u32){
   let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let xm=select(x-1u,x,x==0u);let xp=min(g-1u,x+1u);
-  tmp[i]=(read_field(field,cell(xm,y,g))+2.0*read_field(field,i)+read_field(field,cell(xp,y,g)))*0.25;
+  write_tmp(i,(read_field(field,cell(xm,y,g))+2.0*read_field(field,i)+read_field(field,cell(xp,y,g)))*0.25);
 }
 fn blur_v_field(i:u32,field:u32){
   let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let ym=select(y-1u,y,y==0u);let yp=min(g-1u,y+1u);
-  write_field(field,i,(tmp[cell(x,ym,g)]+2.0*tmp[i]+tmp[cell(x,yp,g)])*0.25);
+  write_field(field,i,(read_tmp(cell(x,ym,g))+2.0*read_tmp(i)+read_tmp(cell(x,yp,g)))*0.25);
 }
 fn blur2_h_field(i:u32,field:u32){
   let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let xm2=u32(max(0,i32(x)-2));let xm1=u32(max(0,i32(x)-1));let xp1=min(g-1u,x+1u);let xp2=min(g-1u,x+2u);
-  tmp[i]=(read_field(field,cell(xm2,y,g))+4.0*read_field(field,cell(xm1,y,g))+6.0*read_field(field,i)+4.0*read_field(field,cell(xp1,y,g))+read_field(field,cell(xp2,y,g)))*0.0625;
+  write_tmp(i,(read_field(field,cell(xm2,y,g))+4.0*read_field(field,cell(xm1,y,g))+6.0*read_field(field,i)+4.0*read_field(field,cell(xp1,y,g))+read_field(field,cell(xp2,y,g)))*0.0625);
 }
 fn blur2_v_field(i:u32,field:u32){
   let g=grid_n();let cells=g*g;if(i>=cells){return;}let x=i%g;let y=i/g;let ym2=u32(max(0,i32(y)-2));let ym1=u32(max(0,i32(y)-1));let yp1=min(g-1u,y+1u);let yp2=min(g-1u,y+2u);
-  write_field(field,i,(tmp[cell(x,ym2,g)]+4.0*tmp[cell(x,ym1,g)]+6.0*tmp[i]+4.0*tmp[cell(x,yp1,g)]+tmp[cell(x,yp2,g)])*0.0625);
+  write_field(field,i,(read_tmp(cell(x,ym2,g))+4.0*read_tmp(cell(x,ym1,g))+6.0*read_tmp(i)+4.0*read_tmp(cell(x,yp1,g))+read_tmp(cell(x,yp2,g)))*0.0625);
 }
 @compute @workgroup_size(64) fn blur_h_total(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,0u);}
 @compute @workgroup_size(64) fn blur_v_total(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,0u);}
@@ -1845,6 +2120,14 @@ fn blur2_v_field(i:u32,field:u32){
 @compute @workgroup_size(64) fn blur2_v_hydro(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,2u);}
 @compute @workgroup_size(64) fn blur2_h_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,3u);}
 @compute @workgroup_size(64) fn blur2_v_adhere(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,3u);}
+@compute @workgroup_size(64) fn blur_h_sig0(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur_v_sig0(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur_h_sig1(@builtin(global_invocation_id) gid:vec3u){blur_h_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur_v_sig1(@builtin(global_invocation_id) gid:vec3u){blur_v_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur2_h_sig0(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur2_v_sig0(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,4u);}
+@compute @workgroup_size(64) fn blur2_h_sig1(@builtin(global_invocation_id) gid:vec3u){blur2_h_field(gid.x,5u);}
+@compute @workgroup_size(64) fn blur2_v_sig1(@builtin(global_invocation_id) gid:vec3u){blur2_v_field(gid.x,5u);}
 @compute @workgroup_size(64)
 fn gather(@builtin(global_invocation_id) gid:vec3u){
   let i=gid.x;let excluded=cfg[4];let hydroAttract=cfg[5];let philicExpose=cfg[6];let hydroSat=max(1e-6,cfg[7]);let coreBias=cfg[8];let exposureBias=cfg[9];let interfaceBias=cfg[10];let contactAttract=cfg[11];let contactSat=max(1e-6,cfg[12]);let selfH=cfg[13];let selfC=cfg[14];let topo=max(1.0,cfg[2]);
@@ -1862,8 +2145,30 @@ fn gather(@builtin(global_invocation_id) gid:vec3u){
     if(left<0.0&&philicExpose>0.0){let sx=m.x+n.x*off;let sy=m.y+n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,off,-philicExpose*(-left)*e.x*e.y,-philicExpose*(-left)*e.x*e.z);}
     if(right>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let h=grad(2u,sx,sy);let hv=max(0.0,h.x-selfH*right*segW);let hg=1.0/(1.0+hv/hydroSat);out+=side_force(i,-off,hydroAttract*right*hg*h.y,hydroAttract*right*hg*h.z);if(contactAttract>0.0&&rc>0.0){let c=grad(3u,sx,sy);let cv=max(0.0,c.x-selfC*rc*segW);let cg=1.0/(1.0+cv/contactSat);out+=side_force(i,-off,contactAttract*rc*cg*c.y,contactAttract*rc*cg*c.z);}}
     if(right<0.0&&philicExpose>0.0){let sx=m.x-n.x*off;let sy=m.y-n.y*off;let e=grad(1u,sx,sy);out+=side_force(i,-off,-philicExpose*(-right)*e.x*e.y,-philicExpose*(-right)*e.x*e.z);}
+    let typedAttract=cfg[20];
+    if(typedAttract>0.0){
+      let code=segCode[i];
+      if(code.x!=0.0||code.y!=0.0){
+        let sx=m.x+n.x*off;let sy=m.y+n.y*off;let g0=grad(4u,sx,sy);let g1=grad(5u,sx,sy);
+        out+=side_force(i,off,typedAttract*(code.x*g0.y+code.y*g1.y),typedAttract*(code.x*g0.z+code.y*g1.z));
+      }
+      if(code.z!=0.0||code.w!=0.0){
+        let sx=m.x-n.x*off;let sy=m.y-n.y*off;let g0=grad(4u,sx,sy);let g1=grad(5u,sx,sy);
+        out+=side_force(i,-off,typedAttract*(code.z*g0.y+code.w*g1.y),typedAttract*(code.z*g0.z+code.w*g1.z));
+      }
+    }
     segForce[i]=out;
   }
+}
+// Fold per-segment sided forces onto their endpoint nodes so downstream
+// consumers need only one force buffer. Runs after gather and apply_pts.
+@compute @workgroup_size(64)
+fn combine_forces(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;if(i>=n_nodes()){return;}
+  var f=nodeForce[i];
+  if(i<n_seg()){let sf=segForce[i];f+=sf.xy;}
+  if(i>0u){let sf=segForce[i-1u];f+=sf.zw;}
+  nodeForce[i]=f;
 }
 @compute @workgroup_size(64)
 fn apply_pts(@builtin(global_invocation_id) gid:vec3u){
@@ -1893,7 +2198,9 @@ async function ensureHydroGpu(fieldSize,n){
       'blur2_h_env','blur2_v_env',
       'blur2_h_hydro','blur2_v_hydro',
       'blur2_h_adhere','blur2_v_adhere',
-      'gather','apply_pts'
+      'gather','apply_pts','combine_forces',
+      'blur_h_sig0','blur_v_sig0','blur_h_sig1','blur_v_sig1',
+      'blur2_h_sig0','blur2_v_sig0','blur2_h_sig1','blur2_v_sig1'
     ];
     const vis=GPUShaderStage.COMPUTE,bgEntries=[
       {binding:0,visibility:vis,buffer:{type:'read-only-storage'}},
@@ -1903,12 +2210,7 @@ async function ensureHydroGpu(fieldSize,n){
       {binding:4,visibility:vis,buffer:{type:'storage'}},
       {binding:5,visibility:vis,buffer:{type:'storage'}},
       {binding:6,visibility:vis,buffer:{type:'storage'}},
-      {binding:7,visibility:vis,buffer:{type:'storage'}},
-      {binding:8,visibility:vis,buffer:{type:'storage'}},
-      {binding:9,visibility:vis,buffer:{type:'storage'}},
-      {binding:10,visibility:vis,buffer:{type:'storage'}},
-      {binding:11,visibility:vis,buffer:{type:'storage'}},
-      {binding:12,visibility:vis,buffer:{type:'storage'}}
+      {binding:7,visibility:vis,buffer:{type:'read-only-storage'}}
     ];
     const bindGroupLayout=wgpuDevice.createBindGroupLayout({entries:bgEntries}),layout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[bindGroupLayout]});
     hydroGpu={pipelines:Object.create(null),fieldSize:0,n:0,bindGroupLayout};
@@ -1916,21 +2218,14 @@ async function ensureHydroGpu(fieldSize,n){
   }
   const cells=fieldSize*fieldSize,segN=Math.max(1,n-1),need=!hydroGpu.bindGroup||hydroGpu.fieldSize!==fieldSize||hydroGpu.n<n;
   if(need){
-    for(const key of ['config','pts','seg','rawTotal','rawHydro','rawAdhere','total','env','hydro','adhere','tmp','nodeForce','segForce','ptsRead','nodeRead','segRead'])hydroGpu[key]?.destroy?.();
+    for(const key of ['config','pts','seg','raw','fields','nodeForce','segForce','segCode','ptsRead','nodeRead','segRead'])hydroGpu[key]?.destroy?.();
     hydroGpu.fieldSize=fieldSize;hydroGpu.n=n;
     hydroGpu.config=wgpuDevice.createBuffer({size:32*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     hydroGpu.pts=wgpuDevice.createBuffer({size:Math.max(4,n*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
     hydroGpu.seg=wgpuDevice.createBuffer({size:Math.max(4,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    const rawUsage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST;
-    hydroGpu.rawTotal=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
-    hydroGpu.rawHydro=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
-    hydroGpu.rawAdhere=wgpuDevice.createBuffer({size:cells*4,usage:rawUsage});
-    const fieldUsage=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC;
-    hydroGpu.total=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
-    hydroGpu.env=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
-    hydroGpu.hydro=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
-    hydroGpu.adhere=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
-    hydroGpu.tmp=wgpuDevice.createBuffer({size:cells*4,usage:fieldUsage});
+    hydroGpu.raw=wgpuDevice.createBuffer({size:cells*5*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
+    hydroGpu.fields=wgpuDevice.createBuffer({size:cells*7*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
+    hydroGpu.segCode=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
     hydroGpu.nodeForce=wgpuDevice.createBuffer({size:Math.max(8,n*2*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
     hydroGpu.segForce=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_SRC});
     hydroGpu.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
@@ -1938,9 +2233,9 @@ async function ensureHydroGpu(fieldSize,n){
     hydroGpu.segRead=wgpuDevice.createBuffer({size:Math.max(16,segN*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
     const entries=[
       {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:hydroGpu.pts}},{binding:2,resource:{buffer:hydroGpu.seg}},
-      {binding:3,resource:{buffer:hydroGpu.rawTotal}},{binding:4,resource:{buffer:hydroGpu.rawHydro}},{binding:5,resource:{buffer:hydroGpu.rawAdhere}},
-      {binding:6,resource:{buffer:hydroGpu.total}},{binding:7,resource:{buffer:hydroGpu.env}},{binding:8,resource:{buffer:hydroGpu.hydro}},{binding:9,resource:{buffer:hydroGpu.adhere}},
-      {binding:10,resource:{buffer:hydroGpu.tmp}},{binding:11,resource:{buffer:hydroGpu.nodeForce}},{binding:12,resource:{buffer:hydroGpu.segForce}}
+      {binding:3,resource:{buffer:hydroGpu.raw}},{binding:4,resource:{buffer:hydroGpu.fields}},
+      {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}},
+      {binding:7,resource:{buffer:hydroGpu.segCode}}
     ];
     hydroGpu.bindGroup=wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries});
   }
@@ -1965,18 +2260,27 @@ async function addHydropathyFieldForcesGpu(rod,body,opts={}){
     }
   }
   const cfg=new Float32Array(32);
-  cfg[0]=count;cfg[1]=fieldSize;cfg[2]=topoEll;cfg[3]=ell;cfg[4]=opts.excluded??2.2;cfg[5]=opts.hydroAttract??2.7;cfg[6]=opts.philicExpose??.75;cfg[7]=opts.hydroSat??2.2;cfg[8]=opts.coreBias??.65;cfg[9]=opts.exposureBias??.45;cfg[10]=opts.interfaceBias??.9;cfg[11]=opts.hydroContactAttract??0;cfg[12]=opts.hydroContactSat??1.2;cfg[13]=opts.hydroSelfSubtract??0;cfg[14]=opts.hydroContactSelfSubtract??0;cfg[15]=opts.hydroZeroNetForce?1:0;cfg[16]=4096;cfg[17]=worldSize;cfg[18]=opts.applyMobility??0;cfg[19]=opts.applyMaxStep??0;
+  cfg[0]=count;cfg[1]=fieldSize;cfg[2]=topoEll;cfg[3]=ell;cfg[4]=opts.excluded??2.2;cfg[5]=opts.hydroAttract??2.7;cfg[6]=opts.philicExpose??.75;cfg[7]=opts.hydroSat??2.2;cfg[8]=opts.coreBias??.65;cfg[9]=opts.exposureBias??.45;cfg[10]=opts.interfaceBias??.9;cfg[11]=opts.hydroContactAttract??0;cfg[12]=opts.hydroContactSat??1.2;cfg[13]=opts.hydroSelfSubtract??0;cfg[14]=opts.hydroContactSelfSubtract??0;cfg[15]=opts.hydroZeroNetForce?1:0;cfg[16]=4096;cfg[17]=worldSize;cfg[18]=opts.applyMobility??0;cfg[19]=opts.applyMaxStep??0;cfg[20]=opts.typedAttract??0;
   const ptWrite=ptData.length===count*4?ptData:ptData.subarray(0,count*4),segWrite=segData.length===Math.max(1,E)*4?segData:segData.subarray(0,Math.max(1,E)*4);
   const ptsBuffer=opts.ptsBuffer||gpu.pts,segBuffer=opts.segBuffer||gpu.seg;
   const bindGroup=(opts.ptsBuffer||opts.segBuffer)?wgpuDevice.createBindGroup({layout:hydroGpu.bindGroupLayout,entries:[
     {binding:0,resource:{buffer:hydroGpu.config}},{binding:1,resource:{buffer:ptsBuffer}},{binding:2,resource:{buffer:segBuffer}},
-    {binding:3,resource:{buffer:hydroGpu.rawTotal}},{binding:4,resource:{buffer:hydroGpu.rawHydro}},{binding:5,resource:{buffer:hydroGpu.rawAdhere}},
-    {binding:6,resource:{buffer:hydroGpu.total}},{binding:7,resource:{buffer:hydroGpu.env}},{binding:8,resource:{buffer:hydroGpu.hydro}},{binding:9,resource:{buffer:hydroGpu.adhere}},
-    {binding:10,resource:{buffer:hydroGpu.tmp}},{binding:11,resource:{buffer:hydroGpu.nodeForce}},{binding:12,resource:{buffer:hydroGpu.segForce}}
+    {binding:3,resource:{buffer:hydroGpu.raw}},{binding:4,resource:{buffer:hydroGpu.fields}},
+    {binding:5,resource:{buffer:hydroGpu.nodeForce}},{binding:6,resource:{buffer:hydroGpu.segForce}},
+    {binding:7,resource:{buffer:hydroGpu.segCode}}
   ]}):gpu.bindGroup;
   wgpuDevice.queue.writeBuffer(gpu.config,0,cfg);
   if(opts.uploadPts!==false)wgpuDevice.queue.writeBuffer(ptsBuffer,0,ptWrite);
   if(opts.uploadSeg!==false)wgpuDevice.queue.writeBuffer(segBuffer,0,segWrite);
+  {
+    const codeLen=Math.max(1,E)*4;
+    let codeWrite=body?.segCodeData&&body.segCodeData.length>=codeLen?body.segCodeData.subarray(0,codeLen):null;
+    if(!codeWrite){
+      if(!hydroGpu.zeroCodes||hydroGpu.zeroCodes.length<codeLen)hydroGpu.zeroCodes=new Float32Array(codeLen);
+      codeWrite=hydroGpu.zeroCodes.subarray(0,codeLen);
+    }
+    wgpuDevice.queue.writeBuffer(gpu.segCode,0,codeWrite);
+  }
   const cells=fieldSize*fieldSize,workCells=Math.ceil(Math.max(cells,count,E)/64),workNodes=Math.ceil(Math.max(count,E,1)/64);
   const encodeDispatch=(enc,name,work=workCells)=>{const pass=enc.beginComputePass();pass.setPipeline(gpu.pipelines[name]);pass.setBindGroup(0,bindGroup);pass.dispatchWorkgroups(work);pass.end();};
   let enc=wgpuDevice.createCommandEncoder();
@@ -1997,18 +2301,29 @@ async function addHydropathyFieldForcesGpu(rod,body,opts={}){
   blur('env',opts.envBlur??Math.max(3,Math.round((opts.hydroBlur??7)*.75)));
   blur('hydro',(opts.hydroAttract??0)>0?(opts.hydroBlur??7):0);
   blur('adhere',(opts.hydroContactAttract??0)>0?(opts.hydroContactBlur??3):0);
+  blur('sig0',(opts.typedAttract??0)>0?(opts.typedBlur??3):0);
+  blur('sig1',(opts.typedAttract??0)>0?(opts.typedBlur??3):0);
   encodeDispatch(enc,'gather',workNodes);
   let gpuMs=0,readbackMs=0;
   if(opts.applyToPts){
     encodeDispatch(enc,'apply_pts',workNodes);
+    if(opts.combineForces)encodeDispatch(enc,'combine_forces',workNodes);
     if(opts.readback===false){
       const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
       return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,maxMove:0,applied:true,gpuMs,readbackMs:0};
     }
     const ptsRead=gpu.ptsRead;
     enc.copyBufferToBuffer(ptsBuffer,0,ptsRead,0,count*4*4);
+    if(opts.forceReadback){enc.copyBufferToBuffer(gpu.nodeForce,0,gpu.nodeRead,0,count*2*4);enc.copyBufferToBuffer(gpu.segForce,0,gpu.segRead,0,Math.max(1,E)*4*4);}
     const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
-    const readStart=nowMs();await ptsRead.mapAsync(GPUMapMode.READ);const pf=new Float32Array(ptsRead.getMappedRange()).slice(0,count*4);ptsRead.unmap();readbackMs=nowMs()-readStart;
+    const readStart=nowMs();await ptsRead.mapAsync(GPUMapMode.READ);const pf=new Float32Array(ptsRead.getMappedRange()).slice(0,count*4);ptsRead.unmap();
+    let forceInfo=null;
+    if(opts.forceReadback){
+      await gpu.nodeRead.mapAsync(GPUMapMode.READ);const nf=new Float32Array(gpu.nodeRead.getMappedRange()).slice(0,count*2);gpu.nodeRead.unmap();
+      await gpu.segRead.mapAsync(GPUMapMode.READ);const sfArr=new Float32Array(gpu.segRead.getMappedRange()).slice(0,Math.max(1,E)*4);gpu.segRead.unmap();
+      forceInfo=storeCombinedFieldForces(body,refs,pts,count,E,nf,sfArr,!!opts.hydroZeroNetForce);
+    }
+    readbackMs=nowMs()-readStart;
     let maxMove=0;
     for(let i=0;i<count;i++){
       const j=i*4,x=pf[j],y=pf[j+1],oldX=ptData[j],oldY=ptData[j+1],dx=x-oldX,dy=y-oldY;
@@ -2016,23 +2331,38 @@ async function addHydropathyFieldForcesGpu(rod,body,opts={}){
       else if(pts[i]){const p=pts[i];p.x=x;p.y=y;p.vx=dx;p.vy=dy;}
       ptData[j]=x;ptData[j+1]=y;maxMove=Math.max(maxMove,Math.hypot(dx,dy));
     }
-    return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,maxMove,applied:true,gpuMs,readbackMs};
+    return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,maxMove,applied:true,gpuMs,readbackMs,...(forceInfo?{forceBalance:forceInfo.net,rawForceBalance:forceInfo.rawNet,maxForce:forceInfo.maxForce,fieldForces:true}:{})};
   }
   const nodeRead=gpu.nodeRead,segRead=gpu.segRead;
   enc.copyBufferToBuffer(gpu.nodeForce,0,nodeRead,0,count*2*4);enc.copyBufferToBuffer(gpu.segForce,0,segRead,0,Math.max(1,E)*4*4);
   const gpuStart=nowMs();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();gpuMs=nowMs()-gpuStart;
   const readStart=nowMs();await nodeRead.mapAsync(GPUMapMode.READ);const nf=new Float32Array(nodeRead.getMappedRange()).slice(0,count*2);nodeRead.unmap();
   await segRead.mapAsync(GPUMapMode.READ);const sf=new Float32Array(segRead.getMappedRange()).slice(0,Math.max(1,E)*4);segRead.unmap();readbackMs=nowMs()-readStart;
-  for(const p of pts){p.fx=0;p.fy=0;}
-  for(let i=0;i<pts.length;i++){pts[i].fx+=nf[i*2]||0;pts[i].fy+=nf[i*2+1]||0;}
-  for(let k=0;k<E;k++){const a=pts[k],b=pts[k+1];a.fx+=sf[k*4]||0;a.fy+=sf[k*4+1]||0;b.fx+=sf[k*4+2]||0;b.fy+=sf[k*4+3]||0;}
-  const rawForce=hydroBodyForceSummary(body);
-  if(opts.hydroZeroNetForce&&pts.length){
-    const dx=rawForce.fx/pts.length,dy=rawForce.fy/pts.length;
-    for(const p of pts){p.fx-=dx;p.fy-=dy;}
+  const forceInfo=storeCombinedFieldForces(body,refs,pts,count,E,nf,sf,!!opts.hydroZeroNetForce);
+  return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,rawForceBalance:forceInfo.rawNet,forceBalance:forceInfo.net,maxForce:forceInfo.maxForce,rawNetRatio:forceInfo.rawNet/Math.max(1e-9,forceInfo.maxForce),netRatio:forceInfo.net/Math.max(1e-9,forceInfo.maxForce),gpuMs,readbackMs,fieldForces:true};
+}
+// Combine per-node excluded-volume forces with per-segment sided forces spread
+// onto segment endpoints, optionally remove the soup-wide mean, and store
+// fx/fy on the node objects so angle dynamics can use them as torques.
+function storeCombinedFieldForces(body,refs,pts,count,E,nf,sf,zeroNet){
+  let arr=body&&body.nodeFieldForce&&body.nodeFieldForce.length>=count*2?body.nodeFieldForce:new Float32Array(count*2);
+  if(body)body.nodeFieldForce=arr;
+  let sx=0,sy=0;
+  for(let i=0;i<count;i++){
+    let fx=nf[i*2]||0,fy=nf[i*2+1]||0;
+    if(i<E){fx+=sf[i*4]||0;fy+=sf[i*4+1]||0;}
+    if(i>0){fx+=sf[(i-1)*4+2]||0;fy+=sf[(i-1)*4+3]||0;}
+    arr[i*2]=fx;arr[i*2+1]=fy;sx+=fx;sy+=fy;
   }
-  const force=opts.hydroZeroNetForce?hydroBodyForceSummary(body):rawForce;
-  return {hydroEnergy:0,hydroMeanRho:0,hydroPairs:0,hydroActive:active,field:true,gpu:true,fieldSize,worldSize,rawForceBalance:rawForce.net,forceBalance:force.net,maxForce:force.maxForce,rawNetRatio:rawForce.netRatio,netRatio:force.netRatio,gpuMs,readbackMs};
+  const rawNet=Math.hypot(sx,sy);
+  if(zeroNet&&count){const mx=sx/count,my=sy/count;for(let i=0;i<count;i++){arr[i*2]-=mx;arr[i*2+1]-=my;}}
+  let maxForce=0;
+  for(let i=0;i<count;i++){
+    const fx=arr[i*2],fy=arr[i*2+1],t=refs?.[i]||pts[i];
+    if(t){t.fx=fx;t.fy=fy;}
+    maxForce=Math.max(maxForce,Math.hypot(fx,fy));
+  }
+  return {net:zeroNet?0:rawNet,rawNet,maxForce};
 }
 function hydroBodyForceSummary(body){
   const pts=body?.pts||[];
@@ -2162,222 +2492,143 @@ fn main(@builtin(global_invocation_id) gid:vec3u){let tid=gid.x;if(tid>=cfg.chai
 function createWgpuBuffer(device,data,usage){const buf=device.createBuffer({size:Math.max(4,data.byteLength),usage,mappedAtCreation:true});new data.constructor(buf.getMappedRange()).set(data);buf.unmap();return buf;}
 async function ensureWgpu(){
   if(wgpuReady)return wgpuReady;
-  wgpuReady=(async()=>{if(!navigator.gpu)throw new Error('WebGPU is not available in this browser');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw new Error('No WebGPU adapter found');const requiredLimits={};if((adapter.limits?.maxStorageBuffersPerShaderStage||0)>=16)requiredLimits.maxStorageBuffersPerShaderStage=16;wgpuDevice=await adapter.requestDevice(Object.keys(requiredLimits).length?{requiredLimits}:undefined);
+  wgpuReady=(async()=>{if(!navigator.gpu)throw new Error('WebGPU is not available in this browser');const adapter=await navigator.gpu.requestAdapter();if(!adapter)throw new Error('No WebGPU adapter found');const requiredLimits={};const maxStorage=adapter.limits?.maxStorageBuffersPerShaderStage||0;if(maxStorage>8)requiredLimits.maxStorageBuffersPerShaderStage=Math.min(16,maxStorage);wgpuDevice=await adapter.requestDevice(Object.keys(requiredLimits).length?{requiredLimits}:undefined);
     const module=wgpuDevice.createShaderModule({code:WGPU_SHADER});wgpuPipeline=await wgpuDevice.createComputePipelineAsync({layout:'auto',compute:{module,entryPoint:'main'}});
     return true;})();return wgpuReady;
 }
 const MOBILE_HEX_N=23;
-const MOBILE_BACKGROUND_PER_DIGIT=8;
 const MOBILE_POOL_COUNT=12;
+const MOBILE_BASE_TEMP=.6;
+const MOBILE_HOT_TEMP=30;
+const MOBILE_GROW_FOLD_STEPS=4;
+const MOBILE_HEAT_STEPS=120;
+const MOBILE_HOT_STEPS=150;
+const MOBILE_COOL_STEPS=180;
+const MOBILE_SETTLE_STEPS=180;
 let mobileJobsByDigit=Array.from({length:10},()=>[]);
-let mobileBackgroundStates=[];
 let mobileForegroundState=null;
 let mobileActiveDigit='8';
 let mobileDigitCursor=Array(10).fill(0);
-let mobileFrame=0;
-let mobileLoopToken=0;
-let mobileStepping=false;
-let mobileReady=false;
+let mobileFrame=0,mobileLoopToken=0,mobileStepping=false,mobileReady=false;
+let mobilePhase='loading',mobilePhaseStep=0,mobileTemperature=MOBILE_BASE_TEMP;
 
 function setupMobileCanvas(){
-  const canvas=$('digit-board');
-  const rect=canvas.getBoundingClientRect();
-  const cssW=Math.max(1,rect.width||innerWidth||360),cssH=Math.max(1,rect.height||innerHeight||640),dpr=Math.max(1,Math.min(2,devicePixelRatio||1));
+  const canvas=$('digit-board'),rect=canvas.getBoundingClientRect();
+  const cssW=Math.max(1,rect.width||innerWidth||360),cssH=Math.max(1,rect.height||cssW),dpr=Math.max(1,Math.min(2,devicePixelRatio||1));
   const w=Math.round(cssW*dpr),h=Math.round(cssH*dpr);
   if(canvas.width!==w||canvas.height!==h){canvas.width=w;canvas.height=h;}
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(dpr,0,0,dpr,0,0);
+  const ctx=canvas.getContext('2d');ctx.setTransform(dpr,0,0,dpr,0,0);
   return {canvas,ctx,w:cssW,h:cssH,ox:0,oy:0,scale:1,size:Math.min(cssW,cssH),world:true};
 }
-
+function mobileForegroundPlacement(view){return {cx:view.w*.5,cy:view.h*.5,scale:Math.min(view.w,view.h)/400*.84};}
 function mobileTransformCurrentRod(cx,cy,scale){
   const rod=ensureContinuousRod();if(!rod)return;
   const tx=p=>[cx+(p[0]-200)*scale,cy+(p[1]-200)*scale];
-  if(sampleDomain){
-    sampleDomain.localCentroid=sampleDomain.localCentroid||sampleDomain.centroid?.slice?.()||[200,200];
-    sampleDomain.centroid=tx(sampleDomain.localCentroid);
-  }
-  for(const st of continuousAngles){
-    if(!st)continue;
-    const [x,y]=tx([st.x,st.y]);
-    st.x=x;st.y=y;st.vx=(st.vx||0)*scale;st.vy=(st.vy||0)*scale;st.cell=(st.cell||1)*scale;
-  }
-  rod.rest=rod.rest.map(tx);
-  rod.coarseRest=rod.coarseRest.map(tx);
-  rod.ell=rod.ell.map(v=>v*scale);
-  rod.meanEll*=scale;rod.topologyMeanEll*=scale;
-  rod.hydro=restHydropathyLabels(rod.rest,rod.meanEll||1);
-  rod.sideHydro=restSideHydropathyLabels(rod.rest,rod.meanEll||1);
-  rod.restContactWeight=restContactWeights(rod.rest,rod.meanEll||1,rod.topologyMeanEll||rod.meanEll||1);
-  rod.statsFresh=false;updateRodEnergy();
+  if(sampleDomain){sampleDomain.localCentroid=sampleDomain.localCentroid||sampleDomain.centroid?.slice?.()||[200,200];sampleDomain.centroid=tx(sampleDomain.localCentroid);}
+  for(const st of continuousAngles){if(!st)continue;const [x,y]=tx([st.x,st.y]);st.x=x;st.y=y;st.vx=(st.vx||0)*scale;st.vy=(st.vy||0)*scale;st.cell=(st.cell||1)*scale;}
+  rod.rest=rod.rest.map(tx);rod.coarseRest=rod.coarseRest.map(tx);rod.ell=rod.ell.map(v=>v*scale);
+  if(rod._full){rod._full.rest=rod._full.rest.map(tx);rod._full.ell=rod._full.ell.map(v=>v*scale);}
+  rod.meanEll*=scale;rod.topologyMeanEll*=scale;rod.statsFresh=false;updateRodEnergy();
 }
-
-function mobileStateFromJob(job,{cx,cy,scale,line=false,seed=0}={}){
+function mobileStateFromJob(job,{cx,cy,scale,seed=0}={}){
   sampleDigitMask=String(job.digit);sampleActiveMask=job.mask.slice();sampleDomain=job.domain;resetContinuousAngles();wgpuSelectedPath=job.path.slice();
   if(!pathUsesDomainEdges(wgpuSelectedPath,sampleDomain))return {digit:String(job.digit),loaded:false,error:job.error||'no path',mask:sampleActiveMask.slice(),domain:sampleDomain,path:[],angles:cloneAngles(),rod:null};
   materializeSampleRod(wgpuSelectedPath);
-  const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);
-  if(line){
-    initializeCurrentRodFromLine({render:false,start:false,seed});
-  }else if(rod){
-    resetRodTangentsFromGeometry(path,true);
-    rod.kappaScale=1;rod.foldRamp=false;rod.temporalHydroTick=0;rod.temporalHydroTime=0;
-    updateRodEnergy(path);
-  }
+  if(!initializeCurrentRodGrow({render:false,start:false,seed,foldSteps:MOBILE_GROW_FOLD_STEPS,chunk:2,seedLen:4}))return {digit:String(job.digit),loaded:false,error:'could not initialize growth'};
   mobileTransformCurrentRod(cx,cy,scale);
-  return {digit:String(job.digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:wgpuSelectedPath.slice(),angles:cloneAngles(),rod:cloneRod(),loaded:wgpuSelectedPath.length>1};
+  return {digit:String(job.digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:wgpuSelectedPath.slice(),angles:cloneAngles(),rod:cloneRod(),loaded:true};
 }
-
-function mobileBackgroundPlacement(view,digit,slot){
-  const cols=MOBILE_BACKGROUND_PER_DIGIT,rows=10;
-  const cellW=view.w/cols,cellH=view.h/rows;
-  const seed=rodSeedMix(0xF01D23,digit,slot);
-  const jx=(((seed&255)/255)-.5)*cellW*.28,jy=((((seed>>>8)&255)/255)-.5)*cellH*.28;
-  return {
-    cx:(slot+.5)*cellW+jx,
-    cy:(digit+.5)*cellH+jy,
-    scale:Math.min(cellW,cellH)/400*.82
-  };
+function mobileSelectDigit(digit,{relayout=false}={}){
+  digit=String(digit).replace(/\D/g,'').slice(-1);if(!digit)return;
+  mobileActiveDigit=digit;if(!mobileReady)return;
+  const d=+digit,jobs=mobileJobsByDigit[d];if(!jobs.length)return;
+  const view=setupMobileCanvas(),job=jobs[mobileDigitCursor[d]++%jobs.length],place=mobileForegroundPlacement(view),seed=sampleRandomU32();
+  soupWorldSize=Math.max(400,Math.ceil(Math.max(view.w,view.h)));
+  mobileForegroundState=mobileStateFromJob(job,{...place,seed});
+  allDigitEpoch++;allDigitStates=mobileForegroundState?.loaded?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
+  GPU_ROD_SOLVER_ENABLED=false;mobilePhase='growing';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
+  const cycle=$('cycle-toggle');if(cycle){cycle.disabled=true;cycle.classList.remove('active');cycle.textContent='growing…';}
+  renderMobileFold();startMobileLoop();
 }
-
-function mobileForegroundPlacement(view){
-  return {cx:view.w*.5,cy:view.h*.50,scale:Math.min(view.w,view.h)/400*.84};
+function requestMobileDenaturation(){
+  if(!mobileForegroundState?.loaded||mobilePhase!=='folded')return;
+  mobilePhase='heating';mobilePhaseStep=0;
+  const b=$('cycle-toggle');if(b){b.disabled=true;b.classList.add('active');b.textContent='heating…';}
 }
-
-function rebuildMobileBackground(view=setupMobileCanvas()){
-  mobileBackgroundStates=[];
-  for(let d=0;d<10;d++){
-    const jobs=mobileJobsByDigit[d];if(!jobs.length)continue;
-    for(let s=0;s<MOBILE_BACKGROUND_PER_DIGIT;s++){
-      const job=jobs[s%jobs.length],place=mobileBackgroundPlacement(view,d,s);
-      mobileBackgroundStates.push(mobileStateFromJob(job,{...place,line:false,seed:rodSeedMix(0xBACE,d,s)}));
-    }
+function advanceMobileProtocol(){
+  mobilePhaseStep++;
+  if(mobilePhase==='growing'){
+    const done=!!mobileForegroundState?.rod?.growth?.done;
+    if(done){mobilePhase='settling';mobilePhaseStep=0;}
+  }else if(mobilePhase==='settling'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
+    mobilePhase='folded';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
+    const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='denature → refold';}
+  }else if(mobilePhase==='heating'){
+    mobileTemperature=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_HEAT_STEPS);
+    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;}
+  }else if(mobilePhase==='denatured'){
+    mobileTemperature=MOBILE_HOT_TEMP;
+    if(mobilePhaseStep>=MOBILE_HOT_STEPS){mobilePhase='cooling';mobilePhaseStep=0;const b=$('cycle-toggle');if(b)b.textContent='cooling…';}
+  }else if(mobilePhase==='cooling'){
+    mobileTemperature=MOBILE_HOT_TEMP-(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_COOL_STEPS);
+    if(mobilePhaseStep>=MOBILE_COOL_STEPS){mobilePhase='recovering';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;const b=$('cycle-toggle');if(b)b.textContent='refolding…';}
+  }else if(mobilePhase==='recovering'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
+    mobilePhase='recovered';mobilePhaseStep=0;
+    const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='repeat denaturation';}
+  }else if(mobilePhase==='recovered'){
+    mobilePhase='folded';mobilePhaseStep=0;
   }
 }
-
-function mobileSelectDigit(digit,{relayout=false}={}){
-  digit=String(digit).replace(/\D/g,'').slice(-1);
-  if(!digit)return;
-  mobileActiveDigit=digit;
-  if(!mobileReady)return;
-  const d=+digit,jobs=mobileJobsByDigit[d];if(!jobs.length)return;
-  const view=setupMobileCanvas();
-  if(relayout||!mobileBackgroundStates.length)rebuildMobileBackground(view);
-  const job=jobs[mobileDigitCursor[d]++%jobs.length],place=mobileForegroundPlacement(view);
-  mobileForegroundState=mobileStateFromJob(job,{...place,line:true,seed:sampleRandomU32()});
-  allDigitEpoch++;allDigitStates=mobileForegroundState?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
-  GPU_ROD_SOLVER_ENABLED=true;
-  renderMobileFold();
-  startMobileLoop();
+async function applyMobileExcludedVolume(){
+  invalidateSharedSoupBuffers();const body=prepareAllDigitSharedSoupSoa();if(!body)return;
+  const pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
+  await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
+    excluded:0,edwardsV:2,hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0,
+    hydroContactAttract:0,typedAttract:0,applyToPts:false,forceReadback:true,worldSize:soupWorldSize
+  }));
 }
-
-function drawMobileRod(ctx,st,view,{background=false}={}){
+function drawMobileRod(ctx,st,view){
   if(!st?.loaded)return;
-  withDigitState(st,()=>{
-    const rod=ensureContinuousRod(),drawPath=rodSimulationPath(wgpuSelectedPath,rod);
-    if(!rod||drawPath.length<2)return;
-    const pts=drawPath.map(rodPoint),normals=rodOffsetNormals(pts),E=Math.max(0,drawPath.length-1);
-    ctx.save();
-    ctx.lineCap='round';ctx.lineJoin='round';
-    if(background){
-      ctx.globalAlpha=.085;ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(.55,Math.min(view.w,view.h)*.0018);
-      ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
-      ctx.restore();return;
-    }
-    const offset=Math.max(1.1,Math.min(view.w,view.h)*.0032);
-    ctx.globalAlpha=.17;ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(3.2,Math.min(view.w,view.h)*.013);
+  withDigitState(st,()=>{const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
+    const pts=path.map(rodPoint),normals=rodOffsetNormals(pts),E=path.length-1;
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=cssv('--vermilion');ctx.globalAlpha=.96;ctx.lineWidth=Math.max(2.2,Math.min(view.w,view.h)*.009);
     ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
-    ctx.globalAlpha=.98;ctx.lineWidth=Math.max(1.6,Math.min(view.w,view.h)*.0065);
-    const groups=new Map(),add=(color,k,side)=>{
-      let g=groups.get(color);if(!g){g=[];groups.set(color,g);}
-      g.push([k,side]);
-    };
-    for(let k=0;k<E;k++){
-      const side=rod?.sideHydro?.[k],fallback=((rod?.hydro?.[k]??0)+(rod?.hydro?.[k+1]??rod?.hydro?.[k]??0))*.5*.5+.5;
-      add(hydroSideBucketColor(side?.left??fallback),k,1);
-      add(hydroSideBucketColor(side?.right??fallback),k,-1);
-    }
-    for(const [color,segs] of groups){
-      ctx.strokeStyle=color;ctx.beginPath();
-      for(const [k,side] of segs)canvasBezierSegment(ctx,pts,normals,k,view,side,offset);
-      ctx.stroke();
-    }
-    const first=canvasRodPoint(pts[0],view),last=canvasRodPoint(pts[pts.length-1],view),r=Math.max(2.5,Math.min(view.w,view.h)*.012);
-    ctx.globalAlpha=1;ctx.fillStyle=cssv('--vermilion');ctx.strokeStyle=cssv('--ink');ctx.lineWidth=Math.max(1,Math.min(view.w,view.h)*.0024);
-    for(const p of [first,last]){ctx.beginPath();ctx.arc(p[0],p[1],r,0,TAU);ctx.fill();ctx.stroke();}
-    ctx.restore();
+    const first=canvasRodPoint(pts[0],view),last=canvasRodPoint(pts.at(-1),view),r=Math.max(2.5,Math.min(view.w,view.h)*.011);
+    ctx.fillStyle=cssv('--ink');for(const p of [first,last]){ctx.beginPath();ctx.arc(p[0],p[1],r,0,TAU);ctx.fill();}ctx.restore();
   });
 }
-
 function renderMobileFold(){
-  const view=setupMobileCanvas(),{ctx,w,h}=view;
-  ctx.fillStyle=cssv('--paper');ctx.fillRect(0,0,w,h);
-  for(const st of mobileBackgroundStates)drawMobileRod(ctx,st,view,{background:true});
-  drawMobileRod(ctx,mobileForegroundState,view);
+  const view=setupMobileCanvas(),{ctx,w,h}=view;ctx.fillStyle=cssv('--paper');ctx.fillRect(0,0,w,h);drawMobileRod(ctx,mobileForegroundState,view);
+  const el=$('fold-stats');if(!el||!mobileForegroundState?.loaded)return;
+  const info=withDigitState(mobileForegroundState,()=>{const rod=ensureContinuousRod(),full=rod?._full?.N||rod?.rest?.length||0,active=rod?.active||rod?.rest?.length||0,err=continuousStats({fresh:true}).restError/(rod?.meanEll||1);return {active,full,err};});
+  const phase=mobilePhase==='settling'?'folding':mobilePhase;
+  el.textContent=`digit ${mobileActiveDigit} · ${phase} · T ${mobileTemperature.toFixed(1)} · monomers ${info.active}/${info.full} · normalized error ${info.err.toFixed(2)}`;
 }
-
-function stopMobileLoop(){
-  mobileLoopToken++;
-  if(mobileFrame)cancelAllDigitFrame(mobileFrame);
-  mobileFrame=0;mobileStepping=false;
-}
-
+function stopMobileLoop(){mobileLoopToken++;if(mobileFrame)cancelAllDigitFrame(mobileFrame);mobileFrame=0;mobileStepping=false;}
 function startMobileLoop(){
-  if(mobileFrame)return;
-  const token=++mobileLoopToken;
-  const frame=async()=>{
-    if(token!==mobileLoopToken)return;
-    if(mobileStepping){mobileFrame=scheduleAllDigitFrame(frame);return;}
+  if(mobileFrame)return;const token=++mobileLoopToken;
+  const frame=async()=>{if(token!==mobileLoopToken)return;if(mobileStepping){mobileFrame=scheduleAllDigitFrame(frame);return;}
     mobileStepping=true;mobileFrame=0;
-    try{
-      if(mobileForegroundState?.loaded){
-        await runGpuRodBatchDeterministicStep([mobileForegroundState],{force:true,temperature:.85,field:0,seed:sampleRandomU32(),applyField:false});
-      }
-      renderMobileFold();
-    }catch(err){
-      console.error('fold step failed',err);
-    }finally{
-      mobileStepping=false;
-      if(token===mobileLoopToken)mobileFrame=scheduleAllDigitFrame(frame);
-    }
-  };
-  mobileFrame=scheduleAllDigitFrame(frame);
+    try{if(mobileForegroundState?.loaded){await applyMobileExcludedVolume();await withDigitState(mobileForegroundState,()=>stepTemporalIntrinsicHydrophobicDynamics(rodDynamics({temperature:mobileTemperature,field:1})));advanceMobileProtocol();}renderMobileFold();}
+    catch(err){console.error('fold step failed',err);const el=$('fold-stats');if(el)el.textContent=`simulation error · ${err?.message||err}`;}
+    finally{mobileStepping=false;if(token===mobileLoopToken)mobileFrame=scheduleAllDigitFrame(frame);}
+  };mobileFrame=scheduleAllDigitFrame(frame);
 }
-
 async function initMobileFold(){
-  stopAllDigitLoop();stopMobileLoop();
-  SAMPLE_N=MOBILE_HEX_N;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;
-  GPU_ROD_SOLVER_ENABLED=true;
-  renderMobileFold();
-  try{
-    const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});
-    mobileJobsByDigit=Array.from({length:10},()=>[]);
-    for(const batch of batches)for(const job of batch){
-      if(!job.error&&job.path?.length&&mobileJobsByDigit[job.digit]?.length<MOBILE_BACKGROUND_PER_DIGIT)mobileJobsByDigit[job.digit].push(job);
-    }
-    mobileReady=true;
-    mobileSelectDigit(mobileActiveDigit,{relayout:true});
-  }catch(err){
-    console.error('fold init failed',err);
-  }
+  stopAllDigitLoop();stopMobileLoop();SAMPLE_N=MOBILE_HEX_N;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;GPU_ROD_SOLVER_ENABLED=false;renderMobileFold();setFoldLoading(true,'sampling folding paths…');
+  try{const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});mobileJobsByDigit=Array.from({length:10},()=>[]);
+    for(const batch of batches)for(const job of batch)if(!job.error&&job.path?.length)mobileJobsByDigit[job.digit].push(job);
+    mobileReady=true;mobileSelectDigit(mobileActiveDigit,{relayout:true});setFoldLoading(false);
+  }catch(err){console.error('fold init failed',err);setFoldLoading(true,`could not start · ${err?.message||err}`);}
 }
+function setFoldLoading(on,msg){const el=$('fold-loading');if(!el)return;if(msg){const m=$('fold-loading-msg');if(m)m.textContent=msg;}el.classList.toggle('hidden',!on);}
+function updatePadActive(digit){const pad=$('fold-pad');if(!pad)return;for(const b of pad.querySelectorAll('button[data-digit]'))b.classList.toggle('active',b.dataset.digit===String(digit));}
+$('cycle-toggle')?.addEventListener('click',requestMobileDenaturation);
+$('fold-pad')?.addEventListener('click',ev=>{const b=ev.target.closest?.('button[data-digit]');if(!b)return;mobileSelectDigit(b.dataset.digit);updatePadActive(b.dataset.digit);});
+window.addEventListener?.('keydown',ev=>{if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);updatePadActive(ev.key);}});
+window.addEventListener?.('resize',()=>{if(!mobileReady){renderMobileFold();return;}mobileSelectDigit(mobileActiveDigit,{relayout:true});});
+updatePadActive(mobileActiveDigit);initMobileFold();
 
-function mobileCaptureDigit(value){
-  const d=String(value||'').match(/[0-9](?!.*[0-9])/);
-  if(d)mobileSelectDigit(d[0]);
-}
-
-const mobileInput=$('mobile-key-capture');
-$('digit-board').addEventListener('pointerdown',()=>mobileInput?.focus?.({preventScroll:true}));
-mobileInput?.addEventListener('input',ev=>{mobileCaptureDigit(ev.target.value);ev.target.value='';});
-window.addEventListener?.('keydown',ev=>{
-  if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);}
-});
-window.addEventListener?.('resize',()=>{
-  if(!mobileReady){renderMobileFold();return;}
-  mobileSelectDigit(mobileActiveDigit,{relayout:true});
-});
-initMobileFold();
 </script>
 </body>
 </html>
