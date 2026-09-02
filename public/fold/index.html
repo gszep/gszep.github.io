@@ -2551,7 +2551,7 @@ function mobileSelectDigit(digit,{relayout=false}={}){
   renderMobileFold();startMobileLoop();
 }
 function requestMobileDenaturation(){
-  if(!mobileForegroundState?.loaded||mobilePhase!=='folded')return;
+  if(!mobileForegroundState?.loaded||!['folded','recovered'].includes(mobilePhase))return;
   mobilePhase='heating';mobilePhaseStep=0;
   const b=$('cycle-toggle');if(b){b.disabled=true;b.classList.add('active');b.textContent='heating…';}
 }
@@ -2565,7 +2565,7 @@ function advanceMobileProtocol(){
     const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='denature → refold';}
   }else if(mobilePhase==='heating'){
     mobileTemperature=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_HEAT_STEPS);
-    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;}
+    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;const b=$('cycle-toggle');if(b)b.textContent='denatured…';}
   }else if(mobilePhase==='denatured'){
     mobileTemperature=MOBILE_HOT_TEMP;
     if(mobilePhaseStep>=MOBILE_HOT_STEPS){mobilePhase='cooling';mobilePhaseStep=0;const b=$('cycle-toggle');if(b)b.textContent='cooling…';}
@@ -2575,8 +2575,6 @@ function advanceMobileProtocol(){
   }else if(mobilePhase==='recovering'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
     mobilePhase='recovered';mobilePhaseStep=0;
     const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='repeat denaturation';}
-  }else if(mobilePhase==='recovered'){
-    mobilePhase='folded';mobilePhaseStep=0;
   }
 }
 async function applyMobileExcludedVolume(){
