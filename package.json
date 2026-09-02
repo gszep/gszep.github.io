@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "astro dev",
     "check-i18n": "node scripts/check-i18n.mjs",
+    "import:rewild": "node scripts/import-rewild-talk.mjs",
     "build": "npm run check-i18n && astro build",
     "preview": "astro preview",
     "astro": "astro"
