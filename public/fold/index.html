@@ -68,8 +68,10 @@
   .fold-pad button:active{transform:translateY(1px)}
   .fold-pad button.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
   .fold-pad button.zero{grid-column:2}
-  .fold-pad button.cycle{grid-column:1/-1;font-size:clamp(13px,3.4vw,16px);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.02em;color:var(--ink-soft)}
-  .fold-pad button.cycle.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
+  .fold-pad button.protocol{font-size:clamp(11px,2.8vw,14px);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.01em;color:var(--ink-soft)}
+  .fold-pad button.cycle{grid-column:1/3}
+  .fold-pad button.resolution{grid-column:3/4}
+  .fold-pad button.protocol.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
   .fold-loading{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 24px}
   .fold-loading.hidden{display:none}
   #fold-stats{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-soft);letter-spacing:.02em;padding:0 12px;text-align:center;min-height:15px;flex:none}
@@ -92,7 +94,8 @@
   <button type="button" data-digit="8">8</button>
   <button type="button" data-digit="9">9</button>
   <button type="button" data-digit="0" class="zero">0</button>
-  <button type="button" id="cycle-toggle" class="cycle" title="heat the folded filament until it denatures, then cool it and watch it refold">denature → refold</button>
+  <button type="button" class="protocol cycle cycle-control" title="heat the folded filament until it denatures, then cool it and watch it refold">denature → refold</button>
+  <button type="button" class="protocol resolution resolution-control" title="increase the hex-grid resolution and resample the selected digit">hex20 ↑</button>
 </nav>
 <div class="wrap">
   <header>
@@ -102,6 +105,8 @@
     <div class="bar">
       <button id="run" class="primary">sample</button>
       <button id="reset">reset</button>
+      <button type="button" class="cycle-control">denature → refold</button>
+      <button type="button" class="resolution-control">resolution hex20 ↑</button>
       <label class="range-ctl">Spacing <input id="grid-n" type="range" min="5" max="30" step="1" value="20"><b id="grid-n-label">hex20 digits 0-9</b></label>
       <span class="range-ctl">Dynamics <b>temporal intrinsic + hydrophobic</b></span>
       <label class="range-ctl">Noise <input id="dynamics-temp" type="number" min="0" max="4" step="0.05" value="1.5"></label>
@@ -2496,10 +2501,13 @@ async function ensureWgpu(){
     const module=wgpuDevice.createShaderModule({code:WGPU_SHADER});wgpuPipeline=await wgpuDevice.createComputePipelineAsync({layout:'auto',compute:{module,entryPoint:'main'}});
     return true;})();return wgpuReady;
 }
-const MOBILE_HEX_N=23;
+const MOBILE_RESOLUTIONS=[10,15,20,25,30];
+let mobileHexN=20;
 const MOBILE_POOL_COUNT=12;
 const MOBILE_BASE_TEMP=.6;
-const MOBILE_HOT_TEMP=30;
+// Dimensionless thermal scale. At this value angular fluctuations overcome
+// the finite intrinsic-curvature potential while covalent edge lengths remain.
+const MOBILE_HOT_TEMP=300;
 const MOBILE_GROW_FOLD_STEPS=4;
 const MOBILE_HEAT_STEPS=120;
 const MOBILE_HOT_STEPS=150;
@@ -2511,6 +2519,8 @@ let mobileActiveDigit='8';
 let mobileDigitCursor=Array(10).fill(0);
 let mobileFrame=0,mobileLoopToken=0,mobileStepping=false,mobileReady=false;
 let mobilePhase='loading',mobilePhaseStep=0,mobileTemperature=MOBILE_BASE_TEMP;
+function setCycleControls({text,disabled=false,active=false}){for(const b of document.querySelectorAll('.cycle-control')){b.textContent=text;b.disabled=disabled;b.classList.toggle('active',active);}}
+function updateResolutionControls(){for(const b of document.querySelectorAll('.resolution-control'))b.textContent=`${b.closest('.fold-pad')?'':'resolution '}hex${mobileHexN} ↑`;}
 
 function setupMobileCanvas(){
   const canvas=$('digit-board'),rect=canvas.getBoundingClientRect();
@@ -2547,13 +2557,13 @@ function mobileSelectDigit(digit,{relayout=false}={}){
   mobileForegroundState=mobileStateFromJob(job,{...place,seed});
   allDigitEpoch++;allDigitStates=mobileForegroundState?.loaded?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
   GPU_ROD_SOLVER_ENABLED=false;mobilePhase='growing';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
-  const cycle=$('cycle-toggle');if(cycle){cycle.disabled=true;cycle.classList.remove('active');cycle.textContent='growing…';}
+  setCycleControls({text:'growing…',disabled:true});
   renderMobileFold();startMobileLoop();
 }
 function requestMobileDenaturation(){
   if(!mobileForegroundState?.loaded||!['folded','recovered'].includes(mobilePhase))return;
   mobilePhase='heating';mobilePhaseStep=0;
-  const b=$('cycle-toggle');if(b){b.disabled=true;b.classList.add('active');b.textContent='heating…';}
+  setCycleControls({text:'heating…',disabled:true,active:true});
 }
 function advanceMobileProtocol(){
   mobilePhaseStep++;
@@ -2562,19 +2572,19 @@ function advanceMobileProtocol(){
     if(done){mobilePhase='settling';mobilePhaseStep=0;}
   }else if(mobilePhase==='settling'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
     mobilePhase='folded';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
-    const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='denature → refold';}
+    setCycleControls({text:'denature → refold'});
   }else if(mobilePhase==='heating'){
     mobileTemperature=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_HEAT_STEPS);
-    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;const b=$('cycle-toggle');if(b)b.textContent='denatured…';}
+    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;setCycleControls({text:'denatured…',disabled:true,active:true});}
   }else if(mobilePhase==='denatured'){
     mobileTemperature=MOBILE_HOT_TEMP;
-    if(mobilePhaseStep>=MOBILE_HOT_STEPS){mobilePhase='cooling';mobilePhaseStep=0;const b=$('cycle-toggle');if(b)b.textContent='cooling…';}
+    if(mobilePhaseStep>=MOBILE_HOT_STEPS){mobilePhase='cooling';mobilePhaseStep=0;setCycleControls({text:'cooling…',disabled:true,active:true});}
   }else if(mobilePhase==='cooling'){
     mobileTemperature=MOBILE_HOT_TEMP-(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_COOL_STEPS);
-    if(mobilePhaseStep>=MOBILE_COOL_STEPS){mobilePhase='recovering';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;const b=$('cycle-toggle');if(b)b.textContent='refolding…';}
+    if(mobilePhaseStep>=MOBILE_COOL_STEPS){mobilePhase='recovering';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;setCycleControls({text:'refolding…',disabled:true,active:true});}
   }else if(mobilePhase==='recovering'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
     mobilePhase='recovered';mobilePhaseStep=0;
-    const b=$('cycle-toggle');if(b){b.disabled=false;b.classList.remove('active');b.textContent='repeat denaturation';}
+    setCycleControls({text:'repeat denaturation'});
   }
 }
 async function applyMobileExcludedVolume(){
@@ -2613,7 +2623,7 @@ function startMobileLoop(){
   };mobileFrame=scheduleAllDigitFrame(frame);
 }
 async function initMobileFold(){
-  stopAllDigitLoop();stopMobileLoop();SAMPLE_N=MOBILE_HEX_N;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;GPU_ROD_SOLVER_ENABLED=false;renderMobileFold();setFoldLoading(true,'sampling folding paths…');
+  stopAllDigitLoop();stopMobileLoop();mobileReady=false;SAMPLE_N=mobileHexN;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;GPU_ROD_SOLVER_ENABLED=false;updateResolutionControls();renderMobileFold();setFoldLoading(true,`sampling hex${mobileHexN} folding paths…`);
   try{const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});mobileJobsByDigit=Array.from({length:10},()=>[]);
     for(const batch of batches)for(const job of batch)if(!job.error&&job.path?.length)mobileJobsByDigit[job.digit].push(job);
     mobileReady=true;mobileSelectDigit(mobileActiveDigit,{relayout:true});setFoldLoading(false);
@@ -2621,7 +2631,8 @@ async function initMobileFold(){
 }
 function setFoldLoading(on,msg){const el=$('fold-loading');if(!el)return;if(msg){const m=$('fold-loading-msg');if(m)m.textContent=msg;}el.classList.toggle('hidden',!on);}
 function updatePadActive(digit){const pad=$('fold-pad');if(!pad)return;for(const b of pad.querySelectorAll('button[data-digit]'))b.classList.toggle('active',b.dataset.digit===String(digit));}
-$('cycle-toggle')?.addEventListener('click',requestMobileDenaturation);
+for(const b of document.querySelectorAll('.cycle-control'))b.addEventListener('click',requestMobileDenaturation);
+for(const b of document.querySelectorAll('.resolution-control'))b.addEventListener('click',()=>{const i=MOBILE_RESOLUTIONS.indexOf(mobileHexN);mobileHexN=MOBILE_RESOLUTIONS[(i+1)%MOBILE_RESOLUTIONS.length];mobileDigitCursor=Array(10).fill(0);initMobileFold();});
 $('fold-pad')?.addEventListener('click',ev=>{const b=ev.target.closest?.('button[data-digit]');if(!b)return;mobileSelectDigit(b.dataset.digit);updatePadActive(b.dataset.digit);});
 window.addEventListener?.('keydown',ev=>{if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);updatePadActive(ev.key);}});
 window.addEventListener?.('resize',()=>{if(!mobileReady){renderMobileFold();return;}mobileSelectDigit(mobileActiveDigit,{relayout:true});});
