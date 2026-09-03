@@ -421,8 +421,10 @@ function rodBendWeight(rod,k,base=(foldParams.kappaBend??CONT_KAPPA_BEND)){
 }
 function thermalBendScale(temperature){
   if(foldParams.thermalBendSoftening!==true)return 1;
-  const onset=foldParams.thermalBendOnset??.05,full=Math.max(onset+1e-9,foldParams.thermalBendFullTemp??1.3),hotRatio=Math.max(.05,Math.min(1,foldParams.thermalBendHotRatio??.5));
-  const x=Math.max(0,Math.min(1,(temperature-onset)/(full-onset))),h=x*x*(3-2*x);
+  const onset=foldParams.thermalBendOnset??.05,full=Math.max(onset+1e-9,foldParams.thermalBendFullTemp??1.3),hotRatio=Math.max(0,Math.min(1,foldParams.thermalBendHotRatio??.5));
+  const startFrac=Math.max(0,Math.min(.95,foldParams.thermalBendStartFrac??.55));
+  const start=onset+(full-onset)*startFrac;
+  const x=Math.max(0,Math.min(1,(temperature-start)/Math.max(1e-9,(full-onset)*(1-startFrac)))),h=x*x*(3-2*x);
   return 1-(1-hotRatio)*h;
 }
 function domainDisplayCentroid(){
@@ -1037,6 +1039,10 @@ const GPU_BEAD_SHADER=`
 @group(0) @binding(13) var<storage,read> edgeRod:array<u32>;
 @group(0) @binding(14) var<storage,read> nodeType:array<u32>;
 @group(0) @binding(15) var<storage,read_write> typedField:array<atomic<u32>>;
+// combined layout: [A: cells*K][B: cells*K][chain density: cells]
+fn typed_cells_total()->u32{let d=typed_dims();return u32(d.x*d.y);}
+fn typed_off_B()->u32{return typed_cells_total()*u32(cfg[26]);}
+fn typed_off_chain()->u32{return 2u*typed_cells_total()*u32(cfg[26]);}
 fn typed_dims()->vec2i{return vec2i(i32(cfg[24]),i32(cfg[25]));}
 fn typed_cell(p:vec2f)->vec2i{
   let c=max(1e-6,cfg[23]);let d=typed_dims();
@@ -1061,9 +1067,27 @@ fn rand_normal(seed:u32,step:u32,i:u32,channel:u32)->f32{
   return sqrt(-2.0*log(u))*cos(6.28318530718*v);
 }
 fn wrap_pi(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a>3.14159265359){a=a-tau;}return a;}
+// Staged denaturation: the shape code (kappa) is erased in the EARLY part
+// of the temperature ramp; bending stiffness softens only LATER (delayed by
+// cfg[31]), once the already-expanded chain is safe from kinking through
+// the excluded-volume wall.
 fn thermal_bend_scale(t:f32)->f32{
-  let onset=cfg[6];let full=max(onset+1e-9,cfg[7]);let hotRatio=clamp(cfg[8],0.05,1.0);
-  let x=clamp((t-onset)/(full-onset),0.0,1.0);let h=x*x*(3.0-2.0*x);
+  let onset=cfg[6];let full=max(onset+1e-9,cfg[7]);let hotRatio=clamp(cfg[8],0.0,1.0);
+  let startFrac=clamp(cfg[31],0.0,.95);
+  let start=onset+(full-onset)*startFrac;
+  let x=clamp((t-start)/max(1e-9,(full-onset)*(1.0-startFrac)),0.0,1.0);
+  let h=x*x*(3.0-2.0*x);
+  return 1.0-(1.0-hotRatio)*h;
+}
+// Denaturation of the CODE rather than the MATERIAL: the preferred turn
+// kappa ramps toward kappaHotRatio (0 = no shape memory) at the temperature
+// peak while bending stiffness stays finite, so the hot ensemble is a
+// disordered semiflexible worm that cannot kink through the steric wall.
+fn thermal_kappa_scale(t:f32)->f32{
+  let onset=cfg[6];let full=max(onset+1e-9,cfg[7]);let hotRatio=clamp(cfg[29],0.0,1.0);
+  let fullFrac=clamp(cfg[30],0.05,1.0);
+  let x=clamp((t-onset)/max(1e-9,(full-onset)*fullFrac),0.0,1.0);
+  let h=x*x*(3.0-2.0*x);
   return 1.0-(1.0-hotRatio)*h;
 }
 fn current_step()->u32{return atomicLoad(&stepBuf[0]);}
@@ -1100,7 +1124,7 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
   let rod=nodeRod[i];let m=rodMeta[rod];
   let idx=i-m.x;let n=rodState[rod*8u];
   if(idx>=n){posNext[i]=pos[i];return;}
-  let t=current_temp();let bendScale=thermal_bend_scale(t);
+  let t=current_temp();let bendScale=thermal_bend_scale(t);let kappaScale=thermal_kappa_scale(t);
   let dt=cfg[1];let mob=cfg[2];
   var f=vec2f(0.0,0.0);
   // bending force: joints j=idx-1, idx, idx+1 (turn at node j uses nodes j-1,j,j+1)
@@ -1114,7 +1138,7 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
     let e1=pos[g]-pos[g-1u];let e2=pos[g+1u]-pos[g];
     let l1=max(1e-9,dot(e1,e1));let l2=max(1e-9,dot(e2,e2));
     let phi=atan2(e1.x*e2.y-e1.y*e2.x,dot(e1,e2));
-    let coef=-c*wrap_pi(phi-code.x);
+    let coef=-c*wrap_pi(phi-code.x*kappaScale);
     let p1=vec2f(-e1.y,e1.x)/l1;let p2=vec2f(-e2.y,e2.x)/l2;
     if(o==1){f=f+coef*p1;}
     else if(o==0){f=f+coef*(-p1-p2);}
@@ -1138,9 +1162,15 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
         if(nodeRod[jg]!=rod){continue;}
         let jdx=i32(jg-m.x);
         if(abs(jdx-i32(idx))<=seqExcl){continue;}
+        // Van-der-Waals-like balance: complementary sticker sites carry an
+        // enlarged repulsive core (cfg[28] x cutoff ~ the native lattice
+        // spacing), so the field attraction equilibrates AT native contact
+        // distance instead of compressing interfaces into the steric wall.
+        var pairCutoff=cutoff;
+        if(cfg[22]>0.0&&nodeType[i]>0u&&nodeType[jg]>0u){pairCutoff=cutoff*cfg[28];}
         let d=pos[i]-pos[jg];let r=length(d);
-        if(r>=cutoff||r<1e-9){continue;}
-        let fm=min(eps*(cutoff/r-1.0),eps*capMult);
+        if(r>=pairCutoff||r<1e-9){continue;}
+        let fm=min(eps*(pairCutoff/r-1.0),eps*capMult);
         f=f+fm*d/r;
       }
     }}
@@ -1165,7 +1195,11 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
         let w=select(1.0,2.0,ox==0);
         gyf=gyf+w*(typed_at(base+vec2i(ox,1),ch)-typed_at(base+vec2i(ox,-1),ch));
       }
-      f=f+stickerStrength*vec2f(gxf,gyf)/(2048.0*max(1e-6,cfg[23]));
+      // Saturation = binding equilibrium: once the local complement density
+      // reaches rho_sat (a docked interface), the attractive drive switches
+      // off instead of compressing the interface below native spacing.
+      let sat=max(0.0,1.0-typed_at(base,ch)/max(1.0,cfg[27]));
+      f=f+(stickerStrength*sat)*vec2f(gxf,gyf)/(2048.0*max(1e-6,cfg[23]));
     }
   }
   var disp=mob*dt*f;
@@ -1173,7 +1207,11 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
   let dl=length(disp);
   if(dl>maxMove){disp=disp*(maxMove/dl);}
   let sigma=select(0.0,sqrt(2.0*mob*max(0.0,t)*dt),t>0.0);
-  let noise=vec2f(rand_normal(u32(cfg[9]),current_step(),i,1u),rand_normal(u32(cfg[9]),current_step(),i,2u))*sigma;
+  // noise stream keyed by the rod's pairing seed and LOCAL index, so rods
+  // representing the same (topology, seed, digit) replica in different
+  // condition arms receive identical thermal histories
+  let nk=u32(cfg[9])^m.w;
+  let noise=vec2f(rand_normal(nk,current_step(),idx,1u),rand_normal(nk,current_step(),idx,2u))*sigma;
   posNext[i]=pos[i]+disp+noise;
 }
 @compute @workgroup_size(128)
@@ -1202,8 +1240,71 @@ fn constrain_edge(eg:u32,parity:u32){
 @compute @workgroup_size(128)
 fn clearTyped(@builtin(global_invocation_id) gid:vec3u){
   let d=typed_dims();
-  if(gid.x>=u32(d.x*d.y)*u32(cfg[26])){return;}
+  let cells=u32(d.x*d.y);
+  if(gid.x<cells){atomicStore(&typedField[typed_off_chain()+gid.x],0u);}
+  if(gid.x>=cells*u32(cfg[26])){return;}
   atomicStore(&typedField[gid.x],0u);
+  atomicStore(&typedField[typed_off_B()+gid.x],0u);
+}
+@compute @workgroup_size(128)
+fn splatChain(@builtin(global_invocation_id) gid:vec3u){
+  if(cfg[22]<=0.0){return;}
+  let i=gid.x;if(i>=u32(cfg[19])){return;}
+  let rod=nodeRod[i];let m=rodMeta[rod];
+  if(i-m.x>=rodState[rod*8u]){return;}
+  let c=max(1e-6,cfg[23]);
+  let cell=typed_cell(pos[i]);
+  let d=typed_dims();
+  atomicAdd(&typedField[typed_off_chain()+u32(cell.y)*u32(d.x)+u32(cell.x)],256u);
+}
+// Screened diffusion of the mediator: each pass spreads the letter fields to
+// neighboring cells with transmission exp(-rho_chain/rho_screen), so field
+// propagating THROUGH occupied backbone cells is absorbed. Two ping-pong
+// passes leave the screened result back in typedField for sampling.
+fn chain_trans(cell:vec2i)->f32{
+  let d=typed_dims();
+  if(cell.x<0||cell.y<0||cell.x>=d.x||cell.y>=d.y){return 0.0;}
+  let rho=f32(atomicLoad(&typedField[typed_off_chain()+u32(cell.y)*u32(d.x)+u32(cell.x)]));
+  return exp(-rho/max(1.0,cfg[32]));
+}
+fn typed_atB(cell:vec2i,ch:u32)->f32{
+  let d=typed_dims();
+  if(cell.x<0||cell.y<0||cell.x>=d.x||cell.y>=d.y){return 0.0;}
+  return f32(atomicLoad(&typedField[typed_off_B()+typed_index(cell,ch)]));
+}
+// Absorption acts on TRANSPORT only: the retained center term is free, and
+// each neighbor contribution is attenuated by the transmission of the cell
+// it traveled through. Sites therefore do not screen their own emission or
+// their directly adjacent partners; only backbone IN BETWEEN absorbs field.
+@compute @workgroup_size(128)
+fn diffuseAB(@builtin(global_invocation_id) gid:vec3u){
+  if(cfg[22]<=0.0){return;}
+  let d=typed_dims();let cells=u32(d.x*d.y);
+  if(gid.x>=cells*u32(cfg[26])){return;}
+  let ch=gid.x/cells;let ci=gid.x%cells;
+  let cell=vec2i(i32(ci%u32(d.x)),i32(ci/u32(d.x)));
+  var val=.4*typed_at(cell,ch);
+  for(var k=0;k<4;k++){
+    let o=vec2i(select(0,select(1,-1,k==1),k<2),select(0,select(1,-1,k==3),k>=2));
+    let nb=cell+o;
+    val=val+.15*typed_at(nb,ch)*chain_trans(nb);
+  }
+  atomicStore(&typedField[typed_off_B()+gid.x],u32(round(val)));
+}
+@compute @workgroup_size(128)
+fn diffuseBA(@builtin(global_invocation_id) gid:vec3u){
+  if(cfg[22]<=0.0){return;}
+  let d=typed_dims();let cells=u32(d.x*d.y);
+  if(gid.x>=cells*u32(cfg[26])){return;}
+  let ch=gid.x/cells;let ci=gid.x%cells;
+  let cell=vec2i(i32(ci%u32(d.x)),i32(ci/u32(d.x)));
+  var val=.4*typed_atB(cell,ch);
+  for(var k=0;k<4;k++){
+    let o=vec2i(select(0,select(1,-1,k==1),k<2),select(0,select(1,-1,k==3),k>=2));
+    let nb=cell+o;
+    val=val+.15*typed_atB(nb,ch)*chain_trans(nb);
+  }
+  atomicStore(&typedField[gid.x],u32(round(val)));
 }
 @compute @workgroup_size(128)
 fn splatTyped(@builtin(global_invocation_id) gid:vec3u){
@@ -1246,7 +1347,7 @@ fn grow(@builtin(global_invocation_id) gid:vec3u){
   let angPrev=atan2(dir.y,dir.x);
   let code=nodeCode[gPrev]; // turn at node a-1 (edges a-2,a-1)
   let localB=max(1e-9,code.y*bendScale);
-  let turn=code.x+select(0.0,rand_normal(u32(cfg[9]),step,rod,71u)*sqrt(max(0.0,t)/localB),t>0.0);
+  let turn=code.x*thermal_kappa_scale(t)+select(0.0,rand_normal(u32(cfg[9])^m.w,step,a,71u)*sqrt(max(0.0,t)/localB),t>0.0);
   let ang=angPrev+turn;
   let el=ell[m.z+a-1u];
   let np=pos[gPrev]+vec2f(cos(ang),sin(ang))*el;
@@ -1272,22 +1373,32 @@ async function ensureGpuBeadPipelines(){
   const layout=wgpuDevice.createBindGroupLayout({entries});
   const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
   const mk=async name=>wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:name}});
-  const names=['clearGrid','binNodes','predict','constrainEven','constrainOdd','copyBack','grow','tick','clearTyped','splatTyped'];
+  const names=['clearGrid','binNodes','predict','constrainEven','constrainOdd','copyBack','grow','tick','clearTyped','splatTyped','splatChain','diffuseAB','diffuseBA'];
   const pipes=await Promise.all(names.map(mk));
   gpuBead={layout,pipelines:Object.fromEntries(names.map((n,i)=>[n,pipes[i]]))};
   return gpuBead;
 }
-function compileStickerPairs(F,topoEll,minSeqSep,contactRadius=1.15){
-  // Native tertiary contacts: far in sequence, close in native space, with a
-  // greedy unique (lock-and-key) matching preferring the tightest contacts.
+function compileStickerPairs(F,topoEll,minSeqSep,contactRadius=1.15,siteFraction=(foldParams.stickerFraction??.3)){
+  // Native tertiary contacts ranked by sequence separation (most nonlocal
+  // first; tie-break tightest), greedy unique lock-and-key matching, capped
+  // so sticker SITES cover at most siteFraction of the backbone. Default
+  // 0.30 follows the buried-core residue fraction (Rose et al. 1985,
+  // Science, 10.1126/science.4023714) and sits at the conservative end of
+  // long-range order N_LR/N ~ 0.3-0.6 for two-state proteins (Gromiha &
+  // Selvaraj 2001, J Mol Biol, 10.1006/jmbi.2001.4775).
   const r0=topoEll*contactRadius,r2=r0*r0,candidates=[];
   for(let i=0;i<F.N;i++)for(let j=i+minSeqSep;j<F.N;j++){
     const dx=F.rest[i][0]-F.rest[j][0],dy=F.rest[i][1]-F.rest[j][1],d2=dx*dx+dy*dy;
-    if(d2<r2)candidates.push([d2,i,j]);
+    if(d2<r2)candidates.push([j-i,d2,i,j]);
   }
-  candidates.sort((a,b)=>a[0]-b[0]);
+  candidates.sort((a,b)=>b[0]-a[0]||a[1]-b[1]);
+  const maxPairs=Math.max(1,Math.floor(siteFraction*F.N/2));
   const used=new Set(),pairs=[];
-  for(const [,i,j] of candidates){if(used.has(i)||used.has(j))continue;used.add(i);used.add(j);pairs.push([i,j]);}
+  for(const [,,i,j] of candidates){
+    if(pairs.length>=maxPairs)break;
+    if(used.has(i)||used.has(j))continue;
+    used.add(i);used.add(j);pairs.push([i,j]);
+  }
   return pairs;
 }
 function seededShuffle(list,seed){
@@ -1321,7 +1432,8 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
   const bboxPoint=(x,y)=>{minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);};
   for(let ri=0;ri<rods.length;ri++){
     const r=rods[ri];
-    meta[ri*4]=r.node0;meta[ri*4+1]=r.N;meta[ri*4+2]=r.node0-ri;meta[ri*4+3]=4;
+    meta[ri*4]=r.node0;meta[ri*4+1]=r.N;meta[ri*4+2]=r.node0-ri;
+    meta[ri*4+3]=(opts.rodSeeds?opts.rodSeeds[ri]:rodSeedMix(seed,ri,0xA11CE))>>>0;
     params[ri*4]=r.centroid[0];params[ri*4+1]=r.centroid[1];params[ri*4+2]=r.topoEll;params[ri*4+3]=0;
     state[ri*8]=r.active;state[ri*8+1]=0;state[ri*8+2]=r.active>=r.N?1:0;
     maxCutoff=Math.max(maxCutoff,r.topoEll*(foldParams.wcaSigma??.55));
@@ -1370,7 +1482,7 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
   const margin=300;
   const ox=minX-margin,oy=minY-margin,w=(maxX-minX)+2*margin,h=(maxY-minY)+2*margin;
   const cellSize=maxCutoff,gw=Math.max(4,Math.ceil(w/cellSize)),gh=Math.max(4,Math.ceil(h/cellSize)),cells=gw*gh;
-  const typedCell=maxCutoff/(foldParams.wcaSigma??.55),typedGw=Math.max(4,Math.ceil(w/typedCell)),typedGh=Math.max(4,Math.ceil(h/typedCell));
+  const typedCell=(maxCutoff/(foldParams.wcaSigma??.55))*(opts.stickerFieldScale??foldParams.stickerFieldScale??1),typedGw=Math.max(4,Math.ceil(w/typedCell)),typedGh=Math.max(4,Math.ceil(h/typedCell));
   const mkBuf=(data,usage)=>createWgpuBuffer(wgpuDevice,data,usage);
   const su=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST,sr=su|GPUBufferUsage.COPY_SRC;
   const batch={
@@ -1380,11 +1492,11 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
     nodeType:mkBuf(typeOff,su),typeOff,typeNative,typeScrambled,stickerPairsByRod,stickerAlphabet,stickerMode:'off',
     gridCount:wgpuDevice.createBuffer({size:Math.max(4,cells*4),usage:su}),
     gridSlot:wgpuDevice.createBuffer({size:Math.max(4,cells*GPU_BEAD_MAX_OCC*4),usage:su}),
-    typedField:wgpuDevice.createBuffer({size:Math.max(4,typedGw*typedGh*stickerAlphabet*4),usage:su}),
+    typedField:wgpuDevice.createBuffer({size:Math.max(4,typedGw*typedGh*(2*stickerAlphabet+1)*4),usage:su}),
     typedCell,typedGw,typedGh,
     temps:null,
     stepBuf:mkBuf(new Uint32Array(4),sr),
-    cfgBuf:wgpuDevice.createBuffer({size:32*4,usage:su}),
+    cfgBuf:wgpuDevice.createBuffer({size:40*4,usage:su}),
     readBuf:wgpuDevice.createBuffer({size:Math.max(64,(totalNodes*2+rods.length*8+4)*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST}),
     bindGroup:null,
   };
@@ -1398,7 +1510,7 @@ function gpuBeadSetTemps(batch,tempsArray){
   batch.bindGroup=null;
 }
 function gpuBeadWriteCfg(batch,overrides={}){
-  const cfg=new Float32Array(32);
+  const cfg=new Float32Array(40);
   cfg[0]=batch.rods.length;
   cfg[1]=overrides.dt??foldParams.beadDt??.04;
   cfg[2]=overrides.mobility??foldParams.beadMobility??1;
@@ -1415,6 +1527,12 @@ function gpuBeadWriteCfg(batch,overrides={}){
   cfg[19]=batch.totalNodes;cfg[20]=batch.cells;cfg[21]=batch.totalEdges;
   cfg[22]=batch.stickerMode==='off'?0:(overrides.stickerStrength??foldParams.stickerStrength??25);
   cfg[23]=batch.typedCell;cfg[24]=batch.typedGw;cfg[25]=batch.typedGh;cfg[26]=batch.stickerAlphabet;
+  cfg[27]=overrides.stickerSat??foldParams.stickerSat??1e9;
+  cfg[28]=overrides.stickerContactScale??foldParams.stickerContactScale??1.9;
+  cfg[29]=overrides.thermalKappaHotRatio??foldParams.thermalKappaHotRatio??1;
+  cfg[30]=overrides.thermalKappaFullFrac??foldParams.thermalKappaFullFrac??.45;
+  cfg[31]=overrides.thermalBendStartFrac??foldParams.thermalBendStartFrac??.55;
+  cfg[32]=overrides.stickerScreenDensity??foldParams.stickerScreenDensity??1e9;
   wgpuDevice.queue.writeBuffer(batch.cfgBuf,0,cfg);
 }
 function gpuBeadBindGroup(batch){
@@ -1459,6 +1577,9 @@ async function runGpuBeadSteps(batch,steps,{chunk=200}={}){
       if(stickersOn){
         pass.setPipeline(gpuBead.pipelines.clearTyped);pass.dispatchWorkgroups(typedWg);
         pass.setPipeline(gpuBead.pipelines.splatTyped);pass.dispatchWorkgroups(nodeWg);
+        pass.setPipeline(gpuBead.pipelines.splatChain);pass.dispatchWorkgroups(nodeWg);
+        pass.setPipeline(gpuBead.pipelines.diffuseAB);pass.dispatchWorkgroups(typedWg);
+        pass.setPipeline(gpuBead.pipelines.diffuseBA);pass.dispatchWorkgroups(typedWg);
       }
       pass.setPipeline(gpuBead.pipelines.predict);pass.dispatchWorkgroups(nodeWg);
       for(let it=0;it<batch.constraintIters;it++){
@@ -2522,11 +2643,20 @@ const MOBILE_RESOLUTIONS=[10,15,20,25,30];
 let mobileHexN=10;
 const MOBILE_POOL_COUNT=16;
 const MOBILE_BASE_TEMP=.001;
-// Fig. 2 protocol on the GPU bead-rod engine (see ablation/README.md):
-// heat to T=6 with softened bend modulus, hot plateau, cool, recover.
-const MOBILE_HOT_TEMP=6;
+// Staged denaturation: kappa (shape code) is erased over the first ~45% of
+// the heat ramp while stiffness is still full (the filament straightens and
+// unfolds); bending stiffness then softens to 0.1x over the last ~45%, once
+// the chain has expanded and cannot kink through the excluded-volume wall.
+const MOBILE_HOT_TEMP=3;
 const MOBILE_FOLDED_ERROR=.75;
 const MOBILE_RECOVERED_ERROR=.4;
+// err/meanEll grows ~linearly with chain length for the same visual quality
+// (long-wavelength modes accumulate over more segments), so thresholds are
+// anchored at N=225 (hex20) and scaled by N/225 above that.
+function mobileSizeFactor(){
+  const n=mobileForegroundState?.rod?._full?.N||225;
+  return Math.max(1,n/225);
+}
 const MOBILE_TEMPS_CAPACITY=4000000;
 let mobileDtInfo={dt:.04,scale:1};
 // Explicit bending stability: joint stiffness k ~ 2*B_eff/ell^2 with
@@ -2542,7 +2672,7 @@ function computeMobileDt(rod){
 function mobileDtScale(){return mobileDtInfo.scale;}
 function mobileGrowInterval(){return Math.max(2,Math.round(6*mobileDtScale()));}
 function mobileHeatSteps(){return Math.round(1500*mobileDtScale());}
-function mobileHotSteps(){return Math.round(6000*mobileDtScale());}
+function mobileHotSteps(){return Math.round(18000*mobileDtScale());}
 function mobileCoolSteps(){return Math.round(3000*mobileDtScale());}
 function mobileMaxSettleSteps(){return Math.round(30000*mobileDtScale());}
 function mobileRecoveryCap(){return Math.round(800000*mobileDtScale());}
@@ -2601,7 +2731,7 @@ function mobileSelectDigit(digit,{relayout=false}={}){
   destroyMobileGpuBatch();mobileMetrics={err:Infinity,crossings:0,tick:0};
   if(mobileForegroundState?.loaded){
     mobileDtInfo=computeMobileDt(mobileForegroundState.rod);
-    foldParams.beadDt=mobileDtInfo.dt;foldParams.beadMobility=1;foldParams.wcaEpsilon=3;foldParams.beadCapMult=16;
+    foldParams.beadDt=mobileDtInfo.dt;foldParams.beadMobility=1;foldParams.wcaEpsilon=3;foldParams.beadCapMult=16;foldParams.thermalBendHotRatio=.1;foldParams.thermalKappaHotRatio=0;foldParams.thermalBendFullTemp=MOBILE_HOT_TEMP;foldParams.stickerFieldScale=2;foldParams.stickerScreenDensity=1500;
     ensureGpuBeadPipelines().then(()=>{
       const batch=buildGpuBeadBatch([mobileForegroundState],{seed:seed>>>0||1,growInterval:mobileGrowInterval()});
       const temps=new Float32Array(Math.min(MOBILE_TEMPS_CAPACITY,1<<22));temps.fill(MOBILE_BASE_TEMP);
@@ -2641,7 +2771,7 @@ function markMobileFolded(){
 // contacts toward tighter-than-native spacing), so "recovered" is judged
 // relative to this run's own folded baseline rather than a fixed constant.
 function mobileRecoveredThreshold(){
-  return Math.max(MOBILE_RECOVERED_ERROR,(mobileFoldedBaseline??0)*1.5+.1);
+  return Math.max(MOBILE_RECOVERED_ERROR*mobileSizeFactor(),(mobileFoldedBaseline??0)*1.5+.1);
 }
 function advanceMobileProtocol(stepsRun){
   mobilePhaseStep+=stepsRun;
@@ -2655,11 +2785,11 @@ function advanceMobileProtocol(stepsRun){
   if(mobilePhase==='growing'){
     const done=!!mobileForegroundState?.rod?.growth?.done;
     if(done){
-      if(mobileCachedError()<=MOBILE_FOLDED_ERROR)markMobileFolded();
+      if(mobileCachedError()<=MOBILE_FOLDED_ERROR*mobileSizeFactor())markMobileFolded();
       else{mobilePhase='settling';mobilePhaseStep=0;setCycleControls({text:'folding…',disabled:true});}
     }
   }else if(mobilePhase==='settling'){
-    if(mobileCachedError()<=MOBILE_FOLDED_ERROR||mobilePhaseStep>=mobileMaxSettleSteps())markMobileFolded();
+    if(mobileCachedError()<=MOBILE_FOLDED_ERROR*mobileSizeFactor()||mobilePhaseStep>=mobileMaxSettleSteps())markMobileFolded();
   }else if(mobilePhase==='heating'&&S>=b.hot){
     mobilePhase='denatured';mobilePhaseStep=0;setCycleControls({text:'denatured…',disabled:true,active:true});
   }else if(mobilePhase==='denatured'&&S>=b.cool){
@@ -2676,8 +2806,11 @@ function advanceMobileProtocol(stepsRun){
 const MOBILE_STICKER_COLORS=['#2f6f9f','#3f8f6b','#d59b2f','#8f5fa8','#b0506a','#5a7d4f'];
 function mobileActiveStickerTypes(){
   if(mobileStickerMode==='off'||!mobileGpu?.batch)return null;
-  return mobileStickerMode==='native'?mobileGpu.batch.typeNative:mobileGpu.batch.typeScrambled;
+  return mobileStickerMode==='scrambled'?mobileGpu.batch.typeScrambled:mobileGpu.batch.typeNative;
 }
+// Denatured state: soften the local code much further when hot so the hot
+// ensemble is genuinely disordered (accepted trade-off vs. strict biophysical
+// temperature interpretation).
 function drawMobileRod(ctx,st,view){
   if(!st?.loaded)return;
   withDigitState(st,()=>{const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
@@ -2743,7 +2876,7 @@ let mobileMetrics={err:Infinity,crossings:0,docked:null,tick:0};
 let mobileStickerMode='off';
 const MOBILE_STICKER_MODES=['off','native','scrambled'];
 function applyMobileStickerMode(){
-  foldParams.stickerStrength=25;
+  foldParams.stickerStrength=40;
   if(mobileGpu)gpuBeadSetStickers(mobileGpu.batch,mobileStickerMode);
   for(const b of document.querySelectorAll('.sticker-control'))b.textContent=`nonlocal stickers: ${mobileStickerMode}`;
 }
@@ -2777,16 +2910,25 @@ function startMobileLoop(){
     mobileStepping=true;mobileFrame=0;
     try{
       const tFrame=performance.now();
-      if(mobileForegroundState?.loaded&&mobileGpu){
+      let drew=false;
+      const gpuRef=mobileGpu;
+      if(mobileForegroundState?.loaded&&gpuRef){
         const steps=mobileStepsPerFrame();
-        await runGpuBeadSteps(mobileGpu.batch,steps,{chunk:steps});
+        await runGpuBeadSteps(gpuRef.batch,steps,{chunk:steps});
+        if(mobileGpu!==gpuRef){mobileStepping=false;if(token===mobileLoopToken)mobileFrame=scheduleAllDigitFrame(frame);return;}
         mobileGpu.stepCount+=steps;
-        await readbackGpuBead(mobileGpu.batch);
-        if(mobileMetrics.tick++%4===0||['growing','settling','heating'].includes(mobilePhase))refreshMobileMetrics();
+        // draw only every 3rd iteration: readback+canvas are the fixed
+        // per-frame cost, so skipping them triples simulation throughput
+        mobileGpu.drawTick=(mobileGpu.drawTick||0)+1;
+        drew=mobileGpu.drawTick%3===0||mobilePhase==='growing';
+        if(drew){
+          await readbackGpuBead(mobileGpu.batch);
+          if(mobileMetrics.tick++%2===0||['growing','settling','heating'].includes(mobilePhase))refreshMobileMetrics();
+        }
         advanceMobileProtocol(steps);
         mobileGpu.lastSteps=steps;
       }
-      renderMobileFold();
+      if(drew||!mobileGpu)renderMobileFold();
       if(mobileGpu){
         const ms=performance.now()-tFrame;
         mobileGpu.frameMs=mobileGpu.frameMs?mobileGpu.frameMs*.7+ms*.3:ms;
