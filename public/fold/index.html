@@ -166,7 +166,7 @@ let GPU_ROD_SOLVER_ENABLED=false;
 const GPU_ROD_MAX_EDGES=512;
 // Active story: exact local geometry + calibrated excluded volume. No
 // hydropathy, typed guidance, curvature corruption, or widened code.
-let foldParams={temporalHydroFieldTorque:.3,wcaEpsilon:.75,wcaTorqueGain:.3,lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.10,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:false,temporalHydroSubstepAnneal:false,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
+let foldParams={canonicalThermostat:true,temporalHydroMobility:1,thermalBendSoftening:true,thermalBendOnset:.05,thermalBendFullTemp:1.3,thermalBendHotRatio:.5,temporalHydroFieldTorque:.3,wcaEpsilon:.75,wcaTorqueGain:.3,lineJitter:0,omegaJitter:0,fastErr:.07,midErr:.16,fast:.32,mid:.22,slow:.13,temporalHydroKappaRate:.01,temporalHydroSubstepKappaRamp:true,temporalHydroAnneal:false,temporalHydroSubstepAnneal:false,temporalHydroUseTime:true,temporalHydroAnnealTauTime:4.0,temporalHydroAnnealTau:45,temporalHydroAnnealFloor:.15,temporalHydroLateSubsteps:3,temporalHydroLateSubstepsTick:60};
 let allDigitMode=true, allDigitStates=[], allDigitFrame=0, allDigitLoopToken=0, allDigitLoading=false, allDigitLoadingN=0, allDigitEpoch=0, allDigitGridTimer=0, allDigitStatsCache=null, allDigitStatsTick=0, wgpuDigitBatchCache=null, allDigitPool=[], allDigitPoolFill=null, allDigitPoolN=0, allDigitPoolSeed=null, allDigitPrefetchError='', allDigitSharedFieldStats={nodes:0,active:0,maxForce:0}, allDigitSharedFieldPending=null, allDigitSharedSoa=null, soupWorldSize=400;
 function invalidateSharedSoupBuffers(){allDigitSharedSoa=null;}
 function telemetrySet(key,value,alpha=.28){if(Number.isFinite(value))runtimeTelemetry[key]=runtimeTelemetry[key]?runtimeTelemetry[key]*(1-alpha)+value*alpha:value;}
@@ -401,7 +401,7 @@ function updateRodEnergy(path=wgpuSelectedPath){
   for(let k=1;k<path.length-1;k++){
     const a=continuousAngles[path[k-1]],b=continuousAngles[path[k]],c=continuousAngles[path[k+1]];if(!a||!b||!c)continue;
     const ux=b.x-a.x,uy=b.y-a.y,vx=c.x-b.x,vy=c.y-b.y,beta=Math.atan2(ux*vy-uy*vx,ux*vx+uy*vy),dB=angleDelta(beta,rodTargetKappa(rod,k-1));
-    eBend+=.5*rodBendWeight(rod,k-1,bendBase)*dB*dB;
+    eBend+=.5*rodBendWeight(rod,k-1,bendBase)*(rod.currentThermalBendScale??1)*dB*dB;
     curvSum+=dB*dB;curvN++;
   }
   rod.energy=eStretch+eBend;rod.meanStrain=strainN?strain/strainN:0;rod.maxStrain=maxStrain;rod.curvErr=curvN?Math.sqrt(curvSum/curvN):0;rod.statsFresh=true;rod.restErr=null;
@@ -409,8 +409,18 @@ function updateRodEnergy(path=wgpuSelectedPath){
 function rodEnergyBendBase(){
   return foldParams.energyBend??foldParams.kappaBend??CONT_KAPPA_BEND;
 }
+const CONT_BEND_REF_ELL=17.6; // hex10 smooth-segment reference length
 function rodBendWeight(rod,k,base=(foldParams.kappaBend??CONT_KAPPA_BEND)){
-  return base*(rod.bendW?.[k]??1);
+  // Discretization of (A/2) integral (k-k0)^2 ds gives a joint coefficient
+  // A/ds, keeping material stiffness invariant as grid resolution changes.
+  const resolutionScale=CONT_BEND_REF_ELL/Math.max(1e-6,rod.meanEll||CONT_BEND_REF_ELL);
+  return base*resolutionScale*(rod.bendW?.[k]??1);
+}
+function thermalBendScale(temperature){
+  if(foldParams.thermalBendSoftening!==true)return 1;
+  const onset=foldParams.thermalBendOnset??.05,full=Math.max(onset+1e-9,foldParams.thermalBendFullTemp??1.3),hotRatio=Math.max(.05,Math.min(1,foldParams.thermalBendHotRatio??.5));
+  const x=Math.max(0,Math.min(1,(temperature-onset)/(full-onset))),h=x*x*(3-2*x);
+  return 1-(1-hotRatio)*h;
 }
 function domainDisplayCentroid(){
   const domain=sampleDomain||buildSampleDomain();
@@ -601,59 +611,85 @@ function initializeCurrentRodFromCoil({render=true,start=true,seed=null,turnSigm
   return true;
 }
 window.initializeCurrentRodFromCoil=initializeCurrentRodFromCoil;
-// --- Biologically plausible initializations -------------------------------
-// Two protocols that avoid the self-intersecting compact-coil ensemble (which
-// can lock in physically unreachable topologies under sterics):
-//  (1) GROW: vectorial N->C co-translational synthesis. Bake the full native
-//      rod once (so intrinsic curvature / contacts are the COMPLETE-structure
-//      code), then expose only a growing prefix: fold F steps, extrude the
-//      next monomer at the tip, repeat. Excluded volume is on throughout, so
-//      the chain can never self-intersect. F ~ 2-3x the local relaxation time
-//      keeps each added segment locally equilibrated while global folding
-//      trails synthesis - the co-translational regime (see README rate note).
-//  (2) DENATURE: high-T unfold of a straight chain with the fold drive off
-//      (kappaScale=0) but sterics on, swelling a crossing-free self-avoiding
-//      coil, then quench (fold ramp + anneal) - the refolding-from-denatured
-//      ensemble, crossing-free by construction.
-// Both are driven by applyInitProtocol(rod), called once per step; a rod with
-// neither rod.growth nor rod.denature is completely unaffected.
-function growRodPrefix(rod,add){
+// Vectorial co-translational growth. The full local material code is baked
+// once, then only a growing prefix is exposed. Each nascent turn is sampled
+// from its local Boltzmann distribution and subsequently evolves under the
+// same Langevin dynamics as the mature rod.
+function properSegmentCrossing(ax,ay,bx,by,cx,cy,dx,dy,eps=1e-8){
+  if(Math.max(ax,bx)+eps<Math.min(cx,dx)||Math.max(cx,dx)+eps<Math.min(ax,bx)||Math.max(ay,by)+eps<Math.min(cy,dy)||Math.max(cy,dy)+eps<Math.min(ay,by))return false;
+  const abC=(bx-ax)*(cy-ay)-(by-ay)*(cx-ax),abD=(bx-ax)*(dy-ay)-(by-ay)*(dx-ax);
+  const cdA=(dx-cx)*(ay-cy)-(dy-cy)*(ax-cx),cdB=(dx-cx)*(by-cy)-(dy-cy)*(bx-cx);
+  return ((abC>eps&&abD<-eps)||(abC<-eps&&abD>eps))&&((cdA>eps&&cdB<-eps)||(cdA<-eps&&cdB>eps));
+}
+function rodSelfIntersectionCount(path,limit=Infinity){
+  if(path.length<4)return 0;
+  let ell=0,nEll=0,count=0;
+  for(let i=0;i+1<path.length&&i<16;i++){const a=continuousAngles[path[i]],b=continuousAngles[path[i+1]];if(a&&b){ell+=Math.hypot(b.x-a.x,b.y-a.y);nEll++;}}
+  const cell=Math.max(1,2*ell/Math.max(1,nEll)),inv=1/cell,bins=new Map();
+  for(let j=0;j+1<path.length;j++){
+    const c=continuousAngles[path[j]],d=continuousAngles[path[j+1]];if(!c||!d)continue;
+    const x0=Math.floor(Math.min(c.x,d.x)*inv),x1=Math.floor(Math.max(c.x,d.x)*inv),y0=Math.floor(Math.min(c.y,d.y)*inv),y1=Math.floor(Math.max(c.y,d.y)*inv),candidates=new Set();
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const list=bins.get(spatialBinKey(x,y));if(list)for(const i of list)candidates.add(i);}
+    for(const i of candidates){if(j-i<2)continue;const a=continuousAngles[path[i]],b=continuousAngles[path[i+1]];if(a&&b&&properSegmentCrossing(a.x,a.y,b.x,b.y,c.x,c.y,d.x,d.y)&&++count>=limit)return count;}
+    for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){const key=spatialBinKey(x,y),list=bins.get(key);if(list)list.push(j);else bins.set(key,[j]);}
+  }
+  return count;
+}
+function rodHasSelfIntersection(path){return rodSelfIntersectionCount(path,1)>0;}
+function newTipWouldCross(rod,a,nx,ny,active){
+  const path=rod.simPath;if(!a)return false;
+  for(let i=0;i+2<active;i++){
+    const c=continuousAngles[path[i]],d=continuousAngles[path[i+1]];
+    if(c&&d&&properSegmentCrossing(a.x,a.y,nx,ny,c.x,c.y,d.x,d.y))return true;
+  }
+  return false;
+}
+function growRodPrefix(rod,add,temperature=0){
   const F=rod._full;if(!F)return;
-  const old=rod.active,next=Math.min(F.N,old+add);
+  const old=rod.active,next=Math.min(F.N,old+add);let reached=old;
   for(let k=old;k<next;k++){
+    let tipSt=null,ang=rod.guideTheta||0,nx=0,ny=0;
+    if(k>=1){
+      tipSt=continuousAngles[rod.simPath[k-1]];
+      // Draw the nascent turn from its local harmonic Boltzmann distribution.
+      // This uses only kappa, local stiffness, and temperature: unlike exact
+      // target-angle insertion it does not kinematically trace the answer, and
+      // unlike straight extrusion it does not inject an O(kappa) impulse.
+      if(k>=2&&rod.theta[k-2]!==undefined){
+        const resolutionScale=CONT_BEND_REF_ELL/Math.max(1e-6,rod.meanEll||CONT_BEND_REF_ELL);
+        const localB=Math.max(1e-9,rodEnergyBendBase()*resolutionScale*(F.bendW[k-2]??1)*thermalBendScale(temperature));
+        const thermalTurn=(F.kappa[k-2]||0)+(temperature>0?rodNormal()*Math.sqrt(temperature/localB):0);
+        ang=rod.theta[k-2]+thermalTurn;
+      }else ang=rod.guideTheta||0;
+      const edgeLength=F.ell[k-1]||rod.meanEll||1;
+      nx=(tipSt?.x||0)+Math.cos(ang)*edgeLength;ny=(tipSt?.y||0)+Math.sin(ang)*edgeLength;
+      // At very high resolution a transient overlap must not halt synthesis.
+      // Record it and let the soft crossing dynamics below resolve it.
+      if(newTipWouldCross(rod,tipSt,nx,ny,k))rod.growthSoftCrossings=(rod.growthSoftCrossings||0)+1;
+    }
     rod.rest[k]=F.rest[k];rod.simPath[k]=F.simPath[k];
     if(F.hydro)rod.hydro[k]=F.hydro[k];
     if(k>=1){
       rod.ell[k-1]=F.ell[k-1];
       if(F.sideHydro&&F.sideHydro[k-1])rod.sideHydro[k-1]=F.sideHydro[k-1];
       if(F.restContactWeight&&F.restContactWeight[k-1])rod.restContactWeight[k-1]=F.restContactWeight[k-1];
-      // extrude the new node at the tip along the last edge direction (a
-      // nascent residue emerging straight, then curled by the fold dynamics)
-      const tipSt=continuousAngles[rod.simPath[k-1]];
-      const ang=(k>=2&&rod.theta[k-2]!==undefined)?rod.theta[k-2]:(rod.guideTheta||0);
-      const nx=(tipSt?.x||0)+Math.cos(ang)*(rod.ell[k-1]||rod.meanEll||1),ny=(tipSt?.y||0)+Math.sin(ang)*(rod.ell[k-1]||rod.meanEll||1);
       let st=continuousAngles[rod.simPath[k]];
       if(!st){st={x:nx,y:ny,vx:0,vy:0,tx:0,ty:0,cell:rod.meanEll||1,virtual:true};continuousAngles[rod.simPath[k]]=st;}
       else{st.x=nx;st.y=ny;st.vx=0;st.vy=0;}
       rod.theta[k-1]=ang;rod.omega[k-1]=0;
     }
     if(k>=2){rod.kappa[k-2]=F.kappa[k-2];rod.bendW[k-2]=F.bendW[k-2];}
+    reached=k+1;
   }
-  rod.active=next;rod.statsFresh=false;rod.restErr=null;
-  if(next>=F.N)rod.growth.done=true;
+  rod.active=reached;rod.statsFresh=false;rod.restErr=null;
+  if(reached>=F.N)rod.growth.done=true;
 }
-function applyInitProtocol(rod){
+function applyInitProtocol(rod,temperature=0){
   rod._constTemp=null;
   if(rod.growth&&!rod.growth.done){
     const g=rod.growth;g.tick++;
-    if(g.tick>=g.nextAdd){growRodPrefix(rod,g.chunk);g.nextAdd=g.tick+g.foldSteps;}
-    // on the tick growth completes, reset the anneal clock so the finished
-    // chain gets a fresh cooling quench over the remaining (equilibration) steps
+    if(g.tick>=g.nextAdd){growRodPrefix(rod,g.chunk,temperature);g.nextAdd=g.tick+g.foldSteps;}
     if(rod.growth.done){rod.temporalHydroTick=0;rod.temporalHydroTime=0;}
-  }else if(rod.denature&&rod.denature.stepsLeft>0){
-    rod.denature.stepsLeft--;
-    rod.kappaScale=0;rod.foldRamp=false;rod._constTemp=rod.denature.temp;
-    if(rod.denature.stepsLeft===0){rod.foldRamp=true;rod.kappaScale=0;rod.temporalHydroTick=0;rod.temporalHydroTime=0;}
   }
 }
 function initializeCurrentRodGrow({render=true,start=true,seed=null,foldSteps=25,chunk=2,seedLen=4}={}){
@@ -680,7 +716,9 @@ function initializeCurrentRodGrow({render=true,start=true,seed=null,foldSteps=25
     else{st.x=x;st.y=y0;st.vx=0;st.vy=0;}
     if(k<S-1){rod.theta[k]=0;rod.omega[k]=0;}
   }
-  rod.kappaScale=0;rod.foldRamp=true;rod.temporalHydroTick=0;rod.temporalHydroTime=0;rod.guideTheta=0;
+  // Existing and newly added joints feel their full local potential
+  // immediately; no artificial global activation/maturation ramp.
+  rod.kappaScale=1;rod.foldRamp=false;rod.temporalHydroTick=0;rod.temporalHydroTime=0;rod.guideTheta=0;
   rod.growth={foldSteps,chunk,tick:0,nextAdd:foldSteps,done:false};rod.denature=null;
   rod.statsFresh=false;rod.restErr=null;updateRodEnergy();
   if(render)renderAllDigitBoard({forceStats:true});
@@ -688,18 +726,7 @@ function initializeCurrentRodGrow({render=true,start=true,seed=null,foldSteps=25
   if(start)startAllDigitLoop();
   return true;
 }
-function initializeCurrentRodDenature({render=true,start=true,seed=null,denatureSteps=200,denatureTemp=2.5}={}){
-  if(!initializeCurrentRodFromLine({render:false,start:false,seed}))return false;
-  const rod=ensureContinuousRod();if(!rod)return false;
-  rod.kappaScale=0;rod.foldRamp=false;rod.temporalHydroTick=0;rod.temporalHydroTime=0;
-  rod.denature={stepsLeft:denatureSteps,temp:denatureTemp};rod._full=null;rod.growth=null;
-  rod.statsFresh=false;rod.restErr=null;updateRodEnergy();
-  if(render)renderAllDigitBoard({forceStats:true});
-  if(render)$('status').textContent=`denaturing · ${denatureSteps} steps @ T${denatureTemp}, then quench`;
-  if(start)startAllDigitLoop();
-  return true;
-}
-window.initializeCurrentRodGrow=initializeCurrentRodGrow;window.initializeCurrentRodDenature=initializeCurrentRodDenature;
+window.initializeCurrentRodGrow=initializeCurrentRodGrow;
 function rodPoint(i){const st=continuousAngles[i];return st?[st.x,st.y]:sampleGridCenter(i);}
 function hydroColor(h){
   h=Math.max(0,Math.min(1,(h+1)*.5));
@@ -822,23 +849,23 @@ function addTemporalModeNoise(delta,E,temp,dt){
   }
 }
 async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
-  const rod=ensureContinuousRod();if(rod)applyInitProtocol(rod);
+  const rod=ensureContinuousRod(),dyn=baseDyn||rodDynamics();if(rod)applyInitProtocol(rod,Math.max(0,dyn.temperature));
   const path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<3)return;
   if(continuousDrag){resetRodTangentsFromGeometry(path,false);return;}
   rod.statsFresh=false;
   syncRodTangents(path);
-  const dyn=baseDyn||rodDynamics(),E=rod.theta.length,baseTemp=Math.max(0,dyn.temperature);
+  const E=rod.theta.length,baseTemp=Math.max(0,dyn.temperature);
   const curv0=rod.curvErr??rodCurvatureError(path);
   const scheduleTime=rod.temporalHydroTime??0,useScheduleTime=foldParams.temporalHydroUseTime===true;
-  const anneal=foldParams.temporalHydroAnneal===true&&baseTemp>0,annealAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
+  const anneal=foldParams.temporalHydroAnneal===true&&baseTemp>0&&!(rod.growth&&!rod.growth.done),annealAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
   const annealTau=Math.max(1e-6,useScheduleTime?(foldParams.temporalHydroAnnealTauTime??(foldParams.temporalHydroAnnealTau??28)*4*(foldParams.temporalHydroDt??.035)):(foldParams.temporalHydroAnnealTau??28));
   const annealFloor=foldParams.temporalHydroAnnealFloor??.08;
-  const tempAt=age=>anneal?baseTemp*(annealFloor+(1-annealFloor)*Math.exp(-age/annealTau)):baseTemp;
+  const tempAt=age=>rod._constTemp!=null?rod._constTemp:(anneal?baseTemp*(annealFloor+(1-annealFloor)*Math.exp(-age/annealTau)):baseTemp);
   const temp=tempAt(annealAge);
   const defaultSubsteps=temp>0?4:5,lateAt=useScheduleTime?(foldParams.temporalHydroLateSubstepsTime??(foldParams.temporalHydroLateSubstepsTick??Infinity)*4*(foldParams.temporalHydroDt??.035)):(foldParams.temporalHydroLateSubstepsTick??Infinity),scheduleAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
   let baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroSubsteps??defaultSubsteps));
   if(scheduleAge>=lateAt&&rod.kappaScale>=1&&Number.isFinite(foldParams.temporalHydroLateSubsteps))baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroLateSubsteps));
-  const smoothScale=rod.simPath?.length?1:TEMPORAL_HYDRO_SPEED,substeps=baseSubsteps*smoothScale,dt=foldParams.temporalHydroDt??.035,angleMobility=foldParams.temporalHydroMobility??.10,maxAngleStep=foldParams.temporalHydroMaxAngleStep??(temp>0?.14:.09),bendBase=foldParams.temporalHydroBend??18,inertia=foldParams.temporalHydroInertia??.40;
+  const smoothScale=rod.simPath?.length?1:TEMPORAL_HYDRO_SPEED,substeps=baseSubsteps*smoothScale,dt=foldParams.temporalHydroDt??.035,angleMobility=foldParams.temporalHydroMobility??.10,maxAngleStep=foldParams.temporalHydroMaxAngleStep??(temp>0?.14:.09),bendBase=foldParams.temporalHydroBend??rodEnergyBendBase(),inertia=foldParams.temporalHydroInertia??.40;
   const bendDtScale=foldParams.temporalHydroScaleBendDt===false?1:dt/(foldParams.temporalHydroRefDt??.035);
   const substepKappaRamp=foldParams.temporalHydroSubstepKappaRamp===true;
   let kappaRampStep=0;
@@ -852,57 +879,118 @@ async function stepTemporalIntrinsicHydrophobicDynamics(baseDyn){
   }
   const scratch=ensureRodSolveScratch(rod,E+1),{lo,diag,hi,rhs,theta,sol}=scratch,noiseDelta=scratch.cosTheta;
   // Field->angle coupling: project per-node shared-field forces (stored on node
-  // refs by the async field pass with forceReadback) onto edge-angle torques.
-  // tau_k = ell_k * tperp_k . (S_k - S0*(n-1-k)/n), suffix sums S_k=sum_{i>k}F_i.
+  // refs by the async field pass with forceReadback) onto edge-angle coordinates.
+  // With positions rebuilt from angles about a fixed centroid,
+  //   dP_i/dtheta_k = ell_k*(-sin th_k, cos th_k)*([i>k] - (n-1-k)/n),
+  // so tau_k = ell_k * tperp_k . (S_k - S0*(n-1-k)/n) with suffix sums S_k=sum_{i>k}F_i.
   const fieldGain=Math.max(0,dyn.field??0)*(foldParams.temporalHydroFieldTorque??1);
-  const sfx=scratch.cp,sfy=scratch.sinTheta;
-  let useFieldTorque=false;
-  if(fieldGain>0){
-    const n=path.length;let sx=0,sy=0;
-    for(let i=n-1;i>=1;i--){const st=continuousAngles[path[i]];sx+=st?.fx||0;sy+=st?.fy||0;sfx[i-1]=sx;sfy[i-1]=sy;}
-    const st0=continuousAngles[path[0]],s0x=sx+(st0?.fx||0),s0y=sy+(st0?.fy||0);
-    for(let k=0;k<E;k++){
-      const w=(n-1-k)/n;sfx[k]-=s0x*w;sfy[k]-=s0y*w;
-      if(!useFieldTorque&&(sfx[k]!==0||sfy[k]!==0))useFieldTorque=true;
+  // Recompute short-range exclusion after every substep. Reusing one force
+  // for four changed conformations caused the visible overshoot/bounce.
+  const wcaEps=foldParams.wcaEpsilon??0,sfx=scratch.cp,sfy=scratch.sinTheta;
+  const updateForceTorques=()=>{
+    const n=path.length,wcaGain=wcaEps>0?(foldParams.wcaTorqueGain??.3):0;
+    let wfx=null,wfy=null,pairs=0,maxForce=0;
+    if(wcaEps>0&&n>3){
+      // Smooth rods have about two edges per topology spacing. A 0.55 cutoff
+      // is just above one edge length, preventing passage without repelling
+      // strands at their intended one-cell native separation.
+      const cutoff=Math.max(1e-6,(rod.topologyMeanEll||rod.meanEll||1)*(foldParams.wcaSigma??.55)),inv=1/cutoff;
+      if(!rod.wcaFx||rod.wcaFx.length<n){rod.wcaFx=new Float64Array(n);rod.wcaFy=new Float64Array(n);}
+      wfx=rod.wcaFx;wfy=rod.wcaFy;wfx.fill(0,0,n);wfy.fill(0,0,n);const bins=new Map();
+      for(let i=0;i<n;i++){const st=continuousAngles[path[i]];if(!st)continue;const key=spatialBinKey(Math.floor(st.x*inv),Math.floor(st.y*inv));let list=bins.get(key);if(!list)bins.set(key,list=[]);list.push(i);}
+      for(let i=0;i<n;i++){
+        const a=continuousAngles[path[i]];if(!a)continue;const bx=Math.floor(a.x*inv),by=Math.floor(a.y*inv);
+        for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+          const list=bins.get(spatialBinKey(bx+ox,by+oy));if(!list)continue;
+          for(const j of list){
+            if(j<=i||j-i<=6)continue;const b=continuousAngles[path[j]];if(!b)continue;
+            const dx=a.x-b.x,dy=a.y-b.y,r=Math.hypot(dx,dy);if(r>=cutoff||r<1e-9)continue;
+            const f=Math.min(wcaEps*(cutoff/r-1),wcaEps*8),ux=dx/r,uy=dy/r;pairs++;maxForce=Math.max(maxForce,f);
+            wfx[i]+=f*ux;wfy[i]+=f*uy;wfx[j]-=f*ux;wfy[j]-=f*uy;
+          }
+        }
+      }
     }
-  }
+    sfx.fill(0,0,E);sfy.fill(0,0,E);let use=false;
+    if(fieldGain>0||wcaGain>0){
+      let sx=0,sy=0;
+      for(let i=n-1;i>=1;i--){const st=continuousAngles[path[i]];sx+=fieldGain*(st?.fx||0)+wcaGain*(wfx?wfx[i]:0);sy+=fieldGain*(st?.fy||0)+wcaGain*(wfy?wfy[i]:0);sfx[i-1]=sx;sfy[i-1]=sy;}
+      const st0=continuousAngles[path[0]],s0x=sx+fieldGain*(st0?.fx||0)+wcaGain*(wfx?wfx[0]:0),s0y=sy+fieldGain*(st0?.fy||0)+wcaGain*(wfy?wfy[0]:0);
+      for(let k=0;k<E;k++){const w=(n-1-k)/n;sfx[k]-=s0x*w;sfy[k]-=s0y*w;if(sfx[k]!==0||sfy[k]!==0)use=true;}
+    }
+    rod.stericPairs=pairs;rod.maxStericForce=maxForce;return use;
+  };
   for(let s=0;s<substeps;s++){
+    const useFieldTorque=updateForceTorques();
     if(substepKappaRamp&&rod.foldRamp){
       rod.kappaScale=Math.min(1,(rod.kappaScale??0)+kappaRampStep);
       if(rod.kappaScale>=1){rod.kappaScale=1;rod.foldRamp=false;}
     }
+    const previousTheta=scratch.therm,crossingsBefore=rodSelfIntersectionCount(path,64);
+    for(let k=0;k<E;k++)previousTheta[k]=rod.theta[k]||0;
     unwrapRodThetasInto(rod.theta,theta,E);
-    lo.fill(0,0,E);hi.fill(0,0,E);diag.fill(inertia,0,E);rhs.fill(0,0,E);
     const stepAge=foldParams.temporalHydroSubstepAnneal===true?(useScheduleTime?scheduleTime+s*dt:(rod.temporalHydroTick??0)+s/Math.max(1,substeps)):annealAge;
-    const stepTemp=tempAt(stepAge);
+    const stepTemp=tempAt(stepAge),canonical=foldParams.canonicalThermostat===true,bendThermalScale=thermalBendScale(stepTemp);
+    rod.currentThermalBendScale=bendThermalScale;
     noiseDelta.fill(0,0,E);
-    if(stepTemp>0)addTemporalModeNoise(noiseDelta,E,stepTemp,dt);
-    const sigma=stepTemp>0?Math.sqrt(2*angleMobility*stepTemp*.018*dt):0;
-    for(let k=0;k<E;k++)rhs[k]=inertia*(theta[k]+noiseDelta[k]+(sigma?rodNormal()*sigma:0));
+    if(canonical){
+      // Stochastic Crank-Nicolson overdamped Langevin thermostat:
+      // (I+aH)th'=(I-aH)th+2ab+sqrt(2*mu*T*dt)xi, a=mu*dt/2.
+      // For quadratic intrinsic-curvature energy this preserves the exact
+      // Boltzmann covariance. No mode noise, empirical factor, or clamp.
+      lo.fill(0,0,E);hi.fill(0,0,E);diag.fill(1,0,E);
+      const sigma=stepTemp>0?Math.sqrt(2*angleMobility*stepTemp*dt):0;
+      for(let k=0;k<E;k++)rhs[k]=theta[k]+(sigma?rodNormal()*sigma:0);
+      const alpha=.5*angleMobility*dt;
+      for(let k=0;k<E-1;k++){
+        const tk=rodTargetKappa(rod,k),c=alpha*rodBendWeight(rod,k,bendBase)*bendThermalScale,diff=theta[k+1]-theta[k];
+        diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;
+        rhs[k]+=c*diff-2*c*tk;rhs[k+1]+=-c*diff+2*c*tk;
+      }
+    }else{
+      lo.fill(0,0,E);hi.fill(0,0,E);diag.fill(inertia,0,E);
+      if(stepTemp>0&&foldParams.modeNoise!==false)addTemporalModeNoise(noiseDelta,E,stepTemp,dt);
+      const sigma=stepTemp>0?Math.sqrt(2*angleMobility*stepTemp*.018*dt):0;
+      for(let k=0;k<E;k++)rhs[k]=inertia*(theta[k]+noiseDelta[k]+(sigma?rodNormal()*sigma:0));
+      const bandW=foldParams.kappaBandWidth??0,bandArr=rod.kappaBand;
+      for(let k=0;k<E-1;k++){
+        const c=rodBendWeight(rod,k,bendBase)*bendThermalScale*bendDtScale;
+        let tk=rodTargetKappa(rod,k);const w=bandArr?(bandArr[k]??bandW):bandW;
+        if(w>0){const cur=theta[k+1]-theta[k];tk=cur<tk-w?tk-w:cur>tk+w?tk+w:cur;}
+        diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*tk;rhs[k+1]+=c*tk;
+      }
+    }
     if(useFieldTorque){
-      const g=fieldGain*angleMobility*dt;
+      const g=angleMobility*dt;
       for(let k=0;k<E;k++)rhs[k]+=g*(rod.ell[k]||1)*(Math.cos(theta[k])*sfy[k]-Math.sin(theta[k])*sfx[k]);
     }
-    // Flat-bottom curvature bands: an underspecified/loosened local code
-    // constrains the turn angle only to a RANGE [kappa-w, kappa+w] (global
-    // foldParams.kappaBandWidth; w=0 = exact code). Inside the band the bend
-    // force vanishes (target := current turn angle) so the chain is free to
-    // drift there - the 'widen' toggle exposes the catastrophic effect on the
-    // distributed curvature-scale deficit misfolds.
-    const bandW=foldParams.kappaBandWidth??0;
-    for(let k=0;k<E-1;k++){
-      const c=rodBendWeight(rod,k,bendBase)*bendDtScale;
-      let tk=rodTargetKappa(rod,k);
-      if(bandW>0){const cur=theta[k+1]-theta[k];tk=cur<tk-bandW?tk-bandW:cur>tk+bandW?tk+bandW:cur;}
-      diag[k]+=c;diag[k+1]+=c;hi[k]-=c;lo[k+1]-=c;rhs[k]-=c*tk;rhs[k+1]+=c*tk;
-    }
-    solveTridiagonalScratch(scratch,E,foldParams.cacheFactor===false?null:`temporal|${E}|${bendBase}|${inertia}`);
+    solveTridiagonalScratch(scratch,E,foldParams.cacheFactor===false?null:`temporal|${canonical?'cn':'legacy'}|${E}|${bendBase}|${bendThermalScale}|${inertia}`);
+    const proposedDelta=noiseDelta;
     for(let k=0;k<E;k++){
       let d=angleDelta(sol[k],theta[k]);
-      if(d>maxAngleStep)d=maxAngleStep;else if(d<-maxAngleStep)d=-maxAngleStep;
-      rod.omega[k]=d;rod.theta[k]=wrapAngle((rod.theta[k]||0)+d);
+      if(!canonical){if(d>maxAngleStep)d=maxAngleStep;else if(d<-maxAngleStep)d=-maxAngleStep;}
+      proposedDelta[k]=d;rod.omega[k]=d;rod.theta[k]=wrapAngle(previousTheta[k]+d);
     }
     projectTemporalRodFromTangents(path,rod,.02);
+    let crossingsAfter=rodSelfIntersectionCount(path,64);
+    if(crossingsAfter>crossingsBefore){
+      let accepted=false,bestFraction=1,bestCount=crossingsAfter;
+      for(const fraction of [.5,.25,.125,.0625]){
+        for(let k=0;k<E;k++){rod.theta[k]=wrapAngle(previousTheta[k]+proposedDelta[k]*fraction);rod.omega[k]=proposedDelta[k]*fraction;}
+        projectTemporalRodFromTangents(path,rod,.02);const count=rodSelfIntersectionCount(path,64);
+        if(count<bestCount){bestCount=count;bestFraction=fraction;}
+        if(count<=crossingsBefore){crossingsAfter=count;accepted=true;break;}
+      }
+      if(!accepted){
+        // Never freeze a state merely because it already contains a crossing:
+        // retain the least-violating finite move so later thermal/local forces
+        // can remove the temporary violation.
+        for(let k=0;k<E;k++){rod.theta[k]=wrapAngle(previousTheta[k]+proposedDelta[k]*bestFraction);rod.omega[k]=proposedDelta[k]*bestFraction;}
+        projectTemporalRodFromTangents(path,rod,.02);crossingsAfter=bestCount;rod.softCrossingSteps=(rod.softCrossingSteps||0)+1;
+      }
+      rod.crossingRejects=(rod.crossingRejects||0)+1;
+    }
+    rod.currentCrossings=crossingsAfter;
   }
   updateRodEnergy(path);
   rod.hydroEnergy=0;rod.hydroMeanRho=0;
@@ -913,464 +1001,405 @@ async function stepCurrentRodDynamics(base){
   const rod=ensureContinuousRod();if(!rod||wgpuSelectedPath.length<2)return;
   await stepTemporalIntrinsicHydrophobicDynamics(base);
 }
-const GPU_ROD_SHADER=`
-@group(0) @binding(0) var<storage,read> cfg:array<f32>;
-@group(0) @binding(1) var<storage,read_write> pts:array<vec4f>;
-@group(0) @binding(2) var<storage,read> ell:array<f32>;
-@group(0) @binding(3) var<storage,read> kappa:array<f32>;
-@group(0) @binding(4) var<storage,read> bendW:array<f32>;
-@group(0) @binding(5) var<storage,read_write> theta:array<f32>;
-@group(0) @binding(6) var<storage,read_write> scratch:array<f32>;
-fn n_nodes()->u32{return u32(cfg[0]);}
-fn n_edges()->u32{return select(0u,n_nodes()-1u,n_nodes()>0u);}
-fn wrap_angle(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a<0.0){a=a+tau;}return a;}
-fn angle_delta(a:f32,b:f32)->f32{let tau=6.28318530718;var d=wrap_angle(a-b);if(d>3.14159265359){d=d-tau;}return d;}
-fn s_theta(i:u32)->u32{return i;}
-fn s_lo(i:u32)->u32{return n_edges()+i;}
-fn s_diag(i:u32)->u32{return n_edges()*2u+i;}
-fn s_hi(i:u32)->u32{return n_edges()*3u+i;}
-fn s_rhs(i:u32)->u32{return n_edges()*4u+i;}
-fn s_sol(i:u32)->u32{return n_edges()*5u+i;}
-@compute @workgroup_size(1)
-fn solve(@builtin(global_invocation_id) gid:vec3u){
-  if(gid.x!=0u){return;}
-  let n=n_nodes();let e=n_edges();
-  if(n<2u||e==0u){return;}
-  scratch[s_theta(0u)]=theta[0u];
-  for(var i=1u;i<512u;i++){
-    if(i>=e){break;}
-    scratch[s_theta(i)]=scratch[s_theta(i-1u)]+angle_delta(theta[i],theta[i-1u]);
-  }
-  let inertia=max(cfg[4],1e-6);let bendBase=cfg[2];let bendDtScale=cfg[3];let kappaScale=cfg[1];
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    scratch[s_lo(i)]=0.0;scratch[s_hi(i)]=0.0;scratch[s_diag(i)]=inertia;scratch[s_rhs(i)]=inertia*scratch[s_theta(i)];
-  }
-  for(var i=0u;i<512u;i++){
-    if(i+1u>=e){break;}
-    let c=bendW[i]*bendBase*bendDtScale;
-    scratch[s_diag(i)]=scratch[s_diag(i)]+c;scratch[s_diag(i+1u)]=scratch[s_diag(i+1u)]+c;
-    scratch[s_hi(i)]=scratch[s_hi(i)]-c;scratch[s_lo(i+1u)]=scratch[s_lo(i+1u)]-c;
-    let targetKappa=kappa[i]*kappaScale;
-    scratch[s_rhs(i)]=scratch[s_rhs(i)]-c*targetKappa;scratch[s_rhs(i+1u)]=scratch[s_rhs(i+1u)]+c*targetKappa;
-  }
-  for(var i=1u;i<512u;i++){
-    if(i>=e){break;}
-    var den=scratch[s_diag(i-1u)];
-    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
-    let m=scratch[s_lo(i)]/den;
-    scratch[s_diag(i)]=scratch[s_diag(i)]-m*scratch[s_hi(i-1u)];
-    scratch[s_rhs(i)]=scratch[s_rhs(i)]-m*scratch[s_rhs(i-1u)];
-  }
-  let last=e-1u;
-  var lastDen=scratch[s_diag(last)];
-  if(abs(lastDen)<1e-6){lastDen=select(-1e-6,1e-6,lastDen>=0.0);}
-  scratch[s_sol(last)]=scratch[s_rhs(last)]/lastDen;
-  for(var back=0u;back<512u;back++){
-    if(back+1u>=e){break;}
-    let i=last-1u-back;
-    var den=scratch[s_diag(i)];
-    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
-    scratch[s_sol(i)]=(scratch[s_rhs(i)]-scratch[s_hi(i)]*scratch[s_sol(i+1u)])/den;
-  }
-  let maxAngleStep=max(0.0,cfg[5]);
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    var d=angle_delta(scratch[s_sol(i)],scratch[s_theta(i)]);
-    d=clamp(d,-maxAngleStep,maxAngleStep);
-    theta[i]=wrap_angle(theta[i]+d);
-  }
-  var cx=0.0;var cy=0.0;
-  for(var i=0u;i<512u;i++){
-    if(i>=n){break;}
-    cx=cx+pts[i].x;cy=cy+pts[i].y;
-  }
-  cx=cx/f32(n);cy=cy/f32(n);
-  var x=0.0;var y=0.0;var px=0.0;var py=0.0;
-  pts[0u]=vec4f(pts[0u].xy,0.0,0.0);
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    x=x+cos(theta[i])*ell[i];y=y+sin(theta[i])*ell[i];
-    pts[i+1u]=vec4f(pts[i+1u].xy,x,y);
-    px=px+x;py=py+y;
-  }
-  px=px/f32(n);py=py/f32(n);
-  let centerStrength=cfg[6];let tx=cx+(cfg[7]-cx)*centerStrength;let ty=cy+(cfg[8]-cy)*centerStrength;
-  for(var i=0u;i<512u;i++){
-    if(i>=n){break;}
-    let local=pts[i].zw;pts[i]=vec4f(tx+local.x-px,ty+local.y-py,0.0,0.0);
-  }
-}
-`;
-const GPU_ROD_BATCH_SHADER=`
+// ===========================================================================
+// GPU bead-rod protocol engine (locked Fig. 2 physics, scalable form).
+// Model: overdamped Brownian dynamics on node positions (Kremer-Grest-style
+// bead-spring polymer): harmonic intrinsic-curvature bending with reversible
+// thermal softening B(T), one fluctuation-dissipation white-noise thermostat,
+// calibrated finite-range excluded volume via a uniform-grid cell list, and
+// XPBD-style red/black projection of exact segment rest lengths. Vectorial
+// co-translational growth samples each nascent turn from N(kappa, T/B(T)).
+// Everything is node/edge-parallel: no serial tridiagonal solve and no global
+// position reconstruction, so total cost is O(N) per step and scaling comes
+// from dispatch width (millions of segments = wide buffers, same kernels).
+// Temperature schedules live in a GPU buffer indexed by a GPU step counter,
+// so whole protocol phases run without CPU involvement between readbacks.
+// ===========================================================================
+const GPU_BEAD_WG=128;
+const GPU_BEAD_MAX_OCC=16;
+const GPU_BEAD_SHADER=`
 @group(0) @binding(0) var<storage,read> cfg:array<f32>;
 @group(0) @binding(1) var<storage,read> rodMeta:array<vec4u>;
-@group(0) @binding(2) var<storage,read> params:array<vec4f>;
-@group(0) @binding(3) var<storage,read_write> pts:array<vec4f>;
-@group(0) @binding(4) var<storage,read> ell:array<f32>;
-@group(0) @binding(5) var<storage,read> kappa:array<f32>;
-@group(0) @binding(6) var<storage,read> bendW:array<f32>;
-@group(0) @binding(7) var<storage,read_write> theta:array<f32>;
-@group(0) @binding(8) var<storage,read_write> scratch:array<f32>;
-// Combined per-node shared-field forces (hydro combine_forces output),
-// projected onto edge-angle torques below.
-@group(0) @binding(9) var<storage,read> force:array<vec2f>;
-fn wrap_angle(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a<0.0){a=a+tau;}return a;}
-fn angle_delta(a:f32,b:f32)->f32{let tau=6.28318530718;var d=wrap_angle(a-b);if(d>3.14159265359){d=d-tau;}return d;}
+@group(0) @binding(2) var<storage,read> rodParams:array<vec4f>;
+@group(0) @binding(3) var<storage,read_write> rodState:array<u32>;
+@group(0) @binding(4) var<storage,read_write> pos:array<vec2f>;
+@group(0) @binding(5) var<storage,read_write> posNext:array<vec2f>;
+@group(0) @binding(6) var<storage,read> ell:array<f32>;
+@group(0) @binding(7) var<storage,read> nodeCode:array<vec2f>;
+@group(0) @binding(8) var<storage,read> nodeRod:array<u32>;
+@group(0) @binding(9) var<storage,read_write> gridCount:array<atomic<u32>>;
+@group(0) @binding(10) var<storage,read_write> gridSlot:array<u32>;
+@group(0) @binding(11) var<storage,read> temps:array<f32>;
+@group(0) @binding(12) var<storage,read_write> stepBuf:array<atomic<u32>>;
+@group(0) @binding(13) var<storage,read> edgeRod:array<u32>;
 fn hash_u32(x0:u32)->u32{var x=x0+0x9e3779b9u;x=(x^(x>>16u))*0x85ebca6bu;x=(x^(x>>13u))*0xc2b2ae35u;return x^(x>>16u);}
-fn rand01(seed:u32,rodId:u32,substep:u32,i:u32,channel:u32)->f32{
-  let h=hash_u32(seed^hash_u32(rodId+0x632be59bu)^hash_u32(substep+0x85157af5u)^hash_u32(i+channel*0x9e3779b9u));
+fn rand01(seed:u32,step:u32,i:u32,channel:u32)->f32{
+  let h=hash_u32(seed^hash_u32(step+0x632be59bu)^hash_u32(i+channel*0x9e3779b9u));
   return (f32(h)+0.5)/4294967296.0;
 }
-fn rand_normal(seed:u32,rodId:u32,substep:u32,i:u32,channel:u32)->f32{
-  let u=max(1e-9,rand01(seed,rodId,substep,i,channel));let v=rand01(seed,rodId,substep,i,channel+17u);
+fn rand_normal(seed:u32,step:u32,i:u32,channel:u32)->f32{
+  let u=max(1e-9,rand01(seed,step,i,channel));let v=rand01(seed,step,i,channel+17u);
   return sqrt(-2.0*log(u))*cos(6.28318530718*v);
 }
-fn s_theta(base:u32,e:u32,i:u32)->u32{return base+i;}
-fn s_lo(base:u32,e:u32,i:u32)->u32{return base+e+i;}
-fn s_diag(base:u32,e:u32,i:u32)->u32{return base+e*2u+i;}
-fn s_hi(base:u32,e:u32,i:u32)->u32{return base+e*3u+i;}
-fn s_rhs(base:u32,e:u32,i:u32)->u32{return base+e*4u+i;}
-fn s_sol(base:u32,e:u32,i:u32)->u32{return base+e*5u+i;}
-fn s_lx(base:u32,e:u32,i:u32)->u32{return base+e*6u+i;}
-fn s_ly(base:u32,e:u32,n:u32,i:u32)->u32{return base+e*6u+n+i;}
-@compute @workgroup_size(1)
-fn solve(@builtin(global_invocation_id) gid:vec3u){
-  let rodId=gid.x;let rodCount=u32(cfg[0]);
-  if(rodId>=rodCount){return;}
-  let m=rodMeta[rodId];let node0=m.x;let n=m.y;let edge0=m.z;let scratch0=m.w;
-  if(n<2u){return;}
-  let e=n-1u;
-  if(e>512u){return;}
-  scratch[s_theta(scratch0,e,0u)]=theta[edge0];
-  for(var i=1u;i<512u;i++){
-    if(i>=e){break;}
-    scratch[s_theta(scratch0,e,i)]=scratch[s_theta(scratch0,e,i-1u)]+angle_delta(theta[edge0+i],theta[edge0+i-1u]);
+fn wrap_pi(a0:f32)->f32{let tau=6.28318530718;var a=a0-floor(a0/tau)*tau;if(a>3.14159265359){a=a-tau;}return a;}
+fn thermal_bend_scale(t:f32)->f32{
+  let onset=cfg[6];let full=max(onset+1e-9,cfg[7]);let hotRatio=clamp(cfg[8],0.05,1.0);
+  let x=clamp((t-onset)/(full-onset),0.0,1.0);let h=x*x*(3.0-2.0*x);
+  return 1.0-(1.0-hotRatio)*h;
+}
+fn current_step()->u32{return atomicLoad(&stepBuf[0]);}
+fn current_temp()->f32{
+  let n=arrayLength(&temps);
+  return temps[min(current_step(),n-1u)];
+}
+fn cell_of(p:vec2f)->vec2i{
+  let cellSize=max(1e-6,cfg[15]);
+  let cx=i32(floor((p.x-cfg[11])/cellSize));let cy=i32(floor((p.y-cfg[12])/cellSize));
+  return vec2i(clamp(cx,0,i32(cfg[13])-1),clamp(cy,0,i32(cfg[14])-1));
+}
+fn cell_index(c:vec2i)->u32{return u32(c.y)*u32(cfg[13])+u32(c.x);}
+@compute @workgroup_size(128)
+fn clearGrid(@builtin(global_invocation_id) gid:vec3u){
+  if(gid.x>=u32(cfg[20])){return;}
+  atomicStore(&gridCount[gid.x],0u);
+}
+@compute @workgroup_size(128)
+fn binNodes(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;if(i>=u32(cfg[19])){return;}
+  let rod=nodeRod[i];let m=rodMeta[rod];
+  let idx=i-m.x;
+  if(idx>=rodState[rod*8u]){return;}
+  let maxOcc=u32(cfg[16]);
+  let ci=cell_index(cell_of(pos[i]));
+  let slot=atomicAdd(&gridCount[ci],1u);
+  if(slot<maxOcc){gridSlot[ci*maxOcc+slot]=i;}
+  else{atomicAdd(&stepBuf[1],1u);}
+}
+@compute @workgroup_size(128)
+fn predict(@builtin(global_invocation_id) gid:vec3u){
+  let i=gid.x;if(i>=u32(cfg[19])){return;}
+  let rod=nodeRod[i];let m=rodMeta[rod];
+  let idx=i-m.x;let n=rodState[rod*8u];
+  if(idx>=n){posNext[i]=pos[i];return;}
+  let t=current_temp();let bendScale=thermal_bend_scale(t);
+  let dt=cfg[1];let mob=cfg[2];
+  var f=vec2f(0.0,0.0);
+  // bending force: joints j=idx-1, idx, idx+1 (turn at node j uses nodes j-1,j,j+1)
+  for(var o:i32=-1;o<=1;o++){
+    let j=i32(idx)+o;
+    if(j<1||j+1>=i32(n)){continue;}
+    let g=m.x+u32(j);
+    let code=nodeCode[g];
+    let c=code.y*bendScale;
+    if(c<=0.0){continue;}
+    let e1=pos[g]-pos[g-1u];let e2=pos[g+1u]-pos[g];
+    let l1=max(1e-9,dot(e1,e1));let l2=max(1e-9,dot(e2,e2));
+    let phi=atan2(e1.x*e2.y-e1.y*e2.x,dot(e1,e2));
+    let coef=-c*wrap_pi(phi-code.x);
+    let p1=vec2f(-e1.y,e1.x)/l1;let p2=vec2f(-e2.y,e2.x)/l2;
+    if(o==1){f=f+coef*p1;}
+    else if(o==0){f=f+coef*(-p1-p2);}
+    else{f=f+coef*p2;}
   }
-  let p=params[rodId];let kappaScale=p.x;let stepTemp=max(0.0,p.w);
-  let bendBase=cfg[1];let bendDtScale=cfg[2];let inertia=max(cfg[3],1e-6);let maxAngleStep=max(0.0,cfg[4]);
-  let angleMobility=cfg[6];let dt=cfg[7];let seed=u32(cfg[8]);let substepId=u32(cfg[9]);let fieldGain=cfg[10];
-  if(fieldGain!=0.0){
-    var sx=0.0;var sy=0.0;
-    for(var back=0u;back<512u;back++){
-      if(back>=e){break;}
-      let i=e-back;
-      let f=force[node0+i];sx=sx+f.x;sy=sy+f.y;
-      scratch[s_lx(scratch0,e,i-1u)]=sx;scratch[s_ly(scratch0,e,n,i-1u)]=sy;
-    }
-  }
-  let modeCount=min(5u,max(2u,u32(floor(sqrt(f32(e))*0.7))));
-  let modeAmpScale=sqrt(2.0*stepTemp*dt)*0.055;
-  let sigma=select(0.0,sqrt(2.0*angleMobility*stepTemp*0.018*dt),stepTemp>0.0);
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    var noiseDelta=0.0;
-    if(stepTemp>0.0&&e>=3u){
-      for(var mode=1u;mode<=5u;mode++){
-        if(mode>modeCount){break;}
-        let mf=f32(mode);
-        let amp=rand_normal(seed,rodId,substepId,mode,3u)*modeAmpScale/(mf*mf);
-        let phase=rand01(seed,rodId,substepId,mode,29u)*6.28318530718;
-        noiseDelta=noiseDelta+amp*sin(3.14159265359*mf*((f32(i)+0.5)/f32(e))+phase);
+  // excluded volume via cell list (intra-rod, sequence separation > seqExcl)
+  let eps=cfg[3];
+  let cutoff=rodParams[rod].z*cfg[4];
+  if(eps>0.0&&cutoff>0.0){
+    let maxOcc=u32(cfg[16]);let seqExcl=i32(cfg[17]);let capMult=cfg[18];
+    let c0=cell_of(pos[i]);
+    for(var oy:i32=-1;oy<=1;oy++){for(var ox:i32=-1;ox<=1;ox++){
+      let cc=c0+vec2i(ox,oy);
+      if(cc.x<0||cc.y<0||cc.x>=i32(cfg[13])||cc.y>=i32(cfg[14])){continue;}
+      let ci=cell_index(cc);
+      let count=min(atomicLoad(&gridCount[ci]),maxOcc);
+      for(var s:u32=0u;s<16u;s++){
+        if(s>=count){break;}
+        let jg=gridSlot[ci*u32(cfg[16])+s];
+        if(jg==i){continue;}
+        if(nodeRod[jg]!=rod){continue;}
+        let jdx=i32(jg-m.x);
+        if(abs(jdx-i32(idx))<=seqExcl){continue;}
+        let d=pos[i]-pos[jg];let r=length(d);
+        if(r>=cutoff||r<1e-9){continue;}
+        let fm=min(eps*(cutoff/r-1.0),eps*capMult);
+        f=f+fm*d/r;
       }
-    }
-    let edgeNoise=select(0.0,rand_normal(seed,rodId,substepId,i,53u)*sigma,stepTemp>0.0);
-    var fieldTau=0.0;
-    if(fieldGain!=0.0){
-      let w=f32(n-1u-i)/f32(n);
-      let f0=force[node0];
-      let s0x=scratch[s_lx(scratch0,e,0u)]+f0.x;let s0y=scratch[s_ly(scratch0,e,n,0u)]+f0.y;
-      let ax=scratch[s_lx(scratch0,e,i)]-s0x*w;let ay=scratch[s_ly(scratch0,e,n,i)]-s0y*w;
-      let th=scratch[s_theta(scratch0,e,i)];
-      fieldTau=fieldGain*angleMobility*dt*ell[edge0+i]*(cos(th)*ay-sin(th)*ax);
-    }
-    scratch[s_lo(scratch0,e,i)]=0.0;scratch[s_hi(scratch0,e,i)]=0.0;
-    scratch[s_diag(scratch0,e,i)]=inertia;scratch[s_rhs(scratch0,e,i)]=inertia*(scratch[s_theta(scratch0,e,i)]+noiseDelta+edgeNoise)+fieldTau;
+    }}
   }
-  for(var i=0u;i<512u;i++){
-    if(i+1u>=e){break;}
-    let c=bendW[edge0+i]*bendBase*bendDtScale;
-    scratch[s_diag(scratch0,e,i)]=scratch[s_diag(scratch0,e,i)]+c;
-    scratch[s_diag(scratch0,e,i+1u)]=scratch[s_diag(scratch0,e,i+1u)]+c;
-    scratch[s_hi(scratch0,e,i)]=scratch[s_hi(scratch0,e,i)]-c;
-    scratch[s_lo(scratch0,e,i+1u)]=scratch[s_lo(scratch0,e,i+1u)]-c;
-    var targetKappa=kappa[edge0+i]*kappaScale;
-    // flat-bottom curvature band [kappa-w, kappa+w]: no restoring force inside
-    // (the 'widen' toggle; w = cfg[11]). Frees each joint, so the deficit
-    // drifts into a large global misplacement rather than a local correction.
-    let bandW=cfg[11];
-    if(bandW>0.0){let cur=scratch[s_theta(scratch0,e,i+1u)]-scratch[s_theta(scratch0,e,i)];targetKappa=clamp(cur,targetKappa-bandW,targetKappa+bandW);}
-    scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-c*targetKappa;
-    scratch[s_rhs(scratch0,e,i+1u)]=scratch[s_rhs(scratch0,e,i+1u)]+c*targetKappa;
-  }
-  for(var i=1u;i<512u;i++){
-    if(i>=e){break;}
-    var den=scratch[s_diag(scratch0,e,i-1u)];
-    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
-    let mval=scratch[s_lo(scratch0,e,i)]/den;
-    scratch[s_diag(scratch0,e,i)]=scratch[s_diag(scratch0,e,i)]-mval*scratch[s_hi(scratch0,e,i-1u)];
-    scratch[s_rhs(scratch0,e,i)]=scratch[s_rhs(scratch0,e,i)]-mval*scratch[s_rhs(scratch0,e,i-1u)];
-  }
-  let last=e-1u;
-  var lastDen=scratch[s_diag(scratch0,e,last)];
-  if(abs(lastDen)<1e-6){lastDen=select(-1e-6,1e-6,lastDen>=0.0);}
-  scratch[s_sol(scratch0,e,last)]=scratch[s_rhs(scratch0,e,last)]/lastDen;
-  for(var back=0u;back<512u;back++){
-    if(back+1u>=e){break;}
-    let i=last-1u-back;
-    var den=scratch[s_diag(scratch0,e,i)];
-    if(abs(den)<1e-6){den=select(-1e-6,1e-6,den>=0.0);}
-    scratch[s_sol(scratch0,e,i)]=(scratch[s_rhs(scratch0,e,i)]-scratch[s_hi(scratch0,e,i)]*scratch[s_sol(scratch0,e,i+1u)])/den;
-  }
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    var d=angle_delta(scratch[s_sol(scratch0,e,i)],scratch[s_theta(scratch0,e,i)]);
-    d=clamp(d,-maxAngleStep,maxAngleStep);
-    theta[edge0+i]=wrap_angle(theta[edge0+i]+d);
-  }
-  var cx=0.0;var cy=0.0;
-  for(var i=0u;i<513u;i++){
-    if(i>=n){break;}
-    let q=pts[node0+i];cx=cx+q.x;cy=cy+q.y;
-  }
-  cx=cx/f32(n);cy=cy/f32(n);
-  var x=0.0;var y=0.0;var px=0.0;var py=0.0;
-  scratch[s_lx(scratch0,e,0u)]=0.0;scratch[s_ly(scratch0,e,n,0u)]=0.0;
-  for(var i=0u;i<512u;i++){
-    if(i>=e){break;}
-    x=x+cos(theta[edge0+i])*ell[edge0+i];y=y+sin(theta[edge0+i])*ell[edge0+i];
-    scratch[s_lx(scratch0,e,i+1u)]=x;scratch[s_ly(scratch0,e,n,i+1u)]=y;
-    px=px+x;py=py+y;
-  }
-  px=px/f32(n);py=py/f32(n);
-  let centerStrength=cfg[5];let tx=cx+(p.y-cx)*centerStrength;let ty=cy+(p.z-cy)*centerStrength;
-  for(var i=0u;i<513u;i++){
-    if(i>=n){break;}
-    let local=vec2f(scratch[s_lx(scratch0,e,i)],scratch[s_ly(scratch0,e,n,i)]);
-    let old=pts[node0+i];pts[node0+i]=vec4f(tx+local.x-px,ty+local.y-py,old.z,old.w);
-  }
+  var disp=mob*dt*f;
+  let maxMove=rodParams[rod].z*cfg[5];
+  let dl=length(disp);
+  if(dl>maxMove){disp=disp*(maxMove/dl);}
+  let sigma=select(0.0,sqrt(2.0*mob*max(0.0,t)*dt),t>0.0);
+  let noise=vec2f(rand_normal(u32(cfg[9]),current_step(),i,1u),rand_normal(u32(cfg[9]),current_step(),i,2u))*sigma;
+  posNext[i]=pos[i]+disp+noise;
+}
+@compute @workgroup_size(128)
+fn constrainEven(@builtin(global_invocation_id) gid:vec3u){
+  constrain_edge(gid.x,0u);
+}
+@compute @workgroup_size(128)
+fn constrainOdd(@builtin(global_invocation_id) gid:vec3u){
+  constrain_edge(gid.x,1u);
+}
+fn constrain_edge(eg:u32,parity:u32){
+  if(eg>=u32(cfg[21])){return;}
+  let rodId=edgeRod[eg];
+  let m=rodMeta[rodId];
+  let k=eg-m.z;
+  if((k&1u)!=parity){return;}
+  let n=rodState[rodId*8u];
+  if(k+1u>=n){return;}
+  let a=m.x+k;let b=a+1u;
+  let d=posNext[b]-posNext[a];
+  let len=max(1e-9,length(d));
+  let corr=0.5*(len-ell[eg])*d/len;
+  posNext[a]=posNext[a]+corr;
+  posNext[b]=posNext[b]-corr;
+}
+@compute @workgroup_size(128)
+fn copyBack(@builtin(global_invocation_id) gid:vec3u){
+  if(gid.x>=u32(cfg[19])){return;}
+  pos[gid.x]=posNext[gid.x];
+}
+@compute @workgroup_size(64)
+fn grow(@builtin(global_invocation_id) gid:vec3u){
+  let rod=gid.x;if(rod>=u32(cfg[0])){return;}
+  let base=rod*8u;
+  if(rodState[base+2u]!=0u){return;}
+  let step=current_step();
+  if(step<rodState[base+1u]){return;}
+  let m=rodMeta[rod];
+  let a=rodState[base];
+  if(a>=m.y){rodState[base+2u]=1u;return;}
+  let t=current_temp();
+  let bendScale=thermal_bend_scale(t);
+  let gPrev=m.x+a-1u;
+  let dir=pos[gPrev]-pos[gPrev-1u];
+  let angPrev=atan2(dir.y,dir.x);
+  let code=nodeCode[gPrev]; // turn at node a-1 (edges a-2,a-1)
+  let localB=max(1e-9,code.y*bendScale);
+  let turn=code.x+select(0.0,rand_normal(u32(cfg[9]),step,rod,71u)*sqrt(max(0.0,t)/localB),t>0.0);
+  let ang=angPrev+turn;
+  let el=ell[m.z+a-1u];
+  let np=pos[gPrev]+vec2f(cos(ang),sin(ang))*el;
+  pos[m.x+a]=np;posNext[m.x+a]=np;
+  rodState[base]=a+1u;
+  if(a+1u>=m.y){rodState[base+2u]=1u;}
+  rodState[base+1u]=step+u32(cfg[10]);
+}
+@compute @workgroup_size(1)
+fn tick(){
+  atomicAdd(&stepBuf[0],1u);
 }
 `;
-let gpuRodSolver=null;
-let gpuRodBatchSolver=null;
-function gpuRodSchedule(path,rod,dynOverrides={}){
-  const baseTemp=Math.max(0,dynOverrides.temperature??0);
-  const dt=foldParams.temporalHydroDt??.035,bendBase=foldParams.temporalHydroBend??18,inertia=foldParams.temporalHydroInertia??.40,bendDtScale=foldParams.temporalHydroScaleBendDt===false?1:dt/(foldParams.temporalHydroRefDt??.035);
-  const anneal=foldParams.temporalHydroAnneal===true&&baseTemp>0,scheduleTime=rod.temporalHydroTime??0,useScheduleTime=foldParams.temporalHydroUseTime===true,annealAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
-  const annealTau=Math.max(1e-6,useScheduleTime?(foldParams.temporalHydroAnnealTauTime??(foldParams.temporalHydroAnnealTau??28)*4*dt):(foldParams.temporalHydroAnnealTau??28));
-  const annealFloor=foldParams.temporalHydroAnnealFloor??.08,tempAt=age=>anneal?baseTemp*(annealFloor+(1-annealFloor)*Math.exp(-age/annealTau)):baseTemp,temp=tempAt(annealAge);
-  const maxAngleStep=foldParams.temporalHydroMaxAngleStep??(temp>0?.14:.09),curv0=rod.curvErr??rodCurvatureError(path);
-  const defaultSubsteps=temp>0?4:5,lateAt=useScheduleTime?(foldParams.temporalHydroLateSubstepsTime??(foldParams.temporalHydroLateSubstepsTick??Infinity)*4*dt):(foldParams.temporalHydroLateSubstepsTick??Infinity),scheduleAge=useScheduleTime?scheduleTime:(rod.temporalHydroTick??0);
-  let baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroSubsteps??defaultSubsteps));
-  if(scheduleAge>=lateAt&&rod.kappaScale>=1&&Number.isFinite(foldParams.temporalHydroLateSubsteps))baseSubsteps=Math.max(1,Math.round(foldParams.temporalHydroLateSubsteps));
-  const smoothScale=rod.simPath?.length?1:TEMPORAL_HYDRO_SPEED,substeps=baseSubsteps*smoothScale,angleMobility=foldParams.temporalHydroMobility??.10;
-  const rampBase=Number.isFinite(foldParams.temporalHydroKappaRate)?Math.max(1e-4,foldParams.temporalHydroKappaRate):(curv0<foldParams.fastErr?foldParams.fast:curv0<foldParams.midErr?foldParams.mid:foldParams.slow);
-  const refSubsteps=foldParams.temporalHydroKappaRefSubsteps??(baseTemp>0?4:5),refDt=foldParams.temporalHydroRefDt??.035,rampStepBase=foldParams.temporalHydroScaleKappaDt===false?rampBase:rampBase*(substeps*dt)/Math.max(1e-6,refSubsteps*refDt);
-  const rampStep=foldParams.temporalHydroSubstepKappaRamp===true?rampStepBase/Math.max(1,substeps):rampStepBase;
-  return {dt,bendBase,inertia,bendDtScale,maxAngleStep,substeps,rampStep,centerStrength:.02,center:sampleDomain?.centroid||domainDisplayCentroid(),angleMobility,baseTemp,tempAt,scheduleTime,useScheduleTime,annealAge};
-}
-async function ensureGpuRodSolver(n){
+let gpuBead=null;
+async function ensureGpuBeadPipelines(){
   await ensureWgpu();
-  if(!gpuRodSolver){
-    const module=wgpuDevice.createShaderModule({code:GPU_ROD_SHADER});
-    const layout=wgpuDevice.createBindGroupLayout({entries:[
-      {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:1,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:2,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:4,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:5,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}}
-    ]});
-    const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
-    gpuRodSolver={layout,pipeline:await wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:'solve'}}),n:0};
-  }
-  if(!gpuRodSolver.bindGroup||gpuRodSolver.n<n){
-    for(const key of ['cfg','pts','ell','kappa','bendW','theta','scratch','ptsRead','thetaRead'])gpuRodSolver[key]?.destroy?.();
-    const e=Math.max(1,n-1),scratchN=e*6;
-    gpuRodSolver.n=n;
-    gpuRodSolver.cfg=wgpuDevice.createBuffer({size:16*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.pts=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
-    gpuRodSolver.ell=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.kappa=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.bendW=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.theta=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
-    gpuRodSolver.scratch=wgpuDevice.createBuffer({size:Math.max(4,scratchN*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,n*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.thetaRead=wgpuDevice.createBuffer({size:Math.max(4,e*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
-    gpuRodSolver.bindGroup=wgpuDevice.createBindGroup({layout:gpuRodSolver.layout,entries:[
-      {binding:0,resource:{buffer:gpuRodSolver.cfg}},{binding:1,resource:{buffer:gpuRodSolver.pts}},
-      {binding:2,resource:{buffer:gpuRodSolver.ell}},{binding:3,resource:{buffer:gpuRodSolver.kappa}},
-      {binding:4,resource:{buffer:gpuRodSolver.bendW}},{binding:5,resource:{buffer:gpuRodSolver.theta}},
-      {binding:6,resource:{buffer:gpuRodSolver.scratch}}
-    ]});
-  }
-  return gpuRodSolver;
+  if(gpuBead?.pipelines)return gpuBead;
+  const module=wgpuDevice.createShaderModule({code:GPU_BEAD_SHADER});
+  const entries=[];
+  const ro=t=>({buffer:{type:t}});
+  const kinds=['read-only-storage','read-only-storage','read-only-storage','storage','storage','storage','read-only-storage','read-only-storage','read-only-storage','storage','storage','read-only-storage','storage','read-only-storage'];
+  kinds.forEach((k,i)=>entries.push({binding:i,visibility:GPUShaderStage.COMPUTE,...ro(k)}));
+  const layout=wgpuDevice.createBindGroupLayout({entries});
+  const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
+  const mk=async name=>wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:name}});
+  const names=['clearGrid','binNodes','predict','constrainEven','constrainOdd','copyBack','grow','tick'];
+  const pipes=await Promise.all(names.map(mk));
+  gpuBead={layout,pipelines:Object.fromEntries(names.map((n,i)=>[n,pipes[i]]))};
+  return gpuBead;
 }
-async function runGpuRodDeterministicStep(path,rod,dynOverrides={}){
-  if(!GPU_ROD_SOLVER_ENABLED&&dynOverrides.force!==true)throw new Error('GPU rod solver is audit-only; pass {force:true} to run it.');
-  path=rodSimulationPath(path,rod);syncRodTangents(path);
-  const n=path.length,E=Math.max(0,n-1);if(n<2||E>GPU_ROD_MAX_EDGES)throw new Error(`GPU rod audit supports 2..${GPU_ROD_MAX_EDGES+1} nodes, got ${n}`);
-  const gpu=await ensureGpuRodSolver(n),ptData=new Float32Array(n*4),thetaData=new Float32Array(E),ellData=new Float32Array(E),kappaData=new Float32Array(E),bendWData=new Float32Array(E);
-  for(let i=0;i<n;i++){const p=continuousAngles[path[i]],j=i*4;ptData[j]=p.x;ptData[j+1]=p.y;}
-  for(let i=0;i<E;i++){thetaData[i]=rod.theta[i]||0;ellData[i]=rod.ell[i]||1;kappaData[i]=rod.kappa[i]||0;bendWData[i]=rod.bendW?.[i]??1;}
-  const sched=gpuRodSchedule(path,rod,dynOverrides);
-  if(sched.baseTemp>0)throw new Error('Single GPU rod audit is deterministic only; use batch solver for stochastic GPU rod steps.');
-  const {bendBase,inertia,dt,bendDtScale,maxAngleStep,substeps,rampStep,centerStrength,center}=sched;
-  let kappaScale=rod.kappaScale??0,foldRamp=!!rod.foldRamp;
-  const cfg=new Float32Array(16);
-  wgpuDevice.queue.writeBuffer(gpu.pts,0,ptData);wgpuDevice.queue.writeBuffer(gpu.theta,0,thetaData);wgpuDevice.queue.writeBuffer(gpu.ell,0,ellData);wgpuDevice.queue.writeBuffer(gpu.kappa,0,kappaData);wgpuDevice.queue.writeBuffer(gpu.bendW,0,bendWData);
-  const gpuStart=nowMs();
-  for(let s=0;s<substeps;s++){
-    if(foldRamp){kappaScale=Math.min(1,kappaScale+rampStep);if(kappaScale>=1){kappaScale=1;foldRamp=false;}}
-    cfg[0]=n;cfg[1]=kappaScale;cfg[2]=bendBase;cfg[3]=bendDtScale;cfg[4]=inertia;cfg[5]=maxAngleStep;cfg[6]=centerStrength;cfg[7]=center[0];cfg[8]=center[1];
-    wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);
-    const enc=wgpuDevice.createCommandEncoder(),pass=enc.beginComputePass();
-    pass.setPipeline(gpu.pipeline);pass.setBindGroup(0,gpu.bindGroup);pass.dispatchWorkgroups(1);pass.end();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
-  }
-  const enc=wgpuDevice.createCommandEncoder();enc.copyBufferToBuffer(gpu.pts,0,gpu.ptsRead,0,n*4*4);enc.copyBufferToBuffer(gpu.theta,0,gpu.thetaRead,0,E*4);wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
-  await gpu.ptsRead.mapAsync(GPUMapMode.READ);const ptsOut=new Float32Array(gpu.ptsRead.getMappedRange()).slice(0,n*4);gpu.ptsRead.unmap();
-  await gpu.thetaRead.mapAsync(GPUMapMode.READ);const thetaOut=new Float32Array(gpu.thetaRead.getMappedRange()).slice(0,E);gpu.thetaRead.unmap();
-  for(let i=0;i<n;i++){const p=continuousAngles[path[i]],j=i*4;p.vx=ptsOut[j]-p.x;p.vy=ptsOut[j+1]-p.y;p.x=ptsOut[j];p.y=ptsOut[j+1];}
-  for(let i=0;i<E;i++){rod.theta[i]=thetaOut[i];rod.omega[i]=angleDelta(thetaOut[i],thetaData[i]||0);}
-  rod.kappaScale=kappaScale;rod.foldRamp=foldRamp;rod.temporalHydroTick=(rod.temporalHydroTick??0)+1;rod.temporalHydroTime=(rod.temporalHydroTime??0)+substeps*dt;updateRodEnergy(path);
-  return {gpuMs:nowMs()-gpuStart,n,E,substeps,kappaScale};
-}
-async function ensureGpuRodBatchSolver(rodCount,totalNodes,totalEdges,scratchCount){
-  await ensureWgpu();
-  if(!gpuRodBatchSolver){
-    const module=wgpuDevice.createShaderModule({code:GPU_ROD_BATCH_SHADER});
-    const layout=wgpuDevice.createBindGroupLayout({entries:[
-      {binding:0,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:1,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:2,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:3,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:4,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:5,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:6,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}},
-      {binding:7,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:8,visibility:GPUShaderStage.COMPUTE,buffer:{type:'storage'}},
-      {binding:9,visibility:GPUShaderStage.COMPUTE,buffer:{type:'read-only-storage'}}
-    ]});
-    const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
-    gpuRodBatchSolver={layout,pipeline:await wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:'solve'}}),rodCount:0,totalNodes:0,totalEdges:0,scratchCount:0};
-  }
-  const need=!gpuRodBatchSolver.bindGroup||gpuRodBatchSolver.rodCount<rodCount||gpuRodBatchSolver.totalNodes<totalNodes||gpuRodBatchSolver.totalEdges<totalEdges||gpuRodBatchSolver.scratchCount<scratchCount;
-  if(need){
-    for(const key of ['cfg','meta','params','pts','hydroSeg','ell','kappa','bendW','theta','scratch','force','ptsRead','thetaRead'])gpuRodBatchSolver[key]?.destroy?.();
-    gpuRodBatchSolver.rodCount=rodCount;gpuRodBatchSolver.totalNodes=totalNodes;gpuRodBatchSolver.totalEdges=totalEdges;gpuRodBatchSolver.scratchCount=scratchCount;
-    gpuRodBatchSolver.cfg=wgpuDevice.createBuffer({size:16*4,usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.meta=wgpuDevice.createBuffer({size:Math.max(16,rodCount*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.params=wgpuDevice.createBuffer({size:Math.max(16,rodCount*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.pts=wgpuDevice.createBuffer({size:Math.max(16,totalNodes*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
-    gpuRodBatchSolver.hydroSeg=wgpuDevice.createBuffer({size:Math.max(16,Math.max(1,totalNodes-1)*4*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.ell=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.kappa=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.bendW=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.theta=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST|GPUBufferUsage.COPY_SRC});
-    gpuRodBatchSolver.scratch=wgpuDevice.createBuffer({size:Math.max(4,scratchCount*4),usage:GPUBufferUsage.STORAGE});
-    gpuRodBatchSolver.force=wgpuDevice.createBuffer({size:Math.max(8,totalNodes*2*4),usage:GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.ptsRead=wgpuDevice.createBuffer({size:Math.max(16,totalNodes*4*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.thetaRead=wgpuDevice.createBuffer({size:Math.max(4,totalEdges*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST});
-    gpuRodBatchSolver.bindGroup=wgpuDevice.createBindGroup({layout:gpuRodBatchSolver.layout,entries:[
-      {binding:0,resource:{buffer:gpuRodBatchSolver.cfg}},{binding:1,resource:{buffer:gpuRodBatchSolver.meta}},
-      {binding:2,resource:{buffer:gpuRodBatchSolver.params}},{binding:3,resource:{buffer:gpuRodBatchSolver.pts}},
-      {binding:4,resource:{buffer:gpuRodBatchSolver.ell}},{binding:5,resource:{buffer:gpuRodBatchSolver.kappa}},
-      {binding:6,resource:{buffer:gpuRodBatchSolver.bendW}},{binding:7,resource:{buffer:gpuRodBatchSolver.theta}},
-      {binding:8,resource:{buffer:gpuRodBatchSolver.scratch}},{binding:9,resource:{buffer:gpuRodBatchSolver.force}}
-    ]});
-  }
-  return gpuRodBatchSolver;
-}
-function buildGpuRodBatch(states=allDigitStates,dynOverrides={}){
-  const rods=[];let totalNodes=0,totalEdges=0,scratchCount=0;
+function buildGpuBeadBatch(states=allDigitStates,opts={}){
+  const {seed=1,growInterval=6,constraintIters=6}=opts;
+  const rods=[];let totalNodes=0,totalEdges=0;
   for(const st of states){
     if(!st.loaded)continue;
     withDigitState(st,()=>{
-      const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
-      syncRodTangents(path);
-      const E=path.length-1;if(E>GPU_ROD_MAX_EDGES)throw new Error(`digit ${st.digit} has ${E} edges; GPU rod batch cap is ${GPU_ROD_MAX_EDGES}`);
-      const schedule=gpuRodSchedule(path,rod,dynOverrides),pointRefs=path.map(i=>continuousAngles[i]);
-      rods.push({st,rod,path:path.slice(),pointRefs,node0:totalNodes,edge0:totalEdges,scratch0:scratchCount,n:path.length,E,schedule,kappaScale:rod.kappaScale??0,foldRamp:!!rod.foldRamp});
-      totalNodes+=path.length;totalEdges+=E;scratchCount+=E*6+path.length*2;
+      const rod=ensureContinuousRod();if(!rod?._full)throw new Error('GPU bead batch requires initializeCurrentRodGrow rods');
+      const F=rod._full,N=F.N,E=N-1;
+      const resScale=CONT_BEND_REF_ELL/Math.max(1e-6,rod.meanEll||CONT_BEND_REF_ELL),bendBase=rodEnergyBendBase();
+      const c=sampleDomain?.centroid||domainDisplayCentroid();
+      rods.push({st,rod,F,N,E,node0:totalNodes,edge0:totalEdges,centroid:[c[0],c[1]],topoEll:rod.topologyMeanEll||rod.meanEll||1,resScale,bendBase,active:rod.active??4});
+      totalNodes+=N;totalEdges+=E;
     });
   }
   if(!rods.length)return null;
-  const first=rods[0].schedule;
-  for(const r of rods){
-    for(const key of ['bendBase','bendDtScale','inertia','maxAngleStep','centerStrength','substeps','dt']){
-      if(Math.abs((r.schedule[key]??0)-(first[key]??0))>1e-9)throw new Error(`GPU rod batch requires common ${key}; digit ${r.st.digit} differs`);
-    }
-  }
-  const meta=new Uint32Array(rods.length*4),params=new Float32Array(rods.length*4),pts=new Float32Array(totalNodes*4),theta=new Float32Array(totalEdges),ell=new Float32Array(totalEdges),kappa=new Float32Array(totalEdges),bendW=new Float32Array(totalEdges);
+  const pos=new Float32Array(totalNodes*2),ellArr=new Float32Array(totalEdges),nodeCode=new Float32Array(totalNodes*2),nodeRodArr=new Uint32Array(totalNodes),edgeRodArr=new Uint32Array(totalEdges);
+  const meta=new Uint32Array(rods.length*4),params=new Float32Array(rods.length*4),state=new Uint32Array(rods.length*8);
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,maxCutoff=1;
   for(let ri=0;ri<rods.length;ri++){
-    const r=rods[ri];meta[ri*4]=r.node0;meta[ri*4+1]=r.n;meta[ri*4+2]=r.edge0;meta[ri*4+3]=r.scratch0;
-    const topoEll=Math.max(1,r.rod.topologyMeanEll||r.rod.meanEll||1);
-    for(let i=0;i<r.n;i++){
-      const p=r.pointRefs[i],j=(r.node0+i)*4,prev=i>0?(r.rod.ell[i-1]||r.rod.meanEll||1):0,next=i<r.E?(r.rod.ell[i]||r.rod.meanEll||1):0;
-      pts[j]=p.x;pts[j+1]=p.y;pts[j+2]=((prev+next)*.5)/topoEll;pts[j+3]=i<r.E?next/topoEll:0;
-    }
-    for(let i=0;i<r.E;i++){const j=r.edge0+i;theta[j]=r.rod.theta[i]||0;ell[j]=r.rod.ell[i]||1;kappa[j]=r.rod.kappa[i]||0;bendW[j]=r.rod.bendW?.[i]??1;}
+    const r=rods[ri];
+    meta[ri*4]=r.node0;meta[ri*4+1]=r.N;meta[ri*4+2]=r.node0-ri;meta[ri*4+3]=4;
+    params[ri*4]=r.centroid[0];params[ri*4+1]=r.centroid[1];params[ri*4+2]=r.topoEll;params[ri*4+3]=0;
+    state[ri*8]=r.active;state[ri*8+1]=0;state[ri*8+2]=r.active>=r.N?1:0;
+    maxCutoff=Math.max(maxCutoff,r.topoEll*(foldParams.wcaSigma??.55));
+    minX=Math.min(minX,r.centroid[0]);maxX=Math.max(maxX,r.centroid[0]);
+    minY=Math.min(minY,r.centroid[1]);maxY=Math.max(maxY,r.centroid[1]);
+    withDigitState(r.st,()=>{
+      const rod=r.rod;
+      for(let k=0;k<r.E;k++){ellArr[r.edge0+k]=r.F.ell[k]||rod.meanEll||1;edgeRodArr[r.edge0+k]=ri;}
+      for(let j=0;j<r.N;j++){
+        nodeRodArr[r.node0+j]=ri;
+        const joint=j-1;
+        const valid=joint>=0&&joint<r.F.kappa.length;
+        nodeCode[(r.node0+j)*2]=valid?(r.F.kappa[joint]||0):0;
+        nodeCode[(r.node0+j)*2+1]=valid?Math.max(0,r.bendBase*r.resScale*(r.F.bendW[joint]??1)):0;
+      }
+      for(let j=0;j<r.active;j++){
+        const stn=continuousAngles[r.F.simPath[j]];
+        pos[(r.node0+j)*2]=stn?stn.x:r.centroid[0];
+        pos[(r.node0+j)*2+1]=stn?stn.y:r.centroid[1];
+      }
+      const tip=r.active-1;
+      for(let j=r.active;j<r.N;j++){pos[(r.node0+j)*2]=pos[(r.node0+tip)*2];pos[(r.node0+j)*2+1]=pos[(r.node0+tip)*2+1];}
+    });
   }
-  return {rods,meta,params,pts,theta,ell,kappa,bendW,totalNodes,totalEdges,scratchCount,schedule:first};
+  const margin=Math.max(300,(maxX-minX+maxY-minY)*.5+200);
+  const ox=minX-margin,oy=minY-margin,w=(maxX-minX)+2*margin,h=(maxY-minY)+2*margin;
+  const cellSize=maxCutoff,gw=Math.max(4,Math.ceil(w/cellSize)),gh=Math.max(4,Math.ceil(h/cellSize)),cells=gw*gh;
+  const mkBuf=(data,usage)=>createWgpuBuffer(wgpuDevice,data,usage);
+  const su=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST,sr=su|GPUBufferUsage.COPY_SRC;
+  const batch={
+    rods,totalNodes,totalEdges,cells,gw,gh,cellSize,ox,oy,seed,growInterval,constraintIters,tempCount:0,
+    meta:mkBuf(meta,su),params:mkBuf(params,su),state:mkBuf(state,sr),
+    pos:mkBuf(pos,sr),posNext:mkBuf(pos,su),ell:mkBuf(ellArr,su),nodeCode:mkBuf(nodeCode,su),nodeRod:mkBuf(nodeRodArr,su),edgeRod:mkBuf(edgeRodArr,su),
+    gridCount:wgpuDevice.createBuffer({size:Math.max(4,cells*4),usage:su}),
+    gridSlot:wgpuDevice.createBuffer({size:Math.max(4,cells*GPU_BEAD_MAX_OCC*4),usage:su}),
+    temps:null,
+    stepBuf:mkBuf(new Uint32Array(4),sr),
+    cfgBuf:wgpuDevice.createBuffer({size:32*4,usage:su}),
+    readBuf:wgpuDevice.createBuffer({size:Math.max(64,(totalNodes*2+rods.length*8+4)*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST}),
+    bindGroup:null,
+  };
+  return batch;
 }
-async function runGpuRodBatchDeterministicStep(states=allDigitStates,dynOverrides={}){
-  if(!GPU_ROD_SOLVER_ENABLED&&dynOverrides.force!==true)throw new Error('GPU rod batch solver is audit-only; pass {force:true} to run it.');
-  const batch=buildGpuRodBatch(states,dynOverrides);if(!batch)return {gpuMs:0,readbackMs:0,rodCount:0,totalNodes:0,totalEdges:0,substeps:0};
-  const gpu=await ensureGpuRodBatchSolver(batch.rods.length,batch.totalNodes,batch.totalEdges,batch.scratchCount),cfg=new Float32Array(16),{schedule}=batch;
-  const noiseSeed=((dynOverrides.seed==null?sampleRandomU32():dynOverrides.seed>>>0)&0xffffff)||0x3779b9;
-  cfg[0]=batch.rods.length;cfg[1]=schedule.bendBase;cfg[2]=schedule.bendDtScale;cfg[3]=schedule.inertia;cfg[4]=schedule.maxAngleStep;cfg[5]=schedule.centerStrength;cfg[6]=schedule.angleMobility;cfg[7]=schedule.dt;cfg[8]=noiseSeed;
-  cfg[10]=Math.max(0,dynOverrides.field??0)*(foldParams.temporalHydroFieldTorque??1);
-  cfg[11]=foldParams.kappaBandWidth??0; // flat-bottom band width (widen toggle)
-  wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);wgpuDevice.queue.writeBuffer(gpu.meta,0,batch.meta);wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);wgpuDevice.queue.writeBuffer(gpu.theta,0,batch.theta);wgpuDevice.queue.writeBuffer(gpu.ell,0,batch.ell);wgpuDevice.queue.writeBuffer(gpu.kappa,0,batch.kappa);wgpuDevice.queue.writeBuffer(gpu.bendW,0,batch.bendW);
-  const gpuStart=nowMs();
-  let fieldStats=null;
-  if(dynOverrides.applyField===true){
-    const body=prepareGpuRodBatchHydroBody(batch),pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
-    wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);
-    wgpuDevice.queue.writeBuffer(gpu.hydroSeg,0,body.segData.subarray(0,Math.max(1,body.segCount)*4));
-    fieldStats=await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
-      ptsBuffer:gpu.pts,
-      segBuffer:gpu.hydroSeg,
-      uploadPts:false,
-      uploadSeg:false,
-      readback:false,
-      combineForces:true,
-      // hydroChannels:false keeps excluded volume (baseline sterics) but zeroes
-      // the hydropathy/amphipathic channels: the harness 'excluded' condition.
-      ...(dynOverrides.hydroChannels===false?{hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0}:{}),
-      ...(dynOverrides.typedAttract>0?{typedAttract:dynOverrides.typedAttract,typedBlur:3}:{})
-    }));
-    const fenc=wgpuDevice.createCommandEncoder();
-    fenc.copyBufferToBuffer(hydroGpu.nodeForce,0,gpu.force,0,batch.totalNodes*2*4);
-    wgpuDevice.queue.submit([fenc.finish()]);
-  }
-  for(let s=0;s<schedule.substeps;s++){
-    for(let ri=0;ri<batch.rods.length;ri++){
-      const r=batch.rods[ri],j=ri*4;
-      if(r.foldRamp){r.kappaScale=Math.min(1,r.kappaScale+r.schedule.rampStep);if(r.kappaScale>=1){r.kappaScale=1;r.foldRamp=false;}}
-      const stepAge=foldParams.temporalHydroSubstepAnneal===true?(r.schedule.useScheduleTime?r.schedule.scheduleTime+s*r.schedule.dt:(r.rod.temporalHydroTick??0)+s/Math.max(1,r.schedule.substeps)):r.schedule.annealAge;
-      batch.params[j]=r.kappaScale;batch.params[j+1]=r.schedule.center[0];batch.params[j+2]=r.schedule.center[1];batch.params[j+3]=r.schedule.tempAt(stepAge);
-    }
-    cfg[9]=s;
-    wgpuDevice.queue.writeBuffer(gpu.cfg,0,cfg);
-    wgpuDevice.queue.writeBuffer(gpu.params,0,batch.params);
-    const enc=wgpuDevice.createCommandEncoder(),pass=enc.beginComputePass();
-    pass.setPipeline(gpu.pipeline);pass.setBindGroup(0,gpu.bindGroup);pass.dispatchWorkgroups(batch.rods.length);pass.end();wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
-  }
-  const enc=wgpuDevice.createCommandEncoder();enc.copyBufferToBuffer(gpu.pts,0,gpu.ptsRead,0,batch.totalNodes*4*4);enc.copyBufferToBuffer(gpu.theta,0,gpu.thetaRead,0,batch.totalEdges*4);wgpuDevice.queue.submit([enc.finish()]);await wgpuDevice.queue.onSubmittedWorkDone();
-  const gpuMs=nowMs()-gpuStart,readStart=nowMs();
-  await gpu.ptsRead.mapAsync(GPUMapMode.READ);const ptsOut=new Float32Array(gpu.ptsRead.getMappedRange()).slice(0,batch.totalNodes*4);gpu.ptsRead.unmap();
-  await gpu.thetaRead.mapAsync(GPUMapMode.READ);const thetaOut=new Float32Array(gpu.thetaRead.getMappedRange()).slice(0,batch.totalEdges);gpu.thetaRead.unmap();
-  const readbackMs=nowMs()-readStart;
-  for(const r of batch.rods){
-    for(let i=0;i<r.n;i++){const p=r.pointRefs[i],j=(r.node0+i)*4;p.vx=ptsOut[j]-p.x;p.vy=ptsOut[j+1]-p.y;p.x=ptsOut[j];p.y=ptsOut[j+1];}
-    for(let i=0;i<r.E;i++){const t=thetaOut[r.edge0+i];r.rod.theta[i]=t;r.rod.omega[i]=angleDelta(t,batch.theta[r.edge0+i]||0);}
-    r.rod.kappaScale=r.kappaScale;r.rod.foldRamp=r.foldRamp;r.rod.temporalHydroTick=(r.rod.temporalHydroTick??0)+1;r.rod.temporalHydroTime=(r.rod.temporalHydroTime??0)+r.schedule.substeps*r.schedule.dt;
-    withDigitState(r.st,()=>updateRodEnergy(r.path));
-  }
-  return {gpuMs,readbackMs,rodCount:batch.rods.length,totalNodes:batch.totalNodes,totalEdges:batch.totalEdges,substeps:schedule.substeps,fieldStats};
+function gpuBeadSetTemps(batch,tempsArray){
+  const data=tempsArray instanceof Float32Array?tempsArray:Float32Array.from(tempsArray);
+  batch.temps?.destroy?.();
+  batch.temps=createWgpuBuffer(wgpuDevice,data,GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST);
+  batch.tempCount=data.length;
+  batch.bindGroup=null;
 }
+function gpuBeadWriteCfg(batch,overrides={}){
+  const cfg=new Float32Array(32);
+  cfg[0]=batch.rods.length;
+  cfg[1]=overrides.dt??foldParams.beadDt??.04;
+  cfg[2]=overrides.mobility??foldParams.beadMobility??1;
+  cfg[3]=overrides.wcaEpsilon??foldParams.wcaEpsilon??.75;
+  cfg[4]=overrides.wcaSigma??foldParams.wcaSigma??.55;
+  cfg[5]=overrides.clampFrac??foldParams.beadMaxMoveFrac??.15;
+  cfg[6]=foldParams.thermalBendOnset??.05;
+  cfg[7]=foldParams.thermalBendFullTemp??1.3;
+  cfg[8]=foldParams.thermalBendHotRatio??.5;
+  cfg[9]=batch.seed>>>0;
+  cfg[10]=batch.growInterval;
+  cfg[11]=batch.ox;cfg[12]=batch.oy;cfg[13]=batch.gw;cfg[14]=batch.gh;cfg[15]=batch.cellSize;
+  cfg[16]=GPU_BEAD_MAX_OCC;cfg[17]=overrides.seqExcl??foldParams.beadSeqExcl??6;cfg[18]=overrides.capMult??foldParams.beadCapMult??8;
+  cfg[19]=batch.totalNodes;cfg[20]=batch.cells;cfg[21]=batch.totalEdges;
+  wgpuDevice.queue.writeBuffer(batch.cfgBuf,0,cfg);
+}
+function gpuBeadBindGroup(batch){
+  if(batch.bindGroup)return batch.bindGroup;
+  if(!batch.temps)throw new Error('gpuBeadSetTemps must run before stepping');
+  batch.bindGroup=wgpuDevice.createBindGroup({layout:gpuBead.layout,entries:[
+    {binding:0,resource:{buffer:batch.cfgBuf}},
+    {binding:1,resource:{buffer:batch.meta}},
+    {binding:2,resource:{buffer:batch.params}},
+    {binding:3,resource:{buffer:batch.state}},
+    {binding:4,resource:{buffer:batch.pos}},
+    {binding:5,resource:{buffer:batch.posNext}},
+    {binding:6,resource:{buffer:batch.ell}},
+    {binding:7,resource:{buffer:batch.nodeCode}},
+    {binding:8,resource:{buffer:batch.nodeRod}},
+    {binding:9,resource:{buffer:batch.gridCount}},
+    {binding:10,resource:{buffer:batch.gridSlot}},
+    {binding:11,resource:{buffer:batch.temps}},
+    {binding:12,resource:{buffer:batch.stepBuf}},
+    {binding:13,resource:{buffer:batch.edgeRod}},
+  ]});
+  return batch.bindGroup;
+}
+async function runGpuBeadSteps(batch,steps,{chunk=200}={}){
+  await ensureGpuBeadPipelines();
+  gpuBeadWriteCfg(batch);
+  const bg=gpuBeadBindGroup(batch);
+  const wg=n=>Math.max(1,Math.ceil(n/GPU_BEAD_WG));
+  const nodeWg=wg(batch.totalNodes),edgeWg=wg(batch.totalEdges),cellWg=wg(batch.cells),rodWg=Math.max(1,Math.ceil(batch.rods.length/64));
+  const t0=nowMs();
+  for(let done=0;done<steps;done+=chunk){
+    const todo=Math.min(chunk,steps-done);
+    const enc=wgpuDevice.createCommandEncoder();
+    const pass=enc.beginComputePass();
+    pass.setBindGroup(0,bg);
+    for(let s=0;s<todo;s++){
+      pass.setPipeline(gpuBead.pipelines.clearGrid);pass.dispatchWorkgroups(cellWg);
+      pass.setPipeline(gpuBead.pipelines.binNodes);pass.dispatchWorkgroups(nodeWg);
+      pass.setPipeline(gpuBead.pipelines.predict);pass.dispatchWorkgroups(nodeWg);
+      for(let it=0;it<batch.constraintIters;it++){
+        pass.setPipeline(gpuBead.pipelines.constrainEven);pass.dispatchWorkgroups(edgeWg);
+        pass.setPipeline(gpuBead.pipelines.constrainOdd);pass.dispatchWorkgroups(edgeWg);
+      }
+      pass.setPipeline(gpuBead.pipelines.copyBack);pass.dispatchWorkgroups(nodeWg);
+      pass.setPipeline(gpuBead.pipelines.grow);pass.dispatchWorkgroups(rodWg);
+      pass.setPipeline(gpuBead.pipelines.tick);pass.dispatchWorkgroups(1);
+    }
+    pass.end();
+    wgpuDevice.queue.submit([enc.finish()]);
+    // bound the in-flight command backlog: long protocol phases otherwise
+    // queue thousands of encoders before the first sync and can OOM the tab
+    if(((done/chunk)|0)%20===19)await wgpuDevice.queue.onSubmittedWorkDone();
+  }
+  await wgpuDevice.queue.onSubmittedWorkDone();
+  return {steps,gpuMs:nowMs()-t0};
+}
+async function readbackGpuBead(batch,{apply=true}={}){
+  const posBytes=batch.totalNodes*2*4,stateBytes=batch.rods.length*8*4;
+  const enc=wgpuDevice.createCommandEncoder();
+  enc.copyBufferToBuffer(batch.pos,0,batch.readBuf,0,posBytes);
+  enc.copyBufferToBuffer(batch.state,0,batch.readBuf,posBytes,stateBytes);
+  enc.copyBufferToBuffer(batch.stepBuf,0,batch.readBuf,posBytes+stateBytes,16);
+  wgpuDevice.queue.submit([enc.finish()]);
+  await batch.readBuf.mapAsync(GPUMapMode.READ);
+  const raw=batch.readBuf.getMappedRange();
+  const posOut=new Float32Array(raw.slice(0,posBytes));
+  const stateOut=new Uint32Array(raw.slice(posBytes,posBytes+stateBytes));
+  const stepOut=new Uint32Array(raw.slice(posBytes+stateBytes,posBytes+stateBytes+16));
+  batch.readBuf.unmap();
+  const summary={step:stepOut[0],binOverflow:stepOut[1],rods:[]};
+  for(let ri=0;ri<batch.rods.length;ri++){
+    const r=batch.rods[ri],active=Math.min(r.N,stateOut[ri*8]||0),done=stateOut[ri*8+2]===1;
+    summary.rods.push({digit:r.st.digit,active,done});
+    if(!apply)continue;
+    withDigitState(r.st,()=>{
+      const rod=ensureContinuousRod(),F=rod._full||r.F;
+      rod.rest=F.rest.slice(0,active);rod.simPath=F.simPath.slice(0,active);
+      rod.ell=F.ell.slice(0,Math.max(0,active-1));
+      rod.kappa=F.kappa.slice(0,Math.max(0,active-2));rod.bendW=F.bendW.slice(0,Math.max(0,active-2));
+      if(F.hydro)rod.hydro=F.hydro.slice(0,active);
+      rod.active=active;
+      if(rod.growth)rod.growth.done=done;
+      rod.theta=[];rod.omega=[];
+      for(let j=0;j<active;j++){
+        const g=(r.node0+j)*2,x=posOut[g],y=posOut[g+1];
+        let stn=continuousAngles[F.simPath[j]];
+        if(!stn){stn={x,y,vx:0,vy:0,tx:0,ty:0,cell:rod.meanEll||1,virtual:true};continuousAngles[F.simPath[j]]=stn;}
+        else{stn.vx=x-stn.x;stn.vy=y-stn.y;stn.x=x;stn.y=y;}
+      }
+      for(let j=0;j+1<active;j++){
+        const g0=(r.node0+j)*2,g1=(r.node0+j+1)*2;
+        rod.theta[j]=Math.atan2(posOut[g1+1]-posOut[g0+1],posOut[g1]-posOut[g0]);rod.omega[j]=0;
+      }
+      rod.statsFresh=false;rod.restErr=null;
+    });
+  }
+  return summary;
+}
+window.buildGpuBeadBatch=buildGpuBeadBatch;
+window.gpuBeadSetTemps=gpuBeadSetTemps;
+window.runGpuBeadSteps=runGpuBeadSteps;
+window.readbackGpuBead=readbackGpuBead;
+window.ensureGpuBeadPipelines=ensureGpuBeadPipelines;
 function snapshotLoadedDigitPoints(states=allDigitStates){
   return states.filter(s=>s.loaded).map(st=>withDigitState(st,()=>{
     const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);
@@ -1406,159 +1435,7 @@ function gpuSharedFieldOptions(extra={}){
     ...extra
   };
 }
-function prepareGpuRodBatchHydroBody(batch){
-  const body=prepareAllDigitSharedSoupSoa();
-  if(!body||body.count!==batch.totalNodes)throw new Error('GPU rod field coupling needs matching shared-soup SoA order.');
-  for(const r of batch.rods)for(let i=0;i<r.n;i++)if(body.refs[r.node0+i]!==r.pointRefs[i])throw new Error(`shared-soup SoA order diverged at digit ${r.st.digit}`);
-  batch.pts.set(body.ptData.subarray(0,batch.totalNodes*4));
-  return body;
-}
-async function runGpuRodBatchFieldStep(states=allDigitStates,opts={}){
-  const batch=buildGpuRodBatch(states,{temperature:0,field:0});if(!batch)return {gpuMs:0,readbackMs:0,rodCount:0,totalNodes:0,totalEdges:0,fieldSize:0};
-  const body=prepareGpuRodBatchHydroBody(batch),gpu=await ensureGpuRodBatchSolver(batch.rods.length,batch.totalNodes,batch.totalEdges,batch.scratchCount);
-  const pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
-  wgpuDevice.queue.writeBuffer(gpu.pts,0,batch.pts);
-  wgpuDevice.queue.writeBuffer(gpu.hydroSeg,0,body.segData.subarray(0,Math.max(1,body.segCount)*4));
-  const stats=await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
-    ptsBuffer:gpu.pts,
-    segBuffer:gpu.hydroSeg,
-    uploadPts:false,
-    uploadSeg:false,
-    readback:opts.readback!==false
-  }));
-  return {...stats,rodCount:batch.rods.length,totalNodes:batch.totalNodes,totalEdges:batch.totalEdges};
-}
-async function auditGpuRodStep(){
-  const snap=cloneDigitStateList(),idx=allDigitStates.findIndex(s=>s.loaded);
-  if(idx<0)throw new Error('No loaded digit state to audit.');
-  const cpuSnap=cloneDigitStateList(snap),gpuSnap=cloneDigitStateList(snap);
-  const metric=pts=>{
-    let sx=0,sy=0,sm=0;for(let i=0;i<pts.length;i++){sx+=pts[i][0];sy+=pts[i][1];sm=Math.max(sm,Math.hypot(pts[i][0],pts[i][1]));}
-    return {sx,sy,sm};
-  };
-  try{
-    restoreDigitStateList(cpuSnap);
-    const cpuPts=await withDigitState(allDigitStates[idx],async()=>{await stepTemporalIntrinsicHydrophobicDynamics(rodDynamics({temperature:0,field:0}));const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);return path.map(i=>[continuousAngles[i].x,continuousAngles[i].y]);});
-    restoreDigitStateList(gpuSnap);
-    const gpuInfo=await withDigitState(allDigitStates[idx],async()=>{const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);const info=await runGpuRodDeterministicStep(path,rod,{force:true});return {info,pts:path.map(i=>[continuousAngles[i].x,continuousAngles[i].y])};});
-    let rms=0,max=0,n=Math.min(cpuPts.length,gpuInfo.pts.length);
-    for(let i=0;i<n;i++){const d=Math.hypot(cpuPts[i][0]-gpuInfo.pts[i][0],cpuPts[i][1]-gpuInfo.pts[i][1]);rms+=d*d;max=Math.max(max,d);}
-    rms=Math.sqrt(rms/Math.max(1,n));
-    return {digit:allDigitStates[idx]?.digit,n,rms,max,cpu:metric(cpuPts),gpu:metric(gpuInfo.pts),...gpuInfo.info};
-  }finally{
-    restoreDigitStateList(snap);
-  }
-}
-window.auditGpuRodStep=auditGpuRodStep;
-async function auditGpuRodBatchStep(steps=1){
-  const snap=cloneDigitStateList();
-  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
-  steps=Math.max(1,Math.min(64,Math.round(steps||1)));
-  const cpuSnap=cloneDigitStateList(snap),gpuSnap=cloneDigitStateList(snap),base=rodDynamics({temperature:0,field:0});
-  try{
-    restoreDigitStateList(cpuSnap);
-    for(let step=0;step<steps;step++)for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));
-    const cpu=snapshotLoadedDigitPoints();
-    restoreDigitStateList(gpuSnap);
-    let info=null,totalGpuMs=0,totalReadbackMs=0;
-    for(let step=0;step<steps;step++){
-      info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:0,field:0});
-      totalGpuMs+=info.gpuMs||0;totalReadbackMs+=info.readbackMs||0;
-    }
-    const gpu=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(cpu,gpu);
-    return {...cmp,...info,steps,totalGpuMs,totalReadbackMs};
-  }finally{
-    restoreDigitStateList(snap);
-  }
-}
-window.auditGpuRodBatchStep=auditGpuRodBatchStep;
-async function auditGpuRodTemperatureResponse(steps=8,temp=1.5,seed=0x6a09e667){
-  const snap=cloneDigitStateList();
-  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
-  steps=Math.max(1,Math.min(64,Math.round(steps||1)));
-  temp=Math.max(0,+temp||0);seed=(seed>>>0)||0x6a09e667;
-  const stepCpu=async base=>{for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));};
-  const stepGpu=async (baseTemp,step)=>runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:baseTemp,field:0,seed:rodSeedMix(seed,step,0x475055)});
-  try{
-    restoreDigitStateList(cloneDigitStateList(snap));
-    for(let i=0;i<steps;i++)await stepCpu(rodDynamics({temperature:0,field:0}));
-    const cpuCold=snapshotLoadedDigitPoints();
-    restoreDigitStateList(cloneDigitStateList(snap));
-    setRodNoiseSeed(seed);
-    for(let i=0;i<steps;i++)await stepCpu(rodDynamics({temperature:temp,field:0}));
-    const cpuWarm=snapshotLoadedDigitPoints();
-    restoreDigitStateList(cloneDigitStateList(snap));
-    let gpuInfo=null;
-    for(let i=0;i<steps;i++)gpuInfo=await stepGpu(0,i);
-    const gpuCold=snapshotLoadedDigitPoints();
-    restoreDigitStateList(cloneDigitStateList(snap));
-    let totalGpuMs=0,totalReadbackMs=0;
-    for(let i=0;i<steps;i++){gpuInfo=await stepGpu(temp,i);totalGpuMs+=gpuInfo.gpuMs||0;totalReadbackMs+=gpuInfo.readbackMs||0;}
-    const gpuWarm=snapshotLoadedDigitPoints();
-    return {
-      steps,temp,seed,
-      cpuThermal:compareDigitPointSnapshots(cpuCold,cpuWarm),
-      gpuThermal:compareDigitPointSnapshots(gpuCold,gpuWarm),
-      coldAgreement:compareDigitPointSnapshots(cpuCold,gpuCold),
-      gpuInfo:{...gpuInfo,totalGpuMs,totalReadbackMs}
-    };
-  }finally{
-    restoreDigitStateList(snap);
-  }
-}
-window.auditGpuRodTemperatureResponse=auditGpuRodTemperatureResponse;
-async function auditGpuRodFieldCouplingStep(){
-  const snap=cloneDigitStateList();
-  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
-  try{
-    restoreDigitStateList(cloneDigitStateList(snap));
-    await stepAllDigitSharedSoupField(allDigitEpoch);
-    const ref=snapshotLoadedDigitPoints();
-    restoreDigitStateList(cloneDigitStateList(snap));
-    const info=await runGpuRodBatchFieldStep(allDigitStates,{readback:true});
-    const got=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(ref,got);
-    return {...cmp,...info};
-  }finally{
-    restoreDigitStateList(snap);
-  }
-}
-window.auditGpuRodFieldCouplingStep=auditGpuRodFieldCouplingStep;
-async function auditGpuRodFieldThenRodStep(steps=1){
-  const snap=cloneDigitStateList();
-  if(!allDigitStates.some(s=>s.loaded))throw new Error('No loaded digit states to audit.');
-  steps=Math.max(1,Math.min(16,Math.round(steps||1)));
-  const base=rodDynamics({temperature:0,field:0});
-  try{
-    restoreDigitStateList(cloneDigitStateList(snap));
-    for(let step=0;step<steps;step++){
-      await stepAllDigitSharedSoupField(allDigitEpoch);
-      for(const st of allDigitStates)if(st.loaded)await withDigitState(st,()=>stepTemporalIntrinsicHydrophobicDynamics(base));
-    }
-    const ref=snapshotLoadedDigitPoints();
-    restoreDigitStateList(cloneDigitStateList(snap));
-    let info=null,totalGpuMs=0,totalReadbackMs=0,totalFieldGpuMs=0;
-    for(let step=0;step<steps;step++){
-      info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:0,field:0,applyField:true});
-      totalGpuMs+=info.gpuMs||0;totalReadbackMs+=info.readbackMs||0;totalFieldGpuMs+=info.fieldStats?.gpuMs||0;
-    }
-    const got=snapshotLoadedDigitPoints(),cmp=compareDigitPointSnapshots(ref,got);
-    return {...cmp,...info,steps,totalGpuMs,totalReadbackMs,totalFieldGpuMs};
-  }finally{
-    restoreDigitStateList(snap);
-  }
-}
-window.auditGpuRodFieldThenRodStep=auditGpuRodFieldThenRodStep;
-function setGpuRodVisibleMode(on=true){
-  GPU_ROD_SOLVER_ENABLED=!!on;
-  allDigitStatsCache=null;
-  wakeAllDigitRods();
-  renderAllDigitBoard({forceStats:true});
-  startAllDigitLoop();
-  return {gpuRodVisible:GPU_ROD_SOLVER_ENABLED};
-}
-window.setGpuRodVisibleMode=setGpuRodVisibleMode;
-window.runGpuRodBatchStep=runGpuRodBatchDeterministicStep;
-window.runGpuRodBatchDeterministicStep=runGpuRodBatchDeterministicStep;
+function setGpuRodVisibleMode(on=true){GPU_ROD_SOLVER_ENABLED=!!on;return {gpuRodVisible:GPU_ROD_SOLVER_ENABLED};}
 function digitGpuStateFromPath(digit,mask,domain,path,error=''){
   sampleDigitMask=String(digit);sampleActiveMask=mask.slice();sampleDomain=domain;resetContinuousAngles();wgpuSelectedPath=path.slice();
   if(!pathUsesDomainEdges(wgpuSelectedPath,sampleDomain))return {digit:String(digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:[],angles:cloneAngles(),rod:null,loaded:false,error:error||'no valid GPU chain'};
@@ -1952,14 +1829,9 @@ function startAllDigitLoop(){
     try{
       const simStart=nowMs();
       const sharedInterval=Math.max(1,Math.round(foldParams.sharedSoupInterval??2)),applyShared=sharedTick++%sharedInterval===0;
-      if(GPU_ROD_SOLVER_ENABLED){
-        const info=await runGpuRodBatchDeterministicStep(allDigitStates,{force:true,temperature:base.temperature,field:base.field,seed:sampleRandomU32(),applyField:applyShared});
-        if(info.fieldStats)allDigitSharedFieldStats={nodes:info.totalNodes,active:info.fieldStats.hydroActive||0,maxMove:info.fieldStats.maxMove||0,net:info.fieldStats.forceBalance||0,fieldSize:info.fieldStats.fieldSize||0,gpu:true,applied:!!info.fieldStats.applied};
-      }else{
-        for(const st of allDigitStates){
-          if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
-          if(st.loaded)await withDigitState(st,()=>stepCurrentRodDynamics(base));
-        }
+      for(const st of allDigitStates){
+        if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
+        if(st.loaded)await withDigitState(st,()=>stepCurrentRodDynamics(base));
       }
       telemetrySet('simMs',nowMs()-simStart);
       if(loopEpoch!==allDigitEpoch||loopToken!==allDigitLoopToken)return;
@@ -2502,25 +2374,48 @@ async function ensureWgpu(){
     return true;})();return wgpuReady;
 }
 const MOBILE_RESOLUTIONS=[10,15,20,25,30];
-let mobileHexN=20;
-const MOBILE_POOL_COUNT=12;
-const MOBILE_BASE_TEMP=.6;
-// Dimensionless thermal scale. At this value angular fluctuations overcome
-// the finite intrinsic-curvature potential while covalent edge lengths remain.
-const MOBILE_HOT_TEMP=300;
-const MOBILE_GROW_FOLD_STEPS=4;
-const MOBILE_HEAT_STEPS=120;
-const MOBILE_HOT_STEPS=150;
-const MOBILE_COOL_STEPS=180;
-const MOBILE_SETTLE_STEPS=180;
+let mobileHexN=10;
+const MOBILE_POOL_COUNT=16;
+const MOBILE_BASE_TEMP=.001;
+// Fig. 2 protocol on the GPU bead-rod engine (see ablation/README.md):
+// heat to T=6 with softened bend modulus, hot plateau, cool, recover.
+const MOBILE_HOT_TEMP=6;
+const MOBILE_FOLDED_ERROR=.75;
+const MOBILE_RECOVERED_ERROR=.4;
+const MOBILE_TEMPS_CAPACITY=4000000;
+let mobileDtInfo={dt:.04,scale:1};
+// Explicit bending stability: joint stiffness k ~ 2*B_eff/ell^2 with
+// B_eff = bendBase*(refEll/ell), so k ~ 2*bendBase*refEll/ell^3. Keep
+// mu*dt*k <= ~0.12 for the ACTUAL post-viewport-transform segment length;
+// otherwise high resolutions (small ell) explode during growth.
+function computeMobileDt(rod){
+  const ell=Math.max(1e-3,rod?.meanEll||8.8);
+  const k=2*rodEnergyBendBase()*CONT_BEND_REF_ELL/(ell*ell*ell);
+  const dt=Math.min(.04,Math.max(.004,.12/k));
+  return {dt,scale:.04/dt};
+}
+function mobileDtScale(){return mobileDtInfo.scale;}
+function mobileGrowInterval(){return Math.max(2,Math.round(6*mobileDtScale()));}
+function mobileHeatSteps(){return Math.round(1500*mobileDtScale());}
+function mobileHotSteps(){return Math.round(6000*mobileDtScale());}
+function mobileCoolSteps(){return Math.round(3000*mobileDtScale());}
+function mobileMaxSettleSteps(){return Math.round(30000*mobileDtScale());}
+function mobileRecoveryCap(){return Math.round(800000*mobileDtScale());}
 let mobileJobsByDigit=Array.from({length:10},()=>[]);
 let mobileForegroundState=null;
 let mobileActiveDigit='8';
 let mobileDigitCursor=Array(10).fill(0);
 let mobileFrame=0,mobileLoopToken=0,mobileStepping=false,mobileReady=false;
 let mobilePhase='loading',mobilePhaseStep=0,mobileTemperature=MOBILE_BASE_TEMP;
+let mobileGpu=null; // {batch,stepCount,bounds:{heat,hot,cool,recover}}
+function destroyMobileGpuBatch(){
+  if(!mobileGpu)return;
+  const b=mobileGpu.batch;
+  for(const k of ['meta','params','state','pos','posNext','ell','nodeCode','nodeRod','edgeRod','gridCount','gridSlot','temps','stepBuf','cfgBuf','readBuf'])b[k]?.destroy?.();
+  mobileGpu=null;
+}
 function setCycleControls({text,disabled=false,active=false}){for(const b of document.querySelectorAll('.cycle-control')){b.textContent=text;b.disabled=disabled;b.classList.toggle('active',active);}}
-function updateResolutionControls(){for(const b of document.querySelectorAll('.resolution-control'))b.textContent=`${b.closest('.fold-pad')?'':'resolution '}hex${mobileHexN} ↑`;}
+function updateResolutionControls(){const atMax=mobileHexN===MOBILE_RESOLUTIONS.at(-1);for(const b of document.querySelectorAll('.resolution-control')){b.textContent=`${b.closest('.fold-pad')?'':'resolution '}hex${mobileHexN}${atMax?' max':' ↑'}`;b.disabled=atMax;}}
 
 function setupMobileCanvas(){
   const canvas=$('digit-board'),rect=canvas.getBoundingClientRect();
@@ -2544,7 +2439,7 @@ function mobileStateFromJob(job,{cx,cy,scale,seed=0}={}){
   sampleDigitMask=String(job.digit);sampleActiveMask=job.mask.slice();sampleDomain=job.domain;resetContinuousAngles();wgpuSelectedPath=job.path.slice();
   if(!pathUsesDomainEdges(wgpuSelectedPath,sampleDomain))return {digit:String(job.digit),loaded:false,error:job.error||'no path',mask:sampleActiveMask.slice(),domain:sampleDomain,path:[],angles:cloneAngles(),rod:null};
   materializeSampleRod(wgpuSelectedPath);
-  if(!initializeCurrentRodGrow({render:false,start:false,seed,foldSteps:MOBILE_GROW_FOLD_STEPS,chunk:2,seedLen:4}))return {digit:String(job.digit),loaded:false,error:'could not initialize growth'};
+  if(!initializeCurrentRodGrow({render:false,start:false,seed,foldSteps:999999,chunk:1,seedLen:4}))return {digit:String(job.digit),loaded:false,error:'could not initialize growth'};
   mobileTransformCurrentRod(cx,cy,scale);
   return {digit:String(job.digit),mask:sampleActiveMask.slice(),domain:sampleDomain,path:wgpuSelectedPath.slice(),angles:cloneAngles(),rod:cloneRod(),loaded:true};
 }
@@ -2558,42 +2453,71 @@ function mobileSelectDigit(digit,{relayout=false}={}){
   allDigitEpoch++;allDigitStates=mobileForegroundState?.loaded?[mobileForegroundState]:[];allDigitStatsCache=null;invalidateSharedSoupBuffers();
   GPU_ROD_SOLVER_ENABLED=false;mobilePhase='growing';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
   setCycleControls({text:'growing…',disabled:true});
-  renderMobileFold();startMobileLoop();
+  destroyMobileGpuBatch();mobileMetrics={err:Infinity,crossings:0,tick:0};
+  if(mobileForegroundState?.loaded){
+    mobileDtInfo=computeMobileDt(mobileForegroundState.rod);
+    foldParams.beadDt=mobileDtInfo.dt;foldParams.beadMobility=1;foldParams.wcaEpsilon=3;foldParams.beadCapMult=16;
+    ensureGpuBeadPipelines().then(()=>{
+      const batch=buildGpuBeadBatch([mobileForegroundState],{seed:seed>>>0||1,growInterval:mobileGrowInterval()});
+      const temps=new Float32Array(Math.min(MOBILE_TEMPS_CAPACITY,1<<22));temps.fill(MOBILE_BASE_TEMP);
+      gpuBeadSetTemps(batch,temps);
+      mobileGpu={batch,stepCount:0,bounds:null};
+      startMobileLoop();
+    }).catch(err=>{console.error('gpu init failed',err);setFoldLoading(true,`GPU engine failed · ${err?.message||err}`);});
+  }
+  renderMobileFold();
 }
 function requestMobileDenaturation(){
-  if(!mobileForegroundState?.loaded||!['folded','recovered'].includes(mobilePhase))return;
+  if(!mobileForegroundState?.loaded||!mobileGpu||!['folded','recovered'].includes(mobilePhase))return;
+  const S0=mobileGpu.stepCount,heat=mobileHeatSteps(),hot=mobileHotSteps(),cool=mobileCoolSteps();
+  const seg=new Float32Array(heat+hot+cool);
+  let t=0;
+  for(let i=1;i<=heat;i++)seg[t++]=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*i/heat;
+  for(let i=0;i<hot;i++)seg[t++]=MOBILE_HOT_TEMP;
+  for(let i=1;i<=cool;i++)seg[t++]=MOBILE_HOT_TEMP-(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*i/cool;
+  wgpuDevice.queue.writeBuffer(mobileGpu.batch.temps,S0*4,seg);
+  mobileGpu.bounds={heat:S0,hot:S0+heat,cool:S0+heat+hot,recover:S0+heat+hot+cool};
   mobilePhase='heating';mobilePhaseStep=0;
   setCycleControls({text:'heating…',disabled:true,active:true});
 }
-function advanceMobileProtocol(){
-  mobilePhaseStep++;
+function mobileNormalizedError(){
+  if(!mobileForegroundState?.loaded)return Infinity;
+  return withDigitState(mobileForegroundState,()=>{const rod=ensureContinuousRod();return continuousStats({fresh:true}).restError/(rod?.meanEll||1);});
+}
+function mobileCachedError(){return mobileMetrics.err;}
+function markMobileFolded(){
+  mobilePhase='folded';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
+  setCycleControls({text:'denature → refold'});
+}
+function advanceMobileProtocol(stepsRun){
+  mobilePhaseStep+=stepsRun;
+  const S=mobileGpu?.stepCount??0,b=mobileGpu?.bounds;
+  if(b){
+    if(S<b.hot)mobileTemperature=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,(S-b.heat)/Math.max(1,b.hot-b.heat));
+    else if(S<b.cool)mobileTemperature=MOBILE_HOT_TEMP;
+    else if(S<b.recover)mobileTemperature=MOBILE_HOT_TEMP-(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,(S-b.cool)/Math.max(1,b.recover-b.cool));
+    else mobileTemperature=MOBILE_BASE_TEMP;
+  }else mobileTemperature=MOBILE_BASE_TEMP;
   if(mobilePhase==='growing'){
     const done=!!mobileForegroundState?.rod?.growth?.done;
-    if(done){mobilePhase='settling';mobilePhaseStep=0;}
-  }else if(mobilePhase==='settling'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
-    mobilePhase='folded';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
-    setCycleControls({text:'denature → refold'});
-  }else if(mobilePhase==='heating'){
-    mobileTemperature=MOBILE_BASE_TEMP+(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_HEAT_STEPS);
-    if(mobilePhaseStep>=MOBILE_HEAT_STEPS){mobilePhase='denatured';mobilePhaseStep=0;setCycleControls({text:'denatured…',disabled:true,active:true});}
-  }else if(mobilePhase==='denatured'){
-    mobileTemperature=MOBILE_HOT_TEMP;
-    if(mobilePhaseStep>=MOBILE_HOT_STEPS){mobilePhase='cooling';mobilePhaseStep=0;setCycleControls({text:'cooling…',disabled:true,active:true});}
-  }else if(mobilePhase==='cooling'){
-    mobileTemperature=MOBILE_HOT_TEMP-(MOBILE_HOT_TEMP-MOBILE_BASE_TEMP)*Math.min(1,mobilePhaseStep/MOBILE_COOL_STEPS);
-    if(mobilePhaseStep>=MOBILE_COOL_STEPS){mobilePhase='recovering';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;setCycleControls({text:'refolding…',disabled:true,active:true});}
-  }else if(mobilePhase==='recovering'&&mobilePhaseStep>=MOBILE_SETTLE_STEPS){
-    mobilePhase='recovered';mobilePhaseStep=0;
-    setCycleControls({text:'repeat denaturation'});
+    if(done){
+      if(mobileCachedError()<=MOBILE_FOLDED_ERROR)markMobileFolded();
+      else{mobilePhase='settling';mobilePhaseStep=0;setCycleControls({text:'folding…',disabled:true});}
+    }
+  }else if(mobilePhase==='settling'){
+    if(mobileCachedError()<=MOBILE_FOLDED_ERROR||mobilePhaseStep>=mobileMaxSettleSteps())markMobileFolded();
+  }else if(mobilePhase==='heating'&&S>=b.hot){
+    mobilePhase='denatured';mobilePhaseStep=0;setCycleControls({text:'denatured…',disabled:true,active:true});
+  }else if(mobilePhase==='denatured'&&S>=b.cool){
+    mobilePhase='cooling';mobilePhaseStep=0;setCycleControls({text:'cooling…',disabled:true,active:true});
+  }else if(mobilePhase==='cooling'&&S>=b.recover){
+    mobilePhase='recovering';mobilePhaseStep=0;setCycleControls({text:'refolding…',disabled:true,active:true});
+  }else if(mobilePhase==='recovering'){
+    if(mobileCachedError()<=MOBILE_RECOVERED_ERROR||mobilePhaseStep>=mobileRecoveryCap()){
+      mobilePhase='recovered';mobilePhaseStep=0;
+      setCycleControls({text:'repeat denaturation'});
+    }
   }
-}
-async function applyMobileExcludedVolume(){
-  invalidateSharedSoupBuffers();const body=prepareAllDigitSharedSoupSoa();if(!body)return;
-  const pseudoRod={meanEll:body.meanEll,topologyMeanEll:body.topologyMeanEll,ell:body.ell};
-  await addHydropathyFieldForcesGpu(pseudoRod,body,gpuSharedFieldOptions({
-    excluded:0,edwardsV:2,hydroAttract:0,philicExpose:0,coreBias:0,exposureBias:0,interfaceBias:0,
-    hydroContactAttract:0,typedAttract:0,applyToPts:false,forceReadback:true,worldSize:soupWorldSize
-  }));
 }
 function drawMobileRod(ctx,st,view){
   if(!st?.loaded)return;
@@ -2608,23 +2532,71 @@ function drawMobileRod(ctx,st,view){
 function renderMobileFold(){
   const view=setupMobileCanvas(),{ctx,w,h}=view;ctx.fillStyle=cssv('--paper');ctx.fillRect(0,0,w,h);drawMobileRod(ctx,mobileForegroundState,view);
   const el=$('fold-stats');if(!el||!mobileForegroundState?.loaded)return;
-  const info=withDigitState(mobileForegroundState,()=>{const rod=ensureContinuousRod(),full=rod?._full?.N||rod?.rest?.length||0,active=rod?.active||rod?.rest?.length||0,err=continuousStats({fresh:true}).restError/(rod?.meanEll||1);return {active,full,err};});
+  const info=withDigitState(mobileForegroundState,()=>{const rod=ensureContinuousRod();return {active:rod?.active||rod?.rest?.length||0,full:rod?._full?.N||rod?.rest?.length||0};});
+  info.err=mobileMetrics.err===Infinity?0:mobileMetrics.err;
   const phase=mobilePhase==='settling'?'folding':mobilePhase;
-  el.textContent=`digit ${mobileActiveDigit} · ${phase} · T ${mobileTemperature.toFixed(1)} · monomers ${info.active}/${info.full} · normalized error ${info.err.toFixed(2)}`;
+  const tempText=mobileTemperature<.01?mobileTemperature.toFixed(3):mobileTemperature.toFixed(2);
+  const bendScale=thermalBendScale(mobileTemperature);
+  const fps=mobileGpu?.frameMs?Math.min(60,Math.round(1000/mobileGpu.frameMs)):0;
+  el.textContent=`digit ${mobileActiveDigit} · ${phase} · T ${tempText} · monomers ${info.active}/${info.full} · normalized error ${info.err.toFixed(2)} · bend ${bendScale.toFixed(2)}× · crossings ${mobileMetrics.crossings} · GPU step ${(mobileGpu?.stepCount??0).toLocaleString()} · ${fps}fps`;
 }
 function stopMobileLoop(){mobileLoopToken++;if(mobileFrame)cancelAllDigitFrame(mobileFrame);mobileFrame=0;mobileStepping=false;}
+// note: initMobileFold also drops any live GPU batch via destroyMobileGpuBatch()
+function mobilePhaseStepCap(){
+  const s=mobileDtScale();
+  const cap=n=>Math.max(2,Math.round(n));
+  if(mobilePhase==='growing')return mobileGrowInterval()*2;
+  if(mobilePhase==='settling')return cap(120*s);
+  if(mobilePhase==='recovering')return cap(500*s);
+  if(mobilePhase==='heating'||mobilePhase==='denatured'||mobilePhase==='cooling')return cap(40*s);
+  if(mobilePhase==='recovered')return cap(150*s); // keep annealing the slow elastic tail
+  return cap(30*s);
+}
+// Keep the UI responsive: regulate on TOTAL measured frame time (GPU steps
+// + readback + render), targeting ~28ms. Fast-forward phases then take longer
+// wall time at high resolution instead of dropping the frame rate.
+const MOBILE_FRAME_TARGET_MS=28;
+function mobileStepsPerFrame(){
+  const cap=mobilePhaseStepCap(),g=mobileGpu;
+  if(!g)return Math.min(cap,64);
+  if(!g.lastSteps)return Math.min(cap,32);
+  const scale=Math.max(.5,Math.min(1.35,MOBILE_FRAME_TARGET_MS/Math.max(4,g.frameMs||MOBILE_FRAME_TARGET_MS)));
+  return Math.max(2,Math.min(cap,Math.round(g.lastSteps*scale)));
+}
+let mobileMetrics={err:Infinity,crossings:0,tick:0};
+function refreshMobileMetrics(){
+  if(!mobileForegroundState?.loaded)return;
+  mobileMetrics.err=mobileNormalizedError();
+  mobileMetrics.crossings=withDigitState(mobileForegroundState,()=>rodSelfIntersectionCount(rodSimulationPath(wgpuSelectedPath,ensureContinuousRod()),64));
+}
 function startMobileLoop(){
   if(mobileFrame)return;const token=++mobileLoopToken;
   const frame=async()=>{if(token!==mobileLoopToken)return;if(mobileStepping){mobileFrame=scheduleAllDigitFrame(frame);return;}
     mobileStepping=true;mobileFrame=0;
-    try{if(mobileForegroundState?.loaded){await applyMobileExcludedVolume();await withDigitState(mobileForegroundState,()=>stepTemporalIntrinsicHydrophobicDynamics(rodDynamics({temperature:mobileTemperature,field:1})));advanceMobileProtocol();}renderMobileFold();}
+    try{
+      const tFrame=performance.now();
+      if(mobileForegroundState?.loaded&&mobileGpu){
+        const steps=mobileStepsPerFrame();
+        await runGpuBeadSteps(mobileGpu.batch,steps,{chunk:steps});
+        mobileGpu.stepCount+=steps;
+        await readbackGpuBead(mobileGpu.batch);
+        if(mobileMetrics.tick++%4===0||['growing','settling','heating'].includes(mobilePhase))refreshMobileMetrics();
+        advanceMobileProtocol(steps);
+        mobileGpu.lastSteps=steps;
+      }
+      renderMobileFold();
+      if(mobileGpu){
+        const ms=performance.now()-tFrame;
+        mobileGpu.frameMs=mobileGpu.frameMs?mobileGpu.frameMs*.7+ms*.3:ms;
+      }
+    }
     catch(err){console.error('fold step failed',err);const el=$('fold-stats');if(el)el.textContent=`simulation error · ${err?.message||err}`;}
     finally{mobileStepping=false;if(token===mobileLoopToken)mobileFrame=scheduleAllDigitFrame(frame);}
   };mobileFrame=scheduleAllDigitFrame(frame);
 }
 async function initMobileFold(){
-  stopAllDigitLoop();stopMobileLoop();mobileReady=false;SAMPLE_N=mobileHexN;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;GPU_ROD_SOLVER_ENABLED=false;updateResolutionControls();renderMobileFold();setFoldLoading(true,`sampling hex${mobileHexN} folding paths…`);
-  try{const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0xF01D23});mobileJobsByDigit=Array.from({length:10},()=>[]);
+  stopAllDigitLoop();stopMobileLoop();destroyMobileGpuBatch();mobileReady=false;SAMPLE_N=mobileHexN;SAMPLE_CELLS=SAMPLE_N*SAMPLE_N;GPU_ROD_SOLVER_ENABLED=false;updateResolutionControls();renderMobileFold();setFoldLoading(true,`sampling hex${mobileHexN} folding paths…`);
+  try{const masks=digitSampleMasks(SAMPLE_N),batches=await runWgpuDigitBatchPool(masks,MOBILE_POOL_COUNT,{seed:0});mobileJobsByDigit=Array.from({length:10},()=>[]);
     for(const batch of batches)for(const job of batch)if(!job.error&&job.path?.length)mobileJobsByDigit[job.digit].push(job);
     mobileReady=true;mobileSelectDigit(mobileActiveDigit,{relayout:true});setFoldLoading(false);
   }catch(err){console.error('fold init failed',err);setFoldLoading(true,`could not start · ${err?.message||err}`);}
@@ -2632,7 +2604,7 @@ async function initMobileFold(){
 function setFoldLoading(on,msg){const el=$('fold-loading');if(!el)return;if(msg){const m=$('fold-loading-msg');if(m)m.textContent=msg;}el.classList.toggle('hidden',!on);}
 function updatePadActive(digit){const pad=$('fold-pad');if(!pad)return;for(const b of pad.querySelectorAll('button[data-digit]'))b.classList.toggle('active',b.dataset.digit===String(digit));}
 for(const b of document.querySelectorAll('.cycle-control'))b.addEventListener('click',requestMobileDenaturation);
-for(const b of document.querySelectorAll('.resolution-control'))b.addEventListener('click',()=>{const i=MOBILE_RESOLUTIONS.indexOf(mobileHexN);mobileHexN=MOBILE_RESOLUTIONS[(i+1)%MOBILE_RESOLUTIONS.length];mobileDigitCursor=Array(10).fill(0);initMobileFold();});
+for(const b of document.querySelectorAll('.resolution-control'))b.addEventListener('click',()=>{const i=MOBILE_RESOLUTIONS.indexOf(mobileHexN);if(i<0||i>=MOBILE_RESOLUTIONS.length-1)return;mobileHexN=MOBILE_RESOLUTIONS[i+1];mobileDigitCursor=Array(10).fill(0);initMobileFold();});
 $('fold-pad')?.addEventListener('click',ev=>{const b=ev.target.closest?.('button[data-digit]');if(!b)return;mobileSelectDigit(b.dataset.digit);updatePadActive(b.dataset.digit);});
 window.addEventListener?.('keydown',ev=>{if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);updatePadActive(ev.key);}});
 window.addEventListener?.('resize',()=>{if(!mobileReady){renderMobileFold();return;}mobileSelectDigit(mobileActiveDigit,{relayout:true});});
