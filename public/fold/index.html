@@ -1083,6 +1083,26 @@ fn thermal_bend_scale(t:f32)->f32{
 // kappa ramps toward kappaHotRatio (0 = no shape memory) at the temperature
 // peak while bending stiffness stays finite, so the hot ensemble is a
 // disordered semiflexible worm that cannot kink through the steric wall.
+// Ramachandran-style degeneracy: a joint with negative encoded stiffness is
+// BASIN-DEGENERATE - its local potential has equal wells at every angle of
+// the lattice turn alphabet (cfg[34..]) instead of one well at the native
+// turn. The native basin is one of the wells (no bias, no corruption); which
+// basin is correct is information the local code no longer carries.
+// Degeneracy is WINDOWED (Ramachandran-like): the local code still names the
+// basin neighborhood (window cfg[42] around the native turn) but not which
+// basin within it. Typically 2-3 candidate basins per degenerate joint.
+fn nearest_basin_win(phi:f32,center:f32)->f32{
+  let n=u32(cfg[33]);let win=cfg[42];
+  var best=center;var bestd=1e9;
+  for(var i=0u;i<8u;i++){
+    if(i>=n){break;}
+    let b=cfg[34u+i];
+    if(abs(wrap_pi(b-center))>win){continue;}
+    let d=abs(wrap_pi(phi-b));
+    if(d<bestd){bestd=d;best=b;}
+  }
+  return best;
+}
 fn thermal_kappa_scale(t:f32)->f32{
   let onset=cfg[6];let full=max(onset+1e-9,cfg[7]);let hotRatio=clamp(cfg[29],0.0,1.0);
   let fullFrac=clamp(cfg[30],0.05,1.0);
@@ -1133,12 +1153,14 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
     if(j<1||j+1>=i32(n)){continue;}
     let g=m.x+u32(j);
     let code=nodeCode[g];
-    let c=code.y*bendScale;
+    let degenerate=code.y<0.0;
+    let c=abs(code.y)*bendScale;
     if(c<=0.0){continue;}
     let e1=pos[g]-pos[g-1u];let e2=pos[g+1u]-pos[g];
     let l1=max(1e-9,dot(e1,e1));let l2=max(1e-9,dot(e2,e2));
     let phi=atan2(e1.x*e2.y-e1.y*e2.x,dot(e1,e2));
-    let coef=-c*wrap_pi(phi-code.x*kappaScale);
+    let prefTurn=select(code.x,nearest_basin_win(phi,code.x),degenerate);
+    let coef=-c*wrap_pi(phi-prefTurn*kappaScale);
     let p1=vec2f(-e1.y,e1.x)/l1;let p2=vec2f(-e2.y,e2.x)/l2;
     if(o==1){f=f+coef*p1;}
     else if(o==0){f=f+coef*(-p1-p2);}
@@ -1346,10 +1368,47 @@ fn grow(@builtin(global_invocation_id) gid:vec3u){
   let dir=pos[gPrev]-pos[gPrev-1u];
   let angPrev=atan2(dir.y,dir.x);
   let code=nodeCode[gPrev]; // turn at node a-1 (edges a-2,a-1)
-  let localB=max(1e-9,code.y*bendScale);
-  let turn=code.x*thermal_kappa_scale(t)+select(0.0,rand_normal(u32(cfg[9])^m.w,step,a,71u)*sqrt(max(0.0,t)/localB),t>0.0);
-  let ang=angPrev+turn;
+  let localB=max(1e-9,abs(code.y)*bendScale);
+  var meanTurn=code.x;
+  let noiseTurn=select(0.0,rand_normal(u32(cfg[9])^m.w,step,a,71u)*sqrt(max(0.0,t)/localB),t>0.0);
   let el=ell[m.z+a-1u];
+  if(code.y<0.0){
+    // Nascent chain knows only the basin NEIGHBORHOOD (window cfg[42]) and is
+    // additionally STERICALLY FILTERED at birth: basins whose insertion would
+    // thread the new segment through the existing chain are excluded, exactly
+    // as excluded volume prunes Ramachandran options for real nascent chains.
+    // Draw order is keyed by m.w => identical across paired condition arms.
+    let n=u32(cfg[33]);let win=cfg[42];
+    var eligible=array<f32,8>();
+    var ne=0u;
+    for(var i=0u;i<8u;i++){
+      if(i>=n){break;}
+      if(abs(wrap_pi(cfg[34u+i]-code.x))<=win){eligible[ne]=cfg[34u+i];ne++;}
+    }
+    if(ne>0u){
+      let start=u32(rand01(u32(cfg[9])^m.w,step,a,83u)*f32(ne))%ne;
+      meanTurn=eligible[start];
+      for(var o=0u;o<8u;o++){
+        if(o>=ne){break;}
+        let cand=eligible[(start+o)%ne];
+        let candAng=angPrev+cand*thermal_kappa_scale(t)+noiseTurn;
+        let candPos=pos[gPrev]+vec2f(cos(candAng),sin(candAng))*el;
+        var crosses=false;
+        for(var s2=0u;s2+2u<a;s2++){
+          let p1=pos[m.x+s2];let p2=pos[m.x+s2+1u];
+          let d1=pos[gPrev];let d2=candPos;
+          let r=d2-d1;let q=p2-p1;let denom=r.x*q.y-r.y*q.x;
+          if(abs(denom)<1e-9){continue;}
+          let sN=((p1.x-d1.x)*q.y-(p1.y-d1.y)*q.x)/denom;
+          let tN=((p1.x-d1.x)*r.y-(p1.y-d1.y)*r.x)/denom;
+          if(sN>0.001&&sN<0.999&&tN>0.001&&tN<0.999){crosses=true;break;}
+        }
+        if(!crosses){meanTurn=cand;break;}
+      }
+    }
+  }
+  let turn=meanTurn*thermal_kappa_scale(t)+noiseTurn;
+  let ang=angPrev+turn;
   let np=pos[gPrev]+vec2f(cos(ang),sin(ang))*el;
   pos[m.x+a]=np;posNext[m.x+a]=np;
   rodState[base]=a+1u;
@@ -1407,9 +1466,28 @@ function seededShuffle(list,seed){
   for(let k=list.length-1;k>0;k--){const m=Math.floor(rnd()*(k+1));[list[k],list[m]]=[list[m],list[k]];}
   return list;
 }
+function clusterBasinAlphabet(values,gap=.1){
+  // Lattice turn alphabet: cluster the native turn angles of the whole batch
+  // (they concentrate at the hex-lattice symmetry angles) into <=8 basins.
+  const sorted=values.slice().sort((a,b)=>a-b),clusters=[];
+  for(const v of sorted){
+    const c=clusters[clusters.length-1];
+    if(c&&v-c.max<=gap){c.sum+=v;c.n++;c.max=v;}
+    else clusters.push({sum:v,n:1,max:v});
+  }
+  let basins=clusters.map(c=>c.sum/c.n);
+  while(basins.length>8){
+    // merge the two closest basins until it fits the cfg slots
+    let bi=0,bd=Infinity;
+    for(let i=0;i+1<basins.length;i++)if(basins[i+1]-basins[i]<bd){bd=basins[i+1]-basins[i];bi=i;}
+    basins.splice(bi,2,(basins[bi]+basins[bi+1])/2);
+  }
+  return basins;
+}
 function buildGpuBeadBatch(states=allDigitStates,opts={}){
   const {seed=1,growInterval=6,constraintIters=6,stickerMinSeqSep=20,stickerContactRadius=1.15}=opts;
   const bendScale=opts.bendScale??foldParams.beadBendScale??1;
+  const degradeFraction=Math.max(0,Math.min(1,opts.degradeFraction??foldParams.degradeFraction??0));
   const rods=[];let totalNodes=0,totalEdges=0;
   for(const st of states){
     if(!st.loaded)continue;
@@ -1463,12 +1541,24 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
     withDigitState(r.st,()=>{
       const rod=r.rod;
       for(let k=0;k<r.E;k++){ellArr[r.edge0+k]=r.F.ell[k]||rod.meanEll||1;edgeRodArr[r.edge0+k]=ri;}
+      // Basin degeneracy mask: fraction degradeFraction of joints lose their
+      // native turn value and keep only the basin alphabet (multi-well).
+      // Mask is keyed by the rod pairing seed => identical across mode arms.
+      const rodKey=(opts.rodSeeds?opts.rodSeeds[ri]:rodSeedMix(seed,ri,0xA11CE))>>>0;
+      r.degenerateJoints=[];
       for(let j=0;j<r.N;j++){
         nodeRodArr[r.node0+j]=ri;
         const joint=j-1;
         const valid=joint>=0&&joint<r.F.kappa.length;
+        let stiff=valid?Math.max(0,bendScale*r.bendBase*r.resScale*(r.F.bendW[joint]??1)):0;
+        if(valid&&degradeFraction>0&&((rodSeedMix(rodKey,joint,0xBA51)>>>0)%10000)/10000<degradeFraction){
+          // degenerate basins are also SHALLOW (broad Ramachandran-like
+          // wells), keeping basin hopping thermally accessible at search
+          // temperatures that leave the exact-coded backbone intact
+          stiff=-(foldParams.degradeSoftness??.3)*stiff;r.degenerateJoints.push(joint);
+        }
         nodeCode[(r.node0+j)*2]=valid?(r.F.kappa[joint]||0):0;
-        nodeCode[(r.node0+j)*2+1]=valid?Math.max(0,bendScale*r.bendBase*r.resScale*(r.F.bendW[joint]??1)):0;
+        nodeCode[(r.node0+j)*2+1]=stiff;
       }
       for(let j=0;j<r.active;j++){
         const stn=continuousAngles[r.F.simPath[j]];
@@ -1479,6 +1569,9 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
       for(let j=r.active;j<r.N;j++){pos[(r.node0+j)*2]=pos[(r.node0+tip)*2];pos[(r.node0+j)*2+1]=pos[(r.node0+tip)*2+1];}
     });
   }
+  const allKappa=[];
+  for(const r of rods)for(const k of r.F.kappa)allKappa.push(k||0);
+  const basinAlphabet=clusterBasinAlphabet(allKappa);
   const margin=300;
   const ox=minX-margin,oy=minY-margin,w=(maxX-minX)+2*margin,h=(maxY-minY)+2*margin;
   const cellSize=maxCutoff,gw=Math.max(4,Math.ceil(w/cellSize)),gh=Math.max(4,Math.ceil(h/cellSize)),cells=gw*gh;
@@ -1490,13 +1583,14 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
     meta:mkBuf(meta,su),params:mkBuf(params,su),state:mkBuf(state,sr),
     pos:mkBuf(pos,sr),posNext:mkBuf(pos,su),ell:mkBuf(ellArr,su),nodeCode:mkBuf(nodeCode,su),nodeRod:mkBuf(nodeRodArr,su),edgeRod:mkBuf(edgeRodArr,su),
     nodeType:mkBuf(typeOff,su),typeOff,typeNative,typeScrambled,stickerPairsByRod,stickerAlphabet,stickerMode:'off',
+    basinAlphabet,degradeFraction,
     gridCount:wgpuDevice.createBuffer({size:Math.max(4,cells*4),usage:su}),
     gridSlot:wgpuDevice.createBuffer({size:Math.max(4,cells*GPU_BEAD_MAX_OCC*4),usage:su}),
     typedField:wgpuDevice.createBuffer({size:Math.max(4,typedGw*typedGh*(2*stickerAlphabet+1)*4),usage:su}),
     typedCell,typedGw,typedGh,
     temps:null,
     stepBuf:mkBuf(new Uint32Array(4),sr),
-    cfgBuf:wgpuDevice.createBuffer({size:40*4,usage:su}),
+    cfgBuf:wgpuDevice.createBuffer({size:48*4,usage:su}),
     readBuf:wgpuDevice.createBuffer({size:Math.max(64,(totalNodes*2+rods.length*8+4)*4),usage:GPUBufferUsage.MAP_READ|GPUBufferUsage.COPY_DST}),
     bindGroup:null,
   };
@@ -1510,7 +1604,7 @@ function gpuBeadSetTemps(batch,tempsArray){
   batch.bindGroup=null;
 }
 function gpuBeadWriteCfg(batch,overrides={}){
-  const cfg=new Float32Array(40);
+  const cfg=new Float32Array(48);
   cfg[0]=batch.rods.length;
   cfg[1]=overrides.dt??foldParams.beadDt??.04;
   cfg[2]=overrides.mobility??foldParams.beadMobility??1;
@@ -1533,6 +1627,10 @@ function gpuBeadWriteCfg(batch,overrides={}){
   cfg[30]=overrides.thermalKappaFullFrac??foldParams.thermalKappaFullFrac??.45;
   cfg[31]=overrides.thermalBendStartFrac??foldParams.thermalBendStartFrac??.55;
   cfg[32]=overrides.stickerScreenDensity??foldParams.stickerScreenDensity??1e9;
+  const basins=batch.basinAlphabet||[];
+  cfg[33]=basins.length;
+  for(let i=0;i<Math.min(8,basins.length);i++)cfg[34+i]=basins[i];
+  cfg[42]=overrides.degradeWindow??foldParams.degradeWindow??.75;
   wgpuDevice.queue.writeBuffer(batch.cfgBuf,0,cfg);
 }
 function gpuBeadBindGroup(batch){
