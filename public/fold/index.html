@@ -71,6 +71,7 @@
   .fold-pad button.protocol{font-size:clamp(11px,2.8vw,14px);font-weight:600;font-family:'IBM Plex Mono',monospace;letter-spacing:.01em;color:var(--ink-soft)}
   .fold-pad button.cycle{grid-column:1/3}
   .fold-pad button.resolution{grid-column:3/4}
+  .fold-pad button.sticker{grid-column:1/-1}
   .fold-pad button.protocol.active{background:var(--vermilion);border-color:var(--vermilion);color:#fff}
   .fold-loading{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;background:var(--paper);color:var(--ink-soft);font-family:'IBM Plex Mono',monospace;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:0 24px}
   .fold-loading.hidden{display:none}
@@ -96,6 +97,7 @@
   <button type="button" data-digit="0" class="zero">0</button>
   <button type="button" class="protocol cycle cycle-control" title="heat the folded filament until it denatures, then cool it and watch it refold">denature → refold</button>
   <button type="button" class="protocol resolution resolution-control" title="increase the hex-grid resolution and resample the selected digit">hex20 ↑</button>
+  <button type="button" class="protocol sticker sticker-control" title="field-mediated complementary chemistry at native tertiary contacts; scrambled keeps the same letters at the same sites but shuffled">nonlocal stickers: off</button>
 </nav>
 <div class="wrap">
   <header>
@@ -107,6 +109,7 @@
       <button id="reset">reset</button>
       <button type="button" class="cycle-control">denature → refold</button>
       <button type="button" class="resolution-control">resolution hex20 ↑</button>
+      <button type="button" class="sticker-control">nonlocal stickers: off</button>
       <label class="range-ctl">Spacing <input id="grid-n" type="range" min="5" max="30" step="1" value="20"><b id="grid-n-label">hex20 digits 0-9</b></label>
       <span class="range-ctl">Dynamics <b>temporal intrinsic + hydrophobic</b></span>
       <label class="range-ctl">Noise <input id="dynamics-temp" type="number" min="0" max="4" step="0.05" value="1.5"></label>
@@ -1032,6 +1035,22 @@ const GPU_BEAD_SHADER=`
 @group(0) @binding(11) var<storage,read> temps:array<f32>;
 @group(0) @binding(12) var<storage,read_write> stepBuf:array<atomic<u32>>;
 @group(0) @binding(13) var<storage,read> edgeRod:array<u32>;
+@group(0) @binding(14) var<storage,read> nodeType:array<u32>;
+@group(0) @binding(15) var<storage,read_write> typedField:array<atomic<u32>>;
+fn typed_dims()->vec2i{return vec2i(i32(cfg[24]),i32(cfg[25]));}
+fn typed_cell(p:vec2f)->vec2i{
+  let c=max(1e-6,cfg[23]);let d=typed_dims();
+  return vec2i(clamp(i32(floor((p.x-cfg[11])/c)),0,d.x-1),clamp(i32(floor((p.y-cfg[12])/c)),0,d.y-1));
+}
+fn typed_index(cell:vec2i,ch:u32)->u32{
+  let d=typed_dims();
+  return ch*u32(d.x*d.y)+u32(cell.y)*u32(d.x)+u32(cell.x);
+}
+fn typed_at(cell:vec2i,ch:u32)->f32{
+  let d=typed_dims();
+  if(cell.x<0||cell.y<0||cell.x>=d.x||cell.y>=d.y){return 0.0;}
+  return f32(atomicLoad(&typedField[typed_index(cell,ch)]));
+}
 fn hash_u32(x0:u32)->u32{var x=x0+0x9e3779b9u;x=(x^(x>>16u))*0x85ebca6bu;x=(x^(x>>13u))*0xc2b2ae35u;return x^(x>>16u);}
 fn rand01(seed:u32,step:u32,i:u32,channel:u32)->f32{
   let h=hash_u32(seed^hash_u32(step+0x632be59bu)^hash_u32(i+channel*0x9e3779b9u));
@@ -1126,6 +1145,29 @@ fn predict(@builtin(global_invocation_id) gid:vec3u){
       }
     }}
   }
+  // Nonlocal chemistry, field-mediated: typed sticker sites deposit into
+  // per-letter density fields; a site feels the gradient of its COMPLEMENT
+  // letter's field (A<->A', B<->B', ...). The letter code is compiled once
+  // from the native distance matrix; the dynamics only ever reads local
+  // fields, so specificity is finite (a small alphabet can mis-pair).
+  let stickerStrength=cfg[22];
+  if(stickerStrength>0.0){
+    let t=nodeType[i];
+    if(t>0u){
+      let ch=(t-1u)^1u;
+      let base=typed_cell(pos[i]);
+      var gxf=0.0;var gyf=0.0;
+      for(var oy:i32=-1;oy<=1;oy++){
+        let w=select(1.0,2.0,oy==0);
+        gxf=gxf+w*(typed_at(base+vec2i(1,oy),ch)-typed_at(base+vec2i(-1,oy),ch));
+      }
+      for(var ox:i32=-1;ox<=1;ox++){
+        let w=select(1.0,2.0,ox==0);
+        gyf=gyf+w*(typed_at(base+vec2i(ox,1),ch)-typed_at(base+vec2i(ox,-1),ch));
+      }
+      f=f+stickerStrength*vec2f(gxf,gyf)/(2048.0*max(1e-6,cfg[23]));
+    }
+  }
   var disp=mob*dt*f;
   let maxMove=rodParams[rod].z*cfg[5];
   let dl=length(disp);
@@ -1156,6 +1198,31 @@ fn constrain_edge(eg:u32,parity:u32){
   let corr=0.5*(len-ell[eg])*d/len;
   posNext[a]=posNext[a]+corr;
   posNext[b]=posNext[b]-corr;
+}
+@compute @workgroup_size(128)
+fn clearTyped(@builtin(global_invocation_id) gid:vec3u){
+  let d=typed_dims();
+  if(gid.x>=u32(d.x*d.y)*u32(cfg[26])){return;}
+  atomicStore(&typedField[gid.x],0u);
+}
+@compute @workgroup_size(128)
+fn splatTyped(@builtin(global_invocation_id) gid:vec3u){
+  if(cfg[22]<=0.0){return;}
+  let i=gid.x;if(i>=u32(cfg[19])){return;}
+  let t=nodeType[i];if(t==0u){return;}
+  let rod=nodeRod[i];let m=rodMeta[rod];
+  if(i-m.x>=rodState[rod*8u]){return;}
+  let c=max(1e-6,cfg[23]);
+  let gx=(pos[i].x-cfg[11])/c-0.5;let gy=(pos[i].y-cfg[12])/c-0.5;
+  let x0=i32(floor(gx));let y0=i32(floor(gy));
+  let fx=gx-f32(x0);let fy=gy-f32(y0);
+  let d=typed_dims();
+  for(var oy:i32=0;oy<2;oy++){for(var ox:i32=0;ox<2;ox++){
+    let cx=x0+ox;let cy=y0+oy;
+    if(cx<0||cy<0||cx>=d.x||cy>=d.y){continue;}
+    let w=select(1.0-fx,fx,ox==1)*select(1.0-fy,fy,oy==1);
+    atomicAdd(&typedField[typed_index(vec2i(cx,cy),t-1u)],u32(round(w*256.0)));
+  }}
 }
 @compute @workgroup_size(128)
 fn copyBack(@builtin(global_invocation_id) gid:vec3u){
@@ -1200,18 +1267,38 @@ async function ensureGpuBeadPipelines(){
   const module=wgpuDevice.createShaderModule({code:GPU_BEAD_SHADER});
   const entries=[];
   const ro=t=>({buffer:{type:t}});
-  const kinds=['read-only-storage','read-only-storage','read-only-storage','storage','storage','storage','read-only-storage','read-only-storage','read-only-storage','storage','storage','read-only-storage','storage','read-only-storage'];
+  const kinds=['read-only-storage','read-only-storage','read-only-storage','storage','storage','storage','read-only-storage','read-only-storage','read-only-storage','storage','storage','read-only-storage','storage','read-only-storage','read-only-storage','storage'];
   kinds.forEach((k,i)=>entries.push({binding:i,visibility:GPUShaderStage.COMPUTE,...ro(k)}));
   const layout=wgpuDevice.createBindGroupLayout({entries});
   const pipelineLayout=wgpuDevice.createPipelineLayout({bindGroupLayouts:[layout]});
   const mk=async name=>wgpuDevice.createComputePipelineAsync({layout:pipelineLayout,compute:{module,entryPoint:name}});
-  const names=['clearGrid','binNodes','predict','constrainEven','constrainOdd','copyBack','grow','tick'];
+  const names=['clearGrid','binNodes','predict','constrainEven','constrainOdd','copyBack','grow','tick','clearTyped','splatTyped'];
   const pipes=await Promise.all(names.map(mk));
   gpuBead={layout,pipelines:Object.fromEntries(names.map((n,i)=>[n,pipes[i]]))};
   return gpuBead;
 }
+function compileStickerPairs(F,topoEll,minSeqSep,contactRadius=1.15){
+  // Native tertiary contacts: far in sequence, close in native space, with a
+  // greedy unique (lock-and-key) matching preferring the tightest contacts.
+  const r0=topoEll*contactRadius,r2=r0*r0,candidates=[];
+  for(let i=0;i<F.N;i++)for(let j=i+minSeqSep;j<F.N;j++){
+    const dx=F.rest[i][0]-F.rest[j][0],dy=F.rest[i][1]-F.rest[j][1],d2=dx*dx+dy*dy;
+    if(d2<r2)candidates.push([d2,i,j]);
+  }
+  candidates.sort((a,b)=>a[0]-b[0]);
+  const used=new Set(),pairs=[];
+  for(const [,i,j] of candidates){if(used.has(i)||used.has(j))continue;used.add(i);used.add(j);pairs.push([i,j]);}
+  return pairs;
+}
+function seededShuffle(list,seed){
+  let h=(seed>>>0)||0x9e3779b9;
+  const rnd=()=>{h=(h+0x6D2B79F5)>>>0;let t=Math.imul(h^(h>>>15),h|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};
+  for(let k=list.length-1;k>0;k--){const m=Math.floor(rnd()*(k+1));[list[k],list[m]]=[list[m],list[k]];}
+  return list;
+}
 function buildGpuBeadBatch(states=allDigitStates,opts={}){
-  const {seed=1,growInterval=6,constraintIters=6}=opts;
+  const {seed=1,growInterval=6,constraintIters=6,stickerMinSeqSep=20,stickerContactRadius=1.15}=opts;
+  const bendScale=opts.bendScale??foldParams.beadBendScale??1;
   const rods=[];let totalNodes=0,totalEdges=0;
   for(const st of states){
     if(!st.loaded)continue;
@@ -1226,16 +1313,41 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
   }
   if(!rods.length)return null;
   const pos=new Float32Array(totalNodes*2),ellArr=new Float32Array(totalEdges),nodeCode=new Float32Array(totalNodes*2),nodeRodArr=new Uint32Array(totalNodes),edgeRodArr=new Uint32Array(totalEdges);
+  const typeOff=new Uint32Array(totalNodes),typeNative=new Uint32Array(totalNodes),typeScrambled=new Uint32Array(totalNodes);
+  const stickerAlphabet=Math.max(2,2*Math.round((opts.stickerAlphabet??foldParams.stickerAlphabet??6)/2));
+  const stickerPairsByRod=[];
   const meta=new Uint32Array(rods.length*4),params=new Float32Array(rods.length*4),state=new Uint32Array(rods.length*8);
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity,maxCutoff=1;
+  const bboxPoint=(x,y)=>{minX=Math.min(minX,x);maxX=Math.max(maxX,x);minY=Math.min(minY,y);maxY=Math.max(maxY,y);};
   for(let ri=0;ri<rods.length;ri++){
     const r=rods[ri];
     meta[ri*4]=r.node0;meta[ri*4+1]=r.N;meta[ri*4+2]=r.node0-ri;meta[ri*4+3]=4;
     params[ri*4]=r.centroid[0];params[ri*4+1]=r.centroid[1];params[ri*4+2]=r.topoEll;params[ri*4+3]=0;
     state[ri*8]=r.active;state[ri*8+1]=0;state[ri*8+2]=r.active>=r.N?1:0;
     maxCutoff=Math.max(maxCutoff,r.topoEll*(foldParams.wcaSigma??.55));
-    minX=Math.min(minX,r.centroid[0]);maxX=Math.max(maxX,r.centroid[0]);
-    minY=Math.min(minY,r.centroid[1]);maxY=Math.max(maxY,r.centroid[1]);
+    bboxPoint(r.centroid[0],r.centroid[1]);
+    for(const q of r.F.rest)bboxPoint(q[0],q[1]);
+    const nativePairs=compileStickerPairs(r.F,r.topoEll,stickerMinSeqSep,stickerContactRadius);
+    stickerPairsByRod.push(nativePairs);
+    // Letter code: contact c gets complementary letter pair (2m+1, 2m+2),
+    // cycling m over the alphabet. Scrambled control: same letters, seeded
+    // shuffle over the same sites (wrong placement, same composition).
+    // Group contacts into contiguous interfaces (sequence-adjacent on both
+    // strands) and give each interface one complementary letter pair. This
+    // matches real binding surfaces (contiguous complementary patches) and
+    // renders as matched color blocks.
+    const byI=nativePairs.slice().sort((a,b)=>a[0]-b[0]);
+    let cluster=-1,prevI=-99,prevJ=-99;
+    const letters=[];
+    for(const [i,j] of byI){
+      if(Math.abs(i-prevI)>3||Math.abs(j-prevJ)>3)cluster++;
+      prevI=i;prevJ=j;
+      const m=cluster%(stickerAlphabet/2);
+      typeNative[r.node0+i]=2*m+1;typeNative[r.node0+j]=2*m+2;
+      letters.push([i,2*m+1],[j,2*m+2]);
+    }
+    const shuffled=seededShuffle(letters.map(l=>l[1]),rodSeedMix(seed,ri,0x57C2));
+    letters.forEach(([site],k)=>{typeScrambled[r.node0+site]=shuffled[k];});
     withDigitState(r.st,()=>{
       const rod=r.rod;
       for(let k=0;k<r.E;k++){ellArr[r.edge0+k]=r.F.ell[k]||rod.meanEll||1;edgeRodArr[r.edge0+k]=ri;}
@@ -1244,7 +1356,7 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
         const joint=j-1;
         const valid=joint>=0&&joint<r.F.kappa.length;
         nodeCode[(r.node0+j)*2]=valid?(r.F.kappa[joint]||0):0;
-        nodeCode[(r.node0+j)*2+1]=valid?Math.max(0,r.bendBase*r.resScale*(r.F.bendW[joint]??1)):0;
+        nodeCode[(r.node0+j)*2+1]=valid?Math.max(0,bendScale*r.bendBase*r.resScale*(r.F.bendW[joint]??1)):0;
       }
       for(let j=0;j<r.active;j++){
         const stn=continuousAngles[r.F.simPath[j]];
@@ -1255,17 +1367,21 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
       for(let j=r.active;j<r.N;j++){pos[(r.node0+j)*2]=pos[(r.node0+tip)*2];pos[(r.node0+j)*2+1]=pos[(r.node0+tip)*2+1];}
     });
   }
-  const margin=Math.max(300,(maxX-minX+maxY-minY)*.5+200);
+  const margin=300;
   const ox=minX-margin,oy=minY-margin,w=(maxX-minX)+2*margin,h=(maxY-minY)+2*margin;
   const cellSize=maxCutoff,gw=Math.max(4,Math.ceil(w/cellSize)),gh=Math.max(4,Math.ceil(h/cellSize)),cells=gw*gh;
+  const typedCell=maxCutoff/(foldParams.wcaSigma??.55),typedGw=Math.max(4,Math.ceil(w/typedCell)),typedGh=Math.max(4,Math.ceil(h/typedCell));
   const mkBuf=(data,usage)=>createWgpuBuffer(wgpuDevice,data,usage);
   const su=GPUBufferUsage.STORAGE|GPUBufferUsage.COPY_DST,sr=su|GPUBufferUsage.COPY_SRC;
   const batch={
     rods,totalNodes,totalEdges,cells,gw,gh,cellSize,ox,oy,seed,growInterval,constraintIters,tempCount:0,
     meta:mkBuf(meta,su),params:mkBuf(params,su),state:mkBuf(state,sr),
     pos:mkBuf(pos,sr),posNext:mkBuf(pos,su),ell:mkBuf(ellArr,su),nodeCode:mkBuf(nodeCode,su),nodeRod:mkBuf(nodeRodArr,su),edgeRod:mkBuf(edgeRodArr,su),
+    nodeType:mkBuf(typeOff,su),typeOff,typeNative,typeScrambled,stickerPairsByRod,stickerAlphabet,stickerMode:'off',
     gridCount:wgpuDevice.createBuffer({size:Math.max(4,cells*4),usage:su}),
     gridSlot:wgpuDevice.createBuffer({size:Math.max(4,cells*GPU_BEAD_MAX_OCC*4),usage:su}),
+    typedField:wgpuDevice.createBuffer({size:Math.max(4,typedGw*typedGh*stickerAlphabet*4),usage:su}),
+    typedCell,typedGw,typedGh,
     temps:null,
     stepBuf:mkBuf(new Uint32Array(4),sr),
     cfgBuf:wgpuDevice.createBuffer({size:32*4,usage:su}),
@@ -1297,6 +1413,8 @@ function gpuBeadWriteCfg(batch,overrides={}){
   cfg[11]=batch.ox;cfg[12]=batch.oy;cfg[13]=batch.gw;cfg[14]=batch.gh;cfg[15]=batch.cellSize;
   cfg[16]=GPU_BEAD_MAX_OCC;cfg[17]=overrides.seqExcl??foldParams.beadSeqExcl??6;cfg[18]=overrides.capMult??foldParams.beadCapMult??8;
   cfg[19]=batch.totalNodes;cfg[20]=batch.cells;cfg[21]=batch.totalEdges;
+  cfg[22]=batch.stickerMode==='off'?0:(overrides.stickerStrength??foldParams.stickerStrength??25);
+  cfg[23]=batch.typedCell;cfg[24]=batch.typedGw;cfg[25]=batch.typedGh;cfg[26]=batch.stickerAlphabet;
   wgpuDevice.queue.writeBuffer(batch.cfgBuf,0,cfg);
 }
 function gpuBeadBindGroup(batch){
@@ -1317,6 +1435,8 @@ function gpuBeadBindGroup(batch){
     {binding:11,resource:{buffer:batch.temps}},
     {binding:12,resource:{buffer:batch.stepBuf}},
     {binding:13,resource:{buffer:batch.edgeRod}},
+    {binding:14,resource:{buffer:batch.nodeType}},
+    {binding:15,resource:{buffer:batch.typedField}},
   ]});
   return batch.bindGroup;
 }
@@ -1326,6 +1446,7 @@ async function runGpuBeadSteps(batch,steps,{chunk=200}={}){
   const bg=gpuBeadBindGroup(batch);
   const wg=n=>Math.max(1,Math.ceil(n/GPU_BEAD_WG));
   const nodeWg=wg(batch.totalNodes),edgeWg=wg(batch.totalEdges),cellWg=wg(batch.cells),rodWg=Math.max(1,Math.ceil(batch.rods.length/64));
+  const typedWg=wg(batch.typedGw*batch.typedGh*batch.stickerAlphabet),stickersOn=batch.stickerMode!=='off';
   const t0=nowMs();
   for(let done=0;done<steps;done+=chunk){
     const todo=Math.min(chunk,steps-done);
@@ -1335,6 +1456,10 @@ async function runGpuBeadSteps(batch,steps,{chunk=200}={}){
     for(let s=0;s<todo;s++){
       pass.setPipeline(gpuBead.pipelines.clearGrid);pass.dispatchWorkgroups(cellWg);
       pass.setPipeline(gpuBead.pipelines.binNodes);pass.dispatchWorkgroups(nodeWg);
+      if(stickersOn){
+        pass.setPipeline(gpuBead.pipelines.clearTyped);pass.dispatchWorkgroups(typedWg);
+        pass.setPipeline(gpuBead.pipelines.splatTyped);pass.dispatchWorkgroups(nodeWg);
+      }
       pass.setPipeline(gpuBead.pipelines.predict);pass.dispatchWorkgroups(nodeWg);
       for(let it=0;it<batch.constraintIters;it++){
         pass.setPipeline(gpuBead.pipelines.constrainEven);pass.dispatchWorkgroups(edgeWg);
@@ -1395,6 +1520,26 @@ async function readbackGpuBead(batch,{apply=true}={}){
   }
   return summary;
 }
+function gpuBeadSetStickers(batch,mode){
+  const arr=mode==='native'?batch.typeNative:mode==='scrambled'?batch.typeScrambled:batch.typeOff;
+  wgpuDevice.queue.writeBuffer(batch.nodeType,0,arr);
+  batch.stickerMode=mode;
+}
+function gpuBeadSetStickerModes(batch,modesByRod){
+  // Per-rod condition mixing: rods with 'off' contribute no typed sites, so
+  // one batch can carry off/native/scrambled arms simultaneously.
+  const mixed=new Uint32Array(batch.typeOff.length);
+  batch.rods.forEach((r,ri)=>{
+    const mode=modesByRod[ri]??'off';
+    if(mode==='off')return;
+    const src=mode==='native'?batch.typeNative:batch.typeScrambled;
+    for(let i=0;i<r.N;i++)mixed[r.node0+i]=src[r.node0+i];
+  });
+  wgpuDevice.queue.writeBuffer(batch.nodeType,0,mixed);
+  batch.stickerMode=modesByRod.some(m=>m!=='off')?'mixed':'off';
+}
+window.gpuBeadSetStickerModes=gpuBeadSetStickerModes;
+window.gpuBeadSetStickers=gpuBeadSetStickers;
 window.buildGpuBeadBatch=buildGpuBeadBatch;
 window.gpuBeadSetTemps=gpuBeadSetTemps;
 window.runGpuBeadSteps=runGpuBeadSteps;
@@ -2411,7 +2556,7 @@ let mobileGpu=null; // {batch,stepCount,bounds:{heat,hot,cool,recover}}
 function destroyMobileGpuBatch(){
   if(!mobileGpu)return;
   const b=mobileGpu.batch;
-  for(const k of ['meta','params','state','pos','posNext','ell','nodeCode','nodeRod','edgeRod','gridCount','gridSlot','temps','stepBuf','cfgBuf','readBuf'])b[k]?.destroy?.();
+  for(const k of ['meta','params','state','pos','posNext','ell','nodeCode','nodeRod','edgeRod','gridCount','gridSlot','temps','stepBuf','cfgBuf','readBuf','nodeType','typedField'])b[k]?.destroy?.();
   mobileGpu=null;
 }
 function setCycleControls({text,disabled=false,active=false}){for(const b of document.querySelectorAll('.cycle-control')){b.textContent=text;b.disabled=disabled;b.classList.toggle('active',active);}}
@@ -2462,6 +2607,7 @@ function mobileSelectDigit(digit,{relayout=false}={}){
       const temps=new Float32Array(Math.min(MOBILE_TEMPS_CAPACITY,1<<22));temps.fill(MOBILE_BASE_TEMP);
       gpuBeadSetTemps(batch,temps);
       mobileGpu={batch,stepCount:0,bounds:null};
+      applyMobileStickerMode();
       startMobileLoop();
     }).catch(err=>{console.error('gpu init failed',err);setFoldLoading(true,`GPU engine failed · ${err?.message||err}`);});
   }
@@ -2485,9 +2631,17 @@ function mobileNormalizedError(){
   return withDigitState(mobileForegroundState,()=>{const rod=ensureContinuousRod();return continuousStats({fresh:true}).restError/(rod?.meanEll||1);});
 }
 function mobileCachedError(){return mobileMetrics.err;}
+let mobileFoldedBaseline=null;
 function markMobileFolded(){
   mobilePhase='folded';mobilePhaseStep=0;mobileTemperature=MOBILE_BASE_TEMP;
+  mobileFoldedBaseline=mobileMetrics.err===Infinity?null:mobileMetrics.err;
   setCycleControls({text:'denature → refold'});
+}
+// Nonlocal sticker fields shift the folded error floor slightly (they bias
+// contacts toward tighter-than-native spacing), so "recovered" is judged
+// relative to this run's own folded baseline rather than a fixed constant.
+function mobileRecoveredThreshold(){
+  return Math.max(MOBILE_RECOVERED_ERROR,(mobileFoldedBaseline??0)*1.5+.1);
 }
 function advanceMobileProtocol(stepsRun){
   mobilePhaseStep+=stepsRun;
@@ -2513,18 +2667,39 @@ function advanceMobileProtocol(stepsRun){
   }else if(mobilePhase==='cooling'&&S>=b.recover){
     mobilePhase='recovering';mobilePhaseStep=0;setCycleControls({text:'refolding…',disabled:true,active:true});
   }else if(mobilePhase==='recovering'){
-    if(mobileCachedError()<=MOBILE_RECOVERED_ERROR||mobilePhaseStep>=mobileRecoveryCap()){
+    if(mobileCachedError()<=mobileRecoveredThreshold()||mobilePhaseStep>=mobileRecoveryCap()){
       mobilePhase='recovered';mobilePhaseStep=0;
       setCycleControls({text:'repeat denaturation'});
     }
   }
 }
+const MOBILE_STICKER_COLORS=['#2f6f9f','#3f8f6b','#d59b2f','#8f5fa8','#b0506a','#5a7d4f'];
+function mobileActiveStickerTypes(){
+  if(mobileStickerMode==='off'||!mobileGpu?.batch)return null;
+  return mobileStickerMode==='native'?mobileGpu.batch.typeNative:mobileGpu.batch.typeScrambled;
+}
 function drawMobileRod(ctx,st,view){
   if(!st?.loaded)return;
   withDigitState(st,()=>{const rod=ensureContinuousRod(),path=rodSimulationPath(wgpuSelectedPath,rod);if(!rod||path.length<2)return;
     const pts=path.map(rodPoint),normals=rodOffsetNormals(pts),E=path.length-1;
-    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=cssv('--vermilion');ctx.globalAlpha=.96;ctx.lineWidth=Math.max(2.2,Math.min(view.w,view.h)*.009);
+    const lw=Math.max(2.2,Math.min(view.w,view.h)*.009);
+    ctx.save();ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=cssv('--vermilion');ctx.globalAlpha=.96;ctx.lineWidth=lw;
     ctx.beginPath();for(let k=0;k<E;k++)canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
+    // Sticker overlay: tint backbone segments at sticker sites; each
+    // complementary interface pair shares one hue on both strands.
+    const types=mobileActiveStickerTypes();
+    if(types){
+      const half=Math.max(1,Math.round((mobileGpu.batch.stickerAlphabet||6)/2));
+      const colorOf=t=>MOBILE_STICKER_COLORS[Math.floor((t-1)/2)%Math.min(half,MOBILE_STICKER_COLORS.length)];
+      ctx.lineWidth=lw*1.25;ctx.globalAlpha=.95;
+      for(let k=0;k<E;k++){
+        const t=types[k]||types[k+1];
+        if(!t||k+1>=rod.active)continue;
+        ctx.strokeStyle=colorOf(t);
+        ctx.beginPath();canvasBezierSegment(ctx,pts,normals,k,view,0,0);ctx.stroke();
+      }
+      ctx.lineWidth=lw;
+    }
     const first=canvasRodPoint(pts[0],view),last=canvasRodPoint(pts.at(-1),view),r=Math.max(2.5,Math.min(view.w,view.h)*.011);
     ctx.fillStyle=cssv('--ink');for(const p of [first,last]){ctx.beginPath();ctx.arc(p[0],p[1],r,0,TAU);ctx.fill();}ctx.restore();
   });
@@ -2538,7 +2713,8 @@ function renderMobileFold(){
   const tempText=mobileTemperature<.01?mobileTemperature.toFixed(3):mobileTemperature.toFixed(2);
   const bendScale=thermalBendScale(mobileTemperature);
   const fps=mobileGpu?.frameMs?Math.min(60,Math.round(1000/mobileGpu.frameMs)):0;
-  el.textContent=`digit ${mobileActiveDigit} · ${phase} · T ${tempText} · monomers ${info.active}/${info.full} · normalized error ${info.err.toFixed(2)} · bend ${bendScale.toFixed(2)}× · crossings ${mobileMetrics.crossings} · GPU step ${(mobileGpu?.stepCount??0).toLocaleString()} · ${fps}fps`;
+  const dockedText=mobileMetrics.docked==null?'':` · tertiary contacts ${(mobileMetrics.docked*100).toFixed(0)}%`;
+  el.textContent=`digit ${mobileActiveDigit} · ${phase} · T ${tempText} · stickers ${mobileStickerMode} · monomers ${info.active}/${info.full} · error ${info.err.toFixed(2)}${dockedText} · bend ${bendScale.toFixed(2)}× · crossings ${mobileMetrics.crossings} · GPU step ${(mobileGpu?.stepCount??0).toLocaleString()} · ${fps}fps`;
 }
 function stopMobileLoop(){mobileLoopToken++;if(mobileFrame)cancelAllDigitFrame(mobileFrame);mobileFrame=0;mobileStepping=false;}
 // note: initMobileFold also drops any live GPU batch via destroyMobileGpuBatch()
@@ -2563,11 +2739,37 @@ function mobileStepsPerFrame(){
   const scale=Math.max(.5,Math.min(1.35,MOBILE_FRAME_TARGET_MS/Math.max(4,g.frameMs||MOBILE_FRAME_TARGET_MS)));
   return Math.max(2,Math.min(cap,Math.round(g.lastSteps*scale)));
 }
-let mobileMetrics={err:Infinity,crossings:0,tick:0};
+let mobileMetrics={err:Infinity,crossings:0,docked:null,tick:0};
+let mobileStickerMode='off';
+const MOBILE_STICKER_MODES=['off','native','scrambled'];
+function applyMobileStickerMode(){
+  foldParams.stickerStrength=25;
+  if(mobileGpu)gpuBeadSetStickers(mobileGpu.batch,mobileStickerMode);
+  for(const b of document.querySelectorAll('.sticker-control'))b.textContent=`nonlocal stickers: ${mobileStickerMode}`;
+}
+function cycleMobileStickerMode(){
+  const i=MOBILE_STICKER_MODES.indexOf(mobileStickerMode);
+  mobileStickerMode=MOBILE_STICKER_MODES[(i+1)%MOBILE_STICKER_MODES.length];
+  applyMobileStickerMode();
+}
 function refreshMobileMetrics(){
   if(!mobileForegroundState?.loaded)return;
   mobileMetrics.err=mobileNormalizedError();
   mobileMetrics.crossings=withDigitState(mobileForegroundState,()=>rodSelfIntersectionCount(rodSimulationPath(wgpuSelectedPath,ensureContinuousRod()),64));
+  // Native tertiary-contact recovery (geometric, independent of sticker mode)
+  const pairs=mobileGpu?.batch?.stickerPairsByRod?.[0];
+  if(pairs?.length){
+    mobileMetrics.docked=withDigitState(mobileForegroundState,()=>{
+      const rod=ensureContinuousRod(),F=rod._full;if(!F)return null;
+      const r1=(rod.topologyMeanEll||rod.meanEll)*1.15*1.35;let ok=0,tot=0;
+      for(const [i,j] of pairs){
+        if(i>=rod.active||j>=rod.active)continue;tot++;
+        const a=continuousAngles[F.simPath[i]],b=continuousAngles[F.simPath[j]];
+        if(a&&b&&Math.hypot(a.x-b.x,a.y-b.y)<r1)ok++;
+      }
+      return tot?ok/tot:null;
+    });
+  }else mobileMetrics.docked=null;
 }
 function startMobileLoop(){
   if(mobileFrame)return;const token=++mobileLoopToken;
@@ -2605,6 +2807,7 @@ function setFoldLoading(on,msg){const el=$('fold-loading');if(!el)return;if(msg)
 function updatePadActive(digit){const pad=$('fold-pad');if(!pad)return;for(const b of pad.querySelectorAll('button[data-digit]'))b.classList.toggle('active',b.dataset.digit===String(digit));}
 for(const b of document.querySelectorAll('.cycle-control'))b.addEventListener('click',requestMobileDenaturation);
 for(const b of document.querySelectorAll('.resolution-control'))b.addEventListener('click',()=>{const i=MOBILE_RESOLUTIONS.indexOf(mobileHexN);if(i<0||i>=MOBILE_RESOLUTIONS.length-1)return;mobileHexN=MOBILE_RESOLUTIONS[i+1];mobileDigitCursor=Array(10).fill(0);initMobileFold();});
+for(const b of document.querySelectorAll('.sticker-control'))b.addEventListener('click',cycleMobileStickerMode);
 $('fold-pad')?.addEventListener('click',ev=>{const b=ev.target.closest?.('button[data-digit]');if(!b)return;mobileSelectDigit(b.dataset.digit);updatePadActive(b.dataset.digit);});
 window.addEventListener?.('keydown',ev=>{if(/^[0-9]$/.test(ev.key)){ev.preventDefault();mobileSelectDigit(ev.key);updatePadActive(ev.key);}});
 window.addEventListener?.('resize',()=>{if(!mobileReady){renderMobileFold();return;}mobileSelectDigit(mobileActiveDigit,{relayout:true});});
