@@ -1502,7 +1502,7 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
   }
   if(!rods.length)return null;
   const pos=new Float32Array(totalNodes*2),ellArr=new Float32Array(totalEdges),nodeCode=new Float32Array(totalNodes*2),nodeRodArr=new Uint32Array(totalNodes),edgeRodArr=new Uint32Array(totalEdges);
-  const typeOff=new Uint32Array(totalNodes),typeNative=new Uint32Array(totalNodes),typeScrambled=new Uint32Array(totalNodes);
+  const typeOff=new Uint32Array(totalNodes),typeNative=new Uint32Array(totalNodes),typeScrambled=new Uint32Array(totalNodes),typeUniform=new Uint32Array(totalNodes);
   const stickerAlphabet=Math.max(2,2*Math.round((opts.stickerAlphabet??foldParams.stickerAlphabet??6)/2));
   const stickerPairsByRod=[];
   const meta=new Uint32Array(rods.length*4),params=new Float32Array(rods.length*4),state=new Uint32Array(rods.length*8);
@@ -1538,6 +1538,10 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
     }
     const shuffled=seededShuffle(letters.map(l=>l[1]),rodSeedMix(seed,ri,0x57C2));
     letters.forEach(([site],k)=>{typeScrambled[r.node0+site]=shuffled[k];});
+    // Uniform compaction glue: identical sites and strength, ONE letter pair
+    // alternating along the chain - maximal nonspecific adhesion carrying no
+    // contact-map information (the null for "any compaction would do").
+    letters.map(l=>l[0]).sort((a,b)=>a-b).forEach((site,k)=>{typeUniform[r.node0+site]=1+(k&1);});
     withDigitState(r.st,()=>{
       const rod=r.rod;
       for(let k=0;k<r.E;k++){ellArr[r.edge0+k]=r.F.ell[k]||rod.meanEll||1;edgeRodArr[r.edge0+k]=ri;}
@@ -1582,7 +1586,7 @@ function buildGpuBeadBatch(states=allDigitStates,opts={}){
     rods,totalNodes,totalEdges,cells,gw,gh,cellSize,ox,oy,seed,growInterval,constraintIters,tempCount:0,
     meta:mkBuf(meta,su),params:mkBuf(params,su),state:mkBuf(state,sr),
     pos:mkBuf(pos,sr),posNext:mkBuf(pos,su),ell:mkBuf(ellArr,su),nodeCode:mkBuf(nodeCode,su),nodeRod:mkBuf(nodeRodArr,su),edgeRod:mkBuf(edgeRodArr,su),
-    nodeType:mkBuf(typeOff,su),typeOff,typeNative,typeScrambled,stickerPairsByRod,stickerAlphabet,stickerMode:'off',
+    nodeType:mkBuf(typeOff,su),typeOff,typeNative,typeScrambled,typeUniform,stickerPairsByRod,stickerAlphabet,stickerMode:'off',
     basinAlphabet,degradeFraction,
     gridCount:wgpuDevice.createBuffer({size:Math.max(4,cells*4),usage:su}),
     gridSlot:wgpuDevice.createBuffer({size:Math.max(4,cells*GPU_BEAD_MAX_OCC*4),usage:su}),
@@ -1740,7 +1744,7 @@ async function readbackGpuBead(batch,{apply=true}={}){
   return summary;
 }
 function gpuBeadSetStickers(batch,mode){
-  const arr=mode==='native'?batch.typeNative:mode==='scrambled'?batch.typeScrambled:batch.typeOff;
+  const arr=mode==='native'?batch.typeNative:mode==='scrambled'?batch.typeScrambled:mode==='uniform'?batch.typeUniform:batch.typeOff;
   wgpuDevice.queue.writeBuffer(batch.nodeType,0,arr);
   batch.stickerMode=mode;
 }
@@ -1751,7 +1755,7 @@ function gpuBeadSetStickerModes(batch,modesByRod){
   batch.rods.forEach((r,ri)=>{
     const mode=modesByRod[ri]??'off';
     if(mode==='off')return;
-    const src=mode==='native'?batch.typeNative:batch.typeScrambled;
+    const src=mode==='native'?batch.typeNative:mode==='uniform'?batch.typeUniform:batch.typeScrambled;
     for(let i=0;i<r.N;i++)mixed[r.node0+i]=src[r.node0+i];
   });
   wgpuDevice.queue.writeBuffer(batch.nodeType,0,mixed);
@@ -2740,7 +2744,9 @@ async function ensureWgpu(){
 const MOBILE_RESOLUTIONS=[10,15,20,25,30];
 let mobileHexN=10;
 const MOBILE_POOL_COUNT=16;
-const MOBILE_BASE_TEMP=.001;
+// Finite ambient temperature: the filament is always thermally jostled,
+// never frozen. Live-tunable via window.setFoldTemperature(T).
+let MOBILE_BASE_TEMP=.1;
 // Staged denaturation: kappa (shape code) is erased over the first ~45% of
 // the heat ramp while stiffness is still full (the filament straightens and
 // unfolds); bending stiffness then softens to 0.1x over the last ~45%, once
@@ -2781,6 +2787,15 @@ let mobileDigitCursor=Array(10).fill(0);
 let mobileFrame=0,mobileLoopToken=0,mobileStepping=false,mobileReady=false;
 let mobilePhase='loading',mobilePhaseStep=0,mobileTemperature=MOBILE_BASE_TEMP;
 let mobileGpu=null; // {batch,stepCount,bounds:{heat,hot,cool,recover}}
+window.setFoldTemperature=function(T){
+  MOBILE_BASE_TEMP=Math.max(.0005,+T||.1);
+  if(mobileGpu&&['growing','settling','folded','recovered'].includes(mobilePhase)){
+    // rewrite the remaining schedule with the new ambient temperature
+    const cap=mobileGpu.batch.tempCount,from=Math.min(cap-1,mobileGpu.stepCount);
+    wgpuDevice.queue.writeBuffer(mobileGpu.batch.temps,from*4,new Float32Array(cap-from).fill(MOBILE_BASE_TEMP));
+  }
+  return MOBILE_BASE_TEMP;
+};
 function destroyMobileGpuBatch(){
   if(!mobileGpu)return;
   const b=mobileGpu.batch;
@@ -2904,7 +2919,7 @@ function advanceMobileProtocol(stepsRun){
 const MOBILE_STICKER_COLORS=['#2f6f9f','#3f8f6b','#d59b2f','#8f5fa8','#b0506a','#5a7d4f'];
 function mobileActiveStickerTypes(){
   if(mobileStickerMode==='off'||!mobileGpu?.batch)return null;
-  return mobileStickerMode==='scrambled'?mobileGpu.batch.typeScrambled:mobileGpu.batch.typeNative;
+  return mobileStickerMode==='uniform'?mobileGpu.batch.typeUniform:mobileGpu.batch.typeNative;
 }
 // Denatured state: soften the local code much further when hot so the hot
 // ensemble is genuinely disordered (accepted trade-off vs. strict biophysical
@@ -2972,7 +2987,7 @@ function mobileStepsPerFrame(){
 }
 let mobileMetrics={err:Infinity,crossings:0,docked:null,tick:0};
 let mobileStickerMode='off';
-const MOBILE_STICKER_MODES=['off','native','scrambled'];
+const MOBILE_STICKER_MODES=['off','native','uniform'];
 function applyMobileStickerMode(){
   foldParams.stickerStrength=40;
   if(mobileGpu)gpuBeadSetStickers(mobileGpu.batch,mobileStickerMode);
