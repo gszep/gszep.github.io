@@ -1,0 +1,225 @@
+---
+interface Props {
+  lang?: 'en' | 'ja';
+}
+
+const { lang = 'en' } = Astro.props;
+const copy = lang === 'ja'
+  ? {
+      label: 'MANIFOLD · 人間の手仕事の地図',
+      hint: 'スクロールすると時間が進みます',
+      source: '元のインタラクティブ作品を見る',
+    }
+  : {
+      label: 'MANIFOLD · the map of human manual work',
+      hint: 'scroll moves the hands through time',
+      source: 'open the original interactive work',
+    };
+---
+
+<div class="manifold-hands l-screen" data-manifold-hands>
+  <div class="manifold-hands__label">
+    <span>{copy.label}</span>
+    <span class="manifold-hands__hint">{copy.hint}</span>
+  </div>
+  <a class="manifold-hands__source" href="/manifold/">{copy.source} ↗</a>
+  <div class="manifold-hands__status" role="status">loading trajectories…</div>
+</div>
+
+<style>
+  .manifold-hands {
+    height: min(76vh, 760px);
+    min-height: 460px;
+    margin: 0 0 3rem;
+    position: relative;
+    pointer-events: none;
+  }
+
+  .manifold-hands__label,
+  .manifold-hands__source,
+  .manifold-hands__status {
+    position: absolute;
+    z-index: 8;
+    font: 0.68rem/1.5 ui-monospace, SFMono-Regular, Menlo, monospace;
+    letter-spacing: 0.03em;
+    color: color-mix(in srgb, var(--post-text) 58%, transparent);
+  }
+
+  .manifold-hands__label { top: 1rem; left: max(1rem, calc((100vw - 900px) / 2)); }
+  .manifold-hands__hint { display: block; opacity: 0.65; }
+  .manifold-hands__source {
+    right: max(1rem, calc((100vw - 900px) / 2));
+    bottom: 1rem;
+    color: var(--post-text);
+    pointer-events: auto;
+    text-decoration: none;
+    opacity: 0.6;
+  }
+  .manifold-hands__source:hover { opacity: 1; color: var(--post-text); }
+  .manifold-hands__status { inset: 50% auto auto 50%; transform: translate(-50%, -50%); }
+
+  :global(.manifold-canvas) {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 15;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 500ms ease;
+    mix-blend-mode: multiply;
+  }
+  :global(.dark .manifold-canvas) { mix-blend-mode: screen; }
+  :global(.manifold-canvas.is-visible) { opacity: 0.72; }
+  :global(.post:has(.manifold-hands) header),
+  :global(.post:has(.manifold-hands) .post-content) { position: relative; z-index: 10; }
+  :global(.written-by-hands) { transition: opacity 120ms linear; }
+
+  @media (max-width: 640px) {
+    .manifold-hands { min-height: 390px; height: 62vh; }
+    .manifold-hands__label { left: 1rem; }
+    .manifold-hands__source { right: 1rem; max-width: 15rem; text-align: right; }
+    :global(.manifold-canvas.is-visible) { opacity: 0.58; }
+  }
+</style>
+
+<script is:inline type="module">
+  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+
+  const mount = document.querySelector('[data-manifold-hands]');
+  if (mount && !document.querySelector('.manifold-canvas')) {
+    const article = mount.closest('article');
+    const status = mount.querySelector('.manifold-hands__status');
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 1.6));
+    renderer.setSize(innerWidth, innerHeight);
+    renderer.setClearColor(0x000000, 0);
+    renderer.domElement.className = 'manifold-canvas';
+    renderer.domElement.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(34, innerWidth / innerHeight, 0.01, 10);
+    camera.position.set(0, -0.045, 0.57);
+    camera.lookAt(0, -0.045, 0);
+    const group = new THREE.Group();
+    scene.add(group);
+    scene.add(new THREE.AmbientLight(0xffffff, 1.5));
+    const light = new THREE.DirectionalLight(0xffffff, 2.4);
+    light.position.set(0.5, 0.8, 0.8);
+    scene.add(light);
+
+    let meta;
+    let trajectories = [];
+    let meshes = [];
+    let progress = 0;
+    let visible = false;
+    const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function ink() {
+      return document.documentElement.classList.contains('dark') ? 0xdde4ff : 0x172033;
+    }
+
+    async function load() {
+      meta = await fetch('/manifold/data/writing-meta.json').then(r => r.json());
+      const faces = new Uint32Array(await fetch('/manifold/data/faces.bin').then(r => r.arrayBuffer()));
+      trajectories = await Promise.all(meta.ids.map(async id => {
+        const q = new Uint16Array(await fetch(`/manifold/data/traj/${id}.bin`).then(r => r.arrayBuffer()));
+        const [mn, mx] = meta.bboxes[id];
+        const scale = mx.map((v, axis) => (v - mn[axis]) / 65535);
+        const out = new Float32Array(q.length);
+        for (let k = 0; k < q.length; k += 3) {
+          out[k] = mn[0] + q[k] * scale[0];
+          out[k + 1] = mn[1] + q[k + 1] * scale[1];
+          out[k + 2] = mn[2] + q[k + 2] * scale[2];
+        }
+        return out;
+      }));
+
+      meshes = trajectories.map((_, i) => {
+        const geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(meta.n_verts * 3), 3));
+        geometry.setIndex(new THREE.BufferAttribute(faces, 1));
+        const material = new THREE.MeshPhongMaterial({
+          color: ink(), transparent: true, opacity: 0.09,
+          depthWrite: false, side: THREE.DoubleSide, shininess: 20,
+        });
+        const mesh = new THREE.Mesh(geometry, material);
+        mesh.rotation.z = (i - trajectories.length / 2) * 0.004;
+        group.add(mesh);
+        return mesh;
+      });
+      status?.remove();
+      updateFrame(0);
+      renderer.domElement.classList.toggle('is-visible', visible);
+      requestAnimationFrame(draw);
+    }
+
+    function updateFrame(frameFloat) {
+      if (!meta) return;
+      const stride = meta.n_verts * 3;
+      meshes.forEach((mesh, i) => {
+        const local = (frameFloat + i * 0.42) % (meta.n_frames - 1);
+        const f0 = Math.floor(local);
+        const f1 = Math.min(f0 + 1, meta.n_frames - 1);
+        const a = local - f0;
+        const arr = mesh.geometry.attributes.position.array;
+        const source = trajectories[i];
+        const b0 = f0 * stride;
+        const b1 = f1 * stride;
+        for (let k = 0; k < stride; k++) arr[k] = source[b0 + k] * (1 - a) + source[b1 + k] * a;
+        mesh.geometry.attributes.position.needsUpdate = true;
+        mesh.geometry.computeVertexNormals();
+      });
+    }
+
+    function onScroll() {
+      if (!article) return;
+      const rect = article.getBoundingClientRect();
+      const distance = article.offsetHeight + innerHeight;
+      progress = Math.max(0, Math.min(1, (innerHeight - rect.top) / distance));
+      visible = rect.top < innerHeight && rect.bottom > 0;
+      renderer.domElement.classList.toggle('is-visible', visible);
+
+      const written = article.querySelector('.written-by-hands');
+      if (written && !reduced) {
+        const wr = written.getBoundingClientRect();
+        const reveal = Math.max(0.16, Math.min(1, (innerHeight * 0.78 - wr.top) / (innerHeight * 0.34)));
+        written.style.opacity = reveal.toFixed(3);
+      }
+    }
+
+    function draw(time) {
+      if (!document.body.contains(mount)) {
+        renderer.dispose();
+        renderer.domElement.remove();
+        return;
+      }
+      if (visible) {
+        const phase = reduced ? 7 : progress * (meta.n_frames - 1) * 5 + time * 0.0015;
+        updateFrame(phase % (meta.n_frames - 1));
+        const line = (progress * 7) % 1;
+        group.position.x = 0.15 - line * 0.3;
+        group.position.y = -0.055 + Math.sin(progress * Math.PI * 9) * 0.035;
+        group.rotation.y = -0.12 + Math.sin(progress * Math.PI * 2) * 0.16;
+        const currentInk = ink();
+        meshes.forEach(mesh => mesh.material.color.setHex(currentInk));
+        renderer.render(scene, camera);
+      }
+      requestAnimationFrame(draw);
+    }
+
+    addEventListener('scroll', onScroll, { passive: true });
+    addEventListener('resize', () => {
+      camera.aspect = innerWidth / innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth, innerHeight);
+      onScroll();
+    });
+    onScroll();
+    load().catch(error => {
+      if (status) status.textContent = `unable to load hand data: ${error.message}`;
+      renderer.domElement.remove();
+    });
+  }
+</script>

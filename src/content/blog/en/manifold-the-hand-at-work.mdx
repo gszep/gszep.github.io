@@ -1,0 +1,58 @@
+---
+title: "MANIFOLD: What Is a Hand Worth?"
+description: "An artwork about manual labour becoming training data—and the price of teaching machines what hands know."
+date: 2026-03-13
+image: "/images/manifold-thumbnail.png"
+imagePosition: "50% 42%"
+tags: ["art", "labour", "physical-ai", "data"]
+order: -1
+---
+
+import ManifoldHands from '../../../components/interactive/ManifoldHands.astro';
+
+<ManifoldHands lang="en" />
+
+A hand is never only a hand at work. It is a baker judging resistance in dough, a tailor keeping tension ahead of a blade, a courier feeling whether a box will slip. Skill lives in pressures and corrections that are difficult to say aloud. This tacit knowledge is now being recorded as video, joint positions, trajectories, forces and labels so that a machine can learn to act.
+
+<span class="written-by-hands">Global markets move hands. Data taken from those hands returns to the market as a means of moving them again—this time at a distance, through a model and a machine.</span>
+
+**MANIFOLD** began as a map of these movements. It arranges 301 hand trajectories from the [ARCTIC dataset](https://arctic.is.tue.mpg.de/) in a two-dimensional UMAP: gestures judged similar by an algorithm become neighbours. The hands above are nine recordings of a person using a notebook, played together. Agreement makes them solid. Difference leaves a ghost.
+
+The occupational colours in the original piece—baker, barista, clerk, cook, courier, tailor—are speculative labels I assigned from the objects being handled. They are not the occupations of the dataset participants. That fiction is part of the problem: it is remarkably easy to travel from a movement, to a task, to a worker, and then to imagine an entire labour market from a small and clean dataset.
+
+## The dataset is a choreography
+
+A demonstration is not raw nature. Someone chose the object, the camera, the beginning and end of the action, the successful take, the coordinate system and the label. The worker performs inside that score. Later, thousands of performances can be superimposed until individual hesitation disappears and only the statistically useful gesture remains.
+
+The result is haunting because it is both intimate and anonymous. Each mesh preserves the timing of one body, but not its biography. The hand becomes detachable: a reusable instruction for another embodiment.
+
+This conversion is accelerating. Language models found an enormous accidental dataset in the public internet. Robots have no equivalent archive of touch. Physical-AI companies therefore build it deliberately through teleoperation, motion capture, first-person video and robot fleets. [Scale AI advertises](https://scale.com/physical-ai) a physical-AI data engine receiving more than 1,000 hours of demonstrations per day. Academic systems such as [DexCap](https://dex-cap.github.io/) are designed to make dexterous demonstrations portable and faster to collect. The bottleneck is not merely intelligence. It is access to enough bodies performing enough tasks.
+
+## Trying to price the hand
+
+What is the aggregate economic value of the human hand? There is no honest single number. “Manual labour” is not a standard statistical category, and the hand cannot be separated cleanly from perception, judgement, language, care or the rest of the body. Wages also miss informal work, subsistence work and unpaid domestic work—precisely the kinds of activity most likely to be filmed as ordinary manipulation.
+
+We can still establish the scale of the question. The ILO reports that labour received [52.4% of global income in 2024](https://www.ilo.org/resource/news/global-employment-forecast-downgraded-7-million-jobs-2025-amid-rising). Applied to a world economy of roughly one hundred trillion dollars, all human labour is a claim measured in tens of trillions per year. A narrower estimate could start with the ILO's [ISCO occupation groups](https://ilostat.ilo.org/methods/concepts-and-definitions/classification-occupation/): agricultural workers, craft and trade workers, machine operators, assemblers and elementary occupations, plus parts of service and care work. But multiplying headcounts by wages would create false precision. It would price the hand according to what workers currently capture, not what their hands produce.
+
+That distinction matters. Automation investors are interested in the value that can be transferred from labour to capital. A wage is therefore not just a cost; it is also the worker's recurring claim on production. Once skill is embedded in a machine owned by someone else, that claim can weaken.
+
+## How much capital is chasing the transfer?
+
+Public funding rounds do not reveal research budgets, and none can be allocated neatly to “solving the hand.” They do, however, show the order of magnitude of the wager. In 2024:
+
+- data foundry Scale AI raised [$1 billion at a $13.8 billion valuation](https://scale.com/blog/scale-ai-series-f);
+- robot-model company Physical Intelligence raised [$400 million](https://www.axios.com/2024/11/04/physical-intelligence-robot-ai-funding), after showing a generalist policy folding laundry, bussing tables and assembling boxes;
+- Skild AI announced a [$300 million Series A](https://www.skild.ai/blogs/announcing-our-300m-series-a) for a general-purpose “robot brain”;
+- humanoid company Figure announced [$675 million at a $2.6 billion valuation](https://www.prnewswire.com/news-releases/figure-raises-675m-at-2-6b-valuation-and-signs-collaboration-agreement-with-openai-302074897.html).
+
+Those four rounds alone total **$2.375 billion**. Only part of that money concerns manipulation data, and the companies overlap very different layers—labelling, models and machines. The total is not a market size. It is evidence that investors expect embodied skill to become an asset that can be captured, scaled and owned.
+
+## Leverage
+
+The history of tools is not simply a history of workers losing power. Tools can enlarge skill, reduce injury and make new forms of work possible. The political question is ownership. Who owns the recording? Who may train on it? Does a person whose demonstration improves a robot receive only an hourly collection wage, or a continuing stake in what the model can do? Can workers inspect, refuse or bargain over the uses of data gathered on the job?
+
+The hand holding a tool has leverage in two senses. It can act on the world, and—when its knowledge is scarce—it can negotiate. A hand that teaches a tool to operate without it may surrender both kinds at once.
+
+MANIFOLD does not predict that outcome. It makes the feedback loop visible: markets choreograph bodies; bodies generate data; data choreographs machines; machines return to the market. The ghosts are not robots yet. They are traces of people, still present inside the system that proposes to make them unnecessary.
+
+<small>Hand motion: ARCTIC (Fan et al., CVPR 2023), CC BY-NC-SA 4.0. Hand model: MANO (Romero et al.), MPI, non-commercial. This adaptation uses a reduced set of nine notebook trajectories.</small>
