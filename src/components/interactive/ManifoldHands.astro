@@ -73,7 +73,28 @@ const copy = lang === 'ja'
   :global(.manifold-canvas.is-visible) { opacity: 0.72; }
   :global(.post:has(.manifold-hands) header),
   :global(.post:has(.manifold-hands) .post-content) { position: relative; z-index: 10; }
-  :global(.written-by-hands) { transition: opacity 120ms linear; }
+  :global(.written-by-hands) {
+    min-height: 8lh;
+    font-size: clamp(1.35rem, 2.6vw, 2rem);
+    line-height: 1.65;
+    letter-spacing: 0.015em;
+  }
+  :global(.written-by-hands .type-char) {
+    opacity: 0;
+    transition: opacity 80ms linear;
+  }
+  :global(.written-by-hands .type-char.is-typed) { opacity: 1; }
+  :global(.written-by-hands .type-char.is-cursor) {
+    text-decoration: underline;
+    text-decoration-thickness: 0.08em;
+    text-underline-offset: 0.16em;
+  }
+  :global(.manifold-credit) {
+    display: block;
+    max-width: 36rem;
+    font: 0.65rem/1.55 ui-monospace, SFMono-Regular, Menlo, monospace;
+    opacity: 0.45;
+  }
 
   @media (max-width: 640px) {
     .manifold-hands { min-height: 390px; height: 62vh; }
@@ -114,7 +135,28 @@ const copy = lang === 'ja'
     let meshes = [];
     let progress = 0;
     let visible = false;
+    let typeChars = [];
+    let handTarget = null;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    function prepareTyping() {
+      const written = article?.querySelector('.written-by-hands');
+      if (!written) return;
+      const text = written.textContent || '';
+      written.textContent = '';
+      written.setAttribute('aria-label', text);
+      for (const character of Array.from(text)) {
+        const span = document.createElement('span');
+        span.className = 'type-char';
+        span.setAttribute('aria-hidden', 'true');
+        span.textContent = character;
+        written.appendChild(span);
+        typeChars.push(span);
+      }
+      if (reduced) typeChars.forEach(char => char.classList.add('is-typed'));
+    }
+
+    prepareTyping();
 
     function ink() {
       return document.documentElement.classList.contains('dark') ? 0xdde4ff : 0x172033;
@@ -182,10 +224,21 @@ const copy = lang === 'ja'
       renderer.domElement.classList.toggle('is-visible', visible);
 
       const written = article.querySelector('.written-by-hands');
-      if (written && !reduced) {
+      if (written && typeChars.length && !reduced) {
         const wr = written.getBoundingClientRect();
-        const reveal = Math.max(0.16, Math.min(1, (innerHeight * 0.78 - wr.top) / (innerHeight * 0.34)));
-        written.style.opacity = reveal.toFixed(3);
+        const reveal = Math.max(0, Math.min(1, (innerHeight * 0.76 - wr.top) / (innerHeight * 0.58)));
+        const typed = Math.floor(reveal * typeChars.length);
+        typeChars.forEach((char, index) => {
+          char.classList.toggle('is-typed', index < typed);
+          char.classList.toggle('is-cursor', index === Math.max(0, typed - 1) && typed < typeChars.length);
+        });
+        const cursor = typeChars[Math.min(typed, typeChars.length - 1)];
+        if (reveal > 0 && reveal < 1 && cursor) {
+          const cr = cursor.getBoundingClientRect();
+          handTarget = { x: cr.left + cr.width / 2, y: cr.top + cr.height * 0.65 };
+        } else {
+          handTarget = null;
+        }
       }
     }
 
@@ -199,8 +252,18 @@ const copy = lang === 'ja'
         const phase = reduced ? 7 : progress * (meta.n_frames - 1) * 5 + time * 0.0015;
         updateFrame(phase % (meta.n_frames - 1));
         const line = (progress * 7) % 1;
-        group.position.x = 0.15 - line * 0.3;
-        group.position.y = -0.055 + Math.sin(progress * Math.PI * 9) * 0.035;
+        let targetX = 0.15 - line * 0.3;
+        let targetY = -0.055 + Math.sin(progress * Math.PI * 9) * 0.035;
+        if (handTarget) {
+          const viewHeight = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z;
+          const viewWidth = viewHeight * camera.aspect;
+          // The mesh origin sits near the palm; offset it so the fingertips
+          // meet the character currently being revealed.
+          targetX = (handTarget.x / innerWidth - 0.5) * viewWidth + 0.08;
+          targetY = -0.045 + (0.5 - handTarget.y / innerHeight) * viewHeight + 0.015;
+        }
+        group.position.x += (targetX - group.position.x) * 0.18;
+        group.position.y += (targetY - group.position.y) * 0.18;
         group.rotation.y = -0.12 + Math.sin(progress * Math.PI * 2) * 0.16;
         const currentInk = ink();
         meshes.forEach(mesh => mesh.material.color.setHex(currentInk));
