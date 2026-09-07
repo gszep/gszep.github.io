@@ -60,19 +60,32 @@ const source = lang === 'ja'
   :global(.post:has(.manifold-hands) .post-content) { position: relative; z-index: 10; }
   :global(.written-by-hands) {
     min-height: 8lh;
-    font-size: clamp(1.35rem, 2.6vw, 2rem);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+    font-size: clamp(1.2rem, 2.3vw, 1.8rem);
+    font-weight: 400;
     line-height: 1.65;
-    letter-spacing: 0.015em;
+    letter-spacing: 0;
   }
   :global(.written-by-hands .type-char) {
     opacity: 0;
     transition: opacity 80ms linear;
   }
   :global(.written-by-hands .type-char.is-typed) { opacity: 1; }
-  :global(.written-by-hands .type-char.is-cursor) {
-    text-decoration: underline;
-    text-decoration-thickness: 0.08em;
-    text-underline-offset: 0.16em;
+  :global(.written-by-hands .type-cursor) {
+    display: inline-block;
+    width: 0.1em;
+    height: 1.05em;
+    margin-left: 0.08em;
+    border-left: 0.09em solid currentColor;
+    vertical-align: -0.14em;
+    animation: manifold-cursor-blink 850ms steps(1, end) infinite;
+  }
+  @keyframes manifold-cursor-blink {
+    0%, 48% { opacity: 1; }
+    49%, 100% { opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    :global(.written-by-hands .type-cursor) { animation: none; }
   }
   :global(.manifold-credit) {
     display: block;
@@ -120,6 +133,7 @@ const source = lang === 'ja'
     let progress = 0;
     let visible = false;
     let typeChars = [];
+    let typeCursor = null;
     let handTarget = null;
     const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -129,6 +143,10 @@ const source = lang === 'ja'
       const text = written.textContent || '';
       written.textContent = '';
       written.setAttribute('aria-label', text);
+      typeCursor = document.createElement('span');
+      typeCursor.className = 'type-cursor';
+      typeCursor.setAttribute('aria-hidden', 'true');
+      written.appendChild(typeCursor);
       for (const character of Array.from(text)) {
         const span = document.createElement('span');
         span.className = 'type-char';
@@ -137,7 +155,10 @@ const source = lang === 'ja'
         written.appendChild(span);
         typeChars.push(span);
       }
-      if (reduced) typeChars.forEach(char => char.classList.add('is-typed'));
+      if (reduced) {
+        typeChars.forEach(char => char.classList.add('is-typed'));
+        written.appendChild(typeCursor);
+      }
     }
 
     prepareTyping();
@@ -214,11 +235,13 @@ const source = lang === 'ja'
         const typed = Math.floor(reveal * typeChars.length);
         typeChars.forEach((char, index) => {
           char.classList.toggle('is-typed', index < typed);
-          char.classList.toggle('is-cursor', index === Math.max(0, typed - 1) && typed < typeChars.length);
         });
-        const cursor = typeChars[Math.min(typed, typeChars.length - 1)];
-        if (reveal > 0 && reveal < 1 && cursor) {
-          const cr = cursor.getBoundingClientRect();
+        if (typeCursor) {
+          if (typed === 0) written.prepend(typeCursor);
+          else typeChars[Math.min(typed, typeChars.length) - 1].after(typeCursor);
+        }
+        if (reveal > 0 && reveal < 1 && typeCursor) {
+          const cr = typeCursor.getBoundingClientRect();
           handTarget = { x: cr.left + cr.width / 2, y: cr.top + cr.height * 0.65 };
         } else {
           handTarget = null;
