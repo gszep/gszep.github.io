@@ -4,25 +4,13 @@ interface Props {
 }
 
 const { lang = 'en' } = Astro.props;
-const copy = lang === 'ja'
-  ? {
-      label: 'MANIFOLD · 人間の手仕事の地図',
-      hint: 'スクロールすると時間が進みます',
-      source: '元のインタラクティブ作品を見る',
-    }
-  : {
-      label: 'MANIFOLD · the map of human manual work',
-      hint: 'scroll moves the hands through time',
-      source: 'open the original interactive work',
-    };
+const source = lang === 'ja'
+  ? '元のインタラクティブ作品を見る'
+  : 'open the original interactive work';
 ---
 
 <div class="manifold-hands l-screen" data-manifold-hands>
-  <div class="manifold-hands__label">
-    <span>{copy.label}</span>
-    <span class="manifold-hands__hint">{copy.hint}</span>
-  </div>
-  <a class="manifold-hands__source" href="/manifold/">{copy.source} ↗</a>
+  <a class="manifold-hands__source" href="/manifold/">{source} ↗</a>
   <div class="manifold-hands__status" role="status">loading trajectories…</div>
 </div>
 
@@ -35,7 +23,6 @@ const copy = lang === 'ja'
     pointer-events: none;
   }
 
-  .manifold-hands__label,
   .manifold-hands__source,
   .manifold-hands__status {
     position: absolute;
@@ -45,8 +32,6 @@ const copy = lang === 'ja'
     color: color-mix(in srgb, var(--post-text) 58%, transparent);
   }
 
-  .manifold-hands__label { top: 1rem; left: max(1rem, calc((100vw - 900px) / 2)); }
-  .manifold-hands__hint { display: block; opacity: 0.65; }
   .manifold-hands__source {
     right: max(1rem, calc((100vw - 900px) / 2));
     bottom: 1rem;
@@ -98,7 +83,6 @@ const copy = lang === 'ja'
 
   @media (max-width: 640px) {
     .manifold-hands { min-height: 390px; height: 62vh; }
-    .manifold-hands__label { left: 1rem; }
     .manifold-hands__source { right: 1rem; max-width: 15rem; text-align: right; }
     :global(.manifold-canvas.is-visible) { opacity: 0.58; }
   }
