@@ -37,22 +37,15 @@ h2.t { font-size: 54px; line-height: .9; max-width: 1120px; }
 /* 02 — low-stakes room technology histogram */
 .tech-poll h2.t { font-size: 47px; }
 .tech-poll .lede { margin-top: 9px; font-size: 15px; }
-.tech-grid { position: relative; height: 293px; margin-top: 17px; overflow: hidden; }
-.tech { position: absolute; display: flex; align-items: center; border: 3px solid var(--ct-black); border-radius: 0; padding: 8px 34px 8px 10px; background: var(--ct-white); color: var(--ct-black); text-align: left; font: 700 13px/1.08 var(--ct-font-mono); cursor: pointer; overflow: hidden; transition: left .28s ease, top .28s ease, width .28s ease, height .28s ease, background .12s linear; }
-.tech span { position: relative; z-index: 2; max-height: 100%; overflow: hidden; overflow-wrap: anywhere; }
-.tech::after { content: attr(data-votes); position: absolute; z-index: 2; right: 8px; top: 7px; color: var(--ct-punk-dark); font-size: 12px; }
-.tech.compact { padding: 6px 7px; font-size: 10.5px; }
-.tech.compact.has-votes { padding-right: 25px; }
-.tech.compact::after { right: 6px; top: 5px; font-size: 10px; }
-.tech.tiny span { writing-mode: vertical-rl; text-orientation: mixed; white-space: nowrap; }
+.tech-grid { display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 43px; gap: 7px; margin-top: 17px; }
+.tech { position: relative; border: 3px solid var(--ct-black); border-radius: 0; padding: 7px 10px 11px; background: var(--ct-white); color: var(--ct-black); text-align: left; font: 700 13px/1 var(--ct-font-mono); cursor: pointer; overflow: hidden; }
+.tech span { position: relative; z-index: 2; }
 .tech.own { border-left: 12px solid var(--ct-punk-dark); }
 .tech.mixed { border-left: 12px solid var(--ct-punk); }
 .tech.ghost { border-color: var(--ct-gray-300); color: var(--ct-gray-500); }
-@media (hover: hover) {
-  .tech:hover { background: var(--ct-black); color: var(--ct-white); }
-  .tech:hover::after { color: var(--ct-punk); }
-}
-.tech .meter { display: none; }
+.tech .meter { position: absolute; left: 0; bottom: 0; height: 7px; width: calc(var(--votes) * 20%); background: var(--ct-punk); transition: width .12s linear; }
+.tech.ghost .meter { background: var(--ct-gray-500); }
+.tech:hover { background: var(--ct-black); color: var(--ct-white); }
 .poll-legend { display: flex; gap: 17px; margin-top: 10px; font: 700 10px/1 var(--ct-font-mono); text-transform: uppercase; }
 .poll-legend span::before { content: "■"; margin-right: 6px; }
 .poll-legend .lg-own::before { color: var(--ct-punk-dark); }.poll-legend .lg-mixed::before { color: var(--ct-punk); }.poll-legend .lg-ghost::before { color: var(--ct-gray-300); }
@@ -115,7 +108,6 @@ h2.t { font-size: 54px; line-height: .9; max-width: 1120px; }
 .kotoma-hero-copy { position: absolute; z-index: 2; left: 52px; top: 52px; width: 570px; padding: 18px 20px 21px; border-top: 3px solid var(--ct-punk); background: var(--ct-black); color: var(--ct-white); }
 .kotoma-hero-copy .repo-name { display: inline-block; padding: 7px 9px; background: var(--ct-punk); color: var(--ct-black); font: 700 13px/1 var(--ct-font-mono); text-transform: uppercase; }
 .kotoma-hero-copy h2.t { margin-top: 15px; font-size: 64px; line-height: .88; }
-.kotoma-hero-copy p { margin: 18px 0 0; max-width: 500px; font: 500 20px/1.25 var(--ct-font-mono); }
 .aps-showcase { padding: 0; display: block; overflow: hidden; background: var(--ct-black); }
 .aps-showcase::before, .aps-showcase::after { content: none; }
 .aps-reel { position: absolute; inset: 0; display: grid; grid-template-columns: 44% 56%; grid-template-rows: 47% 53%; gap: 3px; background: var(--ct-black); }
@@ -150,5 +142,18 @@ h2.t { font-size: 54px; line-height: .9; max-width: 1120px; }
 .chi-root { position: absolute; left: 50%; top: 42%; transform: translate(-50%,-50%); color: var(--ct-punk); font-size: 150px; font-weight: 700; }
 .branch { position: absolute; left: 8%; right: 8%; display: flex; justify-content: space-around; border-top: 3px solid var(--ct-white); }.branch i { width: 17px; height: 17px; margin-top: -10px; background: var(--ct-punk); }.branch.b1 { top: 20%; }.branch.b2 { top: 49%; }.branch.b3 { top: 76%; }
 .memory { position: absolute; width: 80px; height: 54px; border: 3px solid var(--ct-white); }.memory.m1 { left: 11%; top: 28%; }.memory.m2 { right: 12%; top: 57%; }.memory.m3 { left: 24%; top: 63%; }
+
+/* ja — EN→JP size bridge (×0.86) on deck-scoped heading sizes; CJK drops Latin kerning */
+html[lang="ja"] h1.t { font-size: 74px; line-height: 1.02; }
+html[lang="ja"] h2.t { font-size: 46px; line-height: 1.08; }
+html[lang="ja"] .tech-poll h2.t { font-size: 40px; }
+html[lang="ja"] .project-copy h2.t { font-size: 44px; }
+html[lang="ja"] .hero-project-title h2.t { font-size: 50px; line-height: 1.08; }
+html[lang="ja"] .jam-hero-copy h2.t { font-size: 57px; line-height: 1.08; }
+html[lang="ja"] .kotoma-hero-copy h2.t { font-size: 55px; line-height: 1.08; }
+html[lang="ja"] .aps-showcase-copy h2.t { font-size: 52px; line-height: 1.08; }
+html[lang="ja"] .eco-note blockquote { font-size: 26px; line-height: 1.25; letter-spacing: 0; }
+html[lang="ja"] .cluster b, html[lang="ja"] .spectrum-thesis span { letter-spacing: 0; }
+html[lang="ja"] .sticker, html[lang="ja"] .repo-name { letter-spacing: .04em; }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; } }

@@ -1,10 +1,12 @@
 ---
-// Static public snapshot imported from decks@275e53b863b5bda8d8fae07359cae3bb4e01e532.
+// Static public snapshot imported from decks@1f491327db9a00d502af31c26a1fd8522cc65783.
 const slides = [
   'title', 'room-check', 'spectrum', 'secret-tunnel', 'secret-tunnel-live',
   'mosaic', 'mosaic-live', 'age-of-empires', 'decks', 'kotoma', 'jam', 'aps',
   'chi', 'ecosystem',
 ];
+const locales = ['en', 'ja'];
+const defaultLocale = 'en';
 ---
 
 <!doctype html>
@@ -49,15 +51,18 @@ const slides = [
     <nav id="controls" aria-label="Presentation controls">
       <button id="prev" title="Previous slide (←)" aria-label="Previous slide">←</button>
       <button id="next" title="Next slide (→ or Space)" aria-label="Next slide">→</button>
+      <button id="locale" title="Switch language / 言語を切り替える (Tab)" aria-label="Switch language"></button>
       <button id="full" title="Full screen (F)" aria-label="Full screen">⛶</button>
     </nav>
-    <script define:vars={{ slides }}>
+    <script define:vars={{ slides, locales, defaultLocale }}>
       const params = new URLSearchParams(location.search);
       const stage = document.querySelector('#stage');
       const viewport = document.querySelector('#viewport');
       const controls = document.querySelector('#controls');
       const frames = [];
       let index = 0;
+      let lang = locales.includes(params.get('lang')) ? params.get('lang') : defaultLocale;
+      document.documentElement.lang = lang;
       const requested = Number(params.get('slide'));
       if (Number.isInteger(requested) && requested > 0 && requested <= slides.length) index = requested - 1;
 
@@ -81,11 +86,14 @@ const slides = [
       for (let i = 0; i < slides.length; i++) {
         const frame = document.createElement('iframe');
         frame.title = `Slide ${i + 1} of ${slides.length}`;
-        frame.onload = () => {
-          frame.contentWindow.addEventListener('keydown', onKey);
-          bindSwipe(frame.contentDocument);
-        };
-        frame.src = `/decks/rewild-open-projector/slides/${encodeURIComponent(slides[i])}.html?lang=en`;
+        frame.ready = new Promise(resolve => {
+          frame.onload = () => {
+            frame.contentWindow.addEventListener('keydown', onKey);
+            bindSwipe(frame.contentDocument);
+            resolve();
+          };
+        });
+        frame.src = `/decks/rewild-open-projector/slides/${encodeURIComponent(slides[i])}.html?lang=${encodeURIComponent(lang)}`;
         frames.push(frame);
         stage.append(frame);
       }
@@ -94,7 +102,21 @@ const slides = [
         const url = new URL(location.href);
         url.search = '';
         url.searchParams.set('slide', String(index + 1));
+        if (lang !== defaultLocale) url.searchParams.set('lang', lang);
         history.replaceState(null, '', url);
+      }
+      async function switchLocale() {
+        lang = locales[(locales.indexOf(lang) + 1) % locales.length];
+        document.documentElement.lang = lang;
+        document.querySelector('#locale').textContent = lang.toUpperCase();
+        const active = frames[index];
+        await active.ready;
+        if (active.contentWindow.setI18nLocale) await active.contentWindow.setI18nLocale(lang);
+        for (let i = 0; i < frames.length; i++) {
+          if (i === index) continue;
+          frames[i].ready.then(() => frames[i].contentWindow.setI18nLocale && frames[i].contentWindow.setI18nLocale(lang));
+        }
+        updateUrl();
       }
       function show(next) {
         index = (next + frames.length) % frames.length;
@@ -116,9 +138,12 @@ const slides = [
         else if (key === 'Home') { event.preventDefault(); show(0); }
         else if (key === 'End') { event.preventDefault(); show(frames.length - 1); }
         else if (key.toLowerCase() === 'f') { event.preventDefault(); toggleFull(); }
+        else if (key === 'Tab' || key.toLowerCase() === 'l') { event.preventDefault(); switchLocale(); }
       }
       document.querySelector('#prev').onclick = () => show(index - 1);
       document.querySelector('#next').onclick = () => show(index + 1);
+      document.querySelector('#locale').onclick = switchLocale;
+      document.querySelector('#locale').textContent = lang.toUpperCase();
       document.querySelector('#full').onclick = toggleFull;
       bindSwipe(viewport);
       addEventListener('resize', fit);

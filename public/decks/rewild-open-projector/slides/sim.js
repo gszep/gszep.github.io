@@ -34,55 +34,18 @@
   document.querySelectorAll('.check').forEach(el => el.addEventListener('click', () => el.classList.toggle('on')));
   document.querySelectorAll('.action').forEach(el => el.addEventListener('click', () => el.classList.toggle('active')));
   document.querySelector('.delta')?.addEventListener('click', () => document.querySelector('.sovereignty')?.classList.toggle('shifted'));
-  const techGrid = document.querySelector('.tech-grid');
-  if (techGrid) {
-    const techs = [...techGrid.querySelectorAll('.tech')];
-    const gap = 3, columns = 8;
-    const layout = items => {
-      const total = items.reduce((sum, item) => sum + item.weight, 0);
-      const rows = Array.from({ length: Math.ceil(items.length / columns) }, (_, index) => items.slice(index * columns, (index + 1) * columns));
-      const boxes = [];
-      let y = 0;
-      for (const row of rows) {
-        const rowWeight = row.reduce((sum, item) => sum + item.weight, 0);
-        const height = techGrid.clientHeight * rowWeight / total;
-        let x = 0;
-        for (const item of row) {
-          const width = techGrid.clientWidth * item.weight / rowWeight;
-          boxes.push({ tech: item.tech, x, y, width, height });
-          x += width;
-        }
-        y += height;
-      }
-      return boxes;
-    };
-    const paint = () => {
-      const items = techs.map(tech => ({ tech, weight: Number(tech.dataset.count) + 1 }));
-      for (const box of layout(items)) {
-        const width = Math.max(1, box.width - gap * 2), height = Math.max(1, box.height - gap * 2);
-        Object.assign(box.tech.style, { left: box.x + gap + 'px', top: box.y + gap + 'px', width: width + 'px', height: height + 'px' });
-        const count = Number(box.tech.dataset.count);
-        box.tech.dataset.votes = count ? String(count) : '';
-        box.tech.classList.toggle('has-votes', count > 0);
-        box.tech.classList.toggle('compact', width < 165 || height < 48);
-        box.tech.classList.toggle('tiny', width < 42 || height < 30);
-        const label = box.tech.querySelector('span')?.textContent.trim() || 'technology';
-        box.tech.setAttribute('aria-label', `${label}: ${count} room vote${count === 1 ? '' : 's'}`);
-      }
-    };
-    for (const tech of techs) {
-      tech.addEventListener('click', event => {
-        const count = Number(tech.dataset.count);
-        tech.dataset.count = String(event.shiftKey ? Math.max(0, count - 1) : count + 1);
-        paint();
-      });
-      tech.addEventListener('contextmenu', event => {
-        event.preventDefault();
-        tech.dataset.count = String(Math.max(0, Number(tech.dataset.count) - 1));
-        paint();
-      });
-    }
-    addEventListener('resize', paint);
+  for (const tech of document.querySelectorAll('.tech')) {
+    const paint = () => tech.style.setProperty('--votes', tech.dataset.count);
+    tech.addEventListener('click', event => {
+      const count = Number(tech.dataset.count);
+      tech.dataset.count = String(event.shiftKey ? Math.max(0, count - 1) : Math.min(5, count + 1));
+      paint();
+    });
+    tech.addEventListener('contextmenu', event => {
+      event.preventDefault();
+      tech.dataset.count = String(Math.max(0, Number(tech.dataset.count) - 1));
+      paint();
+    });
     paint();
   }
 })();

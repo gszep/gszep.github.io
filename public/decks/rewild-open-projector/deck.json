@@ -18,7 +18,7 @@
     "chi",
     "ecosystem"
   ],
-  "locales": ["en"],
+  "locales": ["en", "ja"],
   "defaultLocale": "en",
   "frameSources": ["https://gszep.com", "https://www.instagram.com"]
 }

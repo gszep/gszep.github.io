@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 // Pinned source snapshot. This commit reconciles the latest hosted designer edits.
-const SOURCE_COMMIT = '275e53b863b5bda8d8fae07359cae3bb4e01e532';
+const SOURCE_COMMIT = '1f491327db9a00d502af31c26a1fd8522cc65783';
 const here = path.dirname(fileURLToPath(import.meta.url));
 const sourceRoot = path.resolve(here, '../../decks');
 const outputRoot = path.resolve(here, '../public');
@@ -28,11 +28,13 @@ const files = [
   'decks/rewild-open-projector/slides/rewild.css',
   'decks/rewild-open-projector/slides/sim.js',
   'decks/rewild-open-projector/slides/i18n/en.js',
+  'decks/rewild-open-projector/slides/i18n/ja.js',
   'decks/rewild-open-projector/slides/assets/aps-sandbox.png',
   'decks/rewild-open-projector/slides/assets/aps-student-work.jpg',
   'decks/rewild-open-projector/slides/assets/decks-live.png',
   'decks/rewild-open-projector/slides/assets/jam.png',
-  'decks/rewild-open-projector/slides/assets/kotoma-matrix.gif',
+  'decks/rewild-open-projector/slides/assets/kotoma-matrix.mp4',
+  'decks/rewild-open-projector/slides/assets/kotoma-matrix-poster.png',
   'decks/rewild-open-projector/slides/assets/mosaic-hero.png',
   'decks/rewild-open-projector/slides/assets/mosaic.png',
   'decks/rewild-open-projector/slides/assets/secret-tunnel-hero.jpg',
