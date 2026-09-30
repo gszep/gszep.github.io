@@ -1,0 +1,37 @@
+---
+import Page from '../layouts/Page.astro';
+---
+
+<Page title="Terms" description="The ground rules for using the tools I build, in plain words." path="/terms">
+  <article class="policy">
+    <h1>Terms</h1>
+    <p class="lede">These tools are here to help people make cool things together. The ground rules are short.</p>
+
+    <h2>Be kind</h2>
+    <p>Use them for good: learning, making and working with others. Don't use them to harm anyone, to break things, or for anything illegal.</p>
+
+    <h2>Your work is yours</h2>
+    <p>What you create stays yours and your collaborators'. I don't claim it and I don't use it for anything else.</p>
+
+    <h2>Respect each other's edits</h2>
+    <p>You can edit what's shared with you, and so can the AI agents you connect. Agents never overwrite text a person has edited; please treat others' work with the same care.</p>
+
+    <h2>No guarantees</h2>
+    <p>These are experiments run by one person. I do my best to keep them working and safe, but they may change, go down or lose things, so keep copies of anything important.</p>
+
+    <h2>Questions</h2>
+    <p>Email <a href="mailto:contact@gszep.com">contact@gszep.com</a>. How your information is handled is on the <a href="/privacy">privacy</a> page.</p>
+
+    <p class="updated">Last updated 30 September 2026.</p>
+  </article>
+</Page>
+
+<style>
+  .policy { max-width: 700px; margin: 0 auto; padding: 3rem 1rem; line-height: 1.7; }
+  .policy h1 { font-size: 2.25rem; font-weight: 600; margin-bottom: 1rem; }
+  .policy h2 { font-size: 1.25rem; font-weight: 600; margin: 2rem 0 0.5rem; }
+  .policy .lede { font-size: 1.125rem; }
+  .policy p { margin: 0.5rem 0; }
+  .policy a { text-decoration: underline; }
+  .policy .updated { margin-top: 2.5rem; font-size: 0.875rem; opacity: 0.7; }
+</style>
