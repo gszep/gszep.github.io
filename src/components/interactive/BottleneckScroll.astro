@@ -1,0 +1,74 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const nodes = lang === 'ja'
+  ? [['チップ', 'CoWoS・HBM・Tガラス'], ['電力', 'タービンは2030年まで完売'], ['送電設備', '変圧器・開閉装置'], ['基礎金属', '銅・硫酸・電磁鋼板'], ['ロボット', 'NdPr磁石・減速機'], ['鉱山・精錬', '10〜20年、中国で加工']]
+  : [['Chips', 'CoWoS · HBM · T-glass'], ['Power', 'turbines sold to 2030'], ['Grid gear', 'transformers · switchgear'], ['Bulk metals', 'copper · acid · steel'], ['Robots', 'NdPr magnets · reducers'], ['Mines & refineries', '10–20 yrs, China-processed']];
+const colors = ['#5c946e', '#8aa860', '#edae49', '#e0803f', '#d1495b', '#003d5b'];
+---
+<div class="bscroll">
+  <div class="bsticky">
+    <div class="chain">
+      {nodes.map(([t, s], i) => (
+        <div class="node" data-i={i} style={`--c:${colors[i]}`}>
+          <span class="t">{t}</span><span class="s">{s}</span>
+        </div>
+      ))}
+    </div>
+  </div>
+  <div class="bsteps">
+    <slot />
+  </div>
+</div>
+<style>
+  .bscroll { position: relative; margin: 2rem 0; }
+  .bsticky {
+    position: sticky; top: 4.5rem; z-index: 5; padding: 0.5rem 0;
+    background: var(--post-bg, transparent);
+    backdrop-filter: blur(6px);
+  }
+  :global(html:not(.dark)) .bsticky { background: rgba(255,255,255,0.88); }
+  :global(html.dark) .bsticky { background: rgba(0,0,0,0.8); }
+  .chain { display: flex; gap: 4px; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .node {
+    flex: 1; border-radius: 6px; padding: 6px 4px; text-align: center; line-height: 1.2;
+    background: var(--post-code-bg, #f2f2f2); color: var(--post-caption, #737373);
+    transition: background 0.35s, color 0.35s, transform 0.35s; border: 2px solid transparent;
+  }
+  .node .t { display: block; font-weight: 700; font-size: 0.8rem; }
+  .node .s { display: block; font-size: 0.65rem; }
+  .node.on { background: var(--c); color: #fff; transform: translateY(-2px); }
+  .node.past { border-color: var(--c); color: var(--post-text, #353535); }
+  .bsteps :global(.bstep) { min-height: 45vh; padding: 2rem 0 1rem; opacity: 0.35; transition: opacity 0.3s; }
+  .bsteps :global(.bstep.active) { opacity: 1; }
+  .bsteps :global(.bstep:last-child) { min-height: 30vh; }
+  @media (max-width: 600px) {
+    .node .s { display: none; }
+    .node .t { font-size: 0.68rem; }
+  }
+</style>
+<script>
+  document.querySelectorAll<HTMLElement>(".bscroll").forEach((root) => {
+    const steps = Array.from(root.querySelectorAll<HTMLElement>(".bstep"));
+    const nodes = Array.from(root.querySelectorAll<HTMLElement>(".node"));
+    const set = (stage: number, step: HTMLElement) => {
+      steps.forEach((s) => s.classList.toggle("active", s === step));
+      nodes.forEach((n, i) => {
+        n.classList.toggle("on", i === stage);
+        n.classList.toggle("past", i < stage);
+      });
+    };
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) {
+            const el = e.target as HTMLElement;
+            set(parseInt(el.dataset.stage ?? "0", 10), el);
+          }
+        });
+      },
+      { rootMargin: "-45% 0px -45% 0px" }
+    );
+    steps.forEach((s) => io.observe(s));
+  });
+</script>

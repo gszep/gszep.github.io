@@ -1,0 +1,321 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const tabs = lang === 'ja'
+  ? ['人型ロボット → ネオジム磁石', '中国国外で作るロボット → Dy・Tb', 'AIデータセンター → 銅']
+  : ['Humanoid robots → NdFeB magnets', 'Robots built outside China → Dy + Tb', 'AI data centres → copper'];
+---
+
+<div class="mrace" id="mrace" data-lang={lang}>
+  <div class="mrace-tabs" role="tablist">
+    <button type="button" data-preset="magnets" class="active">{tabs[0]}</button>
+    <button type="button" data-preset="heavy">{tabs[1]}</button>
+    <button type="button" data-preset="copper">{tabs[2]}</button>
+  </div>
+
+  <svg viewBox="0 0 660 360" preserveAspectRatio="xMidYMid meet" aria-label="Exponential demand versus material supply">
+    <g class="grid" id="mr-grid"></g>
+    <g class="axes">
+      <line x1="70" y1="20" x2="70" y2="310" />
+      <line x1="70" y1="310" x2="640" y2="310" />
+    </g>
+    <text id="mr-ylabel" x="16" y="165" transform="rotate(-90 16 165)" text-anchor="middle" class="axlabel"></text>
+    <path id="mr-total" class="line-total" />
+    <path id="mr-supply" class="line-supply" />
+    <path id="mr-demand" class="line-demand" />
+    <g id="mr-cross"></g>
+    <g class="legend" transform="translate(84,30)">
+      <line x1="0" y1="0" x2="22" y2="0" class="line-demand" /><text x="28" y="4" id="mr-leg-d">demand</text>
+      <line x1="0" y1="18" x2="22" y2="18" class="line-supply" /><text x="28" y="22" id="mr-leg-s">supply available</text>
+      <line x1="0" y1="36" x2="22" y2="36" class="line-total" /><text x="28" y="40">{lang === "ja" ? "世界の総供給" : "total world supply"}</text>
+    </g>
+  </svg>
+
+  <p class="mrace-readout" id="mr-readout"></p>
+
+  <div class="mrace-controls" id="mr-controls"></div>
+  <p class="mrace-note" id="mr-note"></p>
+</div>
+
+<style is:global>
+  .mrace {
+    width: 100%;
+    max-width: 760px;
+    margin: 0 auto;
+    color: var(--post-text, #353535);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .mrace svg { width: 100%; height: auto; display: block; }
+  .mrace-tabs { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+  .mrace-tabs button {
+    font-size: 0.85rem; padding: 0.3rem 0.8rem; border-radius: 999px;
+    border: 1px solid var(--post-separator, #ddd); background: transparent; color: var(--post-caption, #737373); cursor: pointer;
+  }
+  .mrace-tabs button.active { background: var(--post-heading, #1a1a1a); color: var(--post-aside-bg, #fff); border-color: transparent; }
+  .mrace .axes line { stroke: var(--post-separator, #bbb); }
+  .mrace .grid line { stroke: var(--post-separator, #eee); stroke-dasharray: 2 3; }
+  .mrace .grid text, .mrace .axlabel, .mrace .legend text { fill: var(--post-caption, #737373); font-size: 11px; }
+  .mrace .axlabel { font-size: 12px; }
+  .mrace path, .mrace .legend line { fill: none; stroke-width: 2.5; }
+  .mrace .line-demand { stroke: #d1495b; }
+  .mrace .line-supply { stroke: #30638e; }
+  .mrace .line-total { stroke: var(--post-caption, #999); stroke-dasharray: 5 4; stroke-width: 1.5; }
+  .mrace .cross-dot { fill: #d1495b; stroke: var(--post-aside-bg, #fff); stroke-width: 2; }
+  .mrace .cross-line { stroke: #d1495b; stroke-dasharray: 3 3; stroke-width: 1; }
+  .mrace .cross-text { fill: #d1495b; font-size: 13px; font-weight: 700; }
+  .mrace-readout { text-align: center; font-size: 1rem; margin: 0.4rem 0 0.8rem; }
+  .mrace-readout b { color: #d1495b; }
+  .mrace-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.6rem 1.4rem; font-size: 0.85rem; }
+  .mrace-controls label { text-align: left; display: flex; flex-direction: column; gap: 0.15rem; color: var(--post-caption, #737373); }
+  .mrace-controls .row { display: flex; justify-content: space-between; align-items: baseline; gap: 0.6rem; line-height: 1.3; }
+  .mrace-controls .row > span:first-child { flex: 1; }
+  .mrace-controls .val { white-space: nowrap; }
+  .mrace-controls .val { color: var(--post-heading, #1a1a1a); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .mrace-controls input[type=range] { width: 100%; accent-color: #30638e; }
+  .mrace-note { font-size: 0.8rem; color: var(--post-caption, #737373); text-align: center; margin-top: 0.8rem; line-height: 1.5; }
+</style>
+
+<script>
+  type Param = { key: string; label: string; min: number; max: number; step: number; fmt: (v: number) => string };
+  type Preset = {
+    unit: string; ylabel: string; demandLabel: string; supplyLabel: string;
+    params: Param[]; defaults: Record<string, number>; note: string;
+    demand: (t: number, p: Record<string, number>) => number;   // t = years since 2026, kt/yr
+    total: (t: number, p: Record<string, number>) => number;
+    share: (p: Record<string, number>) => number;
+  };
+
+  const pct = (v: number) => `${Math.round(v)}%`;
+  const yrs = (v: number) => `${v.toFixed(1)} ${document.getElementById("mrace")?.dataset.lang === "ja" ? "年" : "yr"}`;
+
+  const presets: Record<string, Preset> = {
+    magnets: {
+      unit: "kt NdFeB / yr",
+      ylabel: "kilotonnes of NdFeB magnet per year (log)",
+      demandLabel: "magnets needed for new humanoids",
+      supplyLabel: "magnet supply robots can claim",
+      params: [
+        { key: "td", label: "Robot production doubling time", min: 0.5, max: 5, step: 0.1, fmt: yrs },
+        { key: "p0", label: "Humanoids built in 2026", min: 20, max: 1000, step: 10, fmt: (v) => `${v.toFixed(0)}k` },
+        { key: "kg", label: "NdFeB per robot", min: 0.5, max: 5, step: 0.1, fmt: (v) => `${v.toFixed(1)} kg` },
+        { key: "sub", label: "Motors made magnet-free (ferrite, induction)", min: 0, max: 90, step: 5, fmt: pct },
+        { key: "g", label: "Magnet supply growth", min: 0, max: 30, step: 1, fmt: (v) => `${v.toFixed(0)}% / yr` },
+        { key: "sh", label: "Share of magnet supply robots can claim", min: 5, max: 100, step: 5, fmt: pct },
+      ],
+      defaults: { td: 1.5, p0: 100, kg: 2.5, sub: 0, g: 8, sh: 30 },
+      note: "Baseline: ~226 kt NdFeB demand in 2026, growing 7.5–10%/yr (CRU, Arthur D. Little); 2–4.5 kg per humanoid (CRU, FAI); ~100k humanoids built in 2026, mostly in China. Bank base cases (Goldman, BofA) imply ~1.3-year doubling to 2035, then flattening. EVs, wind and electronics compete for the rest.",
+      demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e6,
+      total: (t, p) => 226 * Math.pow(1 + p.g / 100, t),
+      share: (p) => p.sh / 100,
+    },
+    heavy: {
+      unit: "t Dy-eq / yr",
+      ylabel: "dysprosium-equivalent per year, outside China (log)",
+      demandLabel: "Dy + Tb needed for robots built outside China",
+      supplyLabel: "ex-China Dy + Tb robots can claim",
+      params: [
+        { key: "td", label: "Robot production doubling time", min: 0.5, max: 5, step: 0.1, fmt: yrs },
+        { key: "p0", label: "Humanoids built outside China in 2026", min: 5, max: 200, step: 5, fmt: (v) => `${v.toFixed(0)}k` },
+        { key: "kg", label: "Dy-equivalent per robot", min: 20, max: 100, step: 5, fmt: (v) => `${v.toFixed(0)} g` },
+        { key: "sub", label: "Heavy-REE-free magnet grades adopted", min: 0, max: 90, step: 5, fmt: pct },
+        { key: "g", label: "Ex-China Dy + Tb supply growth", min: 0, max: 80, step: 5, fmt: (v) => `${v.toFixed(0)}% / yr` },
+        { key: "sh", label: "Share of ex-China Dy + Tb robots can claim", min: 5, max: 100, step: 5, fmt: pct },
+      ],
+      defaults: { td: 1.5, p0: 20, kg: 57, sub: 0, g: 30, sh: 50 },
+      note: "Baseline: Lynas, the only commercial heavy-rare-earth separator outside China, produces a few tens of tonnes of Dy + Tb a year (capacity ~290 t if feedstock allows); MP Materials is commissioning a circuit. 35–79 g Dy-equivalent per humanoid (FAI). Defence, EVs and wind compete for the same tonnes.",
+      demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e9,
+      total: (t, p) => 0.062 * Math.pow(1 + p.g / 100, t),
+      share: (p) => p.sh / 100,
+    },
+    copper: {
+      unit: "kt Cu / yr",
+      ylabel: "kilotonnes of copper per year (log)",
+      demandLabel: "copper for new AI capacity incl. grid",
+      supplyLabel: "copper AI can claim",
+      params: [
+        { key: "td", label: "AI power capacity added: doubling time", min: 0.5, max: 6, step: 0.1, fmt: yrs },
+        { key: "p0", label: "Data-centre capacity added in 2026", min: 5, max: 60, step: 1, fmt: (v) => `${v.toFixed(0)} GW` },
+        { key: "kg", label: "Copper intensity incl. grid share", min: 10, max: 120, step: 5, fmt: (v) => `${v.toFixed(0)} t / MW` },
+        { key: "sub", label: "Thrifting: 800 V DC, fibre, aluminium", min: 0, max: 60, step: 5, fmt: pct },
+        { key: "g", label: "Refined copper supply growth", min: 0, max: 8, step: 0.5, fmt: (v) => `${v.toFixed(1)}% / yr` },
+        { key: "sh", label: "Share of world copper AI can claim", min: 1, max: 40, step: 1, fmt: pct },
+      ],
+      defaults: { td: 2.5, p0: 18, kg: 60, sub: 0, g: 2, sh: 10 },
+      note: "Baseline: ~28 Mt refined copper demand (IEA 2025) growing ~2%/yr; 12–47 t/MW inside the facility (WEF, S&P), roughly 2.8× that once its share of the grid is counted (Payne Institute); 15–20 GW added per year (Wood Mackenzie). Forecasters expect additions to plateau around 30 GW/yr — the doubling slider is the recursive-improvement hypothesis, not a consensus.",
+      demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e3,
+      total: (t, p) => 28000 * Math.pow(1 + p.g / 100, t),
+      share: (p) => p.sh / 100,
+    },
+  };
+
+  const LANG = (document.getElementById("mrace")?.dataset.lang ?? "en") as "en" | "ja";
+  const JA: Record<string, { ylabel: string; demandLabel: string; supplyLabel: string; note: string; labels: Record<string, string> }> = {
+    magnets: {
+      ylabel: "ネオジム磁石（千トン/年、対数）",
+      demandLabel: "新しい人型ロボットに必要な磁石",
+      supplyLabel: "ロボットが確保できる磁石供給",
+      note: "前提：2026年のネオジム磁石需要は約22.6万トンで年7.5〜10%成長（CRU、アーサー・D・リトル）。人型ロボット1台あたり2〜4.5kg（CRU、FAI）。2026年の人型ロボット生産は約10万台で、大半が中国。銀行の基本シナリオ（ゴールドマン、BofA）は2035年まで約1.3年ごとの倍増を示唆。EV・風力・電子機器が残りを奪い合う。",
+      labels: { td: "ロボット生産の倍増期間", p0: "2026年の人型ロボット生産台数", kg: "1台あたりのネオジム磁石", sub: "磁石を使わないモーターの比率（フェライト・誘導）", g: "磁石供給の成長率", sh: "ロボットが確保できる磁石供給の割合" },
+    },
+    heavy: {
+      ylabel: "中国国外のジスプロシウム換算（年、対数）",
+      demandLabel: "中国国外で作るロボットに必要なDy・Tb",
+      supplyLabel: "ロボットが確保できる中国国外のDy・Tb",
+      note: "前提：中国国外で唯一重希土類を商業分離するLynasの生産は年数十トン（原料があれば能力約290トン）。MP Materialsも設備を立ち上げ中。人型ロボット1台あたりジスプロシウム換算35〜79g（FAI）。防衛・EV・風力が同じ供給を奪い合う。",
+      labels: { td: "ロボット生産の倍増期間", p0: "2026年に中国国外で作る人型ロボット", kg: "1台あたりのジスプロシウム換算量", sub: "重希土類を使わない磁石グレードの採用率", g: "中国国外のDy・Tb供給の成長率", sh: "ロボットが確保できる中国国外Dy・Tbの割合" },
+    },
+    copper: {
+      ylabel: "銅（千トン/年、対数）",
+      demandLabel: "新しいAI設備に必要な銅（送電網を含む）",
+      supplyLabel: "AIが確保できる銅",
+      note: "前提：精錬銅需要は約2,800万トン（IEA、2025年）で年約2%成長。施設内の銅は1MWあたり12〜47トン（WEF、S&P）、送電網の分担分を含めると約2.8倍（ペイン研究所）。年15〜20GWの増設（ウッド・マッケンジー）。予測機関は年30GW前後で頭打ちと見ている。倍増スライダーは自己改善シナリオの仮説であり、コンセンサスではない。",
+      labels: { td: "AI電力容量の増設：倍増期間", p0: "2026年のデータセンター増設容量", kg: "銅の原単位（送電網の分担分を含む）", sub: "節約：800V直流・光ファイバー・アルミ", g: "精錬銅供給の成長率", sh: "AIが確保できる世界の銅の割合" },
+    },
+  };
+  if (LANG === "ja") {
+    for (const k of Object.keys(JA)) {
+      const pr = presets[k], j = JA[k];
+      pr.ylabel = j.ylabel; pr.demandLabel = j.demandLabel; pr.supplyLabel = j.supplyLabel; pr.note = j.note;
+      pr.params.forEach((prm) => { if (j.labels[prm.key]) prm.label = j.labels[prm.key]; });
+    }
+  }
+  const TXT = LANG === "ja"
+    ? {
+        buy: (b: number) => `供給を2倍にしても、逼迫は<b>${b.toFixed(1)}年</b>しか遅れません。`,
+        none: "この設定では供給の伸びが需要を上回るため、逼迫は起きません。",
+        now: "需要はすでにこの分野が確保できる供給を超えています。",
+        at: (y: number) => `需要がこの分野の確保できる供給を上回るのは<b>${y}年</b>ごろです。`,
+        no2050: "この設定では2050年まで逼迫は起きません。",
+        bindNow: "すでに逼迫", bindAt: (y: number) => `${y}年ごろ逼迫`,
+        yr: "年",
+      }
+    : {
+        buy: (b: number) => `Doubling the supply available only delays the crunch by <b>${b.toFixed(1)} years</b>.`,
+        none: "Supply is growing faster than demand here, so there is no crunch.",
+        now: "Demand already exceeds what this sector can claim. ",
+        at: (y: number) => `Demand outgrows the supply this sector can claim around <b>${y}</b>. `,
+        no2050: "No crunch before 2050 with these settings. ",
+        bindNow: "binding now", bindAt: (y: number) => `binds ~${y}`,
+        yr: "yr",
+      };
+
+  const X0 = 70, X1 = 640, Y0 = 310, Y1 = 20;
+  const T_MAX = 24; // 2026 → 2050
+  const svgns = "http://www.w3.org/2000/svg";
+  const $ = (id: string) => document.getElementById(id);
+
+  let current = "magnets";
+  const state: Record<string, Record<string, number>> = {
+    magnets: { ...presets.magnets.defaults },
+    heavy: { ...presets.heavy.defaults },
+    copper: { ...presets.copper.defaults },
+  };
+
+  function buildControls() {
+    const host = $("mr-controls")!;
+    host.innerHTML = "";
+    const pr = presets[current];
+    for (const prm of pr.params) {
+      const lab = document.createElement("label");
+      const row = document.createElement("span"); row.className = "row";
+      const name = document.createElement("span"); name.textContent = prm.label;
+      const val = document.createElement("span"); val.className = "val";
+      row.append(name, val);
+      const inp = document.createElement("input");
+      inp.type = "range"; inp.min = String(prm.min); inp.max = String(prm.max); inp.step = String(prm.step);
+      inp.value = String(state[current][prm.key]);
+      const sync = () => { state[current][prm.key] = parseFloat(inp.value); val.textContent = prm.fmt(state[current][prm.key]); render(); };
+      inp.addEventListener("input", sync);
+      val.textContent = prm.fmt(state[current][prm.key]);
+      lab.append(row, inp);
+      host.append(lab);
+    }
+    $("mr-note")!.textContent = pr.note;
+    $("mr-ylabel")!.textContent = pr.ylabel;
+    $("mr-leg-d")!.textContent = pr.demandLabel;
+    $("mr-leg-s")!.textContent = pr.supplyLabel;
+  }
+
+  function render() {
+    const pr = presets[current];
+    const p = state[current];
+    const N = 240;
+    const ts = Array.from({ length: N + 1 }, (_, i) => (i / N) * T_MAX);
+    const d = ts.map((t) => pr.demand(t, p));
+    const tot = ts.map((t) => pr.total(t, p));
+    const s = tot.map((v) => v * pr.share(p));
+
+    const all = [...d, ...tot, ...s].filter((v) => v > 0);
+    let lo = Math.floor(Math.log10(Math.min(...all)));
+    let hi = Math.ceil(Math.log10(Math.max(...tot) * 30));
+    lo = Math.max(lo, hi - 7);
+    const xFor = (t: number) => X0 + (t / T_MAX) * (X1 - X0);
+    const yFor = (v: number) => {
+      const l = Math.log10(Math.max(v, Math.pow(10, lo)));
+      return Y0 - ((Math.min(l, hi) - lo) / (hi - lo)) * (Y0 - Y1);
+    };
+
+    const grid = $("mr-grid")!; grid.innerHTML = "";
+    for (let e = lo; e <= hi; e++) {
+      const y = yFor(Math.pow(10, e));
+      const l = document.createElementNS(svgns, "line");
+      l.setAttribute("x1", String(X0)); l.setAttribute("x2", String(X1)); l.setAttribute("y1", String(y)); l.setAttribute("y2", String(y));
+      grid.appendChild(l);
+      const tx = document.createElementNS(svgns, "text");
+      tx.setAttribute("x", String(X0 - 6)); tx.setAttribute("y", String(y + 4)); tx.setAttribute("text-anchor", "end");
+      const v = Math.pow(10, e);
+      tx.textContent = v >= 1000 ? `${(v / 1000).toLocaleString()} Mt` : v >= 1 ? `${v} kt` : `${v * 1000} t`;
+      grid.appendChild(tx);
+    }
+    for (let yr = 2026; yr <= 2050; yr += 4) {
+      const x = xFor(yr - 2026);
+      const tx = document.createElementNS(svgns, "text");
+      tx.setAttribute("x", String(x)); tx.setAttribute("y", String(Y0 + 16)); tx.setAttribute("text-anchor", "middle");
+      tx.textContent = String(yr);
+      grid.appendChild(tx);
+    }
+
+    const path = (arr: number[]) => arr.map((v, i) => `${i ? "L" : "M"}${xFor(ts[i]).toFixed(1)},${yFor(v).toFixed(1)}`).join("");
+    $("mr-demand")!.setAttribute("d", path(d));
+    $("mr-supply")!.setAttribute("d", path(s));
+    $("mr-total")!.setAttribute("d", path(tot));
+
+    // crossover where demand exceeds the claimable supply
+    const cross = $("mr-cross")!; cross.innerHTML = "";
+    let ti = d.findIndex((v, i) => v >= s[i]);
+    const readout = $("mr-readout")!;
+    const rate = Math.LN2 / p.td - Math.log(1 + p.g / 100);
+    const buy = rate > 0 ? Math.LN2 / rate : Infinity;
+    const buyTxt = isFinite(buy) ? TXT.buy(buy) : TXT.none;
+    if (ti >= 0) {
+      const t = ts[ti];
+      const yr = 2026 + t;
+      const x = xFor(t), y = yFor(d[ti]);
+      const vl = document.createElementNS(svgns, "line");
+      vl.setAttribute("class", "cross-line"); vl.setAttribute("x1", String(x)); vl.setAttribute("x2", String(x));
+      vl.setAttribute("y1", String(y)); vl.setAttribute("y2", String(Y0));
+      const dot = document.createElementNS(svgns, "circle");
+      dot.setAttribute("class", "cross-dot"); dot.setAttribute("cx", String(x)); dot.setAttribute("cy", String(y)); dot.setAttribute("r", "6");
+      const tx = document.createElementNS(svgns, "text");
+      tx.setAttribute("class", "cross-text"); tx.setAttribute("x", String(Math.min(x + 9, X1 - 90))); tx.setAttribute("y", String(y - 10));
+      tx.textContent = t < 0.05 ? TXT.bindNow : TXT.bindAt(Math.floor(yr));
+      cross.append(vl, dot, tx);
+      readout.innerHTML = (t < 0.05 ? TXT.now : TXT.at(Math.floor(yr))) + buyTxt;
+    } else {
+      readout.innerHTML = TXT.no2050 + buyTxt;
+    }
+  }
+
+  document.querySelectorAll<HTMLButtonElement>("#mrace .mrace-tabs button").forEach((b) => {
+    b.addEventListener("click", () => {
+      document.querySelectorAll("#mrace .mrace-tabs button").forEach((x) => x.classList.remove("active"));
+      b.classList.add("active");
+      current = b.dataset.preset!;
+      buildControls();
+      render();
+    });
+  });
+
+  buildControls();
+  render();
+</script>

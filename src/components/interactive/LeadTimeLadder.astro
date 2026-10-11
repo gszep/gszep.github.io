@@ -1,0 +1,70 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+// [label, physical build / commissioning (yr), queue + permitting + exploration (yr)]
+const rowsEn: [string, number, number][] = [
+  ['Train a frontier model', 0.3, 0],
+  ['Large power transformer', 0.3, 2.2],
+  ['Gas-turbine delivery slot', 1, 3],
+  ['Data centre (incl. grid connection)', 1.5, 1.5],
+  ['Special glass-cloth furnace', 2, 0],
+  ['Leading-edge fab', 2.5, 0.5],
+  ['New memory fab', 3.5, 0.5],
+  ['Rebuild bombed LNG / helium trains', 4, 0],
+  ['Refinery or rare-earth separation plant', 3, 2],
+  ['Copper mine (discovery → production)', 3, 14],
+];
+const rowsJa: [string, number, number][] = [
+  ['最先端モデルの学習', 0.3, 0],
+  ['大型電力用変圧器', 0.3, 2.2],
+  ['ガスタービンの納入枠', 1, 3],
+  ['データセンター（系統接続含む）', 1.5, 1.5],
+  ['特殊ガラスクロス炉', 2, 0],
+  ['最先端半導体工場', 2.5, 0.5],
+  ['新しいメモリ工場', 3.5, 0.5],
+  ['被弾したLNG・ヘリウム設備の再建', 4, 0],
+  ['精錬所・レアアース分離工場', 3, 2],
+  ['銅山（発見→生産）', 3, 14],
+];
+const rows = lang === 'ja' ? rowsJa : rowsEn;
+const T = lang === 'ja'
+  ? { axis: '年', a: '物理的な建設・立ち上げ', b: '待ち行列・許認可・探査' }
+  : { axis: 'years', a: 'physical build & commissioning', b: 'queue, permitting & exploration' };
+const X0 = 290, X1 = 700, maxY = 18;
+const x = (v: number) => X0 + (v / maxY) * (X1 - X0);
+const rowH = 28;
+const H = 44 + rows.length * rowH + 40;
+---
+<div class="ladder">
+  <svg viewBox={`0 0 760 ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="Lead times by stage">
+    {[0, 2, 4, 6, 8, 10, 12, 14, 16, 18].map((t) => (
+      <g>
+        <line x1={x(t)} x2={x(t)} y1="30" y2={H - 36} class="g" />
+        <text x={x(t)} y={H - 20} text-anchor="middle" class="tick">{t}</text>
+      </g>
+    ))}
+    <text x={(X0 + X1) / 2} y={H - 4} text-anchor="middle" class="tick">{T.axis}</text>
+    {rows.map(([label, a, b], i) => (
+      <g>
+        <text x={X0 - 10} y={44 + i * rowH + 13} text-anchor="end" class="lab">{label}</text>
+        <rect x={X0} y={44 + i * rowH} width={Math.max(3, x(a) - X0)} height="17" rx="3" class="pa" />
+        {b > 0 && <rect x={x(a)} y={44 + i * rowH} width={x(a + b) - x(a)} height="17" rx="3" class="pb" />}
+        <text x={x(a + b) + 6} y={44 + i * rowH + 13} class="val">{+(a + b).toFixed(1)}</text>
+      </g>
+    ))}
+    <g transform="translate(290, 16)" class="leg">
+      <rect width="10" height="10" y="-9" rx="2" class="pa" /><text x="14" y="0">{T.a}</text>
+      <rect x="210" width="10" height="10" y="-9" rx="2" class="pb" /><text x="224" y="0">{T.b}</text>
+    </g>
+  </svg>
+</div>
+<style>
+  .ladder { max-width: 780px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .ladder svg { width: 100%; height: auto; }
+  .ladder .g { stroke: var(--post-separator, #eee); }
+  .ladder .tick, .ladder .leg text { fill: var(--post-caption, #737373); font-size: 11px; }
+  .ladder .lab { fill: var(--post-text, #353535); font-size: 13px; }
+  .ladder .val { fill: var(--post-heading, #1a1a1a); font-size: 12px; font-weight: 700; }
+  .ladder .pa { fill: #003d5b; }
+  .ladder .pb { fill: #edae49; opacity: 0.8; }
+</style>
