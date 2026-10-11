@@ -1,0 +1,40 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const en = lang === 'en';
+const rows: [string, string, number, string, string][] = [
+  [en ? 'Tungsten (APT), Jan–Apr 2026' : 'タングステン（APT）2026年1〜4月', 'policy', 350, '+350%', ''],
+  [en ? 'Gallium outside China, since early 2025' : '中国国外のガリウム（2025年初から）', 'policy', 200, '+200%', ''],
+  [en ? 'Helium, late Feb → Apr 2026' : 'ヘリウム（2026年2月末→4月）', 'war', 350, '~4.5×', ''],
+  [en ? 'Power transformers' : '電力用変圧器', 'capacity', 77, '+77%', ''],
+  [en ? 'Sulfuric acid in Chile, under 7 weeks' : 'チリの硫酸（7週間未満）', 'war', 100, '~2×', ''],
+  [en ? 'Copper vs 2026 consensus forecast' : '銅（2026年の予測比）', 'capacity', 35, '+35%', ''],
+  [en ? 'Gallium inside China' : '中国国内のガリウム', 'flat', 1, en ? '~flat' : 'ほぼ横ばい', ''],
+];
+const col: Record<string, string> = { policy: '#d1495b', war: '#edae49', capacity: '#30638e', flat: '#999' };
+const leg = en ? [['policy', 'export policy'], ['war', 'war / by-product'], ['capacity', 'capacity']] : [['policy', '輸出政策'], ['war', '戦争・副産物'], ['capacity', '生産能力']];
+const X0 = 300, X1 = 690;
+---
+<div class="pshock">
+  <svg viewBox={`0 0 760 ${rows.length * 30 + 50}`} role="img" aria-label="2026 price shocks">
+    <g transform="translate(300,14)">
+      {leg.map(([k, t], i) => (
+        <g transform={`translate(${i * 130},0)`}><rect width="10" height="10" y="-9" rx="2" fill={col[k]} /><text x="14" y="0" class="lg">{t}</text></g>
+      ))}
+    </g>
+    {rows.map(([label, k, v, txt], i) => (
+      <g>
+        <text x={X0 - 10} y={44 + i * 30} text-anchor="end" class="lab">{label}</text>
+        <rect x={X0} y={31 + i * 30} width={Math.max(3, (v / 350) * (X1 - X0 - 50))} height="18" rx="3" fill={col[k]} />
+        <text x={X0 + Math.max(3, (v / 350) * (X1 - X0 - 50)) + 6} y={44 + i * 30} class="val">{txt}</text>
+      </g>
+    ))}
+  </svg>
+</div>
+<style>
+  .pshock { max-width: 780px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .pshock svg { width: 100%; height: auto; }
+  .pshock .lab { fill: var(--post-text, #353535); font-size: 13px; }
+  .pshock .val { fill: var(--post-heading, #1a1a1a); font-size: 12px; font-weight: 700; }
+  .pshock .lg { fill: var(--post-caption, #737373); font-size: 11px; }
+</style>

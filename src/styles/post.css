@@ -48,6 +48,7 @@
 
 .post {
   overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .l-screen {
