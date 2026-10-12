@@ -14,9 +14,10 @@ interface Props {
   description?: string;
   tags?: string[];
   lang?: Locale;
+  image?: string;
 }
 
-const { title, date, slug, description, tags = [], lang = 'en' } = Astro.props;
+const { title, date, slug, description, tags = [], lang = 'en', image } = Astro.props;
 const site = getSite(lang);
 const dateLocale = lang === 'ja' ? 'ja-JP' : 'en-US';
 const formattedDate = date.toLocaleDateString(dateLocale, {
@@ -41,7 +42,7 @@ const jsonLd = JSON.stringify({
 });
 ---
 
-<Base title={title} description={description} lang={lang} path={postPath} type="article" publishedDate={date} tags={tags}>
+<Base title={title} description={description} lang={lang} path={postPath} type="article" publishedDate={date} tags={tags} image={image}>
   <Nav lang={lang} />
   <main>
     <article class="post">
