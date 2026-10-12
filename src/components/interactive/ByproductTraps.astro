@@ -11,8 +11,8 @@ const prods = en
 const uses = en
   ? ['Chip fabs: cooling, lithography, packaging', 'Leaching copper for grids & data centres', 'GaN power electronics, RF', 'Fibre optics, laser transceivers', 'Transistor gate dielectric', 'Batteries for robots & storage']
   : ['半導体工場：冷却・露光・パッケージング', '送電網・データセンター向け銅の浸出', 'GaNパワー半導体・RF', '光ファイバー・光トランシーバー', 'トランジスタのゲート絶縁膜', 'ロボット・蓄電用電池'];
-const status = ['shock', 'shock', 'tight', 'tight', 'ok', 'tight'];
-const col: Record<string, string> = { shock: '#d1495b', tight: '#edae49', ok: '#5c946e' };
+const status = ['shock', 'shock', 'tight', 'tight', 'ok', 'policy'];
+const col: Record<string, string> = { shock: '#d1495b', tight: '#edae49', ok: '#5c946e', policy: '#30638e' };
 const H = 6 * 50 + 50;
 const y = (i: number) => 50 + i * 50;
 const head = en ? ['Host industry (sets the volume)', 'By-product', 'What AI & robots need it for'] : ['主産業（量を決める）', '副産物', 'AI・ロボットでの用途'];

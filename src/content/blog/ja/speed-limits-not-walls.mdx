@@ -2,6 +2,7 @@
 title: "壁ではなく速度制限"
 date: 2026-10-11
 description: "ロボットがロボットを作る時代を支える原材料。銅、磁石、ヘリウム、硫酸はAIの拡大をどこで減速させるのか。誰がその鍵を握るのか。そして需要が指数関数的に伸びるとき、供給を増やしても数年しか稼げないのはなぜか。"
+image: "/images/speed-limits-chip-ore.jpg"
 tags: ["ai", "supply-chains", "geopolitics", "materials"]
 order: 1
 ---
@@ -12,280 +13,259 @@ import ByproductTraps from '../../../components/interactive/ByproductTraps.astro
 import BottleneckScroll from '../../../components/interactive/BottleneckScroll.astro';
 import PriceShocks from '../../../components/interactive/PriceShocks.astro';
 
-> **要約。** AIが自らを改良していくという物語は、いずれ物理的な世界を通ることになります。チップ、発電所、送電網、ロボット、そしてさらにロボットを作るロボットです。本格的な成長モデルは、原材料がこれを止めることはないと見ており、地質学的な意味ではおそらく正しいでしょう。しかし、それらのモデルが需要と比べているのは*地中にある量*です。本当の制約は、需要が1〜2年ごとに倍増するなかで、鉱山、精錬所、磁石工場がどれだけ速く*生産量を伸ばせるか*にあります。この競争を計算してみると、二つのことが見えてきます。第一に、供給を増やしても稼げる時間は驚くほど短いということです。ロボットの生産が18か月ごとに倍増するなら、磁石の供給を倍にしても逼迫は2年足らずしか先送りできません。第二に、私が調べた2026年の主要な素材ショックはすべて、希少性ではなくチョークポイント(輸出規制、戦争、あるいは別の産業の副産物)から生じていました。今後数年の行方を決めるのはこうしたチョークポイントであり、その鍵を握っているのは中国だけではありません。
+> **要約。** AIが自らを改良し始めれば、その物語はいずれチップ、発電所、送電網、そしてロボットを作るロボットを通ることになります。成長モデルは、原材料がこれを止めることはないと見ており、地質学的な意味ではおそらく正しいでしょう。未解決なのは、需要が1〜2年ごとに倍増するなかで、特定の国の特定の鉱山、精錬所、磁石工場がどれだけ速く伸びられるかです。供給が一定の率で伸びる限り、上乗せした供給で稼げる時間はわずかです。ロボットの生産が18か月ごとに倍増するなら、磁石の供給を倍にしても逼迫は2年足らずしか先送りできません。そして2026年の素材ショックは、地殻の資源が尽きたからではなく、チョークポイントから生じました。最大の鍵を握るのは中国ですが、すべてではありません。
 
 ## ループ
 
-よく語られる筋書きはこうです。より優れたモデルはより多くの収益を生みます。その収益でより多くの計算資源を買います。より多くの計算資源でより優れたモデルを訓練します。その過程のどこかで、モデルは工場を動かせるほど賢くなり、工場はロボット、発電所、半導体工場、そしてさらなる工場を作り始めます。工場は学習する資本となり、生産量が倍になるたびに次の1単位が安くなっていきます。
+より優れたモデルが収益を生み、その収益で買った計算資源がさらに優れたモデルを訓練します。どこかの時点でAIシステムは工場を動かせるようになり、その工場がロボット、発電所、半導体工場、そしてさらなる工場を作ります。
 
-どんなループも、最も遅い段階の速度でしか回りません。モデルの訓練には数か月、データセンターの建設には1〜2年かかります。銅山は、発見から初生産まで平均で約17年かかります<sup><a href="#ref-1">1</a></sup>。そこで私が答えたい問いは狭いものです。*ループが物理的になったとき、学習が最も遅い投入物はどれで、それを支配しているのは誰か。*
+ループは最も遅い段階の速度でしか回りません。モデルの訓練には数か月、データセンターには1〜2年、銅山には発見から初生産まで平均で約17年かかります<sup><a href="#ref-1">1</a></sup>。そこで私の問いはこうです。*ループが物理的なものを必要とするようになったとき、伸びるのが最も遅い投入物はどれで、それを支配しているのは誰か。*
 
-## 成長モデルの前提
+## 成長モデルが正しい点
 
-この問いについて最も丁寧な研究をしているのは、急速なテイクオフを真剣に受け止めている人たちです。大きな構図については彼らが正しいと私は考えているので、その主張を公平に紹介しておく価値があります。
+Forethoughtの*Industrial Explosion*は、ロボット経済は当初およそ1年で倍増すると見込み(付録では「数年程度」としています)、資源が制約になることはないと推測しつつ、「だからといって、途中で資源がボトルネックになる可能性が排除されるわけではない」と述べています<sup><a href="#ref-2">2</a></sup>。*AI 2027*では、ロボット経済が「原材料が尽き始めない限り」1年足らずで倍増します<sup><a href="#ref-3">3</a></sup>。Damon Binderは、米国経済のあらゆる部門の年間生産、建設にかかる時間、そして現在の経済からの移行過程をモデル化し<sup><a href="#ref-4">4</a></sup><sup><a href="#ref-5">5</a></sup>、こう結論づけています。「採掘は産出の約1%にすぎないので、大幅なコスト上昇でも全体の成長はほとんど鈍らない」<sup><a href="#ref-6">6</a></sup>。Epochはロボット工場と部品をモデル化し、最初に制約となるのは精密減速機で、現在はヒューマノイド年約50万台分、2030年までに150万〜300万台分に増えると見ています<sup><a href="#ref-7">7</a></sup>。
 
-Forethoughtの*Industrial Explosion*は、ロボット経済は当初およそ1年で倍増しうると推定し、簡単のため資源の問題を脇に置いています。その脚注は慎重です。「資源制約がボトルネックになる可能性はあり、これはさらなる研究が必要な重要分野だが、私たちの見立てではそうはならない……歴史的に、資源のボトルネックがGDP成長に上限を課したことは一度もない」。そして本稿にとって重要な但し書きが続きます。「だからといって、途中で資源がボトルネックになる可能性が排除されるわけではない」<sup><a href="#ref-2">2</a></sup>。*AI 2027*では、ロボット経済が「原材料が尽き始めない限り」1年足らずで倍増するとし、脚注で、その頃には超知能が「新たな鉱山を探査し、新技術を開発しているだろう」と答えています<sup><a href="#ref-3">3</a></sup>。Damon Binderによる米国経済の産業連関モデルは最も定量的です。金属ごとに鉱石品位の低下に応じて採掘コストを引き上げても、成長への影響はわずかだと結論づけています。「採掘は産出の約1%にすぎないので、大幅なコスト上昇でも全体の成長はほとんど鈍らない」からです<sup><a href="#ref-4">4</a></sup><sup><a href="#ref-5">5</a></sup>。Epochによるロボット生産の研究では、現時点で制約となっている部品は精密減速機だけで、これがヒューマノイドの生産を年間約50万台に抑えているとしています<sup><a href="#ref-6">6</a></sup>。
+私も同意します。既知の銅の賦存量は1900年から2010年までに約25倍に増え<sup><a href="#ref-8">8</a></sup>、エネルギー転換による需要もほぼすべての鉱物で既知の資源量を下回ります。問題は、鉱山や精錬所を十分な速さで建設できるかどうかです<sup><a href="#ref-9">9</a></sup>。モデルが未解決のまま残しているのは次の点です。
 
-その核心部分には私も同意します。地殻の資源が尽きつつあるわけではありません。探査と技術の進歩により、既知の銅の賦存量は20世紀の間に約25倍に増えました<sup><a href="#ref-7">7</a></sup>。エネルギー転換による需要を丁寧に積み上げても、ほぼすべての鉱物で既知の資源量を下回ります。問題は、鉱山や精錬所を十分な速さで建設できるかどうかです<sup><a href="#ref-8">8</a></sup>。
+1. **素材ごと・場所ごとの立ち上げ速度。** 中国以外のジスプロシウム分離は年に数十トン単位であり、新しい精錬所は建設され、顧客の認定を受けて初めて生産量に数えられます。
+2. **貿易。** Binderの経済は閉鎖経済で<sup><a href="#ref-4">4</a></sup>、Epochのチップ分析は鉱物の手前で止まっています<sup><a href="#ref-10">10</a></sup><sup><a href="#ref-11">11</a></sup>。いずれのモデルも、輸出禁止、1か国にしかない精錬所、ガスプラントへのミサイル攻撃を表現できません。
+3. **そこに至るまで。** 「最も制約の厳しい元素」であるジスプロシウムに対するBinderの答えは、必要量よりはるかに多くの鉱石を採掘することです<sup><a href="#ref-4">4</a></sup>。これは産業基盤ができてしまえば機能します。本稿が扱うのは、それを築くまでの年月です。
 
-しかし、これらのモデルには構造上、三つのものが欠けています。
-
-1. **ストックではなくフロー。** これらのモデルは累積需要を埋蔵量と比べています。テイクオフの最中に重要なのは、年間生産量がどれだけ速く伸ばせるかです。鉱山の生産は年に数%しか伸びませんが、毎年倍増するロボットの台数は100%伸びます。
-2. **閉じた、友好的な経済。** Binderのモデルは閉鎖経済です。輸出はゼロで、米国内のどの産業も生産していない約1%の投入物は国内産業に組み込まれています<sup><a href="#ref-4">4</a></sup>。Epochのチップ分析はチップで止まっています<sup><a href="#ref-9">9</a></sup><sup><a href="#ref-10">10</a></sup>。*AI 2027*は地政学をチップを通じてしか扱っていません。いずれも、輸出禁止、1か国にしか存在しない精錬所、あるいはガスプラントへのミサイル攻撃を表現できません。
-3. **移行期間。** Binder自身の付録は、レアアースを厄介なケースとして挙げています。ジスプロシウムは「最も制約の厳しい元素」であり、彼の答えは、必要量よりはるかに多くの鉱石を採掘して残りを捨てるというものです<sup><a href="#ref-4">4</a></sup>。これは産業基盤ができてしまえば機能します。しかし、そこに到達するまでの過程こそ、私が関心を持っている部分です。
-
-公表されている鉱物研究には、逆の死角があります。S&P Global、IEA、Wood Mackenzie、Payne Instituteは精錬の集中や副産物を真剣に扱っていますが、いずれもデータセンターのギガワットを、横ばいに落ち着く滑らかな経路に沿って金属のトン数に換算しています。S&Pは年間約30 GWの新規容量を想定し、Wood Mackenzieは増設が2030年代初頭に年30〜33 GWでピークに達すると見ています<sup><a href="#ref-11">11</a></sup><sup><a href="#ref-12">12</a></sup><sup><a href="#ref-13">13</a></sup>。自己増殖するループをモデル化しているものはありません。本稿は、この二つの研究群のすき間に位置しています。
+鉱物研究には逆の死角があります。精錬の集中は真剣に扱う一方で、需要は滑らかに伸びると想定しています。Wood Mackenzieでは、データセンターの増設は現在の年15〜20 GWから、2030年代初頭に年30〜33 GWでピークに達します<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup>。
 
 ## 時計
 
-ループの各段階にかかる時間を示します。バーを二つに分けているのは、Binderの正当な指摘によるものです。リードタイムに見えるものの多くは、物理的な制約ではなく、順番待ちや書類手続きなのです<sup><a href="#ref-14">14</a></sup>。大型変圧器の製造自体は数か月ですが、2年の待ち時間は受注残によるものです。銅山の建設は数年ですが、17年の大半は探査、調査、許認可です。
+リードタイムに見えるものの多くは、順番待ちや書類手続きです<sup><a href="#ref-15">15</a></sup>。大型変圧器の製造は数か月ですが、2年の待ち時間は受注残によるものです。銅山の17年の大半は、探査、調査、許認可に費やされます。
 
 <figure>
   <LeadTimeLadder lang="ja" />
-  <figcaption>段階ごとのリードタイム。物理的な建設・試運転(濃色)と、順番待ち・許認可・探査(淡色)に分けています。区分は業界資料に基づく概算です<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup><sup><a href="#ref-16">16</a></sup><sup><a href="#ref-17">17</a></sup>。AIが運営する経済なら淡色の部分を短縮できる可能性はありますが、それは主にそれを選択する法域に限られます。</figcaption>
+  <figcaption>段階ごとのリードタイム。物理的な建設・試運転(濃色)と、順番待ち・許認可・探査(淡色)。合計は業界資料に基づきます<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-15">15</a></sup><sup><a href="#ref-16">16</a></sup><sup><a href="#ref-17">17</a></sup><sup><a href="#ref-18">18</a></sup>。区分は私による例示的な推定です。順番待ちの背後には工場・設備・人材の実際の不足があり、探査にも実際の掘削が伴います。</figcaption>
 </figure>
 
-経済特区を運営するAIなら、淡色のバーを短くできるかもしれません。しかし他国でそれを短くするのは容易ではなく、鉱石の大半と精錬の大半は、AI開発を競う経済圏の外にあります。
+AIが運営する経済特区なら自国では淡色のバーを短くできるかもしれませんが、鉱石の大半が採掘される他国ではそうはいきません。精錬の大半は中国で行われています。
 
 ## 指数関数と鉱山
 
-ここが議論の核心であり、実際に触ってみるのが一番わかりやすいでしょう。一定の周期で倍増する需要(ヒューマノイドロボット、あるいはデータセンター容量)と、年に数%で伸びる供給を選んでください。そして、需要が現実的に確保できる供給の割合を超えるのはいつかを確かめてみてください。
+一定の周期で倍増する需要は、年に数%で伸びる供給のうち確保できる割合を、いつ超えるのでしょうか。
 
 <figure>
   <MaterialRace lang="ja" />
-  <figcaption>指数関数的な需要と、ゆっくり伸びる供給。対数目盛のため、直線は一定の成長率を表します。初期値は各タブの注記にある資料から取っています。倍増期間は検証する仮説であり、予測ではありません。</figcaption>
+  <figcaption>指数関数的な需要と、ゆっくり伸びる供給(対数目盛)。出典と、どの初期値が私自身の仮定かは各タブの注記に示しています。倍増期間は検証する仮説であり、予測ではありません。</figcaption>
 </figure>
 
-どの数字を選んでも、計算から二つのことが導かれます。
-
-**供給を増やしても稼げる時間はわずかです。** 需要が $T_d$ 年ごとに倍増し、供給が成長率 $g$ で伸びるとき、利用可能な供給を倍にすると、逼迫は
+**供給を上乗せしても稼げる時間はわずかです。** 需要が $T_d$ 年ごとに倍増し、供給が一定の成長率 $g$ で伸びるとき、利用可能な供給を倍にすると、逼迫は
 
 $$
 \Delta t = \frac{\ln 2}{\ln 2 / T_d - \ln(1+g)}
 $$
 
-年だけ先送りされます。18か月ごとに倍増するロボットと、年8%で伸びる磁石供給の場合、これは約1.8年です。供給を10倍にしても約6年しか稼げません。指数関数的な需要のもとでは、供給をさらに倍にするたびに、同じ短い猶予しか得られないのです。
+年だけ先送りされます。18か月ごとに倍増するロボットと、年8%で伸びる磁石供給の場合、これは約1.8年です。供給を10倍にしても約6年です。価格が高騰すれば供給は加速するでしょうが、年16%で伸びても、供給を倍にして稼げるのは約2.2年にすぎません。
 
-**時期はほぼ倍増期間で決まります。** 2026年のヒューマノイド生産を7万5,000〜9万台<sup><a href="#ref-18">18</a></sup><sup><a href="#ref-19">19</a></sup>(10万台に丸めます)、ロボット1台あたりネオジム磁石(NdFeB)2.5 kg、現在のNdFeB磁石生産を年約226 ktとします<sup><a href="#ref-20">20</a></sup>。供給を固定すると、1年で倍増する場合、ロボットは2033年頃に現在の磁石生産の5分の1を、2036年頃にその全量を必要とします。2年で倍増する場合は、それぞれ2041年頃と2046年頃にずれます。グラフの初期値(18か月で倍増、年8%で伸びる供給の30%をロボットが確保)では、逼迫は2040年頃に訪れます。
+**時期はほぼ倍増期間で決まります。** 2026年のヒューマノイド生産を7万5,000〜9万台<sup><a href="#ref-19">19</a></sup><sup><a href="#ref-20">20</a></sup>(10万台に丸めます)、1台あたりネオジム磁石(NdFeB)2.5 kg、NdFeB磁石の生産を年約226 ktとします<sup><a href="#ref-21">21</a></sup>。供給を固定すると、1年で倍増する場合、ロボットは2033年頃に現在の磁石生産の5分の1を、2036年頃にその全量を必要とします。2年で倍増する場合は、それぞれ2041年頃と2046年頃です。グラフの初期値では、逼迫は2040年頃に訪れます。
 
-1年での倍増は空想的でしょうか。今後10年については、そうではありません。ゴールドマン・サックスは2026年に7万5,000台、2035年に650万台のヒューマノイドを見込み、バンク・オブ・アメリカは9万台から1,000万台への増加を見込んでいます<sup><a href="#ref-18">18</a></sup><sup><a href="#ref-19">19</a></sup>。いずれも、予測の終点である2035年まで生産が1.3〜1.4年ごとに倍増することを意味します。CRUの基本シナリオでは、2040年にロボット生産が年約1億5,100万台に達し、約363 ktの磁石が必要になります。これは現在の市場全体の約160%にあたります<sup><a href="#ref-20">20</a></sup>。*AI 2027*が掲げる「月100万台の新規ロボット(全種類)」というマイルストーンには年24〜36 ktの磁石が必要で、これは現在の市場の約11〜16%なので収まります。壁はそこからおよそ3回倍増した先にあります。主流の予測とテイクオフの物語は2035年頃までは一致しており、意見が分かれるのはその先です。
+今後10年について、1年での倍増は空想的ではありません。ゴールドマン・サックスは2035年に650万台、バンク・オブ・アメリカは1,000万台のヒューマノイドを見込んでおり<sup><a href="#ref-19">19</a></sup><sup><a href="#ref-20">20</a></sup>、2026年から平均して1.3〜1.4年ごとの倍増にあたります。CRUの基本シナリオである2040年の年約1億5,100万台には約363 ktの磁石が必要で、現在の市場の約160%にあたります<sup><a href="#ref-21">21</a></sup>。*AI 2027*が描く「月100万台の新規ロボット」というマイルストーン<sup><a href="#ref-3">3</a></sup>は、1台あたりヒューマノイド並みの磁石を使うとすれば年24〜36 kt、現在の市場の11〜16%を必要とします。
 
-### 磁石が実際に制約となる場所
+### 磁石が制約となる場所
 
-それは鉱山ではありません。中国以外では、磁石の原料となる精製レアアース酸化物(ネオジム・プラセオジム、NdPr)は現在供給過剰です。8月には約95ドル/kgまで下落し、米国防総省がMP MaterialsとLynasに保証している110ドル/kgの下限価格を下回りました。それを買い取る磁石工場が足りないからです<sup><a href="#ref-21">21</a></sup>。IEAは磁石生産を「供給多様化の主なボトルネック」と呼んでいます。2024年、中国は精錬の約91%、焼結磁石生産の94%を占めていました<sup><a href="#ref-22">22</a></sup>。制約は中間工程、つまり鉱石と完成部品の間の工程にあります。酸化物を金属に変え、合金にし、磁石に成形する工程で、その設備の建設には数年と専用の装置が必要です。
+それは鉱山ではありません。中国以外では、精製ネオジム・プラセオジム酸化物は供給過剰で、8月には約95ドル/kgと、米国防総省がMP MaterialsとLynasに保証している110ドル/kgの下限価格を下回りました。それを買い取る磁石工場が足りないからです<sup><a href="#ref-22">22</a></sup>。IEAは磁石生産を「供給多様化の主なボトルネック」と呼んでいます<sup><a href="#ref-23">23</a></sup>。新しい工場には数年と専用の装置が必要で、中国の論者が指摘するように、成熟した中国の産業とコストで競わなければなりません<sup><a href="#ref-24">24</a></sup>。
 
-磁石を熱に耐えられるようにする重希土類、ジスプロシウムとテルビウムはさらに逼迫しています。中国以外で唯一これを商業的に分離しているLynasの生産量は年に数十トン(3月期は8 t)にとどまり<sup><a href="#ref-23">23</a></sup>、原料が確保できれば約290 tの能力があります<sup><a href="#ref-24">24</a></sup>。ヒューマノイド1台あたりジスプロシウム換算で約57 g<sup><a href="#ref-25">25</a></sup>とすると、60 tで中国以外で生産されるロボット年約100万台分をまかなえます。ただし、ほかに何も使わなければの話です。ロボットは磁石1 kgあたりの重希土類の使用量が電気自動車よりはるかに少ないので、これは助けになります。世界全体では、電気自動車1年分の生産だけで、ヒューマノイド2,600万台分に相当する重希土類がすでに使われています<sup><a href="#ref-25">25</a></sup>。
+磁石を熱に耐えられるようにする重希土類は、さらに逼迫しています。中国以外で唯一ジスプロシウムとテルビウムを商業的に分離しているLynasの生産量は、12月期が26 t、3月期が8 tでした<sup><a href="#ref-25">25</a></sup>。原料が確保できれば、生産能力はジスプロシウム年240 t、テルビウム年50 tです<sup><a href="#ref-26">26</a></sup>。Foundation for American Innovationによるヒューマノイド1台あたりジスプロシウム換算35〜79 gの中央値をとると、年100万台のロボットに約57 tが必要です。ただし、ロボットは磁石1 kgあたりの使用量が電気自動車よりはるかに少なくて済みます<sup><a href="#ref-27">27</a></sup>。
 
 ### 磁石より先に制約となるもの
 
-2026年の時点では、ロボットは磁石よりも先に減速機やハンドが足りなくなります。Epochによれば、精密減速機がヒューマノイドの生産を年約50万台に抑えています<sup><a href="#ref-6">6</a></sup>。日本のハーモニック・ドライブ・システムズ1社が、波動歯車装置市場の約80%を握っています<sup><a href="#ref-26">26</a></sup>。テスラのOptimusの量産立ち上げは、壊れやすいハンドと、量産時の品質に苦しむ減速機・モーターのサプライヤーによって遅れています<sup><a href="#ref-27">27</a></sup>。これらは製造上の問題であり、解決は速く進みます。しかし設計上の選択は、ある制約を別の制約と引き換えにします。ダイレクトドライブ関節は減速機を減らす代わりに磁石を多く使い、ロボットの関節が増えるにつれて、1台あたりの磁石量は減るどころか増えていきます<sup><a href="#ref-28">28</a></sup><sup><a href="#ref-25">25</a></sup>。
+減速機とハンドです。日本のハーモニック・ドライブ・システムズ1社が波動歯車装置市場の約80%を握り<sup><a href="#ref-28">28</a></sup>、テスラのOptimusの量産立ち上げは、壊れやすいハンド、サプライヤーの品質問題、弱いソフトウェアによって遅れています<sup><a href="#ref-29">29</a></sup>。こうした問題は早く解決できますが、設計は制約を入れ替えます。ダイレクトドライブ関節は減速機の代わりに磁石を使い、Adamasはロボットの関節が増えるにつれて1台あたりの磁石量が増えると見ています<sup><a href="#ref-30">30</a></sup>。
 
 ### 銅
 
-銅は、どこまでを範囲に含めるかが最も重要になる素材です。データセンター内部では、銅は1 MWあたり約12〜47トン使われます<sup><a href="#ref-29">29</a></sup><sup><a href="#ref-11">11</a></sup>。施設が必要とする新規送電網の分も含めると、総量は約2.8倍になります。AIデータセンターに関連する銅の約64%は送配電網にあるのです<sup><a href="#ref-13">13</a></sup>。S&Pは、データセンターとその電力インフラの銅需要を2025年に約1.1 Mt、2040年に2.5 Mtと見積もっています。これに対し、精製銅の需要は約28 Mtです<sup><a href="#ref-11">11</a></sup><sup><a href="#ref-1">1</a></sup>。
-
-予測機関の成長率で考えれば、これは壁ではなく価格の問題です。また、懐疑的になる正当な理由もあります。発表されたデータセンター容量のうち、予定どおり電力供給にこぎつけているのは35〜50%にすぎません<sup><a href="#ref-30">30</a></sup>。Nvidiaの800ボルト直流給電設計は導体の銅を大幅に削減し、光ファイバーが銅の配線を置き換えつつあります<sup><a href="#ref-31">31</a></sup><sup><a href="#ref-32">32</a></sup>。上のグラフの銅のタブで制約が生じるのは、データセンターの増設が倍増し続ける場合だけです。そうなると予測している機関はありませんが、それこそが再帰的改善の物語が予測していることなのです。
+データセンター内部では、銅は1 MWあたり約12〜47トン使われます<sup><a href="#ref-31">31</a></sup><sup><a href="#ref-12">12</a></sup>。ある研究によれば、AIデータセンターに関連する銅の約64%は送配電網にあり、送電網を含めると総量はほぼ3倍になります<sup><a href="#ref-14">14</a></sup>。S&Pは、データセンターの銅需要を2025年に約1.1 Mt、2040年に2.5 Mtと見積もっています。これに対し、精製銅の需要は約28 Mtです<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-1">1</a></sup>。予測機関の成長率で考えれば、これは壁ではなく価格の問題です。発表された容量のうち予定どおり電力供給にこぎつけているのは35〜50%にすぎず<sup><a href="#ref-32">32</a></sup>、800ボルト直流給電や光ファイバー配線は銅の使用量を減らします<sup><a href="#ref-33">33</a></sup><sup><a href="#ref-34">34</a></sup>。グラフで銅が制約になるのは、AIが自らを改良する場合のように、増設が倍増し続けるときだけです。
 
 ## コストシェアと弱い環
 
-GPUラックはなぜ銅の値段を気にしないのでしょうか。素材はその価格のごく一部にすぎないからです。銅はデータセンターの設備投資の0.5〜6%程度で、幅があるのは誰の推計を使うかによります<sup><a href="#ref-33">33</a></sup><sup><a href="#ref-34">34</a></sup>。半導体製造に使われるヘリウムは年約10億ドル規模です<sup><a href="#ref-35">35</a></sup>。これがBinderの議論です。コストの1%を占める投入物が10倍に値上がりしても、総コストは約10%しか上がりません。
+AIのコストに占める素材の割合はごくわずかです。データセンターの設備投資に占める銅の割合は、範囲の取り方によって0.5%未満から約6%まで<sup><a href="#ref-35">35</a></sup><sup><a href="#ref-36">36</a></sup>、半導体製造用のヘリウムは年約10億ドル規模です<sup><a href="#ref-37">37</a></sup>。コストの1%を占める投入物が10倍に値上がりしても、総コストは約10%しか上がりません。
 
-経済学の文献には、「それでも素材は重要だ」よりも鋭い答えがあります。投入物が不可欠で代替がきかない場合、その影響はコストシェアに比例しません。BaqaeeとFarhiは、こうした非線形性によって1970年代の石油ショックのマクロ経済的影響がおよそ3倍になったことを示しています<sup><a href="#ref-36">36</a></sup>。Aghion、Jones、Jonesも関連して、成長を制約するのは「私たちが得意なことではなく、不可欠でありながら改善が難しいこと」だと指摘しています<sup><a href="#ref-37">37</a></sup>。そしてAkimitsuは実務的な形でこう述べています。コストシェアがほぼゼロのとき、脅威となるのは価格ではなく*入手可能性*である、と<sup><a href="#ref-38">38</a></sup>。ガリウムはGDPに占める割合はごくわずかですが、窒化ガリウムのパワー半導体ではほぼ100%を占めます。禁輸されれば、いくら払っても手に入りません。
+しかし、代替のきかない不可欠な投入物は、コストシェア以上の打撃を与えます。BaqaeeとFarhiは、こうした非線形性によって1970年代の石油ショックのマクロ経済的影響がおよそ3倍になったことを示しています<sup><a href="#ref-38">38</a></sup>。Aghion、Jones、Jonesは、成長を制約するのは「私たちが得意なことではなく、不可欠でありながら改善が難しいこと」だと論じています<sup><a href="#ref-39">39</a></sup>。コストシェアがほぼゼロのとき、脅威は価格ではなく入手可能性です<sup><a href="#ref-40">40</a></sup>。ガリウムはGDPに占める割合はごくわずかですが、特定のデバイス構造(窒化ガリウムのパワー半導体)には不可欠な投入物であり、規制がかかれば、どれほど安くても認定済みの供給が途絶えうるのです。
 
-ですから本稿の主張は、素材が壁だということではありません。素材は**速度制限**だということです。遅く、不可欠な投入物が移行のペースを決め、そのコストに占める割合を増していきます。そしてそれが特定の地域に集中している場合、誰が先に進むかを決めるのです。
+ですから素材は壁ではなく、**速度制限**です。遅く、不可欠な投入物がペースを決め、それが特定の地域に集中している場合、誰が先に進むかを決めます。
 
 ## 2026年:チョークポイントの年
 
-もし素材が地質学的な理由で制約になるのなら、2026年にそれが表れていたはずです。実際には、価格ショックはそれぞれ異なる原因で起きました。
+2026年の大きな素材価格ショックには、それぞれ地質学的ではない具体的な原因がありました(ただし、報道で大きく扱われるショックは、その性質上、突発的なものに偏ります)。
 
 <figure>
   <PriceShocks lang="ja" />
-  <figcaption>2026年の主な価格変動。タングステン<sup><a href="#ref-39">39</a></sup>、ガリウム<sup><a href="#ref-40">40</a></sup>、ヘリウム<sup><a href="#ref-1">1</a></sup>、変圧器<sup><a href="#ref-41">41</a></sup>、チリの硫酸<sup><a href="#ref-42">42</a></sup>、アナリストのコンセンサス予想と比べた銅<sup><a href="#ref-43">43</a></sup><sup><a href="#ref-44">44</a></sup>。中国国内と国外の価格に大きな差があることは、希少性ではなく輸出政策の痕跡です。</figcaption>
+  <figcaption>主な価格比較。基準は項目ごとに異なる(ラベルに記載)ため、棒の長さを厳密に比べることはできません。タングステン<sup><a href="#ref-41">41</a></sup>、ガリウム<sup><a href="#ref-42">42</a></sup>、ヘリウム<sup><a href="#ref-1">1</a></sup>、変圧器<sup><a href="#ref-43">43</a></sup>、チリの硫酸<sup><a href="#ref-44">44</a></sup>、銅<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup>。中国国内と国外の価格に大きな差があることは、希少性ではなく輸出政策の痕跡です。</figcaption>
 </figure>
 
-- **ヘリウム。** 3月、イランがカタールのラス・ラファン工業地帯を攻撃し、世界のヘリウム供給の約3分の1が失われました<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-1">1</a></sup>。QatarEnergyによれば、この被害で同社のLNG生産能力の17%が3〜5年間停止します<sup><a href="#ref-17">17</a></sup>。ヘリウムの半分以上をカタールから輸入している韓国は<sup><a href="#ref-1">1</a></sup>、数か月分の在庫で半導体工場の稼働を維持しました<sup><a href="#ref-46">46</a></sup>。6月の停戦でホルムズ海峡は再開されましたが、通航は部分的にしか回復しておらず、タンカーへの攻撃が再び増えています<sup><a href="#ref-47">47</a></sup>。
-- **硫酸。** 中国は肥料と食料安全保障を理由に、5月から製錬副産物の硫酸の輸出を停止しました。電子グレードの硫酸は対象外です<sup><a href="#ref-42">42</a></sup>。終了時期については8月から年末までさまざまな報道があります<sup><a href="#ref-48">48</a></sup><sup><a href="#ref-49">49</a></sup>。中国が輸出しているのは生産量1億1,000万トンの約4%にすぎませんが<sup><a href="#ref-50">50</a></sup>、チリの浸出法による銅生産は輸入硫酸に依存しており、指標価格は7週間で倍になりました<sup><a href="#ref-42">42</a></sup><sup><a href="#ref-51">51</a></sup>。
-- **ガリウムとタングステン。** 中国は一次ガリウムの約99%を生産しています。4月、中国国外の価格は1,850ドル/kgに達しましたが、中国国内では横ばいでした<sup><a href="#ref-40">40</a></sup>。タングステンは、中国が輸出業者をわずか15社に許可したことで、4か月で約350%上昇しました<sup><a href="#ref-39">39</a></sup>。
+- **戦争。** 3月、イランがカタールのラス・ラファン工業地帯を攻撃し、世界のヘリウム供給の約3分の1と<sup><a href="#ref-47">47</a></sup><sup><a href="#ref-1">1</a></sup>、カタールのLNG生産能力の17%が3〜5年にわたって失われました<sup><a href="#ref-18">18</a></sup>。韓国はヘリウムの半分以上をカタールから輸入していますが<sup><a href="#ref-1">1</a></sup>、同国の半導体メーカーは3月下旬の時点で数か月分の在庫があると述べていました<sup><a href="#ref-48">48</a></sup>。6月の停戦以降、ホルムズ海峡は部分的に回復しました。イランと関係のない船舶の通航は9月下旬で週約124隻で、戦争前は1日100隻を超えていました<sup><a href="#ref-79">79</a></sup>。原油輸出は費用のかかる迂回策によって危機前の水準近くまで戻りましたが、タンカーへの攻撃は7か月ぶりの高水準です<sup><a href="#ref-49">49</a></sup>。
+- **輸出規制。** 中国は5月に製錬副産物の硫酸の輸出を停止しました<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>。輸出は生産量の約4%にすぎませんが<sup><a href="#ref-52">52</a></sup>、チリの浸出法による銅生産は輸入硫酸に依存しており、価格は7週間で倍になりました<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-53">53</a></sup>。4月、中国国外のガリウム価格は1,850ドル/kgに達しましたが、国内では横ばいでした<sup><a href="#ref-42">42</a></sup>。タングステンは、中国が採掘枠を削減し、輸出業者を15社に絞ったことで、4か月で約350%上昇しました<sup><a href="#ref-41">41</a></sup>。
+- **単一の障害点。** 8月、銅は史上最高値に迫り、アナリストの予想を大きく上回りました。世界最大級の銅山であるインドネシアのグラスベルグは、2025年の泥流事故以来、能力を大きく下回る操業が続いていました<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup><sup><a href="#ref-54">54</a></sup>。
 
-いずれも、地殻の資源が尽きたことによるものではありません。
-
-今年、AIの拡大を*実際に*制約したものが何だったのかも明確にしておくべきでしょう。それはチップとメモリです。TSMCの最先端ラインは2025年後半から稼働率100%近く、時にはそれを超えて稼働しており、SKハイニックスの最高経営責任者は、高帯域幅メモリ(HBM、AIチップの横に積層されるメモリ)の不足が2030年まで続く可能性があると述べています<sup><a href="#ref-52">52</a></sup>。新しいメモリ工場の建設には現在3〜5年かかります<sup><a href="#ref-15">15</a></sup>。ガスタービンの受注残は約220 GWに達する一方、工場の生産能力は年60〜70 GWです<sup><a href="#ref-53">53</a></sup>。日本の日東紡1社が、AIチップのパッケージ内部に使われる特殊ガラスクロスの約85%を生産しており、2027〜28年まで緩和は見込まれていません<sup><a href="#ref-16">16</a></sup>。同じく日本の味の素は、ABF絶縁フィルムのほぼすべてを生産しており、報道によれば8月に中国本土向けの供給を30%削減しました<sup><a href="#ref-54">54</a></sup>。これらは地質ではなく工場の問題です。しかし、まさに本稿が扱う、遅く集中した生産能力の典型例です。
+今年、AIの拡大を最も制約したのは、地質ではなく工場の生産能力でした。TSMCの最先端ラインは2025年後半から稼働率100%前後かそれ以上で稼働し、SKハイニックスの最高経営責任者は高帯域幅メモリの不足が2030年まで続くと見ており<sup><a href="#ref-55">55</a></sup>、新しいメモリ工場の建設には3〜5年かかります<sup><a href="#ref-16">16</a></sup>。ガスタービンの受注残は約220 GWで、生産能力は年60〜70 GWです<sup><a href="#ref-56">56</a></sup>。日東紡はAIチップのパッケージに使われる特殊ガラスクロスの約85%を生産しており、2027〜28年まで緩和は見込まれていません<sup><a href="#ref-17">17</a></sup>。味の素はABF絶縁フィルムのほぼすべてを生産しており、報道によれば8月に中国本土向けの供給を30%削減しました<sup><a href="#ref-57">57</a></sup>。
 
 ## 副産物の罠
 
-最も解決が難しいチョークポイントは、誰も意図して採掘していない素材です。ヘリウムは天然ガス処理から得られます。硫酸は石油精製と金属製錬から得られます。ガリウムはアルミナ精製所から、ゲルマニウムとインジウムは亜鉛精錬所から、ハフニウムはジルコニウムから得られます。これらの供給量は、それ自体の価格ではなく、世界が*主産物*をどれだけ生産するかで決まります。
+最も解決が難しいチョークポイントは、誰も意図して採掘していない素材です。天然ガスから得られるヘリウム、精製と製錬から得られる硫黄と硫酸、アルミナ精製所から得られるガリウムなどです。これらの供給量は主に、世界が*主産物*をどれだけ生産するか、そして誰かが回収に投資するかどうかで決まります。
 
 <figure>
   <ByproductTraps lang="ja" />
-  <figcaption>別の産業によって供給量が決まる6つの素材。赤:2026年にショック。黄:逼迫。緑:十分。<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-38">38</a></sup></figcaption>
+  <figcaption>供給量が主に別の産業によって決まる6つの素材。赤:2026年にショック。黄:逼迫。緑:十分。青:政策で供給を抑制(コンゴ民主共和国のコバルト輸出枠は供給過剰への対応)<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-40">40</a></sup><sup><a href="#ref-58">58</a></sup>。</figcaption>
 </figure>
 
-ここには良い知らせも隠れています。既存のボーキサイトや亜鉛の処理工程から、回収設備さえ作れば、現在の数倍のガリウムを得られる可能性があります<sup><a href="#ref-38">38</a></sup>。そして、私の知る限り誰も書き留めていないひねりがあります。成長モデルはどれも、経済が電化して化石燃料を置き去りにすると想定しています<sup><a href="#ref-4">4</a></sup>。それはまさに、硫黄やヘリウムを副産物として生み出す精製所やガスプラントを縮小させることになります。テイクオフの道筋そのものが、これらの罠を締めつけるのです。(これは私の推論であり、いずれの資料の知見でもありません。)
+既存のボーキサイトや亜鉛の処理工程からは、回収設備を作れば現在の数倍のガリウムを得られる可能性があります<sup><a href="#ref-40">40</a></sup>。しかし、縮小している主産物もあります。Maslin、Van Heerde、Dayは、化石燃料の段階的廃止によって世界の硫黄の80%超の供給源が失われる一方で、硫酸の需要は増えると警告しています<sup><a href="#ref-59">59</a></sup>。AIが運営する産業による経済の急速な電化<sup><a href="#ref-4">4</a></sup>はこの締めつけを強め、ヘリウムにも同様の影響を及ぼすかもしれません。
 
 ## ボトルネックはどう移るか
 
-これらをまとめると、ループが物理的になるにつれて、制約はサプライチェーンを下流から上流へと移っていきます。スクロールしてご覧ください。
+おおまかに、そしてかなりの重なりを伴いながら、ループが物理的になるにつれて制約はサプライチェーンを移っていきます。
 
 <BottleneckScroll lang="ja">
 <div class="bstep" data-stage="0">
 
-**チップ、2024〜2027年。** 最初はGPU、次に先端パッケージング、そして高帯域幅メモリ。現在の制約はウェハーとメモリ、そしてガラスクロスや絶縁フィルムのような、小さく集中した投入物です。ここでの素材はコストと地政学的リスクであり、量の制約ではありません<sup><a href="#ref-52">52</a></sup><sup><a href="#ref-10">10</a></sup>。
+**チップ、2024〜2027年。** GPU、次に先端パッケージング、そして高帯域幅メモリ。汎用の鉱物は制約ではありませんが、ガラスクロスや絶縁フィルムのような認定の必要な特殊素材は、すでに生産量を制約しています<sup><a href="#ref-55">55</a></sup><sup><a href="#ref-11">11</a></sup><sup><a href="#ref-17">17</a></sup>。
 
 </div>
 <div class="bstep" data-stage="1">
 
-**電力、2026〜2030年。** データセンターは、送電網が接続できるよりも速くギガワット単位の電力を必要とします。開発事業者は敷地内のガスタービンに頼りますが、タービンメーカーは2028〜30年まで予約で埋まっています<sup><a href="#ref-53">53</a></sup>。
+**電力、2026〜2030年。** データセンターは、送電網が接続できるよりも速くギガワット単位の電力を必要とします。タービンメーカーは2028〜30年まで予約で埋まっています<sup><a href="#ref-56">56</a></sup>。
 
 </div>
 <div class="bstep" data-stage="2">
 
-**送電網設備。** 変圧器、開閉装置、そして変圧器内部の特殊鋼。製造には数か月しかかかりませんが、受注残が埋まっているため、入手には数年かかります<sup><a href="#ref-14">14</a></sup><sup><a href="#ref-13">13</a></sup>。
+**送電網設備。** 変圧器や開閉装置は、製造には数か月しかかかりませんが、受注残が埋まっているため入手には数年かかります<sup><a href="#ref-15">15</a></sup><sup><a href="#ref-14">14</a></sup>。
 
 </div>
 <div class="bstep" data-stage="3">
 
-**汎用金属。** 送電網と建物のための銅、それを浸出するための硫酸、変圧器のための方向性電磁鋼板。予測機関の成長率ならコストが上がるだけで何も止まりません。倍増が続く場合は、2020年代末頃に制約になり始めます<sup><a href="#ref-11">11</a></sup><sup><a href="#ref-13">13</a></sup>。
+**汎用金属。** 銅、それを浸出する硫酸、変圧器用の鋼板。予測機関の成長率ならコスト上昇と一部の遅れで済みますが、倍増が続けば銅は2020年代末頃に制約になります<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-14">14</a></sup>。
 
 </div>
 <div class="bstep" data-stage="4">
 
-**ロボット。** 最初は減速機、ハンド、ねじ、次に磁石。生産が毎年倍増し続けるなら、ロボットは2030年代前半に現在の磁石生産の5分の1を、2030年代半ばにはその全量を必要とします(上記の私のモデル。入力値は<sup><a href="#ref-20">20</a></sup><sup><a href="#ref-25">25</a></sup>)。
+**ロボット。** 減速機とハンド、次に磁石。生産が毎年倍増するなら、ロボットは2030年代前半に現在の磁石生産の5分の1を、2030年代半ばにはその全量を必要とします<sup><a href="#ref-21">21</a></sup><sup><a href="#ref-27">27</a></sup>。
 
 </div>
 <div class="bstep" data-stage="5">
 
-**鉱山と精錬所。** 最も遅く、最も集中した層です。レアアースの分離、磁石製造、銅の製錬は中国が支配しており、中国以外の重希土類は年に数十トンにとどまります<sup><a href="#ref-22">22</a></sup><sup><a href="#ref-23">23</a></sup>。
+**鉱山と精錬所。** 最も遅く、最も集中した層です。鉱山には10年以上、精錬所には数年かかります。中国以外の重希土類の生産は年に数十トンです<sup><a href="#ref-23">23</a></sup><sup><a href="#ref-25">25</a></sup>。
 
 </div>
 </BottleneckScroll>
 
 ## 誰が鍵を握るのか
 
-よくある構図は「中国対その他」です。実際の地図にはもっと多くのプレーヤーがいて、ここ数年で実際に手を打った国は、多くの報道が示唆するよりも多いのです。
+最大の鍵を握っているのは中国です。レアアース精錬の約91%、焼結磁石生産の94%<sup><a href="#ref-23">23</a></sup>、一次ガリウムの約99%を占めています<sup><a href="#ref-42">42</a></sup>。しかし、ウェハーやフォトレジストからメモリ、チップパッケージ用素材、ロボットの減速機まで、川下の鍵の多くは日本、台湾、韓国、米国が握っており、産出国にも独自の鍵があります。
 
 <figure>
   <LeverageMap lang="ja" />
-  <figcaption>支配的な段階における世界供給のシェア(国別)。色は各段階を握る主体を示します(赤:中国と産出国、青:日本・台湾・米国、黄:戦争による混乱)。●は2019〜26年に何らかの規制があったことを示し、日本の規制も含みます。出典:IEA<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-22">22</a></sup>、Akimitsu<sup><a href="#ref-38">38</a></sup>、USGS<sup><a href="#ref-45">45</a></sup>、ARECOMS<sup><a href="#ref-55">55</a></sup>、Yole<sup><a href="#ref-16">16</a></sup>、CSET<sup><a href="#ref-26">26</a></sup>、FT/ChemNet<sup><a href="#ref-54">54</a></sup>、Construction Physics<sup><a href="#ref-56">56</a></sup>。</figcaption>
+  <figcaption>支配的な工程における世界供給のおおよそのシェア。基準は行ごとに異なります(生産量、精錬量、企業の国籍、所有)。詳細はセルにカーソルを合わせると表示されます。赤:中国と産出国、青:日本・台湾・米国、黄:戦争による混乱。●は2019〜26年に何らかの制限があったことを示し、日本の規制も含みます。出典:IEA<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-23">23</a></sup>、Akimitsu<sup><a href="#ref-40">40</a></sup>、USGS<sup><a href="#ref-47">47</a></sup>、ARECOMS<sup><a href="#ref-58">58</a></sup>、Yole<sup><a href="#ref-17">17</a></sup>、CSET<sup><a href="#ref-28">28</a></sup>、FT/ChemNet<sup><a href="#ref-57">57</a></sup>、Construction Physics<sup><a href="#ref-60">60</a></sup>。</figcaption>
 </figure>
 
-**中国の規制は現実のものであり、北京はそれを通常のことと位置づけています。** 商務部はこれを「輸出管理制度を整備するための……正当な措置」と呼び、「輸出管理は輸出禁止ではない」と強調し、米国の規制リストが中国の約900品目に対し3,000品目を超えることを指摘しています<sup><a href="#ref-57">57</a></sup>。中国の影響力に対抗するために書かれたCFRの報告書でさえ、中国の規制は通常、米国の関税や半導体輸出規制に続く形で導入されてきたことを認めています<sup><a href="#ref-58">58</a></sup>。3月以降、新たな国務院令により、中国のサプライヤーとの取引を打ち切った外国企業に報復する法的根拠が北京に与えられました<sup><a href="#ref-59">59</a></sup>。規制対象のレアアースの米国の輸入量は、いまだ規制前の水準に戻っていません<sup><a href="#ref-60">60</a></sup>。
+**中国の規制は現実のものであり、北京はそれを通常のことと位置づけています。** 商務部は「輸出管理は輸出禁止ではない」と強調しており<sup><a href="#ref-61">61</a></sup>、中国の影響力に対抗するために書かれたCFRの報告書でさえ、中国の規制は通常、米国の関税や半導体輸出規制に続く形で導入されてきたことを認めています<sup><a href="#ref-62">62</a></sup>。3月以降は国務院令により、中国のサプライヤーとの取引を打ち切った外国企業に北京が報復できるようになりました<sup><a href="#ref-63">63</a></sup>。
 
-**中国自身も脆弱です。** 中国は製錬する銅精鉱の80%超を輸入し<sup><a href="#ref-50">50</a></sup>、硫黄の45%超を輸入しており、その半分以上がホルムズ海峡を経由しています<sup><a href="#ref-61">61</a></sup>。2026年の最初の7か月間には、重量ベースでレアアース関連物資の輸入が輸出を上回りました<sup><a href="#ref-62">62</a></sup>。硫酸の禁輸は、影響力の行使であると同時に自己防衛でもありました。また、その管理には漏れがあります。地方政府は地元の税収を守ろうとし、価格差が広がるにつれて密輸も増えています<sup><a href="#ref-63">63</a></sup>。
+**中国自身も脆弱です。** 中国は製錬する銅精鉱の80%超を輸入し<sup><a href="#ref-52">52</a></sup>、硫黄の45%超を輸入していて、その半分以上がホルムズ海峡を経由しています<sup><a href="#ref-64">64</a></sup>。硫酸の禁輸は、影響力の行使であると同時に自己防衛でもありました。また、その管理には漏れがあります。地方政府は地元の税収を守ろうとし、密輸は価格差に応じて増えます<sup><a href="#ref-65">65</a></sup>。
 
-**日本は主要な対抗勢力です。** 日本企業は、シリコンウェハーの約44%、フォトレジストの約4分の3、AIチップのパッケージに使われるガラスクロスと絶縁フィルムの大半、そして世界の精密ロボット減速機の大半を生産しています<sup><a href="#ref-64">64</a></sup><sup><a href="#ref-65">65</a></sup><sup><a href="#ref-16">16</a></sup><sup><a href="#ref-54">54</a></sup><sup><a href="#ref-26">26</a></sup>。1月以降の中国による日本向けデュアルユース品の輸出禁止で、日本の上半期のジスプロシウム輸入は82%減少しました<sup><a href="#ref-66">66</a></sup>。中国の国営メディアは、これを日本国民ではなく日本の「再軍事化」に対する牽制だと説明しています<sup><a href="#ref-67">67</a></sup>。日本のタングステン需要家はスクラップの輸入とリサイクルの構築で対応しており、9DashLineはこの規制が裏目に出ていると論じています<sup><a href="#ref-68">68</a></sup>。一方で、中国稀土集団は減収ながら純利益が46.5%増加したと報告しました<sup><a href="#ref-62">62</a></sup>。どちらも同時に成り立ちうるのです。
+**日本は主要な対抗勢力です。** 日本企業は、シリコンウェハーの約44%、フォトレジストの約4分の3、チップパッケージ用のガラスクロスと絶縁フィルムの大半、そして精密ロボット減速機の大半を生産しています<sup><a href="#ref-66">66</a></sup><sup><a href="#ref-67">67</a></sup><sup><a href="#ref-17">17</a></sup><sup><a href="#ref-57">57</a></sup><sup><a href="#ref-28">28</a></sup>。1月に中国が日本の軍事エンドユーザー向けのデュアルユース品輸出を禁止したのと時を同じくして、日本の上半期のジスプロシウム原鉱の輸入は82%減少しました<sup><a href="#ref-24">24</a></sup>。一方、日本のタングステン需要家はスクラップの輸入とリサイクルで対応し、9DashLineはこの規制が裏目に出ていると論じています<sup><a href="#ref-68">68</a></sup>。
 
-**産出国が見ているのは影響力ではなく付加価値です。** UNCTADによれば、2020年以降、重要鉱物に関する輸出措置(禁輸、割当、課税、許可制)は98件にのぼります。最も多いのはコンゴ民主共和国(18件)で、中国(16件)、インドネシア(12件)が続きます<sup><a href="#ref-69">69</a></sup>。コンゴ民主共和国は「市場の均衡を保つ」ため、コバルトの輸出を年8万7,000トンと戦略備蓄分に制限しています<sup><a href="#ref-55">55</a></sup>。インドネシアはニッケルの国内加工を推し進めており、今月には大統領が11の川下プロジェクトを始動させました。その一方で、国内の専門家は高品位鉱石が10年以内に枯渇しかねないと警告しています<sup><a href="#ref-70">70</a></sup><sup><a href="#ref-71">71</a></sup>。アフリカ開発銀行は、アフリカが重要鉱物の鉱床の約30%を擁しながら、その付加価値のごくわずかしか得ていないと指摘しています<sup><a href="#ref-72">72</a></sup>。率直に付け加えると、AIやロボットを自国の好機と位置づけている産出国政府は見つかりませんでした。彼らが語るのは電気自動車とエネルギー転換です。
+**産出国や中堅国にも鍵があります。** UNCTADによれば、2020年以降、重要鉱物に関する輸出制限は98件にのぼり、その多くはコンゴ民主共和国、中国、インドネシアによるものです<sup><a href="#ref-69">69</a></sup>。コンゴ民主共和国は供給過剰のなか「市場の均衡を保つ」ためコバルトの輸出を制限し<sup><a href="#ref-58">58</a></sup>、インドネシアはニッケルの加工を国内にとどめています<sup><a href="#ref-70">70</a></sup>。韓国の防衛企業はレアアースをロシアやアラブ諸国経由で調達し<sup><a href="#ref-71">71</a></sup>、チリの下院は、米国との鉱物協定が中国との貿易を制限してはならないと警告しました<sup><a href="#ref-72">72</a></sup>。AIやロボットを自国の好機と位置づけている産出国政府は見つかりませんでした。
 
-**中堅国はリスクを分散しています。** 韓国の防衛企業はレアアースをロシアやアラブ諸国経由で調達しています<sup><a href="#ref-73">73</a></sup>。チリの下院は、米国との鉱物協定が中国との貿易を制限したり、優先的なアクセスや統制価格を設けたりしてはならないと警告する決議を可決しました<sup><a href="#ref-74">74</a></sup>。インドは「戦略的自律」と加工を優先する戦略を追求しています。ORFは、中国当局が鉱物へのアクセスと引き換えに外国企業に製品設計情報を求めたとの報道を紹介しています<sup><a href="#ref-75">75</a></sup>。Bruegelは、米国主導の価格下限に慎重になるよう欧州に促しています<sup><a href="#ref-76">76</a></sup>。そして中国にも買い手としての力があります。現在、単一の国営購買機関が鉄鉱石の輸入を一元的に調整しているのです<sup><a href="#ref-77">77</a></sup>。
-
-**認識そのものも鍵になります。** 2010年の日中間のレアアース「禁輸」は貿易統計にははっきりと表れていませんが、それでもLynasへの融資を含め、15年にわたって日本の政策を形づくりました<sup><a href="#ref-78">78</a></sup>。9月28日時点で、米中の休戦は2027年1月10日まで続きます<sup><a href="#ref-79">79</a></sup>。アナリストは、持続的な合意には「レアアースの実際の引き渡し」が必要だと述べていますが<sup><a href="#ref-80">80</a></sup>、中国側の発表はこれに触れていません<sup><a href="#ref-79">79</a></sup>。
+認識そのものも鍵になります。2010年の日中間のレアアース「禁輸」は貿易統計にほとんど表れていませんが、それでもLynasへの融資を含め、15年にわたって日本の政策を形づくりました<sup><a href="#ref-73">73</a></sup>。
 
 ## なぜ重要か:誰が先に進むのか
 
-素材が移行を数年遅らせるだけなら、なぜ気にする必要があるのでしょうか。倍増する経済では、数年がすべてだからです。Binderは、毎年倍増する経済で2年先行することは、生産量が4倍になることを意味すると指摘しています<sup><a href="#ref-5">5</a></sup>。Forethoughtは、フルスタックの知能爆発は、厚い産業基盤と緩やかな規制を持つ国に有利に働く可能性があるとし、中国と湾岸諸国を挙げています<sup><a href="#ref-81">81</a></sup>。これをレバレッジの地図と並べると、居心地の悪い結論が導かれます。今後5年間のチョークポイントは、物理的なループが閉じる*かどうか*は決めないかもしれません。しかし、それが*どこで*閉じるかは十分に決めうるのです。
+毎年倍増する経済では、2年先行することは生産量が4倍になることを意味します<sup><a href="#ref-6">6</a></sup>。Forethoughtは、物理的な産業まで自動化するAIの拡大は、厚い産業基盤と緩やかな規制を持つ国に有利に働く可能性があるとし、中国と湾岸諸国を挙げています<sup><a href="#ref-74">74</a></sup>。今後5年間のチョークポイントは、物理的なループが閉じる*かどうか*は決めないかもしれませんが、それが*どこで*閉じるかは十分に決めうるのです。
 
-率直な限界を一つ挙げておきます。より優れたAIが固定量のチップの上でAIを改良していく、純粋にソフトウェアだけの知能爆発であれば、こうした問題のほぼすべてを回避できます<sup><a href="#ref-81">81</a></sup>。本稿が扱っているのは、ループが原子を必要とする瞬間です。
+限界を一つ挙げておきます。AIが固定量のチップの上で、ソフトウェアだけで自らを改良していくのであれば、こうした問題のほぼすべては当てはまりません<sup><a href="#ref-74">74</a></sup>。
 
 ## 注目すべきこと
 
-- **2027年1月10日**:米中休戦の期限<sup><a href="#ref-79">79</a></sup>。
-- **2026年後半**:中国の硫酸輸出停止が予定どおり終了するか<sup><a href="#ref-48">48</a></sup><sup><a href="#ref-49">49</a></sup>。
-- **2026年後半**:MP Materialsの米国工場から最初の商用磁石が出荷されるか。中国以外の酸化物に買い手がつくか<sup><a href="#ref-21">21</a></sup>。
-- **2027年2月と2028年3月**:日本の大規模な海底レアアース泥の試験と、その実現可能性の判断<sup><a href="#ref-82">82</a></sup>。
-- **2027〜28年**:日東紡のガラスクロス新規生産能力<sup><a href="#ref-16">16</a></sup>。2028年からの味の素のフィルム増産<sup><a href="#ref-54">54</a></sup>。
-- **2027年末**:世界最大級の銅山の一つであるグラスベルグが完全操業に戻るか<sup><a href="#ref-83">83</a></sup>。
-- **ロボット生産の倍増期間。** ヒューマノイドの生産が倍増するのに2年以上かかるなら、磁石は2040年代半ばまで制約になりません。2030年以降も1年での倍増が続くなら、2030年代半ばに制約になります。
-- **新たな供給手法**:低品位銅のバイオリーチング(リオ・ティントのNutonが9月にジョンソン・キャンプで始動)<sup><a href="#ref-84">84</a></sup>、AI主導の探査、レアアースを使わない磁石材料。
+- **ロボット生産の倍増期間。** ヒューマノイドの生産が倍増するのに2年以上かかるなら、ロボットが現在の磁石生産の5分の1すら必要とするのは2040年代以降です。2030年以降も毎年倍増が続くなら、2030年代半ばには全量を必要とします。
+- **2026年後半〜2027年1月**:中国の硫酸輸出停止の終了<sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>、中国以外のレアアース酸化物の買い手<sup><a href="#ref-22">22</a></sup>、そして1月10日の米中休戦の期限。アナリストは、持続的な合意には「レアアースの実際の引き渡し」が必要だと述べています<sup><a href="#ref-75">75</a></sup><sup><a href="#ref-76">76</a></sup>。
+- **2027〜28年**:日東紡のガラスクロス増産<sup><a href="#ref-17">17</a></sup>。2028年に始まる味の素のフィルム増産と、2032年頃の3つ目の工場<sup><a href="#ref-57">57</a></sup>。日本の海底レアアース泥の試験<sup><a href="#ref-77">77</a></sup>。2027年末を目標とし、2028年初めにずれ込む可能性もあるグラスベルグの完全操業への復帰<sup><a href="#ref-54">54</a></sup>。
+- **新たな供給**:低品位銅のバイオリーチング<sup><a href="#ref-78">78</a></sup>、AI主導の探査、レアアースを使わない磁石とモーター。
 
 ## 手法についての注記
 
-インタラクティブモデルは意図的に単純にしています。需要は2026年を基準に指数関数的に伸び、供給は一定の率で伸び、その一定割合が対象の部門に利用可能とします。価格、代替の動き、備蓄、リサイクルは無視しており、これらはいずれも交差を和らげる方向に働きます。示した時期は感度を示す例であり、予測ではありません。リードタイムの区分は概算です。一部の数値は有料レポートを要約経由で読んだもので、特にPayne Instituteの研究がそうです。ヘリウムの再開時期と一部の価格は二次資料に依拠しています。本稿の調査はAIリサーチエージェントの助けを借りて行いました。すべての数値は出典にリンクしており、訂正を歓迎します。
+インタラクティブモデルは意図的に単純にしています。需要は指数関数的に伸び、供給は一定の率で伸び、その一定割合が対象の部門に利用可能とします。価格、代替、備蓄、リサイクルは無視しており、これらはいずれも交差を和らげる方向に働きます。示した時期は感度を示す例であり、予測ではありません。私自身の仮定は各タブに明記しています。一部の数値は有料レポートを要約経由で読んだもので(特にS&PとPayne Institute)、一部の価格は二次資料に依拠しています。本稿の調査はAIリサーチエージェントの助けを借りて行い、冒頭の画像はAI画像生成ツールで作成しました。すべての数値は出典にリンクしており、訂正を歓迎します。
 
 ## 参考文献
 
 <ol class="refs">
   <li id="ref-1">International Energy Agency, Global Critical Minerals Outlook 2026. <a href="https://iea.blob.core.windows.net/assets/19c60aa0-ee07-4a20-a138-33c967ac5008/GlobalCriticalMineralsOutlook2026.pdf">iea.blob.core.windows.net</a></li>
   <li id="ref-2">Tom Davidson & Rose Hadshar, “The Industrial Explosion”, Forethought, 2025. <a href="https://www.forethought.org/research/the-industrial-explosion">www.forethought.org</a></li>
-  <li id="ref-3">Daniel Kokotajlo et al., “AI 2027”, AI Futures Project, 2025 (race and slowdown endings, footnotes). <a href="https://ai-2027.com/footnotes">ai-2027.com</a></li>
+  <li id="ref-3">Daniel Kokotajlo et al., “AI 2027”, AI Futures Project, 2025 (PDF: robot milestones in both endings; Appendix Q, “Robot economy doubling times”, and its footnotes). <a href="https://ai-2027.com/ai-2027.pdf">ai-2027.com</a></li>
   <li id="ref-4">Damon Binder, “The AI Industrial Explosion, Part 1: Maximum growth rates with current technology”, 2026. <a href="https://defensesindepth.bio/ai-industrial-takeoff-part-1-maximum-growth-rates-with-current-technology">defensesindepth.bio</a></li>
-  <li id="ref-5">Damon Binder, “AGI will set off an industrial explosion”, AI Frontiers, 2026. <a href="https://ai-frontiers.org/articles/agi-will-set-off-an-industrial-explosion">ai-frontiers.org</a></li>
-  <li id="ref-6">Epoch AI, “How fast could robot production scale up?”, 2026. <a href="https://epoch.ai/blog/how-fast-could-robot-production-scale-up">epoch.ai</a></li>
-  <li id="ref-7">Richard Schodde, “Long term outlook for the global exploration industry”, MinEx Consulting. <a href="https://www.uvm.edu/~shali/Schodde.pdf">www.uvm.edu</a></li>
-  <li id="ref-8">Hannah Ritchie, “How much will mineral demand increase for the energy transition?”, 2024. <a href="https://hannahritchie.substack.com/p/transition-mineral-demand-part-one">hannahritchie.substack.com</a></li>
-  <li id="ref-9">Epoch AI, “Can AI scaling continue through 2030?”, 2024. <a href="https://epoch.ai/blog/can-ai-scaling-continue-through-2030">epoch.ai</a></li>
-  <li id="ref-10">Epoch AI, “Introducing the AI Chip Components Explorer”, May 2026. <a href="https://epoch.ai/latest/introducing-the-ai-chip-components-explorer">epoch.ai</a></li>
-  <li id="ref-11">S&P Global, “Copper in the Age of AI”, January 2026. <a href="https://www.spglobal.com/en/research-insights/special-reports/copper-in-the-age-of-ai">www.spglobal.com</a></li>
-  <li id="ref-12">Wood Mackenzie, “Data centre metals demand isn’t an asset story. It’s a grid story”, June 2026. <a href="https://www.woodmac.com/press-releases/wood-mackenzie-data-centre-metals-demand-isnt-an-asset-story.-its-a-grid-story">www.woodmac.com</a></li>
-  <li id="ref-13">Amoah, Brown, Simon, Bazilian & Matisek, “Mineral demand from AI data centers: infrastructure intensity, processing bottlenecks, and supply competition”, Resources Policy 119, 2026 (Payne Institute). <a href="https://payneinstitute.mines.edu/mineral-demand-from-ai-data-centers-infrastructure-intensity-processing-bottlenecks-and-supply-competition/">payneinstitute.mines.edu</a></li>
-  <li id="ref-14">Damon Binder, “The AI Industrial Explosion, Part 3: Going faster”, 2026. <a href="https://defensesindepth.bio/the-ai-industrial-explosion-part-3-going-faster/">defensesindepth.bio</a></li>
-  <li id="ref-15">MUFG, “Bottlenecks to Scaling AI Computational Power”, June 2026. <a href="https://www.mufgamericas.com/sites/default/files/document/mufgamericas_com/2026-06/Bottlenecks_Scaling_AI.pdf">www.mufgamericas.com</a></li>
-  <li id="ref-16">Yole Group, “AI supply chain at risk: between T-glass shortage and emerging glass core”, February 2026. <a href="https://www.yolegroup.com/strategy-insights/ai-supply-chain-at-risk-between-t-glass-shortage-and-emerging-glass-core">www.yolegroup.com</a></li>
-  <li id="ref-17">Al Jazeera, “Iran attacks cut 17% of Qatar’s LNG capacity for up to five years: QatarEnergy”, 19 March 2026. <a href="https://www.aljazeera.com/news/2026/3/19/iran-attacks-cut-17-of-qatars-lng-capacity-for-up-to-5-years-qatarenergy">www.aljazeera.com</a></li>
-  <li id="ref-18">Goldman Sachs humanoid forecast, via Yahoo Finance, September 2026. <a href="https://finance.yahoo.com/technology/ai/articles/goldman-sachs-just-supercharged-humanoid-135551371.html">finance.yahoo.com</a></li>
-  <li id="ref-19">Bank of America Institute, “Physical AI, part 2”, March 2026. <a href="https://institute.bankofamerica.com/content/dam/transformation/physical-ai-part-2.pdf">institute.bankofamerica.com</a></li>
-  <li id="ref-20">CRU, “Humanoid robots can widen the projected rare earth supply deficit”, September 2026. <a href="https://www.crugroup.com/en/communities/thought-leadership/2026/humanoid-robots-can-widen-the-projected-rare-earth-supply-deficit">www.crugroup.com</a></li>
-  <li id="ref-21">Benchmark Mineral Intelligence, “Ex-China NdPr prices slip below $110/kg price floor as oversupply builds”, August 2026. <a href="https://source.benchmarkminerals.com/article/ex-china-ndpr-prices-slip-below-110-kg-price-floor-as-oversupply-builds">source.benchmarkminerals.com</a></li>
-  <li id="ref-22">International Energy Agency, Rare Earth Elements: executive summary, April 2026. <a href="https://www.iea.org/reports/rare-earth-elements/executive-summary">www.iea.org</a></li>
-  <li id="ref-23">Rare Earth Mining, “Lynas Rare Earths results: Q3 FY26” (quarterly Dy+Tb output), April 2026. <a href="https://rare-earth-mining.com/lynas-rare-earths-results-q3-fy26">rare-earth-mining.com</a></li>
-  <li id="ref-24">Lynas Rare Earths, June-quarter FY26 earnings call transcript (Dy 240 t/yr and Tb 50 t/yr capacity, feedstock permitting), July 2026. <a href="https://www.investing.com/news/transcripts/earnings-call-transcript-lynas-rare-earths-posts-record-pricing-in-q4-2026-as-stock-falls-93CH-4804573">www.investing.com</a></li>
-  <li id="ref-25">Emerson Alden, “The Robot Boom Has a Magnet Problem”, Foundation for American Innovation, September 2026. <a href="https://www.thefai.org/posts/the-robot-boom-has-a-magnet-problem">www.thefai.org</a></li>
-  <li id="ref-26">John VerWey, “Physical AI”, CSET Georgetown, February 2026. <a href="https://cset.georgetown.edu/wp-content/uploads/CSET-Physical-AI.pdf">cset.georgetown.edu</a></li>
-  <li id="ref-27">Electrek, “Tesla Optimus production ramp: hands, AI generalization problems”, 25 September 2026. <a href="https://electrek.co/2026/09/25/tesla-optimus-production-ramp-hands-ai-generalization-problems">electrek.co</a></li>
-  <li id="ref-28">Adamas Intelligence, “What Boston Dynamics’ Atlas reveals about the future of NdFeB magnet demand”, January 2026. <a href="https://www.adamasintel.com/what-boston-dynamics-atlas-reveals-about-the-future-of-ndfeb-magnet-demand">www.adamasintel.com</a></li>
-  <li id="ref-29">World Economic Forum & Kearney, “From Minerals to Megawatts”, December 2025. <a href="https://reports.weforum.org/docs/WEF_From_Minerals_to_Megawatts_2025.pdf">reports.weforum.org</a></li>
-  <li id="ref-30">Oxford Smith School & Marex, “AI data centres: impact on power and commodity markets”, April 2026. <a href="https://www.smithschool.ox.ac.uk/sites/default/files/2026-04/Impact-on-Power-and-Commodity-Markets.pdf">www.smithschool.ox.ac.uk</a></li>
-  <li id="ref-31">NVIDIA, “800 V HVDC architecture will power the next generation of AI factories”. <a href="https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/">developer.nvidia.com</a></li>
-  <li id="ref-32">Andy Home, “AI may not be the demand booster copper bulls expect”, Reuters, 3 June 2026. <a href="https://www.reuters.com/commentary/reuters-open-interest/ai-may-not-be-demand-booster-copper-bulls-expect-2026-06-03/">www.reuters.com</a></li>
-  <li id="ref-33">Resource Capital Funds, “Metal mining gigacycle: parsing metal demand at the source”, August 2026. <a href="https://resourcecapitalfunds.com/insights/commodity-insights/metal-mining-gigacycle-parsing-metal-demand-at-the-source/">resourcecapitalfunds.com</a></li>
-  <li id="ref-34">BloombergNEF data-centre copper tracking, via Carbon Credits, 2025. <a href="https://carboncredits.com/data-centers-copper-hunger-how-ai-is-driving-a-looming-supply-crunch">carboncredits.com</a></li>
-  <li id="ref-35">PIIE, “Bring back the helium reserve before the next shock hits”, April 2026. <a href="https://www.piie.com/blogs/realtime-economics/2026/bring-back-helium-reserve-next-shock-hits">www.piie.com</a></li>
-  <li id="ref-36">David Baqaee & Emmanuel Farhi, “The Macroeconomic Impact of Microeconomic Shocks: Beyond Hulten’s Theorem”, Econometrica, 2019. <a href="https://www.nber.org/papers/w23145">www.nber.org</a></li>
-  <li id="ref-37">Philippe Aghion, Benjamin Jones & Charles Jones, “Artificial Intelligence and Economic Growth”, NBER, 2019. <a href="https://www.nber.org/system/files/chapters/c14015/c14015.pdf">www.nber.org</a></li>
-  <li id="ref-38">Piyush Akimitsu, “Artificial Intelligence: Supply-Chain Chokepoints and the Reach of Industrial Policy”, arXiv 2607.29572, 2026. <a href="https://arxiv.org/pdf/2607.29572">arxiv.org</a></li>
-  <li id="ref-39">Industrial Info Resources, “China restrictions lead to tungsten supply crunch”, June 2026. <a href="https://www.industrialinfo.com/news/article/china-restrictions-lead-to-tungsten-supply-crunch--358432">www.industrialinfo.com</a></li>
-  <li id="ref-40">CSIS, “The U.S.-China trade truce has not solved the gallium problem”, May 2026. <a href="https://www.csis.org/analysis/us-china-trade-truce-has-not-solved-gallium-problem">www.csis.org</a></li>
-  <li id="ref-41">GameChange Energy, “Transformer lead times in 2026”. <a href="https://www.gamechangeenergy.com/news/transformer-lead-times-in-2026-what-pad-mounted-and-substation-buyers-can-expect">www.gamechangeenergy.com</a></li>
-  <li id="ref-42">Akin Gump, “When supply chains break: force majeure, hardship and the sulfuric acid crisis”, April 2026. <a href="https://www.akingump.com/en/insights/alerts/when-supply-chains-break-force-majeure-hardship-and-the-sulfuric-acid-crisis">www.akingump.com</a></li>
-  <li id="ref-43">Reuters, “Copper to hold gains in 2026 as mine disruptions fuel deficit” (analyst poll), October 2025. <a href="https://www.reuters.com/business/copper-hold-gains-2026-mine-disruptions-fuel-deficit-2025-10-27">www.reuters.com</a></li>
-  <li id="ref-44">MINING.COM, “Copper price back at record’s edge as Grasberg smelter halt bites”, 2026. <a href="https://www.mining.com/copper-price-back-at-records-edge-as-grasberg-smelter-halt-bites-aluminum-surges">www.mining.com</a></li>
-  <li id="ref-45">U.S. Geological Survey, Mineral Commodity Summaries 2026: Helium. <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026-helium.pdf">pubs.usgs.gov</a></li>
-  <li id="ref-46">Korea Herald, “Iran tensions rattle chip supply chains, raise gas risks”, 24 March 2026. <a href="https://www.koreaherald.com/article/10701656">www.koreaherald.com</a></li>
-  <li id="ref-47">Lloyd’s List Intelligence, “Strait of Hormuz brief”, 8 October 2026. <a href="https://www.lloydslistintelligence.com/resources/blog/strait-of-hormuz-brief-8-october-2026">www.lloydslistintelligence.com</a></li>
-  <li id="ref-48">Kpler, “Sulphur & sulphuric acid in 2026: the feedstock crisis cascading through copper, nickel & fertilisers”, June 2026. <a href="https://www.kpler.com/blog/sulphur-sulphuric-acid-in-2026-the-feedstock-crisis-cascading-through-copper-nickel-fertilisers">www.kpler.com</a></li>
-  <li id="ref-49">CRU BC Insight, “China’s sulphuric acid export halt tightens global supply”, May 2026. <a href="https://www.bcinsight.crugroup.com/2026/05/27/chinas-sulphuric-acid-export-halt-tightens-global-supply">www.bcinsight.crugroup.com</a></li>
-  <li id="ref-50">Mysteel, “China’s sulfuric acid export ban unlikely to suppress short-term copper smelting profit”, May 2026. <a href="https://www.mysteel.net/analysis/5125029-chinas-sulfuric-acid-export-ban-unlikely-to-suppress-short-term-copper-smelting-profit">www.mysteel.net</a></li>
-  <li id="ref-51">Cochilco (Chilean Copper Commission), Mercado del ácido sulfúrico. <a href="https://www.cochilco.cl/web/acido-sulfurico">www.cochilco.cl</a></li>
-  <li id="ref-52">CNAS, “American AI Companies Can’t Get Enough Chips”, May 2026. <a href="https://www.cnas.org/publications/reports/american-ai-companies-cant-get-enough-chips">www.cnas.org</a></li>
-  <li id="ref-53">Nathan Benaich et al., State of AI Report 2026. <a href="https://www.stateof.ai/State-of-AI-Report-2026.pdf">www.stateof.ai</a></li>
-  <li id="ref-54">FT Mercati / ChemNet, “Ajinomoto to cut ABF film supply to China by 30% amid global shortage”, August 2026. <a href="https://www.ftmercati.com/en/ajinomoto-to-cut-abf-film-supply-to-china-by-30-amid-global-shortage-178875.html">www.ftmercati.com</a></li>
-  <li id="ref-55">Fastmarkets, interview with ARECOMS (DRC cobalt regulator), August 2026. <a href="https://www.fastmarkets.com/insights/drc-may-reduce-cobalt-quota-if-market-needs-rebalancing-arecoms-says-exclusive">www.fastmarkets.com</a></li>
-  <li id="ref-56">Brian Potter, “Does all semiconductor manufacturing depend on Spruce Pine quartz?”, Construction Physics. <a href="https://www.construction-physics.com/p/does-all-semiconductor-manufacturing">www.construction-physics.com</a></li>
-  <li id="ref-57">Ministry of Commerce of China, spokesperson remarks on rare-earth export controls, 13 October 2025 (gov.cn). <a href="https://english.www.gov.cn/news/202510/13/content_WS68ecc859c6d00ca5f9a06bc8.html">english.www.gov.cn</a></li>
-  <li id="ref-58">Joris Teer, “Dismantling China’s Supply-Chain Weapon”, Council on Foreign Relations, September 2026. <a href="https://www.cfr.org/reports/dismantling-chinas-supply-chain-weapon">www.cfr.org</a></li>
-  <li id="ref-59">State Council of China, Provisions on Industrial and Supply Chain Security (Order No. 834), March 2026 — China Law Translate. <a href="https://www.chinalawtranslate.com/en/-State-Council-Provisions-on-Industrial-and-Supply-Chain-Security/">www.chinalawtranslate.com</a></li>
-  <li id="ref-60">CSIS, “Rare Earth Export Restrictions One Year Later”, April 2026. <a href="https://www.csis.org/analysis/rare-earth-export-restrictions-one-year-later">www.csis.org</a></li>
-  <li id="ref-61">BNamericas, “Crisis in the Middle East worsens sulfuric acid deficit in copper mining in Chile”, 2026. <a href="https://www.bnamericas.com/en/analysis/crisis-in-the-middle-east-worsens-sulfuric-acid-deficit-in-copper-mining-in-chile">www.bnamericas.com</a></li>
-  <li id="ref-62">Global Times, China rare-earth trade and industry results, 7 August 2026. <a href="https://www.globaltimes.cn/page/202608/1367748.shtml">www.globaltimes.cn</a></li>
-  <li id="ref-63">East Asia Forum, “Local politics limits China’s rare earth leverage”, September 2026. <a href="https://eastasiaforum.org/2026/09/10/local-politics-limits-chinas-rare-earth-leverage/">eastasiaforum.org</a></li>
-  <li id="ref-64">36Kr, “Global semiconductor materials market share analysis”, 2026. <a href="https://eu.36kr.com/en/p/3918968758300292">eu.36kr.com</a></li>
-  <li id="ref-65">SemiAnalysis, “Lam Research, Tokyo Electron, JSR battle it out in the EUV photoresist market”, 2021. <a href="https://newsletter.semianalysis.com/p/lam-research-tokyo-electron-jsr-battle">newsletter.semianalysis.com</a></li>
-  <li id="ref-66">Global Times, “Japan’s H1 dysprosium raw mineral imports plunge 82%”, August 2026. <a href="https://www.globaltimes.cn/page/202608/1368583.shtml">www.globaltimes.cn</a></li>
-  <li id="ref-67">Global Times editorial on export controls toward Japan, 5 July 2026. <a href="https://www.globaltimes.cn/page/202607/1365201.shtml">www.globaltimes.cn</a></li>
+  <li id="ref-5">Damon Binder, “The AI Industrial Explosion, Part 2: Transition dynamics”, May 2026. <a href="https://defensesindepth.bio/the-ai-industrial-explosion-part-2-transition-dynamics/">defensesindepth.bio</a></li>
+  <li id="ref-6">Damon Binder, “AGI will set off an industrial explosion”, AI Frontiers, 2026. <a href="https://ai-frontiers.org/articles/agi-will-set-off-an-industrial-explosion">ai-frontiers.org</a></li>
+  <li id="ref-7">Epoch AI, “How fast could robot production scale up?”, 2026. <a href="https://epoch.ai/blog/how-fast-could-robot-production-scale-up">epoch.ai</a></li>
+  <li id="ref-8">Richard Schodde, “Long term outlook for the global exploration industry”, MinEx Consulting. <a href="https://www.uvm.edu/~shali/Schodde.pdf">www.uvm.edu</a></li>
+  <li id="ref-9">Hannah Ritchie, “How much will mineral demand increase for the energy transition?”, 2024. <a href="https://hannahritchie.substack.com/p/transition-mineral-demand-part-one">hannahritchie.substack.com</a></li>
+  <li id="ref-10">Epoch AI, “Can AI scaling continue through 2030?”, 2024. <a href="https://epoch.ai/blog/can-ai-scaling-continue-through-2030">epoch.ai</a></li>
+  <li id="ref-11">Epoch AI, “Introducing the AI Chip Components Explorer”, May 2026. <a href="https://epoch.ai/latest/introducing-the-ai-chip-components-explorer">epoch.ai</a></li>
+  <li id="ref-12">S&P Global, “Copper in the Age of AI”, January 2026. <a href="https://www.spglobal.com/en/research-insights/special-reports/copper-in-the-age-of-ai">www.spglobal.com</a></li>
+  <li id="ref-13">Wood Mackenzie, “Data centre metals demand isn’t an asset story. It’s a grid story”, June 2026. <a href="https://www.woodmac.com/press-releases/wood-mackenzie-data-centre-metals-demand-isnt-an-asset-story.-its-a-grid-story">www.woodmac.com</a></li>
+  <li id="ref-14">Amoah, Brown, Simon, Bazilian & Matisek, “Mineral demand from AI data centers: infrastructure intensity, processing bottlenecks, and supply competition”, Resources Policy 119, 2026 (Payne Institute). <a href="https://payneinstitute.mines.edu/mineral-demand-from-ai-data-centers-infrastructure-intensity-processing-bottlenecks-and-supply-competition/">payneinstitute.mines.edu</a></li>
+  <li id="ref-15">Damon Binder, “The AI Industrial Explosion, Part 3: Going faster”, 2026. <a href="https://defensesindepth.bio/the-ai-industrial-explosion-part-3-going-faster/">defensesindepth.bio</a></li>
+  <li id="ref-16">MUFG, “Bottlenecks to Scaling AI Computational Power”, June 2026. <a href="https://www.mufgamericas.com/sites/default/files/document/mufgamericas_com/2026-06/Bottlenecks_Scaling_AI.pdf">www.mufgamericas.com</a></li>
+  <li id="ref-17">Yole Group, “AI supply chain at risk: between T-glass shortage and emerging glass core”, February 2026. <a href="https://www.yolegroup.com/strategy-insights/ai-supply-chain-at-risk-between-t-glass-shortage-and-emerging-glass-core">www.yolegroup.com</a></li>
+  <li id="ref-18">Al Jazeera, “Iran attacks cut 17% of Qatar’s LNG capacity for up to five years: QatarEnergy”, 19 March 2026. <a href="https://www.aljazeera.com/news/2026/3/19/iran-attacks-cut-17-of-qatars-lng-capacity-for-up-to-5-years-qatarenergy">www.aljazeera.com</a></li>
+  <li id="ref-19">Goldman Sachs humanoid forecast, via Yahoo Finance, September 2026. <a href="https://finance.yahoo.com/technology/ai/articles/goldman-sachs-just-supercharged-humanoid-135551371.html">finance.yahoo.com</a></li>
+  <li id="ref-20">Bank of America Institute, “Physical AI, part 2”, March 2026. <a href="https://institute.bankofamerica.com/content/dam/transformation/physical-ai-part-2.pdf">institute.bankofamerica.com</a></li>
+  <li id="ref-21">CRU, “Humanoid robots can widen the projected rare earth supply deficit”, September 2026. <a href="https://www.crugroup.com/en/communities/thought-leadership/2026/humanoid-robots-can-widen-the-projected-rare-earth-supply-deficit">www.crugroup.com</a></li>
+  <li id="ref-22">Benchmark Mineral Intelligence, “Ex-China NdPr prices slip below $110/kg price floor as oversupply builds”, August 2026. <a href="https://source.benchmarkminerals.com/article/ex-china-ndpr-prices-slip-below-110-kg-price-floor-as-oversupply-builds">source.benchmarkminerals.com</a></li>
+  <li id="ref-23">International Energy Agency, Rare Earth Elements: executive summary, April 2026. <a href="https://www.iea.org/reports/rare-earth-elements/executive-summary">www.iea.org</a></li>
+  <li id="ref-24">Global Times, “Japan’s H1 dysprosium raw mineral imports plunge 82%”, August 2026. <a href="https://www.globaltimes.cn/page/202608/1368583.shtml">www.globaltimes.cn</a></li>
+  <li id="ref-25">Rare Earth Mining, “Lynas Rare Earths results: Q3 FY26” (quarterly Dy+Tb output), April 2026. <a href="https://rare-earth-mining.com/lynas-rare-earths-results-q3-fy26">rare-earth-mining.com</a></li>
+  <li id="ref-26">Lynas Rare Earths, June-quarter FY26 earnings call transcript (Dy 240 t/yr and Tb 50 t/yr capacity, feedstock permitting), July 2026. <a href="https://www.investing.com/news/transcripts/earnings-call-transcript-lynas-rare-earths-posts-record-pricing-in-q4-2026-as-stock-falls-93CH-4804573">www.investing.com</a></li>
+  <li id="ref-27">Emerson Alden, “The Robot Boom Has a Magnet Problem”, Foundation for American Innovation, September 2026. <a href="https://www.thefai.org/posts/the-robot-boom-has-a-magnet-problem">www.thefai.org</a></li>
+  <li id="ref-28">John VerWey, “Physical AI”, CSET Georgetown, February 2026. <a href="https://cset.georgetown.edu/wp-content/uploads/CSET-Physical-AI.pdf">cset.georgetown.edu</a></li>
+  <li id="ref-29">Electrek, “Tesla Optimus production ramp: hands, AI generalization problems”, 25 September 2026. <a href="https://electrek.co/2026/09/25/tesla-optimus-production-ramp-hands-ai-generalization-problems">electrek.co</a></li>
+  <li id="ref-30">Adamas Intelligence, “What Boston Dynamics’ Atlas reveals about the future of NdFeB magnet demand”, January 2026. <a href="https://www.adamasintel.com/what-boston-dynamics-atlas-reveals-about-the-future-of-ndfeb-magnet-demand">www.adamasintel.com</a></li>
+  <li id="ref-31">World Economic Forum & Kearney, “From Minerals to Megawatts”, December 2025. <a href="https://reports.weforum.org/docs/WEF_From_Minerals_to_Megawatts_2025.pdf">reports.weforum.org</a></li>
+  <li id="ref-32">Oxford Smith School & Marex, “AI data centres: impact on power and commodity markets”, April 2026. <a href="https://www.smithschool.ox.ac.uk/sites/default/files/2026-04/Impact-on-Power-and-Commodity-Markets.pdf">www.smithschool.ox.ac.uk</a></li>
+  <li id="ref-33">NVIDIA, “800 V HVDC architecture will power the next generation of AI factories”. <a href="https://developer.nvidia.com/blog/nvidia-800-v-hvdc-architecture-will-power-the-next-generation-of-ai-factories/">developer.nvidia.com</a></li>
+  <li id="ref-34">Andy Home, “AI may not be the demand booster copper bulls expect”, Reuters, 3 June 2026. <a href="https://www.reuters.com/commentary/reuters-open-interest/ai-may-not-be-demand-booster-copper-bulls-expect-2026-06-03/">www.reuters.com</a></li>
+  <li id="ref-35">Resource Capital Funds, “Metal mining gigacycle: parsing metal demand at the source”, August 2026. <a href="https://resourcecapitalfunds.com/insights/commodity-insights/metal-mining-gigacycle-parsing-metal-demand-at-the-source/">resourcecapitalfunds.com</a></li>
+  <li id="ref-36">BloombergNEF data-centre copper tracking, via Carbon Credits, 2025. <a href="https://carboncredits.com/data-centers-copper-hunger-how-ai-is-driving-a-looming-supply-crunch">carboncredits.com</a></li>
+  <li id="ref-37">PIIE, “Bring back the helium reserve before the next shock hits”, April 2026. <a href="https://www.piie.com/blogs/realtime-economics/2026/bring-back-helium-reserve-next-shock-hits">www.piie.com</a></li>
+  <li id="ref-38">David Baqaee & Emmanuel Farhi, “The Macroeconomic Impact of Microeconomic Shocks: Beyond Hulten’s Theorem”, Econometrica, 2019. <a href="https://www.nber.org/papers/w23145">www.nber.org</a></li>
+  <li id="ref-39">Philippe Aghion, Benjamin Jones & Charles Jones, “Artificial Intelligence and Economic Growth”, NBER, 2019. <a href="https://www.nber.org/system/files/chapters/c14015/c14015.pdf">www.nber.org</a></li>
+  <li id="ref-40">Piyush Akimitsu, “Artificial Intelligence: Supply-Chain Chokepoints and the Reach of Industrial Policy”, arXiv 2607.29572, 2026. <a href="https://arxiv.org/pdf/2607.29572">arxiv.org</a></li>
+  <li id="ref-41">Industrial Info Resources, “China restrictions lead to tungsten supply crunch”, June 2026. <a href="https://www.industrialinfo.com/news/article/china-restrictions-lead-to-tungsten-supply-crunch--358432">www.industrialinfo.com</a></li>
+  <li id="ref-42">CSIS, “The U.S.-China trade truce has not solved the gallium problem”, May 2026. <a href="https://www.csis.org/analysis/us-china-trade-truce-has-not-solved-gallium-problem">www.csis.org</a></li>
+  <li id="ref-43">GameChange Energy, “Transformer lead times in 2026”. <a href="https://www.gamechangeenergy.com/news/transformer-lead-times-in-2026-what-pad-mounted-and-substation-buyers-can-expect">www.gamechangeenergy.com</a></li>
+  <li id="ref-44">Akin Gump, “When supply chains break: force majeure, hardship and the sulfuric acid crisis”, April 2026. <a href="https://www.akingump.com/en/insights/alerts/when-supply-chains-break-force-majeure-hardship-and-the-sulfuric-acid-crisis">www.akingump.com</a></li>
+  <li id="ref-45">Reuters, “Copper to hold gains in 2026 as mine disruptions fuel deficit” (analyst poll), October 2025. <a href="https://www.reuters.com/business/copper-hold-gains-2026-mine-disruptions-fuel-deficit-2025-10-27">www.reuters.com</a></li>
+  <li id="ref-46">MINING.COM, “Copper price back at record’s edge as Grasberg smelter halt bites”, 2026. <a href="https://www.mining.com/copper-price-back-at-records-edge-as-grasberg-smelter-halt-bites-aluminum-surges">www.mining.com</a></li>
+  <li id="ref-47">U.S. Geological Survey, Mineral Commodity Summaries 2026: Helium. <a href="https://pubs.usgs.gov/periodicals/mcs2026/mcs2026-helium.pdf">pubs.usgs.gov</a></li>
+  <li id="ref-48">Korea Herald, “Iran tensions rattle chip supply chains, raise gas risks”, 24 March 2026. <a href="https://www.koreaherald.com/article/10701656">www.koreaherald.com</a></li>
+  <li id="ref-49">Lloyd’s List Intelligence, “Strait of Hormuz brief”, 8 October 2026. <a href="https://www.lloydslistintelligence.com/resources/blog/strait-of-hormuz-brief-8-october-2026">www.lloydslistintelligence.com</a></li>
+  <li id="ref-50">Kpler, “Sulphur & sulphuric acid in 2026: the feedstock crisis cascading through copper, nickel & fertilisers”, June 2026. <a href="https://www.kpler.com/blog/sulphur-sulphuric-acid-in-2026-the-feedstock-crisis-cascading-through-copper-nickel-fertilisers">www.kpler.com</a></li>
+  <li id="ref-51">CRU BC Insight, “China’s sulphuric acid export halt tightens global supply”, May 2026. <a href="https://www.bcinsight.crugroup.com/2026/05/27/chinas-sulphuric-acid-export-halt-tightens-global-supply">www.bcinsight.crugroup.com</a></li>
+  <li id="ref-52">Mysteel, “China’s sulfuric acid export ban unlikely to suppress short-term copper smelting profit”, May 2026. <a href="https://www.mysteel.net/analysis/5125029-chinas-sulfuric-acid-export-ban-unlikely-to-suppress-short-term-copper-smelting-profit">www.mysteel.net</a></li>
+  <li id="ref-53">Cochilco (Chilean Copper Commission), Mercado del ácido sulfúrico. <a href="https://www.cochilco.cl/web/acido-sulfurico">www.cochilco.cl</a></li>
+  <li id="ref-54">ChemAnalyst, “Grasberg mine targets end-2027 restart”, May 2026. <a href="https://www.chemanalyst.com/NewsAndDeals/NewsDetails/grasberg-mine-targets-end-2027-restart-as-copper-prices-42180">www.chemanalyst.com</a></li>
+  <li id="ref-55">CNAS, “American AI Companies Can’t Get Enough Chips”, May 2026. <a href="https://www.cnas.org/publications/reports/american-ai-companies-cant-get-enough-chips">www.cnas.org</a></li>
+  <li id="ref-56">Nathan Benaich et al., State of AI Report 2026. <a href="https://www.stateof.ai/State-of-AI-Report-2026.pdf">www.stateof.ai</a></li>
+  <li id="ref-57">FT Mercati / ChemNet, “Ajinomoto to cut ABF film supply to China by 30% amid global shortage”, August 2026. <a href="https://www.ftmercati.com/en/ajinomoto-to-cut-abf-film-supply-to-china-by-30-amid-global-shortage-178875.html">www.ftmercati.com</a></li>
+  <li id="ref-58">Fastmarkets, interview with ARECOMS (DRC cobalt regulator), August 2026. <a href="https://www.fastmarkets.com/insights/drc-may-reduce-cobalt-quota-if-market-needs-rebalancing-arecoms-says-exclusive">www.fastmarkets.com</a></li>
+  <li id="ref-59">Mark Maslin, Livia Van Heerde & Simon Day, “Sulfur: A potential resource crisis that could stifle green technology and threaten food security as the world decarbonises”, The Geographical Journal 188(4), 2022, doi:10.1111/geoj.12475. <a href="https://doi.org/10.1111/geoj.12475">doi.org</a></li>
+  <li id="ref-60">Brian Potter, “Does all semiconductor manufacturing depend on Spruce Pine quartz?”, Construction Physics. <a href="https://www.construction-physics.com/p/does-all-semiconductor-manufacturing">www.construction-physics.com</a></li>
+  <li id="ref-61">Ministry of Commerce of China, spokesperson remarks on rare-earth export controls, 13 October 2025 (gov.cn). <a href="https://english.www.gov.cn/news/202510/13/content_WS68ecc859c6d00ca5f9a06bc8.html">english.www.gov.cn</a></li>
+  <li id="ref-62">Joris Teer, “Dismantling China’s Supply-Chain Weapon”, Council on Foreign Relations, September 2026. <a href="https://www.cfr.org/reports/dismantling-chinas-supply-chain-weapon">www.cfr.org</a></li>
+  <li id="ref-63">State Council of China, Provisions on Industrial and Supply Chain Security (Order No. 834), March 2026 — China Law Translate. <a href="https://www.chinalawtranslate.com/en/-State-Council-Provisions-on-Industrial-and-Supply-Chain-Security/">www.chinalawtranslate.com</a></li>
+  <li id="ref-64">BNamericas, “Crisis in the Middle East worsens sulfuric acid deficit in copper mining in Chile”, 2026. <a href="https://www.bnamericas.com/en/analysis/crisis-in-the-middle-east-worsens-sulfuric-acid-deficit-in-copper-mining-in-chile">www.bnamericas.com</a></li>
+  <li id="ref-65">East Asia Forum, “Local politics limits China’s rare earth leverage”, September 2026. <a href="https://eastasiaforum.org/2026/09/10/local-politics-limits-chinas-rare-earth-leverage/">eastasiaforum.org</a></li>
+  <li id="ref-66">36Kr, “Global semiconductor materials market share analysis”, 2026. <a href="https://eu.36kr.com/en/p/3918968758300292">eu.36kr.com</a></li>
+  <li id="ref-67">SemiAnalysis, “Lam Research, Tokyo Electron, JSR battle it out in the EUV photoresist market”, 2021. <a href="https://newsletter.semianalysis.com/p/lam-research-tokyo-electron-jsr-battle">newsletter.semianalysis.com</a></li>
   <li id="ref-68">Jing Ge, “China’s tungsten export controls on Japan are backfiring”, 9DashLine, July 2026. <a href="https://www.9dashline.com/article/chinas-tungsten-export-controls-on-japan-are-backfiring">www.9dashline.com</a></li>
   <li id="ref-69">UNCTAD Global Trade Update, June 2026 (via IPS / Global Issues). <a href="https://www.globalissues.org/news/2026/07/02/43468">www.globalissues.org</a></li>
   <li id="ref-70">Cabinet Secretariat of Indonesia, “President Prabowo launches 11 downstreaming projects”, October 2026. <a href="https://setkab.go.id/en/president-prabowo-launches-11-downstreaming-projects-worth-rp180-trillion-in-north-maluku/">setkab.go.id</a></li>
-  <li id="ref-71">The Jakarta Post, “Indonesia could run out of nickel within a decade”, October 2026. <a href="https://www.thejakartapost.com/business/2026/10/07/indonesia-could-run-out-of-nickel-within-a-decade">www.thejakartapost.com</a></li>
-  <li id="ref-72">African Development Bank, “Africa wants to make its critical minerals a lever for industrialisation”, July 2026. <a href="https://www.afdb.org/en/news-and-events/africa-wants-make-its-critical-minerals-lever-industrialisation-and-economic-transformation-95515">www.afdb.org</a></li>
-  <li id="ref-73">Korea JoongAng Daily, “Korean defense firms quietly bypass China’s rare earth curbs via third countries”, August 2026. <a href="https://www.koreajoongangdaily.com/business/exclusive-korean-defense-firms-quietly-bypass-chinas-rare-earth-curbs-via-third-countries/12819627">www.koreajoongangdaily.com</a></li>
-  <li id="ref-74">BNamericas, “Chile’s lawmakers push for guardrails in critical minerals deal with US”, October 2026. <a href="https://www.bnamericas.com/en/news/chiles-lawmakers-push-for-guardrails-in-critical-minerals-deal-with-us">www.bnamericas.com</a></li>
-  <li id="ref-75">Observer Research Foundation, “Chokepoint Politics: China’s Rare-Earth Statecraft and India’s Search for Strategic Autonomy”, 2026. <a href="https://www.orfonline.org/research/-chokepoint-politics-china-s-rare-earth-statecraft-and-india-s-search-for-strategic-autonomy">www.orfonline.org</a></li>
-  <li id="ref-76">Bruegel, “Competing inputs: how the European Union can improve critical raw materials supply security”, July 2026. <a href="https://www.bruegel.org/policy-brief/competing-inputs-how-european-union-can-improve-critical-raw-materials-supply-security">www.bruegel.org</a></li>
-  <li id="ref-77">ASPI Strategist, “In minerals purchasing, China is teaching Australia a lesson on economic power”, 2026. <a href="https://www.aspistrategist.org.au/in-minerals-purchasing-china-is-teaching-australia-a-lesson-on-economic-power/">www.aspistrategist.org.au</a></li>
-  <li id="ref-78">Simon Evenett & Johannes Fritz, “Revisiting the China–Japan rare earths dispute of 2010”, VoxEU/CEPR. <a href="https://cepr.org/voxeu/columns/revisiting-china-japan-rare-earths-dispute-2010">cepr.org</a></li>
-  <li id="ref-79">gov.cn, “Eighth round of China–U.S. economic and trade consultations yields positive consensus”, 28 September 2026. <a href="https://english.www.gov.cn/news/202609/28/content_WS6aba53c5c6d00ca5f9a0d803.html">english.www.gov.cn</a></li>
-  <li id="ref-80">Al Jazeera, “‘Hostile, but hooked’: what’s behind the US–China trade truce extension”, 24 September 2026. <a href="https://www.aljazeera.com/economy/2026/9/24/hostile-but-hooked-whats-behind-the-us-china-trade-truce-extension">www.aljazeera.com</a></li>
-  <li id="ref-81">Forethought, “Three types of intelligence explosion”, 2025. <a href="https://www.forethought.org/research/three-types-of-intelligence-explosion">www.forethought.org</a></li>
-  <li id="ref-82">Japan Times, “Japan rare earths mud near Minamitorishima”, July 2026. <a href="https://www.japantimes.co.jp/business/2026/07/25/economy/japan-rare-earths-mud-minamitorishima">www.japantimes.co.jp</a></li>
-  <li id="ref-83">ChemAnalyst, “Grasberg mine targets end-2027 restart”, May 2026. <a href="https://www.chemanalyst.com/NewsAndDeals/NewsDetails/grasberg-mine-targets-end-2027-restart-as-copper-prices-42180">www.chemanalyst.com</a></li>
-  <li id="ref-84">Rio Tinto Nuton. <a href="https://nuton.tech/">nuton.tech</a></li>
+  <li id="ref-71">Korea JoongAng Daily, “Korean defense firms quietly bypass China’s rare earth curbs via third countries”, August 2026. <a href="https://www.koreajoongangdaily.com/business/exclusive-korean-defense-firms-quietly-bypass-chinas-rare-earth-curbs-via-third-countries/12819627">www.koreajoongangdaily.com</a></li>
+  <li id="ref-72">BNamericas, “Chile’s lawmakers push for guardrails in critical minerals deal with US”, October 2026. <a href="https://www.bnamericas.com/en/news/chiles-lawmakers-push-for-guardrails-in-critical-minerals-deal-with-us">www.bnamericas.com</a></li>
+  <li id="ref-73">Simon Evenett & Johannes Fritz, “Revisiting the China–Japan rare earths dispute of 2010”, VoxEU/CEPR. <a href="https://cepr.org/voxeu/columns/revisiting-china-japan-rare-earths-dispute-2010">cepr.org</a></li>
+  <li id="ref-74">Forethought, “Three types of intelligence explosion”, 2025. <a href="https://www.forethought.org/research/three-types-of-intelligence-explosion">www.forethought.org</a></li>
+  <li id="ref-75">gov.cn, “Eighth round of China–U.S. economic and trade consultations yields positive consensus”, 28 September 2026. <a href="https://english.www.gov.cn/news/202609/28/content_WS6aba53c5c6d00ca5f9a0d803.html">english.www.gov.cn</a></li>
+  <li id="ref-76">Al Jazeera, “‘Hostile, but hooked’: what’s behind the US–China trade truce extension”, 24 September 2026. <a href="https://www.aljazeera.com/economy/2026/9/24/hostile-but-hooked-whats-behind-the-us-china-trade-truce-extension">www.aljazeera.com</a></li>
+  <li id="ref-77">Japan Times, “Japan rare earths mud near Minamitorishima”, July 2026. <a href="https://www.japantimes.co.jp/business/2026/07/25/economy/japan-rare-earths-mud-minamitorishima">www.japantimes.co.jp</a></li>
+  <li id="ref-78">Rio Tinto Nuton. <a href="https://nuton.tech/">nuton.tech</a></li>
+  <li id="ref-79">Al Jazeera, "How a 95 percent drop in Hormuz traffic changed global shipping", 27 August 2026 (more than 100 vessels a day before the war). <a href="https://www.aljazeera.com/news/2026/8/27/how-a-95-percent-drop-in-hormuz-traffic-changed-global-shipping">aljazeera.com</a></li>
 </ol>
