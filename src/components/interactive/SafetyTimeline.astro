@@ -1,0 +1,151 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+
+// Time axis: months since 1 Oct 2026 (0) to 1 Sep 2027 (11).
+type Ev =
+  | { kind: 'deadline' | 'earliest' | 'summit'; t: number; label: string; above?: boolean }
+  | { kind: 'window'; t0: number; t1: number; label: string; open?: boolean; above?: boolean };
+interface Lane { name: string; events: Ev[] }
+
+const en: Lane[] = [
+  { name: 'Singapore', events: [
+    { kind: 'deadline', t: 0.2, label: 'Act passed 7 Oct', above: true },
+    { kind: 'window', t0: 0.25, t1: 5, open: true, label: 'Codes of practice drafted' },
+  ] },
+  { name: 'Japan', events: [
+    { kind: 'window', t0: 0.8, t1: 3.6, label: 'AI Act review from late Oct' },
+    { kind: 'window', t0: 3.7, t1: 8.7, open: true, label: 'Possible bill in 2027 Diet', above: true },
+  ] },
+  { name: 'EU', events: [
+    { kind: 'deadline', t: 1.4, label: '12 Nov Gigafactory tender closes', above: true },
+    { kind: 'deadline', t: 2.27, label: '9 Dec liability law deadline' },
+  ] },
+  { name: 'EU AI Act', events: [
+    { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'Evaluator roster for model testing · Code of Practice review ~Aug 2027' },
+  ] },
+  { name: 'South Korea', events: [
+    { kind: 'window', t0: 0, t1: 3.7, label: 'Notices before the grace period ends' },
+    { kind: 'earliest', t: 3.7, label: '22 Jan earliest fines', above: true },
+  ] },
+  { name: 'Australia', events: [
+    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI Standards bill (planned early 2027)' },
+  ] },
+  { name: 'All', events: [
+    { kind: 'summit', t: 8.7, label: 'Geneva AI summit 21–22 Jun', above: true },
+  ] },
+];
+
+const ja: Lane[] = [
+  { name: 'シンガポール', events: [
+    { kind: 'deadline', t: 0.2, label: '10/7 法案成立', above: true },
+    { kind: 'window', t0: 0.25, t1: 5, open: true, label: '実施規則・行動規範の策定' },
+  ] },
+  { name: '日本', events: [
+    { kind: 'window', t0: 0.8, t1: 3.6, label: '10月下旬からAI法見直し' },
+    { kind: 'window', t0: 3.7, t1: 8.7, open: true, label: '2027年通常国会での法案の可能性', above: true },
+  ] },
+  { name: 'EU', events: [
+    { kind: 'deadline', t: 1.4, label: '11/12 ギガファクトリー入札締切', above: true },
+    { kind: 'deadline', t: 2.27, label: '12/9 製造物責任法の期限' },
+  ] },
+  { name: 'EU AI法', events: [
+    { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'モデル評価の評価者名簿・行動規範の見直し（2027年8月頃）' },
+  ] },
+  { name: '韓国', events: [
+    { kind: 'window', t0: 0, t1: 3.7, label: '猶予期間終了前の告示' },
+    { kind: 'earliest', t: 3.7, label: '1/22 早ければ過料開始', above: true },
+  ] },
+  { name: 'オーストラリア', events: [
+    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI基準の法案（2027年初めの予定）' },
+  ] },
+  { name: '全体', events: [
+    { kind: 'summit', t: 8.7, label: '6/21–22 ジュネーブAIサミット', above: true },
+  ] },
+];
+
+const lanes = lang === 'ja' ? ja : en;
+const T = lang === 'ja'
+  ? { months: ['10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y0: '2026', y1: '2027', today: '10/12', dl: '期限', ea: '最も早い日付', win: '起草・審議の期間', sum: '首脳会議', aria: '6つの安全条件を盛り込める法的機会の時系列' }
+  : { months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], y0: '2026', y1: '2027', today: '12 Oct', dl: 'fixed deadline', ea: 'earliest date', win: 'drafting window', sum: 'summit', aria: 'Timeline of legal openings for the six safety conditions' };
+
+const X0 = 150, X1 = 740, M = 11;
+const x = (t: number) => X0 + (t / M) * (X1 - X0);
+const laneH = 58, top = 58;
+const H = top + lanes.length * laneH + 10;
+const TODAY = 0.37;
+---
+<div class="stl">
+  <svg viewBox={`0 0 760 ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={T.aria}>
+    <g class="leg" transform="translate(150, 14)">
+      <circle cx="5" cy="-4" r="5" class="dl" /><text x="14" y="0">{T.dl}</text>
+      <circle cx="120" cy="-4" r="5" class="ea" /><text x="129" y="0">{T.ea}</text>
+      <rect x="230" y="-8" width="22" height="8" rx="4" class="win" /><text x="258" y="0">{T.win}</text>
+      <path d="M 400 -9 l 5 5 l -5 5 l -5 -5 z" class="sum" /><text x="410" y="0">{T.sum}</text>
+    </g>
+    {T.months.map((m, i) => (
+      <g>
+        <line x1={x(i)} x2={x(i)} y1={top - 14} y2={H - 6} class="g" />
+        <text x={x(i) + 3} y={top - 18} class="tick">{m}</text>
+      </g>
+    ))}
+    <text x={x(0)} y={top - 32} class="yr">{T.y0}</text>
+    <text x={x(3)} y={top - 32} class="yr">{T.y1}</text>
+    <line x1={x(TODAY)} x2={x(TODAY)} y1={top - 10} y2={H - 6} class="today" />
+    <text x={x(TODAY) + 3} y={H - 10} class="todayt">{T.today}</text>
+    {lanes.map((lane, i) => {
+      const cy = top + i * laneH + laneH / 2;
+      return (
+        <g>
+          <line x1={X0} x2={X1} y1={cy} y2={cy} class="lane" />
+          <text x={X0 - 10} y={cy + 4} text-anchor="end" class="lab">{lane.name}</text>
+          {lane.events.map((e) => {
+            const ly = e.above ? cy - 12 : cy + 20;
+            if (e.kind === 'window') {
+              const w = x(e.t1) - x(e.t0);
+              return (
+                <g>
+                  <rect x={x(e.t0)} y={cy - 4} width={w} height="8" rx="4" class={e.open ? 'win open' : 'win'} />
+                  <text x={x(e.t0)} y={ly} class="ev">{e.label}</text>
+                </g>
+              );
+            }
+            if (e.kind === 'summit') {
+              return (
+                <g>
+                  <path d={`M ${x(e.t)} ${cy - 8} l 8 8 l -8 8 l -8 -8 z`} class="sum" />
+                  <text x={x(e.t)} y={ly} text-anchor="middle" class="ev strong">{e.label}</text>
+                </g>
+              );
+            }
+            const anchor = x(e.t) > 600 ? 'end' : 'start';
+            return (
+              <g>
+                <circle cx={x(e.t)} cy={cy} r="6" class={e.kind === 'earliest' ? 'ea' : 'dl'} />
+                <text x={x(e.t) + (anchor === 'end' ? 4 : -4)} y={ly} text-anchor={anchor} class="ev strong">{e.label}</text>
+              </g>
+            );
+          })}
+        </g>
+      );
+    })}
+  </svg>
+</div>
+<style>
+  .stl { max-width: 900px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .stl svg { width: 100%; min-width: 680px; height: auto; display: block; }
+  .stl .g { stroke: var(--post-separator, #eee); }
+  .stl .lane { stroke: var(--post-separator, #e5e5e5); stroke-width: 1; }
+  .stl .tick, .stl .leg text { fill: var(--post-caption, #737373); font-size: 11px; }
+  .stl .yr { fill: var(--post-caption, #737373); font-size: 11px; font-weight: 700; }
+  .stl .lab { fill: var(--post-heading, #1a1a1a); font-size: 13px; font-weight: 600; }
+  .stl .ev { fill: var(--post-text, #353535); font-size: 11.5px; }
+  .stl .ev.strong { font-weight: 600; }
+  .stl .dl { fill: #d1495b; }
+  .stl .ea { fill: #fff; stroke: #d1495b; stroke-width: 2; }
+  .stl .win { fill: #00798c; opacity: 0.85; }
+  .stl .win.open { opacity: 0.45; }
+  .stl .sum { fill: #003d5b; }
+  .stl .today { stroke: #edae49; stroke-width: 2; stroke-dasharray: 4 3; }
+  .stl .todayt { fill: #b07a1a; font-size: 11px; font-weight: 700; }
+</style>
