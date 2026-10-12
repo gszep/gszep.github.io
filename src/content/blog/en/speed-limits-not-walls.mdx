@@ -1,7 +1,7 @@
 ---
-title: "Speed limits, not walls"
+title: "How fast can atoms keep up?"
 date: 2026-10-11
-description: "AI that improves itself would eventually need mines, factories and robots. Why copper, magnets, helium and acid could slow that down, who controls them, and why adding supply buys less time than you might expect."
+description: "AI progress comes partly from better ideas and partly from new chips, power, factories and robots. Slide between the two to see how fast AI could grow, when copper and magnets would run short, and which countries hold leverage."
 image: "/images/speed-limits-chip-ore.jpg"
 tags: ["ai", "supply-chains", "geopolitics", "materials"]
 order: 1
@@ -12,24 +12,36 @@ import LeverageMap from '../../../components/interactive/LeverageMap.astro';
 import ByproductTraps from '../../../components/interactive/ByproductTraps.astro';
 import BottleneckScroll from '../../../components/interactive/BottleneckScroll.astro';
 import PriceShocks from '../../../components/interactive/PriceShocks.astro';
+import PhysicalShareSlider from '../../../components/interactive/PhysicalShareSlider.astro';
 
-> **In short.** If AI keeps getting better at improving itself, the story eventually leaves the computer. It needs chips, power stations, power lines, and in the end robots that build more robots, all made from materials that are dug up and processed in factories. The Earth is not running out of them. The problem is speed: a mine or a refinery takes years to build, while demand for robots could double every year or two. When demand doubles that fast, even a big increase in supply buys only a couple of years. And in 2026, every sharp material shortage I looked at came from a narrow point someone controls, such as an export ban, a war or one mine going wrong, rather than from geology. Those narrow points may decide where the AI build-out happens first.
+> **In short.** AI's progress comes from two ingredients: better ideas, which run on the computers that already exist, and more physical things, such as chips, power stations, factories and robots. Nobody knows the mix, so this post lets you choose it with a slider. Ideas can move far faster than buildings, so as soon as even a small share of progress needs new physical things, the pace is set by how fast mines, refineries and factories can grow. When demand doubles every year or two, adding supply buys only a couple of years. The mix also decides who holds leverage. The more AI's growth depends on software, the more it favours whoever already owns the computers and the leading models. The more it depends on building, the more it favours the countries that refine metals and make magnets, gears and power equipment.
 
-## Why materials, and why now
+## Ideas and atoms
 
-Most talk about AI is about software. But software runs on chips, chips run in data centres, data centres need electricity, and electricity needs power stations and grids. If AI becomes capable enough to run factories, the next step is robots building more robots, and that is a very physical business.
+Most talk about AI is about software. Some of AI's progress really is software: better methods squeeze more out of the same chips. The rest needs new physical things, more chips, more electricity, and eventually robots and factories. Recent progress has come roughly half from each, with more chips and power doing slightly more of the work<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
 
-Every stage takes time. Training a new AI model takes months. Building a data centre takes a year or two. A new copper mine takes, on average, about seventeen years from discovery to first production<sup><a href="#ref-1">1</a></sup>. A process can only go as fast as its slowest step. So the question here is: once AI's growth depends on physical things, which materials will be the slow step, and who controls them?
+How this mix changes as AI starts doing AI research is the biggest open question behind this post. At one extreme, AI improves AI almost entirely in software, on the computers that already exist. That is possible only if AI researchers can stand in for the computing power that experiments need, and the evidence on that is split<sup><a href="#ref-80">80</a></sup><sup><a href="#ref-87">87</a></sup>. Part of what looked like pure software progress in the past turns out to have needed ever larger computers to pay off<sup><a href="#ref-81">81</a></sup>, and past estimates of how quickly software improvements feed on themselves may be too high for the same reason<sup><a href="#ref-89">89</a></sup>. In 2026, AI already leads about a quarter of the research work at one major lab<sup><a href="#ref-85">85</a></sup> and does the equivalent of several research interns' work for each human researcher at another<sup><a href="#ref-86">86</a></sup>, but by one estimate the feedback is still somewhat below the level needed to keep speeding itself up<sup><a href="#ref-84">84</a></sup>.
 
-## What the optimists get right
+At the other extreme, progress needs chips, power stations, factories and robots, and these have to be built. Reality sits in between, so the chart below makes the mix a slider.
 
-Researchers who study how fast an AI-driven economy could grow mostly conclude that raw materials will not stop it<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup><sup><a href="#ref-5">5</a></sup>, and on the big picture I agree. The Earth's crust holds far more than we use: the copper we know how to reach grew about 25-fold between 1900 and 2010 as exploration and technology improved<sup><a href="#ref-8">8</a></sup>, and for almost every mineral, the demand from the shift to clean energy is below known resources<sup><a href="#ref-9">9</a></sup>. Mining is also a small part of the economy, about 1% of output, so even large cost increases barely slow growth overall<sup><a href="#ref-6">6</a></sup>. And the first part to run short for robots today is not a raw material at all but precision gears, which currently cap humanoid robot production at about half a million a year<sup><a href="#ref-7">7</a></sup>.
+<figure>
+  <PhysicalShareSlider />
+  <figcaption>Slide to set how much of AI's progress needs new physical things. The curves show how quickly AI capability, physical build-out and robot production double; the boxes show what that means for the value of a lead and for copper and magnet supplies; the row of countries shows whose leverage grows. Inputs and sources are in the notes at the end<sup><a href="#ref-74">74</a></sup><sup><a href="#ref-80">80</a></sup><sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup><sup><a href="#ref-87">87</a></sup><sup><a href="#ref-88">88</a></sup>.</figcaption>
+</figure>
 
-Those studies are not built to answer a narrower question: how fast can *particular* mines, refineries and magnet factories, in *particular* countries, grow, and what happens when trade between them is cut? A new refinery has to be built and then approved by its customers before its output counts. Outside China, the rare metals that let magnets survive heat are separated in tens of tonnes a year<sup><a href="#ref-25">25</a></sup>. The growth models do not include an export ban, a refinery that exists in only one country, or a missile hitting a gas plant<sup><a href="#ref-4">4</a></sup><sup><a href="#ref-10">10</a></sup>. Studies of mineral supply do take those risks seriously, but they assume demand from data centres grows steadily, from about 15–20 GW of new capacity a year today to a peak around 30 GW in the early 2030s<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup>, rather than doubling. This post sits between the two.
+Three things stand out as you slide.
+
+**Building sets the pace for most of the range.** Ideas can, in principle, raise capability ten-fold a year or more, while physical build-out at its fastest doubles every year or two. So once more than a small share of progress needs new things (about a sixth, with the chart's starting assumptions), the speed of building decides the speed of AI. The rest of this post is about that case.
+
+**Faster growth comes with less need for materials.** Towards the software end, AI capability can double in months, and a one-year lead becomes worth many times the capability of the follower. Copper and magnets then matter little.
+
+**Leverage moves with the slider.** Towards the software end, it gathers with whoever owns the computers and the leading models, mostly in the United States<sup><a href="#ref-88">88</a></sup>. Towards the physical end, it moves to the countries that refine metals and make magnets, robots and power equipment, led by China. Japan, Taiwan, South Korea and the Netherlands, which make the chips and the machines and materials behind them, are strongest in the middle, which is roughly where we are now.
 
 ## How long things take
 
-Not all waiting is building. A large transformer takes a few months to make; the two-year wait is the queue of orders ahead of it<sup><a href="#ref-15">15</a></sup>. Most of a copper mine's seventeen years go on exploration, studies and permits.
+A process can only go as fast as its slowest step. Training a new AI model takes months. Building a data centre takes a year or two. A new copper mine takes about seventeen years on average, from discovery to first production<sup><a href="#ref-1">1</a></sup>.
+
+Much of that waiting is queueing. A large transformer takes a few months to make; the two-year wait is the line of orders ahead of it<sup><a href="#ref-15">15</a></sup>. Most of a copper mine's seventeen years go on exploration, studies and permits.
 
 <figure>
   <LeadTimeLadder />
@@ -38,63 +50,69 @@ Not all waiting is building. A large transformer takes a few months to make; the
 
 Faster approvals can shorten the light bars, but only where governments choose to. Most ore is mined in a handful of countries, and most refining happens in China.
 
+## What the growth models cover
+
+Researchers who model how fast an AI-driven economy could grow mostly conclude that raw materials will not stop it<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup><sup><a href="#ref-5">5</a></sup>, and over the long run I agree. The Earth's crust holds far more than we use: the copper we know how to reach grew about 25-fold between 1900 and 2010 as exploration and technology improved<sup><a href="#ref-8">8</a></sup>, and for almost every mineral, the demand from the shift to clean energy is below known resources<sup><a href="#ref-9">9</a></sup>. Mining is also a small part of the economy, about 1% of output, so even large cost increases barely slow growth overall<sup><a href="#ref-6">6</a></sup>. And the first part to run short for robots today is precision gears, which currently cap humanoid robot production at about half a million a year<sup><a href="#ref-7">7</a></sup>.
+
+Those models leave three questions open. How fast can *particular* mines, refineries and magnet factories, in *particular* countries, grow? A new refinery has to be built and then approved by its customers before its output counts, and outside China the rare metals that let magnets survive heat are separated in tens of tonnes a year<sup><a href="#ref-25">25</a></sup>. What happens when trade is cut? None of the models includes an export ban, a refinery that exists in only one country, or a missile hitting a gas plant<sup><a href="#ref-4">4</a></sup><sup><a href="#ref-10">10</a></sup>. And what if demand keeps doubling? Studies of mineral supply take trade risks seriously, but they assume data-centre building grows steadily, from about 15–20 GW of new capacity a year today to a peak around 30 GW in the early 2030s<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup>.
+
 ## A race between doubling and steady growth
 
-Imagine robot production doubling every eighteen months while the supply of the magnets inside them grows 8% a year, a healthy pace for a mining industry. Doubling is relentless: 100,000 robots become a million in five years and ten million in ten. Steady growth is not.
+Imagine robot production doubling every eighteen months while the supply of the magnets inside them grows 8% a year, a healthy pace for a mining industry. Doubling is relentless: 100,000 robots become a million in five years and ten million in ten. Steady growth falls further behind every year.
 
 <figure>
   <MaterialRace />
-  <figcaption>Try it: demand that doubles on a fixed schedule against supply that grows a few percent a year. The vertical axis is logarithmic, so steady growth looks like a straight line. Sources, and which settings are my own assumptions, are listed under each tab. The doubling time is a scenario to explore, not a forecast.</figcaption>
+  <figcaption>Demand that doubles on a fixed schedule against supply that grows a few percent a year. The vertical axis is logarithmic, so steady growth looks like a straight line. Sources, and which settings are my own assumptions, are listed under each tab. The doubling time is a scenario to explore; it corresponds to the physical end of the slider above.</figcaption>
 </figure>
 
 Two things stand out, whatever numbers you choose.
 
-**Extra supply buys surprisingly little time.** In the example above, doubling the magnet supply pushes the shortage back by only about 1.8 years, and ten times more supply by about six. Even if high prices pushed supply growth to 16% a year, doubling supply would buy only about 2.2 years. (The formula is in the notes at the end.)
+**Extra supply buys surprisingly little time.** In the example above, doubling the magnet supply pushes the shortage back by only about 1.8 years, and ten times more supply by about six. Even if high prices pushed supply growth to 16% a year, doubling supply would buy only about 2.2 years.
 
 **The date depends mostly on how fast demand doubles.** About 75,000–90,000 humanoid robots will be built in 2026<sup><a href="#ref-19">19</a></sup><sup><a href="#ref-20">20</a></sup>. Each needs about 2.5 kg of the strong magnets (made of neodymium, iron and boron) that also go into electric cars and wind turbines, and the world makes about 226,000 tonnes of them a year<sup><a href="#ref-21">21</a></sup>. If robot production doubled every year and magnet supply stayed flat, robots would need a fifth of today's magnets around 2033 and all of them around 2036. With a two-year doubling, those dates move to about 2041 and 2046.
 
 Is yearly doubling realistic? Bank forecasts of 6.5 to 10 million humanoids a year by 2035 imply a doubling roughly every 1.3–1.4 years until then<sup><a href="#ref-19">19</a></sup><sup><a href="#ref-20">20</a></sup>. One industry forecast reaches about 151 million robots a year by 2040, needing about 160% of today's entire magnet market<sup><a href="#ref-21">21</a></sup>. A widely read AI scenario imagines a million new robots a month<sup><a href="#ref-3">3</a></sup>, which would need 11–16% of today's magnets.
 
-### Where magnets get stuck
+### Where magnets run short
 
-Not at the mine. Outside China, the refined rare-earth oxide that goes into magnets is in surplus: in August its price fell below the floor the US government guarantees Western producers, because there are too few magnet factories to buy it<sup><a href="#ref-22">22</a></sup>. Making the magnets themselves is the bottleneck<sup><a href="#ref-23">23</a></sup>. New magnet plants take years and specialised equipment, and they must compete on cost with China's mature industry<sup><a href="#ref-24">24</a></sup>.
+Outside China, the refined rare-earth oxide that goes into magnets is in surplus: in August its price fell below the floor the US government guarantees Western producers, because there are too few magnet factories to buy it<sup><a href="#ref-22">22</a></sup>. The shortage is in making the magnets themselves<sup><a href="#ref-23">23</a></sup>. New magnet plants take years and specialised equipment, and they must compete on cost with China's mature industry<sup><a href="#ref-24">24</a></sup>.
 
 Tighter still are the "heavy" rare earths, dysprosium and terbium, which keep magnets working when hot. The only commercial producer outside China made 26 tonnes in one recent quarter and 8 in the next<sup><a href="#ref-25">25</a></sup>, against a capacity of 240 tonnes of dysprosium and 50 of terbium a year if it can get enough ore<sup><a href="#ref-26">26</a></sup>. By one industry measure, a million humanoids a year would need about 57 tonnes, though robots need far less of these metals per kilogram of magnet than electric cars do<sup><a href="#ref-27">27</a></sup>.
 
 ### What runs short before magnets
 
-Gears and hands. One Japanese company makes about 80% of one kind of precision gear used in robot joints<sup><a href="#ref-28">28</a></sup>, and the best-known humanoid programme has been slowed by fragile hands, supplier quality and software<sup><a href="#ref-29">29</a></sup>. These are manufacturing problems, and they tend to get solved quickly. But solving one can create another: some joint designs swap gears for motors that need more magnet, and magnet use per robot is expected to rise as robots gain joints<sup><a href="#ref-30">30</a></sup>.
+Gears and hands. One Japanese company makes about 80% of one kind of precision gear used in robot joints<sup><a href="#ref-28">28</a></sup>, and the best-known humanoid programme has been slowed by fragile hands, supplier quality and software<sup><a href="#ref-29">29</a></sup>. Such manufacturing problems tend to get solved quickly. Solving one can create another, though: some joint designs swap gears for motors that need more magnet, and magnet use per robot is expected to rise as robots gain joints<sup><a href="#ref-30">30</a></sup>.
 
 ### Copper
 
-A data centre contains about 12–47 tonnes of copper per megawatt<sup><a href="#ref-31">31</a></sup><sup><a href="#ref-12">12</a></sup>, and the power lines that feed it roughly triple that<sup><a href="#ref-14">14</a></sup>. Data centres may need about 2.5 million tonnes of copper a year by 2040, out of roughly 28 million used worldwide<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-1">1</a></sup>. At today's forecast growth, that means higher prices, not a hard limit: many announced data centres are running late<sup><a href="#ref-32">32</a></sup>, and new power designs and optical cables use less copper<sup><a href="#ref-33">33</a></sup><sup><a href="#ref-34">34</a></sup>. Copper becomes a limit only if data-centre building keeps doubling, which is exactly what AI improving itself would imply.
+A data centre contains about 12–47 tonnes of copper per megawatt<sup><a href="#ref-31">31</a></sup><sup><a href="#ref-12">12</a></sup>, and the power lines that feed it roughly triple that<sup><a href="#ref-14">14</a></sup>. Data centres may need about 2.5 million tonnes of copper a year by 2040, out of roughly 28 million used worldwide<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-1">1</a></sup>. At today's forecast growth, that means higher prices and some delays: many announced data centres are running late<sup><a href="#ref-32">32</a></sup>, and new power designs and optical cables use less copper<sup><a href="#ref-33">33</a></sup><sup><a href="#ref-34">34</a></sup>. Copper becomes a hard limit if data-centre building keeps doubling, which is what the middle and physical end of the slider imply.
 
 ## Small cost, big consequences
 
-Materials are a tiny part of what AI costs. Copper is between under 0.5% and about 6% of the cost of building a data centre, depending on what is counted<sup><a href="#ref-35">35</a></sup><sup><a href="#ref-36">36</a></sup>, and all the helium used in chipmaking is worth about $1 billion a year<sup><a href="#ref-37">37</a></sup>. So you might expect material prices not to matter.
+Materials are a tiny part of what AI costs. Copper is between under 0.5% and about 6% of the cost of building a data centre, depending on what is counted<sup><a href="#ref-35">35</a></sup><sup><a href="#ref-36">36</a></sup>, and all the helium used in chipmaking is worth about $1 billion a year<sup><a href="#ref-37">37</a></sup>. So you might expect material prices to matter little.
 
-Think of baking powder: a tiny share of what a cake costs, but without it there is no cake. When an input is essential and nothing can replace it, a shortage does far more damage than its share of the cost suggests. That effect roughly tripled the economic damage of the 1970s oil shocks<sup><a href="#ref-38">38</a></sup>, and growth is held back by whatever is essential and hard to improve<sup><a href="#ref-39">39</a></sup>. For such inputs, the danger is not the price but whether you can get them at all<sup><a href="#ref-40">40</a></sup>. Gallium is a negligible part of the world economy, yet some power chips cannot be made without it, and an export ban can stop deliveries however little they cost.
+Think of baking powder: a tiny share of what a cake costs, yet without it there is no cake. When an input is essential and nothing can replace it, a shortage does far more damage than its share of the cost suggests. That effect roughly tripled the economic damage of the 1970s oil shocks<sup><a href="#ref-38">38</a></sup>, and growth is held back by whatever is essential and hard to improve<sup><a href="#ref-39">39</a></sup>. For such inputs, the danger is whether you can get them at all<sup><a href="#ref-40">40</a></sup>. Gallium is a negligible part of the world economy, yet some power chips cannot be made without it, and an export ban can stop deliveries however little they cost.
 
-That is why I call materials a **speed limit, not a wall**. The slow, essential inputs set the pace, and where they are concentrated in a few hands, they decide who goes first.
+So the slow, essential inputs set the pace of AI's physical growth, and where few countries hold them, they decide who goes first.
 
 ## 2026: a year of chokepoints
 
-A chokepoint is a narrow point that everything must pass through: a strait that ships must sail through, or a factory that makes most of the world's supply of something. Each of 2026's big material price jumps had a cause of this kind rather than the Earth running out, though sudden shocks are also the ones that make the news.
+A chokepoint is a narrow point that everything must pass through: a strait that ships must sail through, or a factory that makes most of the world's supply of something. Each of 2026's big material price jumps had a cause of this kind: a war, an export rule, or one mine going wrong. Sudden shocks like these are also the ones that make the news.
 
 <figure>
   <PriceShocks />
-  <figcaption>Selected price changes in 2026. Each bar has its own starting point, shown in its label, so they are not strictly comparable. Tungsten<sup><a href="#ref-41">41</a></sup>; gallium<sup><a href="#ref-42">42</a></sup>; helium<sup><a href="#ref-1">1</a></sup>; transformers<sup><a href="#ref-43">43</a></sup>; sulfuric acid in Chile<sup><a href="#ref-44">44</a></sup>; copper<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup>. When the same material costs far more outside China than inside, the usual reason is an export rule, not scarcity.</figcaption>
+  <figcaption>Selected price changes in 2026. Each bar has its own starting point, shown in its label, so they are not strictly comparable. Tungsten<sup><a href="#ref-41">41</a></sup>; gallium<sup><a href="#ref-42">42</a></sup>; helium<sup><a href="#ref-1">1</a></sup>; transformers<sup><a href="#ref-43">43</a></sup>; sulfuric acid in Chile<sup><a href="#ref-44">44</a></sup>; copper<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup>. When the same material costs far more outside China than inside, the usual reason is an export rule.</figcaption>
 </figure>
 
 - **War.** In March, Iranian strikes on Qatar's Ras Laffan gas complex took out about a third of the world's helium supply<sup><a href="#ref-47">47</a></sup><sup><a href="#ref-1">1</a></sup> and 17% of Qatar's gas export capacity for three to five years<sup><a href="#ref-18">18</a></sup>. Helium is essential for making chips. South Korea's chipmakers, which get over half of theirs from Qatar<sup><a href="#ref-1">1</a></sup>, said in late March they had months of stock<sup><a href="#ref-48">48</a></sup>. Since a June ceasefire, shipping through the Strait of Hormuz has partly recovered, to about 124 ships a week in late September against more than 100 a day before the war<sup><a href="#ref-79">79</a></sup>. Oil exports are back near normal through costly workarounds, while attacks on tankers have risen again<sup><a href="#ref-49">49</a></sup>.
 - **Export rules.** In May, China stopped exporting the sulfuric acid left over from smelting metals<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>. It exports only about 4% of what it makes<sup><a href="#ref-52">52</a></sup>, but Chile uses imported acid to extract copper, and the price there doubled in seven weeks<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-53">53</a></sup>. Gallium outside China reached $1,850 a kilogram in April while staying flat inside China<sup><a href="#ref-42">42</a></sup>, and tungsten rose about 350% in four months as China cut quotas and licensed just fifteen exporters<sup><a href="#ref-41">41</a></sup>.
 - **One mine going wrong.** In August, copper traded near record highs, partly because Grasberg in Indonesia, one of the world's largest copper mines, was still far below capacity after a 2025 mudslide<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup><sup><a href="#ref-54">54</a></sup>.
 
-What held back AI most this year, though, was factory capacity, not raw materials. The most advanced chip factories have run flat out since late 2025, and the special memory that AI chips use may stay short until 2030<sup><a href="#ref-55">55</a></sup>; a new memory factory takes three to five years<sup><a href="#ref-16">16</a></sup>. Makers of gas turbines for power stations have roughly three years of orders waiting<sup><a href="#ref-56">56</a></sup>. One Japanese company makes about 85% of a special glass cloth inside AI chip packages, with no relief before 2027–28<sup><a href="#ref-17">17</a></sup>. Another, Ajinomoto, better known for its seasonings, makes almost all of the insulating film in those packages and reportedly cut supply to mainland China by 30% in August<sup><a href="#ref-57">57</a></sup>.
+What held back AI most this year was factory capacity. The most advanced chip factories have run flat out since late 2025, and the special memory that AI chips use may stay short until 2030<sup><a href="#ref-55">55</a></sup>; a new memory factory takes three to five years<sup><a href="#ref-16">16</a></sup>. Makers of gas turbines for power stations have roughly three years of orders waiting<sup><a href="#ref-56">56</a></sup>. One Japanese company makes about 85% of a special glass cloth inside AI chip packages, with no relief before 2027–28<sup><a href="#ref-17">17</a></sup>. Another, Ajinomoto, better known for its seasonings, makes almost all of the insulating film in those packages and reportedly cut supply to mainland China by 30% in August<sup><a href="#ref-57">57</a></sup>.
 
 ## Leftovers of other industries
 
-The hardest bottlenecks to fix are materials nobody mines on purpose. Helium comes out of natural gas. Sulfur, and the sulfuric acid made from it, come from oil refining and metal smelting. Gallium is a leftover of making aluminium. How much of these the world gets depends mainly on how much of the *main* product it makes, and on whether anyone builds the equipment to capture the leftover.
+The hardest shortages to fix are of materials nobody mines on purpose. Helium comes out of natural gas. Sulfur, and the sulfuric acid made from it, come from oil refining and metal smelting. Gallium is a leftover of making aluminium. How much of these the world gets depends mainly on how much of the *main* product it makes, and on whether anyone builds the equipment to capture the leftover.
 
 <figure>
   <ByproductTraps />
@@ -103,14 +121,14 @@ The hardest bottlenecks to fix are materials nobody mines on purpose. Helium com
 
 There is good news: existing aluminium and zinc plants could yield several times more gallium if they added recovery equipment<sup><a href="#ref-40">40</a></sup>. But some host industries are shrinking. Moving away from fossil fuels removes the source of over 80% of the world's sulfur just as demand for sulfuric acid rises<sup><a href="#ref-59">59</a></sup>. A fast, AI-run electrification of the economy<sup><a href="#ref-4">4</a></sup> would tighten that squeeze, and perhaps a similar one for helium.
 
-## How the bottleneck moves
+## How the slowest step moves
 
-Roughly, and with plenty of overlap, the slowest step moves along the supply chain as AI's growth becomes more physical. Scroll through it.
+At the physical end of the slider, the slowest step moves along the supply chain as AI's growth becomes more physical, roughly and with plenty of overlap. Towards the software end, the sequence stops early, at chips and power. Scroll through it.
 
 <BottleneckScroll>
 <div class="bstep" data-stage="0">
 
-**Chips, 2024–2027.** First the chips themselves, then their packaging, then the special memory beside them. Bulk minerals are not the limit, but a few specialised materials, such as the glass cloth and film in chip packages, already cap how many can be made<sup><a href="#ref-55">55</a></sup><sup><a href="#ref-11">11</a></sup><sup><a href="#ref-17">17</a></sup>.
+**Chips, 2024–2027.** First the chips themselves, then their packaging, then the special memory beside them. A few specialised materials, such as the glass cloth and film in chip packages, already cap how many can be made<sup><a href="#ref-55">55</a></sup><sup><a href="#ref-11">11</a></sup><sup><a href="#ref-17">17</a></sup>.
 
 </div>
 <div class="bstep" data-stage="1">
@@ -125,7 +143,7 @@ Roughly, and with plenty of overlap, the slowest step moves along the supply cha
 </div>
 <div class="bstep" data-stage="3">
 
-**Bulk metals.** Copper, the acid used to extract it, and the special steel in transformers. At forecast growth rates this means higher costs and some delays; if building keeps doubling, copper becomes a limit around the end of this decade<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-14">14</a></sup>.
+**Bulk metals.** Copper, the acid used to extract it, and the special steel in transformers. At forecast growth rates this means higher costs and some delays; if building keeps doubling, copper becomes a hard limit around the end of this decade<sup><a href="#ref-12">12</a></sup><sup><a href="#ref-14">14</a></sup>.
 
 </div>
 <div class="bstep" data-stage="4">
@@ -142,7 +160,7 @@ Roughly, and with plenty of overlap, the slowest step moves along the supply cha
 
 ## Who holds the levers
 
-China holds the biggest ones. It does about 91% of the world's rare-earth refining, makes about 94% of the strongest magnets<sup><a href="#ref-23">23</a></sup> and produces about 99% of new gallium<sup><a href="#ref-42">42</a></sup>. But other countries hold important levers further along the chain. Japan, Taiwan, South Korea and the United States make much of the world's silicon wafers, chipmaking chemicals, memory, chip-package materials and robot gears, and mining countries have levers of their own.
+China holds the biggest physical ones. It does about 91% of the world's rare-earth refining, makes about 94% of the strongest magnets<sup><a href="#ref-23">23</a></sup> and produces about 99% of new gallium<sup><a href="#ref-42">42</a></sup>. Other countries hold important levers further along the chain. Japan, Taiwan, South Korea and the United States make much of the world's silicon wafers, chipmaking chemicals, memory, chip-package materials and robot gears, and mining countries have levers of their own. How much each lever is worth depends on where the slider sits.
 
 <figure>
   <LeverageMap />
@@ -151,22 +169,23 @@ China holds the biggest ones. It does about 91% of the world's rare-earth refini
 
 **China uses its levers, and presents them as normal.** Its commerce ministry says "export controls are not export bans"<sup><a href="#ref-61">61</a></sup>, and its controls have usually followed US tariffs or US limits on chip exports<sup><a href="#ref-62">62</a></sup>. Since March, Chinese rules also let Beijing retaliate against foreign companies that cut off Chinese suppliers<sup><a href="#ref-63">63</a></sup>.
 
-**China is exposed too.** It imports over 80% of the copper ore it smelts<sup><a href="#ref-52">52</a></sup> and over 45% of its sulfur, more than half of it through the Strait of Hormuz<sup><a href="#ref-64">64</a></sup>, so its acid export ban protected its own supply as much as it pressured others. And its controls leak: provinces protect local businesses, and smuggling follows price gaps<sup><a href="#ref-65">65</a></sup>.
+**China is exposed too.** It imports over 80% of the copper ore it smelts<sup><a href="#ref-52">52</a></sup> and over 45% of its sulfur, more than half of it through the Strait of Hormuz<sup><a href="#ref-64">64</a></sup>, so its acid export ban protected its own supply as much as it pressured others. Its controls also leak: provinces protect local businesses, and smuggling follows price gaps<sup><a href="#ref-65">65</a></sup>.
 
-**Japan is the main counterweight.** Japanese companies make about 44% of the world's silicon wafers, around three quarters of the light-sensitive chemicals used to print chips, most of the glass cloth and film in chip packages, and most precision robot gears<sup><a href="#ref-66">66</a></sup><sup><a href="#ref-67">67</a></sup><sup><a href="#ref-17">17</a></sup><sup><a href="#ref-57">57</a></sup><sup><a href="#ref-28">28</a></sup>. When China banned exports of dual-use goods to Japanese military users in January, Japan's imports of dysprosium ore fell 82% in the first half of the year<sup><a href="#ref-24">24</a></sup>. Japanese tungsten users, meanwhile, switched to scrap and recycling, and some analysts think the controls are backfiring<sup><a href="#ref-68">68</a></sup>.
+**Japan is the main counterweight.** Japanese companies make about 44% of the world's silicon wafers, around three quarters of the light-sensitive chemicals used to print chips, most of the glass cloth and film in chip packages, and most precision robot gears<sup><a href="#ref-66">66</a></sup><sup><a href="#ref-67">67</a></sup><sup><a href="#ref-17">17</a></sup><sup><a href="#ref-57">57</a></sup><sup><a href="#ref-28">28</a></sup>. When China banned exports of dual-use goods to Japanese military users in January, Japan's imports of dysprosium ore fell 82% in the first half of the year<sup><a href="#ref-24">24</a></sup>. Japanese tungsten users switched to scrap and recycling, and some analysts think the controls are backfiring<sup><a href="#ref-68">68</a></sup>.
 
-**Mining countries have levers too.** Since 2020, countries have imposed 98 export restrictions on critical minerals, most of them by the Democratic Republic of the Congo, China and Indonesia<sup><a href="#ref-69">69</a></sup>. The Congo limits cobalt exports to support prices<sup><a href="#ref-58">58</a></sup>, and Indonesia insists on processing its nickel at home<sup><a href="#ref-70">70</a></sup>. Korean defence firms buy rare earths through Russia and Arab states<sup><a href="#ref-71">71</a></sup>, and Chile's parliament has warned that a US minerals deal must not restrict its trade with China<sup><a href="#ref-72">72</a></sup>. Interestingly, none of the producer governments I looked at talks about AI or robots as its opportunity.
+**Mining countries have levers too.** Since 2020, countries have imposed 98 export restrictions on critical minerals, most of them by the Democratic Republic of the Congo, China and Indonesia<sup><a href="#ref-69">69</a></sup>. The Congo limits cobalt exports to support prices<sup><a href="#ref-58">58</a></sup>, and Indonesia insists on processing its nickel at home<sup><a href="#ref-70">70</a></sup>. Korean defence firms buy rare earths through Russia and Arab states<sup><a href="#ref-71">71</a></sup>, and Chile's parliament has warned that a US minerals deal must not restrict its trade with China<sup><a href="#ref-72">72</a></sup>. None of the producer governments I looked at talks about AI or robots as its opportunity.
 
 Fear itself can be a lever. China's 2010 rare-earth "embargo" against Japan barely shows in the trade data, yet it shaped fifteen years of Japanese policy, including the financing of the main rare-earth producer outside China<sup><a href="#ref-73">73</a></sup>.
 
-## Why it matters: who goes first
+## Who goes first
 
-If materials only slow things down by a few years, why care? Because in an economy that doubles every year, a two-year head start means four times the output<sup><a href="#ref-6">6</a></sup>. An AI boom that also automates physical industry may favour countries with large industrial bases and light regulation, such as China and the Gulf states<sup><a href="#ref-74">74</a></sup>. The bottlenecks of the next five years may not decide *whether* AI's growth reaches the physical world, but they may well decide *where*.
+In an economy that doubles every year, a two-year head start means four times the output<sup><a href="#ref-6">6</a></sup>, and towards the software end of the slider a lead is worth far more. An AI boom that also automates physical industry may favour countries with large industrial bases and light regulation, such as China and the Gulf states<sup><a href="#ref-74">74</a></sup>. A boom that runs mostly in software favours whoever already owns the computers and the leading models. The bottlenecks of the next five years may decide *where* AI's growth reaches the physical world first.
 
-One honest limit: if AI improves itself purely in software, on the chips that already exist, almost none of this applies<sup><a href="#ref-74">74</a></sup>.
+For middle powers, the uncomfortable part is that their supply-chain leverage is strongest in the middle of the slider, roughly where we are now, and weakest at the software end, where the stakes are highest. The levers that survive a shift towards software are legal ones: rights over computers already on their soil, and rights to test the models that run there. I argue in [a separate post](/en/blog/six-safety-conditions-for-upcoming-laws) that the time to write those rights into law is while the supply-chain leverage still exists.
 
 ## What to watch
 
+- **How much of AI research AI does, and whether experiments need ever more computing power.** This moves the slider<sup><a href="#ref-84">84</a></sup><sup><a href="#ref-85">85</a></sup><sup><a href="#ref-86">86</a></sup>.
 - **How fast robot production doubles.** If it takes two years or more, robots won't need even a fifth of today's magnets before the 2040s. If it doubles every year past 2030, they'll need all of them by the mid-2030s.
 - **Late 2026 to January 2027:** whether China's acid export halt ends<sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>; whether rare-earth oxide made outside China finds buyers<sup><a href="#ref-22">22</a></sup>; and the US–China trade truce deadline on 10 January, where analysts say a lasting deal needs "actual deliveries of rare earths"<sup><a href="#ref-75">75</a></sup><sup><a href="#ref-76">76</a></sup>.
 - **2027–28:** new glass-cloth capacity<sup><a href="#ref-17">17</a></sup>; Ajinomoto's film expansion from 2028, with a third plant around 2032<sup><a href="#ref-57">57</a></sup>; Japan's trial of mining rare-earth mud from the seabed<sup><a href="#ref-77">77</a></sup>; and Grasberg's return to full output, targeted for end-2027 but possibly early 2028<sup><a href="#ref-54">54</a></sup>.
@@ -174,9 +193,9 @@ One honest limit: if AI improves itself purely in software, on the chips that al
 
 ## Notes on method
 
-The interactive model is deliberately simple: demand grows exponentially, supply grows at a fixed rate, and a fixed share of it is available to robots or data centres. It ignores prices, substitutes, stockpiles and recycling, all of which would soften the crunch, so treat the dates as illustrations, not forecasts. My own assumptions are labelled under each tab.
+**The slider model.** AI capability grows only as fast as the slower of its two ingredients: ideas, which by default can raise capability ten-fold a year on existing hardware<sup><a href="#ref-87">87</a></sup>, and physical build-out, which at its fastest doubles every 1.5 years<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-4">4</a></sup>. Both are adjustable under "Change the assumptions". If a share *s* of progress needs physical things, capability grows at the smaller of $g_I/(1-s)$ and $g_P/s$, physical build-out grows at $s$ times that rate (with a floor of 5% a year), and robot production grows in proportion to $s$ again (with a floor of doubling every three years; my assumption). Copper and magnet dates use the same inputs as the race chart further down. The country strengths are my judgement, drawn from the levers described in this post. Today's mix of roughly 40–50% comes from published trends in algorithms, chip efficiency and the number of chips<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
 
-For readers who want the formula: if demand doubles every $T_d$ years and supply grows by a fraction $g$ a year, doubling the available supply delays the crunch by
+**The race chart.** Demand grows exponentially, supply grows at a fixed rate, and a fixed share of it is available to robots or data centres. It ignores prices, substitutes, stockpiles and recycling, all of which would soften the shortage, so treat the dates as illustrations. My own assumptions are labelled under each tab. If demand doubles every $T_d$ years and supply grows by a fraction $g$ a year, doubling the available supply delays the shortage by
 
 $$
 \Delta t = \frac{\ln 2}{\ln 2 / T_d - \ln(1+g)}
@@ -268,4 +287,14 @@ Some figures come from paywalled reports read through summaries, and some prices
   <li id="ref-77">Japan Times, “Japan rare earths mud near Minamitorishima”, July 2026. <a href="https://www.japantimes.co.jp/business/2026/07/25/economy/japan-rare-earths-mud-minamitorishima">www.japantimes.co.jp</a></li>
   <li id="ref-78">Rio Tinto Nuton. <a href="https://nuton.tech/">nuton.tech</a></li>
   <li id="ref-79">Al Jazeera, "How a 95 percent drop in Hormuz traffic changed global shipping", 27 August 2026 (more than 100 vessels a day before the war). <a href="https://www.aljazeera.com/news/2026/8/27/how-a-95-percent-drop-in-hormuz-traffic-changed-global-shipping">aljazeera.com</a></li>
+  <li id="ref-80">Parker Whitfill & Cheryl Wu, “Will compute bottlenecks prevent an intelligence explosion?”, arXiv 2507.23181, 2025. <a href="https://arxiv.org/html/2507.23181v1">arxiv.org</a></li>
+  <li id="ref-81">Gundlach et al., on how measured algorithmic progress depends on compute scale, arXiv 2511.21622, 2025. <a href="https://arxiv.org/abs/2511.21622">arxiv.org</a></li>
+  <li id="ref-82">Anson Ho et al., “Algorithmic progress in language models”, arXiv 2403.05812, 2024. <a href="https://arxiv.org/abs/2403.05812">arxiv.org</a></li>
+  <li id="ref-83">Epoch AI, Trends (AI chip stock, energy efficiency, training compute), 2026. <a href="https://epoch.ai/trends">epoch.ai</a></li>
+  <li id="ref-84">Cunningham et al., on the strength of AI research feedback loops, arXiv 2609.15802, September 2026. <a href="https://arxiv.org/abs/2609.15802v1">arxiv.org</a></li>
+  <li id="ref-85">Anthropic, “Measuring the pace of AI development”, August 2026. <a href="https://www.anthropic.com/institute/measuring-pace-of-ai-development">anthropic.com</a></li>
+  <li id="ref-86">OpenAI, “Research acceleration: a view inside OpenAI”, September 2026. <a href="https://openai.com/index/research-acceleration-view-inside-openai/">openai.com</a></li>
+  <li id="ref-87">Tom Davidson & Tom Houlden, “How quick and big would a software intelligence explosion be?”, Forethought, 2025. <a href="https://www.forethought.org/research/how-quick-and-big-would-a-software-intelligence-explosion-be">forethought.org</a></li>
+  <li id="ref-88">Konstantin Pilz et al., “Trends in AI supercomputers”, arXiv 2504.16026, 2025. <a href="https://arxiv.org/html/2504.16026v1">arxiv.org</a></li>
+  <li id="ref-89">Chan et al., on the risk of a runaway intelligence explosion and biases in past estimates, arXiv 2609.36054, September 2026. <a href="https://arxiv.org/abs/2609.36054">arxiv.org</a></li>
 </ol>
