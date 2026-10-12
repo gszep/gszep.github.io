@@ -1,0 +1,46 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const en = lang === 'en';
+const hosts = en
+  ? ['Natural gas / LNG', 'Oil & gas refining, metal smelting', 'Alumina refining (bauxite)', 'Zinc refining', 'Zirconium refining', 'Copper mining (Congo)']
+  : ['天然ガス・LNG', '石油ガス精製・金属製錬', 'アルミナ精製（ボーキサイト）', '亜鉛精錬', 'ジルコニウム精製', '銅採掘（コンゴ）'];
+const prods = en
+  ? ['Helium', 'Sulfuric acid', 'Gallium', 'Germanium, indium', 'Hafnium', 'Cobalt']
+  : ['ヘリウム', '硫酸', 'ガリウム', 'ゲルマニウム・インジウム', 'ハフニウム', 'コバルト'];
+const uses = en
+  ? ['Chip fabs: cooling, lithography, packaging', 'Leaching copper for grids & data centres', 'GaN power electronics, RF', 'Fibre optics, laser transceivers', 'Transistor gate dielectric', 'Batteries for robots & storage']
+  : ['半導体工場：冷却・露光・パッケージング', '送電網・データセンター向け銅の浸出', 'GaNパワー半導体・RF', '光ファイバー・光トランシーバー', 'トランジスタのゲート絶縁膜', 'ロボット・蓄電用電池'];
+const status = ['shock', 'shock', 'tight', 'tight', 'ok', 'tight'];
+const col: Record<string, string> = { shock: '#d1495b', tight: '#edae49', ok: '#5c946e' };
+const H = 6 * 50 + 50;
+const y = (i: number) => 50 + i * 50;
+const head = en ? ['Host industry (sets the volume)', 'By-product', 'What AI & robots need it for'] : ['主産業（量を決める）', '副産物', 'AI・ロボットでの用途'];
+---
+<div class="bptrap">
+  <svg viewBox={`0 0 860 ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label="By-product supply chains">
+    <text x="10" y="22" class="hd">{head[0]}</text>
+    <text x="345" y="22" class="hd">{head[1]}</text>
+    <text x="560" y="22" class="hd">{head[2]}</text>
+    {hosts.map((h, i) => (
+      <g>
+        <rect x="6" y={y(i) - 16} width="270" height="30" rx="5" class="host" />
+        <text x="16" y={y(i) + 4} class="t">{h}</text>
+        <path d={`M276,${y(i)} C310,${y(i)} 310,${y(i)} 340,${y(i)}`} class="link" />
+        <rect x="340" y={y(i) - 16} width="170" height="30" rx="15" fill={col[status[i]]} />
+        <text x="425" y={y(i) + 4} text-anchor="middle" class="p">{prods[i]}</text>
+        <path d={`M510,${y(i)} C535,${y(i)} 535,${y(i)} 556,${y(i)}`} class="link" />
+        <text x="560" y={y(i) + 4} class="t">{uses[i]}</text>
+      </g>
+    ))}
+  </svg>
+</div>
+<style>
+  .bptrap { max-width: 880px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; }
+  .bptrap svg { width: 100%; height: auto; }
+  .bptrap .host { fill: var(--post-code-bg, #f2f2f2); stroke: var(--post-separator, #ddd); }
+  .bptrap .t { fill: var(--post-text, #353535); font-size: 13px; }
+  .bptrap .p { fill: #fff; font-size: 13px; font-weight: 700; }
+  .bptrap .hd { fill: var(--post-caption, #737373); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+  .bptrap .link { fill: none; stroke: var(--post-caption, #999); stroke-width: 1.5; }
+</style>
