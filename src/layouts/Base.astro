@@ -10,10 +10,13 @@ interface Props {
   type?: 'website' | 'article';
   publishedDate?: Date;
   tags?: string[];
+  image?: string;
 }
 
-const { title, description, lang = 'en', path = '/', type = 'website', publishedDate, tags = [] } = Astro.props;
+const { title, description, lang = 'en', path = '/', type = 'website', publishedDate, tags = [], image } = Astro.props;
 const site = getSite(lang);
+// Social previews need a still image; video thumbnails fall back to the site default.
+const socialImage = `${site.url}${image && /\.(jpe?g|png|webp)$/i.test(image) ? image : '/images/preview.png'}`;
 const pageTitle = title ? `${title} | ${site.title}` : site.title;
 const pageDescription = description || site.description;
 const alternateLang: Locale = lang === 'en' ? 'ja' : 'en';
@@ -33,7 +36,7 @@ const alternate = getAbsoluteLocaleUrl(alternateLang, path);
     <meta property="og:title" content={pageTitle} />
     <meta property="og:description" content={pageDescription} />
     <meta property="og:url" content={canonical} />
-    <meta property="og:image" content={`${site.url}/images/preview.png`} />
+    <meta property="og:image" content={socialImage} />
     <meta property="og:type" content={type} />
     <meta property="og:locale" content={lang === 'ja' ? 'ja_JP' : 'en_US'} />
     {type === 'article' && publishedDate && (
@@ -45,7 +48,7 @@ const alternate = getAbsoluteLocaleUrl(alternateLang, path);
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
-    <meta name="twitter:image" content={`${site.url}/images/preview.png`} />
+    <meta name="twitter:image" content={socialImage} />
     <link rel="icon" type="image/x-icon" href="/images/favicon.ico" />
     <link
       href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
