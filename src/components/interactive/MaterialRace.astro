@@ -98,31 +98,31 @@ const tabs = lang === 'ja'
         { key: "td", label: "Robot production doubling time", min: 0.5, max: 5, step: 0.1, fmt: yrs },
         { key: "p0", label: "Humanoids built in 2026", min: 20, max: 1000, step: 10, fmt: (v) => `${v.toFixed(0)}k` },
         { key: "kg", label: "NdFeB per robot", min: 0.5, max: 5, step: 0.1, fmt: (v) => `${v.toFixed(1)} kg` },
-        { key: "sub", label: "Motors made magnet-free (ferrite, induction)", min: 0, max: 90, step: 5, fmt: pct },
+        { key: "sub", label: "Motors using rare-earth-free alternatives (ferrite, induction)", min: 0, max: 90, step: 5, fmt: pct },
         { key: "g", label: "Magnet supply growth", min: 0, max: 30, step: 1, fmt: (v) => `${v.toFixed(0)}% / yr` },
         { key: "sh", label: "Share of magnet supply robots can claim", min: 5, max: 100, step: 5, fmt: pct },
       ],
       defaults: { td: 1.5, p0: 100, kg: 2.5, sub: 0, g: 8, sh: 30 },
-      note: "Baseline: ~226 kt NdFeB demand in 2026, growing 7.5–10%/yr (CRU, Arthur D. Little); 2–4.5 kg per humanoid (CRU, FAI); ~100k humanoids built in 2026, mostly in China. Bank base cases (Goldman, BofA) imply ~1.3-year doubling to 2035, then flattening. EVs, wind and electronics compete for the rest.",
+      note: "Sources: ~226 kt NdFeB a year (consistent with CRU's ratios); 2–4.5 kg per humanoid (CRU, FAI); 75–90k humanoids built in 2026, mostly in China (Goldman, BofA), rounded to 100k. Goldman and BofA forecasts imply doubling every 1.3–1.4 years on average to 2035. My assumptions: supply growth and the share robots can claim. EVs, wind and electronics compete for the rest.",
       demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e6,
       total: (t, p) => 226 * Math.pow(1 + p.g / 100, t),
       share: (p) => p.sh / 100,
     },
     heavy: {
       unit: "t Dy-eq / yr",
-      ylabel: "dysprosium-equivalent per year, outside China (log)",
-      demandLabel: "Dy + Tb needed for robots built outside China",
-      supplyLabel: "ex-China Dy + Tb robots can claim",
+      ylabel: "Dy-equivalent (Dy + 2.5×Tb) per year, outside China (log)",
+      demandLabel: "Dy-equivalent needed for robots built outside China",
+      supplyLabel: "ex-China Dy-equivalent robots can claim",
       params: [
         { key: "td", label: "Robot production doubling time", min: 0.5, max: 5, step: 0.1, fmt: yrs },
         { key: "p0", label: "Humanoids built outside China in 2026", min: 5, max: 200, step: 5, fmt: (v) => `${v.toFixed(0)}k` },
-        { key: "kg", label: "Dy-equivalent per robot", min: 20, max: 100, step: 5, fmt: (v) => `${v.toFixed(0)} g` },
+        { key: "kg", label: "Dy-equivalent (Dy + 2.5×Tb metal) per robot", min: 20, max: 100, step: 5, fmt: (v) => `${v.toFixed(0)} g` },
         { key: "sub", label: "Heavy-REE-free magnet grades adopted", min: 0, max: 90, step: 5, fmt: pct },
-        { key: "g", label: "Ex-China Dy + Tb supply growth", min: 0, max: 80, step: 5, fmt: (v) => `${v.toFixed(0)}% / yr` },
-        { key: "sh", label: "Share of ex-China Dy + Tb robots can claim", min: 5, max: 100, step: 5, fmt: pct },
+        { key: "g", label: "Ex-China Dy-equivalent supply growth", min: 0, max: 80, step: 5, fmt: (v) => `${v.toFixed(0)}% / yr` },
+        { key: "sh", label: "Share of ex-China Dy-equivalent robots can claim", min: 5, max: 100, step: 5, fmt: pct },
       ],
       defaults: { td: 1.5, p0: 20, kg: 57, sub: 0, g: 30, sh: 50 },
-      note: "Baseline: Lynas, the only commercial heavy-rare-earth separator outside China, produces a few tens of tonnes of Dy + Tb a year (capacity ~290 t if feedstock allows); MP Materials is commissioning a circuit. 35–79 g Dy-equivalent per humanoid (FAI). Defence, EVs and wind compete for the same tonnes.",
+      note: "Sources: Lynas, the only commercial Dy/Tb separator outside China, made 26 t of Dy + Tb in its Dec 2025 quarter and 8 t in its Mar 2026 quarter; nameplate capacity is 240 t Dy + 50 t Tb a year if feedstock allows. 35–79 g Dy-equivalent metal (Dy + 2.5×Tb) per humanoid (FAI). My assumptions: 62 t/yr Dy-equivalent available outside China in 2026, 30%/yr growth, 20k humanoids built outside China, and the share robots can claim. Defence, EVs and wind compete for the same tonnes.",
       demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e9,
       total: (t, p) => 0.062 * Math.pow(1 + p.g / 100, t),
       share: (p) => p.sh / 100,
@@ -141,7 +141,7 @@ const tabs = lang === 'ja'
         { key: "sh", label: "Share of world copper AI can claim", min: 1, max: 40, step: 1, fmt: pct },
       ],
       defaults: { td: 2.5, p0: 18, kg: 60, sub: 0, g: 2, sh: 10 },
-      note: "Baseline: ~28 Mt refined copper demand (IEA 2025) growing ~2%/yr; 12–47 t/MW inside the facility (WEF, S&P), roughly 2.8× that once its share of the grid is counted (Payne Institute); 15–20 GW added per year (Wood Mackenzie). Forecasters expect additions to plateau around 30 GW/yr — the doubling slider is the recursive-improvement hypothesis, not a consensus.",
+      note: "Sources: ~28 Mt refined copper demand (IEA); 12–47 t/MW inside the facility (WEF, S&P), roughly 2.8× that once its share of the grid is counted (Payne Institute); ~15–20 GW added a year now, peaking at 30–33 GW a year in the early 2030s (Wood Mackenzie). My assumptions: ~2%/yr supply growth and the share AI can claim. Sustained doubling is the hypothesis of AI improving itself, not a forecast.",
       demand: (t, p) => p.p0 * 1e3 * Math.pow(2, t / p.td) * p.kg * (1 - p.sub / 100) / 1e3,
       total: (t, p) => 28000 * Math.pow(1 + p.g / 100, t),
       share: (p) => p.sh / 100,
@@ -154,21 +154,21 @@ const tabs = lang === 'ja'
       ylabel: "ネオジム磁石（千トン/年、対数）",
       demandLabel: "新しい人型ロボットに必要な磁石",
       supplyLabel: "ロボットが確保できる磁石供給",
-      note: "前提：2026年のネオジム磁石需要は約22.6万トンで年7.5〜10%成長（CRU、アーサー・D・リトル）。人型ロボット1台あたり2〜4.5kg（CRU、FAI）。2026年の人型ロボット生産は約10万台で、大半が中国。銀行の基本シナリオ（ゴールドマン、BofA）は2035年まで約1.3年ごとの倍増を示唆。EV・風力・電子機器が残りを奪い合う。",
-      labels: { td: "ロボット生産の倍増期間", p0: "2026年の人型ロボット生産台数", kg: "1台あたりのネオジム磁石", sub: "磁石を使わないモーターの比率（フェライト・誘導）", g: "磁石供給の成長率", sh: "ロボットが確保できる磁石供給の割合" },
+      note: "出典：ネオジム磁石は年約22.6万トン（CRUの比率と整合）。人型ロボット1台あたり2〜4.5kg（CRU、FAI）。2026年の人型ロボット生産は7.5万〜9万台で大半が中国（ゴールドマン、BofA）、10万台に丸めた。ゴールドマンとBofAの予測は2035年まで平均1.3〜1.4年ごとの倍増を意味する。私の仮定：供給の成長率とロボットが確保できる割合。EV・風力・電子機器が残りを奪い合う。",
+      labels: { td: "ロボット生産の倍増期間", p0: "2026年の人型ロボット生産台数", kg: "1台あたりのネオジム磁石", sub: "レアアースを使わない代替モーターの比率（フェライト磁石・誘導モーター）", g: "磁石供給の成長率", sh: "ロボットが確保できる磁石供給の割合" },
     },
     heavy: {
-      ylabel: "中国国外のジスプロシウム換算（年、対数）",
-      demandLabel: "中国国外で作るロボットに必要なDy・Tb",
-      supplyLabel: "ロボットが確保できる中国国外のDy・Tb",
-      note: "前提：中国国外で唯一重希土類を商業分離するLynasの生産は年数十トン（原料があれば能力約290トン）。MP Materialsも設備を立ち上げ中。人型ロボット1台あたりジスプロシウム換算35〜79g（FAI）。防衛・EV・風力が同じ供給を奪い合う。",
-      labels: { td: "ロボット生産の倍増期間", p0: "2026年に中国国外で作る人型ロボット", kg: "1台あたりのジスプロシウム換算量", sub: "重希土類を使わない磁石グレードの採用率", g: "中国国外のDy・Tb供給の成長率", sh: "ロボットが確保できる中国国外Dy・Tbの割合" },
+      ylabel: "中国国外のDy換算量（Dy＋2.5×Tb、年、対数）",
+      demandLabel: "中国国外で作るロボットに必要なジスプロシウム換算量",
+      supplyLabel: "ロボットが確保できる中国国外のジスプロシウム換算量",
+      note: "出典：中国国外で唯一Dy・Tbを商業分離するLynasの生産は、2025年12月期が26トン、2026年3月期が8トン。原料があれば能力はDy年240トン＋Tb年50トン。人型ロボット1台あたりジスプロシウム換算（金属、Dy＋2.5×Tb）35〜79g（FAI）。私の仮定：2026年に中国国外で使えるジスプロシウム換算年62トン、年30%の成長、中国国外で作る人型ロボット2万台、ロボットが確保できる割合。防衛・EV・風力が同じ供給を奪い合う。",
+      labels: { td: "ロボット生産の倍増期間", p0: "2026年に中国国外で作る人型ロボット", kg: "1台あたりのジスプロシウム換算量（Dy＋2.5×Tb、金属）", sub: "重希土類を使わない磁石グレードの採用率", g: "中国国外のジスプロシウム換算供給の成長率", sh: "ロボットが確保できる中国国外供給の割合" },
     },
     copper: {
       ylabel: "銅（千トン/年、対数）",
       demandLabel: "新しいAI設備に必要な銅（送電網を含む）",
       supplyLabel: "AIが確保できる銅",
-      note: "前提：精錬銅需要は約2,800万トン（IEA、2025年）で年約2%成長。施設内の銅は1MWあたり12〜47トン（WEF、S&P）、送電網の分担分を含めると約2.8倍（ペイン研究所）。年15〜20GWの増設（ウッド・マッケンジー）。予測機関は年30GW前後で頭打ちと見ている。倍増スライダーは自己改善シナリオの仮説であり、コンセンサスではない。",
+      note: "出典：精錬銅需要は約2,800万トン（IEA）。施設内の銅は1MWあたり12〜47トン（WEF、S&P）、送電網の分担分を含めると約2.8倍（ペイン研究所）。増設は現在年約15〜20GWで、2030年代初頭に年30〜33GWでピーク（ウッド・マッケンジー）。私の仮定：供給の成長率年約2%とAIが確保できる割合。倍増の継続はAIが自らを改良する場合の仮説であり、予測ではない。",
       labels: { td: "AI電力容量の増設：倍増期間", p0: "2026年のデータセンター増設容量", kg: "銅の原単位（送電網の分担分を含む）", sub: "節約：800V直流・光ファイバー・アルミ", g: "精錬銅供給の成長率", sh: "AIが確保できる世界の銅の割合" },
     },
   };
@@ -182,7 +182,10 @@ const tabs = lang === 'ja'
   const TXT = LANG === "ja"
     ? {
         buy: (b: number) => `供給を2倍にしても、逼迫は<b>${b.toFixed(1)}年</b>しか遅れません。`,
-        none: "この設定では供給の伸びが需要を上回るため、逼迫は起きません。",
+        none: "この設定では供給が需要と同じかそれ以上の速さで伸びるため、逼迫は起きません。",
+        equal: "需要と供給が同じ速さで伸びるため、その比率は変わりません。",
+        clears: (y: number) => `ただし供給の伸びが需要を上回るため、不足は<b>${y}年</b>ごろに解消します。`,
+        clearsLate: "供給の伸びが需要を上回るため、不足はいずれ解消しますが、2050年より後です。",
         now: "需要はすでにこの分野が確保できる供給を超えています。",
         at: (y: number) => `需要がこの分野の確保できる供給を上回るのは<b>${y}年</b>ごろです。`,
         no2050: "この設定では2050年まで逼迫は起きません。",
@@ -191,7 +194,10 @@ const tabs = lang === 'ja'
       }
     : {
         buy: (b: number) => `Doubling the supply available only delays the crunch by <b>${b.toFixed(1)} years</b>.`,
-        none: "Supply is growing faster than demand here, so there is no crunch.",
+        none: "Supply grows at least as fast as demand here, so there is no crunch.",
+        equal: "Demand and supply grow at the same rate, so the gap between them never changes.",
+        clears: (y: number) => `But supply grows faster than demand, so the shortage clears around <b>${y}</b>.`,
+        clearsLate: "Supply grows faster than demand, so the shortage eventually clears, but not before 2050.",
         now: "Demand already exceeds what this sector can claim. ",
         at: (y: number) => `Demand outgrows the supply this sector can claim around <b>${y}</b>. `,
         no2050: "No crunch before 2050 with these settings. ",
@@ -276,7 +282,10 @@ const tabs = lang === 'ja'
     }
 
     const path = (arr: number[]) => arr.map((v, i) => `${i ? "L" : "M"}${xFor(ts[i]).toFixed(1)},${yFor(v).toFixed(1)}`).join("");
-    $("mr-demand")!.setAttribute("d", path(d));
+    // stop drawing demand once it leaves the top of the chart, so clipping does not look like a plateau
+    const top = Math.pow(10, hi);
+    const dEnd = d.findIndex((v) => v > top);
+    $("mr-demand")!.setAttribute("d", path(dEnd > 0 ? d.slice(0, dEnd + 1) : d));
     $("mr-supply")!.setAttribute("d", path(s));
     $("mr-total")!.setAttribute("d", path(tot));
 
@@ -286,8 +295,17 @@ const tabs = lang === 'ja'
     const readout = $("mr-readout")!;
     const rate = Math.LN2 / p.td - Math.log(1 + p.g / 100);
     const buy = rate > 0 ? Math.LN2 / rate : Infinity;
-    const buyTxt = isFinite(buy) ? TXT.buy(buy) : TXT.none;
-    if (ti >= 0) {
+    const eps = 1e-9;
+    const buyTxt = rate > eps ? TXT.buy(buy) : rate < -eps ? TXT.none : TXT.equal;
+    if (ti === 0 && rate <= eps) {
+      // demand starts above claimable supply; it only clears if supply grows faster
+      const tc = d.findIndex((v, i) => v < s[i]);
+      readout.innerHTML = TXT.now + (rate < -eps ? (tc > 0 ? TXT.clears(Math.floor(2026 + ts[tc])) : TXT.clearsLate) : TXT.equal);
+      const x = xFor(0), y = yFor(d[0]);
+      const dot = document.createElementNS(svgns, "circle");
+      dot.setAttribute("class", "cross-dot"); dot.setAttribute("cx", String(x)); dot.setAttribute("cy", String(y)); dot.setAttribute("r", "6");
+      cross.append(dot);
+    } else if (ti >= 0) {
       const t = ts[ti];
       const yr = 2026 + t;
       const x = xFor(t), y = yFor(d[ti]);
@@ -302,7 +320,7 @@ const tabs = lang === 'ja'
       cross.append(vl, dot, tx);
       readout.innerHTML = (t < 0.05 ? TXT.now : TXT.at(Math.floor(yr))) + buyTxt;
     } else {
-      readout.innerHTML = TXT.no2050 + buyTxt;
+      readout.innerHTML = rate > eps ? TXT.no2050 + buyTxt : buyTxt;
     }
   }
 

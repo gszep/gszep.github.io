@@ -2,8 +2,8 @@
 interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
 const nodes = lang === 'ja'
-  ? [['チップ', 'CoWoS・HBM・Tガラス'], ['電力', 'タービンは2030年まで完売'], ['送電設備', '変圧器・開閉装置'], ['基礎金属', '銅・硫酸・電磁鋼板'], ['ロボット', 'NdPr磁石・減速機'], ['鉱山・精錬', '10〜20年、中国で加工']]
-  : [['Chips', 'CoWoS · HBM · T-glass'], ['Power', 'turbines sold to 2030'], ['Grid gear', 'transformers · switchgear'], ['Bulk metals', 'copper · acid · steel'], ['Robots', 'NdPr magnets · reducers'], ['Mines & refineries', '10–20 yrs, China-processed']];
+  ? [['チップ', 'CoWoS・HBM・Tガラス'], ['電力', 'タービンは2028〜30年まで予約済み'], ['送電設備', '変圧器・開閉装置'], ['基礎金属', '銅・硫酸・電磁鋼板'], ['ロボット', 'NdPr磁石・減速機'], ['鉱山・精錬', '鉱山10年超・精錬約5年']]
+  : [['Chips', 'CoWoS · HBM · T-glass'], ['Power', 'turbines booked to 2028–30'], ['Grid gear', 'transformers · switchgear'], ['Bulk metals', 'copper · acid · steel'], ['Robots', 'NdPr magnets · reducers'], ['Mines & refineries', 'mines 10+ yrs · refineries ~5']];
 const colors = ['#5c946e', '#8aa860', '#edae49', '#e0803f', '#d1495b', '#003d5b'];
 ---
 <div class="bscroll">

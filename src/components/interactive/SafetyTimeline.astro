@@ -4,7 +4,7 @@ const { lang = 'en' } = Astro.props;
 
 // Time axis: months since 1 Oct 2026 (0) to 1 Sep 2027 (11).
 type Ev =
-  | { kind: 'deadline' | 'summit'; t: number; label: string; above?: boolean }
+  | { kind: 'deadline' | 'earliest' | 'summit'; t: number; label: string; above?: boolean }
   | { kind: 'window'; t0: number; t1: number; label: string; open?: boolean; above?: boolean };
 interface Lane { name: string; events: Ev[] }
 
@@ -19,17 +19,17 @@ const en: Lane[] = [
   ] },
   { name: 'EU', events: [
     { kind: 'deadline', t: 1.4, label: '12 Nov Gigafactory tender closes', above: true },
-    { kind: 'deadline', t: 2.27, label: '9 Dec liability law' },
+    { kind: 'deadline', t: 2.27, label: '9 Dec liability law deadline' },
   ] },
   { name: 'EU AI Act', events: [
     { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'Evaluator roster for model testing · Code of Practice review ~Aug 2027' },
   ] },
   { name: 'South Korea', events: [
-    { kind: 'window', t0: 0, t1: 3.7, label: 'Notices before fines' },
-    { kind: 'deadline', t: 3.7, label: '22 Jan fines begin', above: true },
+    { kind: 'window', t0: 0, t1: 3.7, label: 'Notices before the grace period ends' },
+    { kind: 'earliest', t: 3.7, label: '22 Jan earliest fines', above: true },
   ] },
   { name: 'Australia', events: [
-    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI Standards legislation' },
+    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI Standards bill (planned early 2027)' },
   ] },
   { name: 'All', events: [
     { kind: 'summit', t: 8.7, label: 'Geneva AI summit 21–22 Jun', above: true },
@@ -47,17 +47,17 @@ const ja: Lane[] = [
   ] },
   { name: 'EU', events: [
     { kind: 'deadline', t: 1.4, label: '11/12 ギガファクトリー入札締切', above: true },
-    { kind: 'deadline', t: 2.27, label: '12/9 製造物責任法' },
+    { kind: 'deadline', t: 2.27, label: '12/9 製造物責任法の期限' },
   ] },
   { name: 'EU AI法', events: [
     { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'モデル評価の評価者名簿・行動規範の見直し（2027年8月頃）' },
   ] },
   { name: '韓国', events: [
-    { kind: 'window', t0: 0, t1: 3.7, label: '過料開始前の告示' },
-    { kind: 'deadline', t: 3.7, label: '1/22 過料開始', above: true },
+    { kind: 'window', t0: 0, t1: 3.7, label: '猶予期間終了前の告示' },
+    { kind: 'earliest', t: 3.7, label: '1/22 早ければ過料開始', above: true },
   ] },
   { name: 'オーストラリア', events: [
-    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI基準の立法' },
+    { kind: 'window', t0: 3, t1: 6, open: true, label: 'AI基準の法案（2027年初めの予定）' },
   ] },
   { name: '全体', events: [
     { kind: 'summit', t: 8.7, label: '6/21–22 ジュネーブAIサミット', above: true },
@@ -66,8 +66,8 @@ const ja: Lane[] = [
 
 const lanes = lang === 'ja' ? ja : en;
 const T = lang === 'ja'
-  ? { months: ['10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y0: '2026', y1: '2027', today: '今日', dl: '期限', win: '起草・審議の期間', sum: '首脳会議', aria: '6つの安全条件を盛り込める法的機会の時系列' }
-  : { months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], y0: '2026', y1: '2027', today: 'today', dl: 'hard deadline', win: 'drafting window', sum: 'summit', aria: 'Timeline of legal openings for the six safety conditions' };
+  ? { months: ['10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y0: '2026', y1: '2027', today: '10/12', dl: '期限', ea: '最も早い日付', win: '起草・審議の期間', sum: '首脳会議', aria: '6つの安全条件を盛り込める法的機会の時系列' }
+  : { months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], y0: '2026', y1: '2027', today: '12 Oct', dl: 'fixed deadline', ea: 'earliest date', win: 'drafting window', sum: 'summit', aria: 'Timeline of legal openings for the six safety conditions' };
 
 const X0 = 150, X1 = 740, M = 11;
 const x = (t: number) => X0 + (t / M) * (X1 - X0);
@@ -79,8 +79,9 @@ const TODAY = 0.37;
   <svg viewBox={`0 0 760 ${H}`} preserveAspectRatio="xMidYMid meet" role="img" aria-label={T.aria}>
     <g class="leg" transform="translate(150, 14)">
       <circle cx="5" cy="-4" r="5" class="dl" /><text x="14" y="0">{T.dl}</text>
-      <rect x="120" y="-8" width="22" height="8" rx="4" class="win" /><text x="148" y="0">{T.win}</text>
-      <path d="M 300 -9 l 5 5 l -5 5 l -5 -5 z" class="sum" /><text x="310" y="0">{T.sum}</text>
+      <circle cx="120" cy="-4" r="5" class="ea" /><text x="129" y="0">{T.ea}</text>
+      <rect x="230" y="-8" width="22" height="8" rx="4" class="win" /><text x="258" y="0">{T.win}</text>
+      <path d="M 400 -9 l 5 5 l -5 5 l -5 -5 z" class="sum" /><text x="410" y="0">{T.sum}</text>
     </g>
     {T.months.map((m, i) => (
       <g>
@@ -120,7 +121,7 @@ const TODAY = 0.37;
             const anchor = x(e.t) > 600 ? 'end' : 'start';
             return (
               <g>
-                <circle cx={x(e.t)} cy={cy} r="6" class="dl" />
+                <circle cx={x(e.t)} cy={cy} r="6" class={e.kind === 'earliest' ? 'ea' : 'dl'} />
                 <text x={x(e.t) + (anchor === 'end' ? 4 : -4)} y={ly} text-anchor={anchor} class="ev strong">{e.label}</text>
               </g>
             );
@@ -141,6 +142,7 @@ const TODAY = 0.37;
   .stl .ev { fill: var(--post-text, #353535); font-size: 11.5px; }
   .stl .ev.strong { font-weight: 600; }
   .stl .dl { fill: #d1495b; }
+  .stl .ea { fill: #fff; stroke: #d1495b; stroke-width: 2; }
   .stl .win { fill: #00798c; opacity: 0.85; }
   .stl .win.open { opacity: 0.45; }
   .stl .sum { fill: #003d5b; }
