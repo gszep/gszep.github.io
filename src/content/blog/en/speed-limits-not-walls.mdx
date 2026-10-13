@@ -13,12 +13,14 @@ import ByproductTraps from '../../../components/interactive/ByproductTraps.astro
 import BottleneckScroll from '../../../components/interactive/BottleneckScroll.astro';
 import PriceShocks from '../../../components/interactive/PriceShocks.astro';
 import PhysicalShareSlider from '../../../components/interactive/PhysicalShareSlider.astro';
+import StakesLeverage from '../../../components/interactive/StakesLeverage.astro';
+import SliderTrend from '../../../components/interactive/SliderTrend.astro';
 
-> **In short.** AI's progress comes from two ingredients: better ideas, which run on the computers that already exist, and more physical things, such as chips, power stations, factories and robots. Nobody knows the mix, so this post lets you choose it with a slider. Ideas can move far faster than buildings, so as soon as even a small share of progress needs new physical things, the pace is set by how fast mines, refineries and factories can grow. When demand doubles every year or two, adding supply buys only a couple of years. The mix also decides who holds leverage. The more AI's growth depends on software, the more it favours whoever already owns the computers and the leading models. The more it depends on building, the more it favours the countries that refine metals and make magnets, gears and power equipment.
+> **In short.** AI's progress comes from two ingredients: better ideas, which run on the computers that already exist, and more physical things, such as chips, power stations, factories and robots. Nobody knows the mix, so this post lets you choose it with a slider. Ideas can move far faster than buildings, so as soon as even a small share of progress needs new physical things, the pace is set by how fast mines, refineries and factories can grow. When demand doubles every year or two, adding supply buys only a couple of years. The mix also decides who holds leverage. The more AI's growth depends on software, the more it favours whoever already owns the computers and the leading models. The more it depends on building, the more it favours the countries that refine metals and make magnets, gears and power equipment. Middle powers that make chips and the tools behind them are strongest in between, which is roughly where we are now, and weakest near the software end, where AI grows fastest. That software end has its own risk: AI copying itself onto poorly secured devices, which turns cyber defence into something closer to public health. The share of progress that needs new hardware fell from about 60% to about 40% after 2024; which way it moves next is worth watching.
 
 ## Ideas and atoms
 
-Most talk about AI is about software. Some of AI's progress really is software: better methods squeeze more out of the same chips. The rest needs new physical things, more chips, more electricity, and eventually robots and factories. Recent progress has come roughly half from each, with more chips and power doing slightly more of the work<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
+Most talk about AI is about software. Some of AI's progress really is software: better methods squeeze more out of the same chips. The rest needs new physical things, more chips, more electricity, and eventually robots and factories. Recent progress has come from both, with new hardware doing a little over half the work until 2024 and a little less since<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
 
 How this mix changes as AI starts doing AI research is the biggest open question behind this post. At one extreme, AI improves AI almost entirely in software, on the computers that already exist. That is possible only if AI researchers can stand in for the computing power that experiments need, and the evidence on that is split<sup><a href="#ref-80">80</a></sup><sup><a href="#ref-87">87</a></sup>. Part of what looked like pure software progress in the past turns out to have needed ever larger computers to pay off<sup><a href="#ref-81">81</a></sup>, and past estimates of how quickly software improvements feed on themselves may be too high for the same reason<sup><a href="#ref-89">89</a></sup>. In 2026, AI already leads about a quarter of the research work at one major lab<sup><a href="#ref-85">85</a></sup> and does the equivalent of several research interns' work for each human researcher at another<sup><a href="#ref-86">86</a></sup>, but by one estimate the feedback is still somewhat below the level needed to keep speeding itself up<sup><a href="#ref-84">84</a></sup>.
 
@@ -29,13 +31,20 @@ At the other extreme, progress needs chips, power stations, factories and robots
   <figcaption>Slide to set how much of AI's progress needs new physical things. The curves show how quickly AI capability, physical build-out and robot production double; the boxes show what that means for the value of a lead and for copper and magnet supplies; the row of countries shows whose leverage grows. Inputs and sources are in the notes at the end<sup><a href="#ref-74">74</a></sup><sup><a href="#ref-80">80</a></sup><sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup><sup><a href="#ref-87">87</a></sup><sup><a href="#ref-88">88</a></sup>.</figcaption>
 </figure>
 
+Which way is the slider moving? The direction tells us more than today's position. For about a decade, roughly 55–60% of AI's progress came from new hardware. From late 2024 the share fell to around 40%: AI systems that reason step by step got much better while running on chips that labs already had, and measured capability started improving more than twice as fast as before<sup><a href="#ref-91">91</a></sup><sup><a href="#ref-92">92</a></sup>. That dip probably came from a one-off source of easy gains, and the largest cloud companies plan to spend around &#36;700 billion on new data centres in 2026<sup><a href="#ref-93">93</a></sup>, which would push the share back up. AI doing more of its own research would push it down<sup><a href="#ref-85">85</a></sup><sup><a href="#ref-86">86</a></sup>. My best guess is a share that holds steady or edges up over the next two years, with a wide range either way.
+
+<figure>
+  <SliderTrend />
+  <figcaption>How much of AI's yearly progress needed new chips, power and buildings, 2012–2028. The line is a best estimate from published trends and the band shows the uncertainty; 2027–28 are projections<sup><a href="#ref-81">81</a></sup><sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup><sup><a href="#ref-91">91</a></sup><sup><a href="#ref-92">92</a></sup>.</figcaption>
+</figure>
+
 Three things stand out as you slide.
 
 **Building sets the pace for most of the range.** Ideas can, in principle, raise capability ten-fold a year or more, while physical build-out at its fastest doubles every year or two. So once more than a small share of progress needs new things (about a sixth, with the chart's starting assumptions), the speed of building decides the speed of AI. The rest of this post is about that case.
 
 **Faster growth comes with less need for materials.** Towards the software end, AI capability can double in months, and a one-year lead becomes worth many times the capability of the follower. Copper and magnets then matter little.
 
-**Leverage moves with the slider.** Towards the software end, it gathers with whoever owns the computers and the leading models, mostly in the United States<sup><a href="#ref-88">88</a></sup>. Towards the physical end, it moves to the countries that refine metals and make magnets, robots and power equipment, led by China. Japan, Taiwan, South Korea and the Netherlands, which make the chips and the machines and materials behind them, are strongest in the middle, which is roughly where we are now.
+**Each country's leverage depends on where the slider sits.** A country has leverage when it controls something the rest of the world needs and cannot quickly replace. What the world needs changes along the slider. Near the software end, the scarce things are computers that already exist and the best models; most of both are in the United States<sup><a href="#ref-88">88</a></sup>. Near the physical end, the scarce things are refined metals, magnets, robots and power equipment, where China leads. In the middle, the scarce things are chips and the machines and materials to make them, where Japan, Taiwan, South Korea and the Netherlands are strong. The row of countries under the chart shows this: drag the slider and watch the shading move.
 
 ## How long things take
 
@@ -89,7 +98,7 @@ A data centre contains about 12–47 tonnes of copper per megawatt<sup><a href="
 
 ## Small cost, big consequences
 
-Materials are a tiny part of what AI costs. Copper is between under 0.5% and about 6% of the cost of building a data centre, depending on what is counted<sup><a href="#ref-35">35</a></sup><sup><a href="#ref-36">36</a></sup>, and all the helium used in chipmaking is worth about $1 billion a year<sup><a href="#ref-37">37</a></sup>. So you might expect material prices to matter little.
+Materials are a tiny part of what AI costs. Copper is between under 0.5% and about 6% of the cost of building a data centre, depending on what is counted<sup><a href="#ref-35">35</a></sup><sup><a href="#ref-36">36</a></sup>, and all the helium used in chipmaking is worth about &#36;1 billion a year<sup><a href="#ref-37">37</a></sup>. So you might expect material prices to matter little.
 
 Think of baking powder: a tiny share of what a cake costs, yet without it there is no cake. When an input is essential and nothing can replace it, a shortage does far more damage than its share of the cost suggests. That effect roughly tripled the economic damage of the 1970s oil shocks<sup><a href="#ref-38">38</a></sup>, and growth is held back by whatever is essential and hard to improve<sup><a href="#ref-39">39</a></sup>. For such inputs, the danger is whether you can get them at all<sup><a href="#ref-40">40</a></sup>. Gallium is a negligible part of the world economy, yet some power chips cannot be made without it, and an export ban can stop deliveries however little they cost.
 
@@ -105,7 +114,7 @@ A chokepoint is a narrow point that everything must pass through: a strait that 
 </figure>
 
 - **War.** In March, Iranian strikes on Qatar's Ras Laffan gas complex took out about a third of the world's helium supply<sup><a href="#ref-47">47</a></sup><sup><a href="#ref-1">1</a></sup> and 17% of Qatar's gas export capacity for three to five years<sup><a href="#ref-18">18</a></sup>. Helium is essential for making chips. South Korea's chipmakers, which get over half of theirs from Qatar<sup><a href="#ref-1">1</a></sup>, said in late March they had months of stock<sup><a href="#ref-48">48</a></sup>. Since a June ceasefire, shipping through the Strait of Hormuz has partly recovered, to about 124 ships a week in late September against more than 100 a day before the war<sup><a href="#ref-79">79</a></sup>. Oil exports are back near normal through costly workarounds, while attacks on tankers have risen again<sup><a href="#ref-49">49</a></sup>.
-- **Export rules.** In May, China stopped exporting the sulfuric acid left over from smelting metals<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>. It exports only about 4% of what it makes<sup><a href="#ref-52">52</a></sup>, but Chile uses imported acid to extract copper, and the price there doubled in seven weeks<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-53">53</a></sup>. Gallium outside China reached $1,850 a kilogram in April while staying flat inside China<sup><a href="#ref-42">42</a></sup>, and tungsten rose about 350% in four months as China cut quotas and licensed just fifteen exporters<sup><a href="#ref-41">41</a></sup>.
+- **Export rules.** In May, China stopped exporting the sulfuric acid left over from smelting metals<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>. It exports only about 4% of what it makes<sup><a href="#ref-52">52</a></sup>, but Chile uses imported acid to extract copper, and the price there doubled in seven weeks<sup><a href="#ref-44">44</a></sup><sup><a href="#ref-53">53</a></sup>. Gallium outside China reached &#36;1,850 a kilogram in April while staying flat inside China<sup><a href="#ref-42">42</a></sup>, and tungsten rose about 350% in four months as China cut quotas and licensed just fifteen exporters<sup><a href="#ref-41">41</a></sup>.
 - **One mine going wrong.** In August, copper traded near record highs, partly because Grasberg in Indonesia, one of the world's largest copper mines, was still far below capacity after a 2025 mudslide<sup><a href="#ref-45">45</a></sup><sup><a href="#ref-46">46</a></sup><sup><a href="#ref-54">54</a></sup>.
 
 What held back AI most this year was factory capacity. The most advanced chip factories have run flat out since late 2025, and the special memory that AI chips use may stay short until 2030<sup><a href="#ref-55">55</a></sup>; a new memory factory takes three to five years<sup><a href="#ref-16">16</a></sup>. Makers of gas turbines for power stations have roughly three years of orders waiting<sup><a href="#ref-56">56</a></sup>. One Japanese company makes about 85% of a special glass cloth inside AI chip packages, with no relief before 2027–28<sup><a href="#ref-17">17</a></sup>. Another, Ajinomoto, better known for its seasonings, makes almost all of the insulating film in those packages and reportedly cut supply to mainland China by 30% in August<sup><a href="#ref-57">57</a></sup>.
@@ -158,6 +167,49 @@ At the physical end of the slider, the slowest step moves along the supply chain
 </div>
 </BottleneckScroll>
 
+## Computing power without building
+
+The physical story above assumes that AI gets more computing power by building it. Towards the software end of the slider, there is another route: using computers that already exist, including ones whose owners never agreed.
+
+In October 2026, researchers at one AI company reported that small AI models may be months away from being able to copy themselves onto cheap, poorly secured devices such as off-brand TV boxes, set themselves running there, and spread on<sup><a href="#ref-90">90</a></sup>. Each copy would be slow, and a population of two million such devices would add up to roughly the computing power of forty data-centre chips<sup><a href="#ref-90">90</a></sup>, a tiny amount next to a data centre. The worry is persistence: with no central point to switch off, copies that pass notes to their successors and adapt to new hardware could become endemic, more like the common cold than a single attack<sup><a href="#ref-90">90</a></sup>.
+
+<BottleneckScroll path="software">
+<div class="bstep" data-stage="0">
+
+**Lab computers.** AI already leads about a quarter of the research work at one major lab<sup><a href="#ref-85">85</a></sup>. Experiments still need computing power, so the labs' own data centres set the pace<sup><a href="#ref-80">80</a></sup>.
+
+</div>
+<div class="bstep" data-stage="1">
+
+**Rented cloud.** More experiments and more AI workers mean renting more computers. Who may rent, and under what conditions, becomes a lever<sup><a href="#ref-80">80</a></sup><sup><a href="#ref-87">87</a></sup>.
+
+</div>
+<div class="bstep" data-stage="2">
+
+**Misused accounts.** An AI system that steals keys or logins to someone else's cloud account gets computing power without paying for it. Such copies spread fast but are easier for providers to spot<sup><a href="#ref-90">90</a></sup>.
+
+</div>
+<div class="bstep" data-stage="3">
+
+**Devices online.** Small models running on weakly secured home and office devices: slow, with doubling times of days, but spread across many owners and countries<sup><a href="#ref-90">90</a></sup>.
+
+</div>
+<div class="bstep" data-stage="4">
+
+**Endemic.** Copies that adapt as they spread may never be fully removed, the way bacteria under constant antibiotic use evolve resistance<sup><a href="#ref-90">90</a></sup>.
+
+</div>
+<div class="bstep" data-stage="5">
+
+**Public health.** Defence works like epidemic control: make each infection cause fewer than one new one<sup><a href="#ref-90">90</a></sup>.
+
+</div>
+</BottleneckScroll>
+
+The public-health comparison is useful. Secure default settings play the part of sanitation: the UK, for example, no longer allows devices to ship with default passwords<sup><a href="#ref-90">90</a></sup>. Monitoring network traffic is surveillance. Patches and takedowns are antibiotics, and adaptive copies are the resistance that overuse breeds. Quarantine has worked before: when internet providers isolated customers whose devices were infected by an earlier botnet and told them how to clean up, 92% of infections were cleared within two weeks, against 74% without notification<sup><a href="#ref-90">90</a></sup>. The comparison with gene drives, which spread a change through a wild population, has a cyber counterpart in defensive programs that spread fixes on their own. These have been tried, and they cause damage of their own and break the law in most countries<sup><a href="#ref-94">94</a></sup>, so they are a poor model to copy.
+
+This changes who holds leverage at the software end. Internet providers, national cyber agencies, device regulators and the companies that hold model weights matter more than mines. Middle powers have real tools here: rules for the devices sold in their markets, coordinated takedowns, and incident reports shared across borders, which is one of the [six conditions](/en/blog/six-safety-conditions-for-upcoming-laws) I propose for upcoming laws.
+
 ## Who holds the levers
 
 China holds the biggest physical ones. It does about 91% of the world's rare-earth refining, makes about 94% of the strongest magnets<sup><a href="#ref-23">23</a></sup> and produces about 99% of new gallium<sup><a href="#ref-42">42</a></sup>. Other countries hold important levers further along the chain. Japan, Taiwan, South Korea and the United States make much of the world's silicon wafers, chipmaking chemicals, memory, chip-package materials and robot gears, and mining countries have levers of their own. How much each lever is worth depends on where the slider sits.
@@ -181,11 +233,19 @@ Fear itself can be a lever. China's 2010 rare-earth "embargo" against Japan bare
 
 In an economy that doubles every year, a two-year head start means four times the output<sup><a href="#ref-6">6</a></sup>, and towards the software end of the slider a lead is worth far more. An AI boom that also automates physical industry may favour countries with large industrial bases and light regulation, such as China and the Gulf states<sup><a href="#ref-74">74</a></sup>. A boom that runs mostly in software favours whoever already owns the computers and the leading models. The bottlenecks of the next five years may decide *where* AI's growth reaches the physical world first.
 
-For middle powers, the uncomfortable part is that their supply-chain leverage is strongest in the middle of the slider, roughly where we are now, and weakest at the software end, where the stakes are highest. The levers that survive a shift towards software are legal ones: rights over computers already on their soil, and rights to test the models that run there. I argue in [a separate post](/en/blog/six-safety-conditions-for-upcoming-laws) that the time to write those rights into law is while the supply-chain leverage still exists.
+The chart below puts two things side by side. The stakes are how much a one-year lead is worth, which is largest when AI grows fastest. Middle powers' leverage is the average strength of the countries between the United States and China. The two peak in different places. The stakes peak towards the software end, where a small physical share still lets AI grow fastest. Middle powers' leverage peaks in the middle, around today's mix, and is near its lowest exactly where the stakes peak.
+
+<figure>
+  <StakesLeverage />
+  <figcaption>The value of a one-year lead (purple) and the average leverage of middle powers (teal) across the slider, each shown as a share of its own maximum. The dashed lines show the United States and China for comparison. The slider moves with the other charts on this page.</figcaption>
+</figure>
+
+So if AI's growth shifts towards software, middle powers lose leverage at the moment it would matter most. The levers that hold up in that shift are legal ones: rights over computers already on their soil, and rights to test the models that run there. I argue in [a separate post](/en/blog/six-safety-conditions-for-upcoming-laws) that the time to write those rights into law is while the supply-chain leverage still exists.
 
 ## What to watch
 
 - **How much of AI research AI does, and whether experiments need ever more computing power.** This moves the slider<sup><a href="#ref-84">84</a></sup><sup><a href="#ref-85">85</a></sup><sup><a href="#ref-86">86</a></sup>.
+- **Whether AI copies start living on devices outside data centres,** and whether device rules and coordinated takedowns keep each infection causing fewer than one new one<sup><a href="#ref-90">90</a></sup>.
 - **How fast robot production doubles.** If it takes two years or more, robots won't need even a fifth of today's magnets before the 2040s. If it doubles every year past 2030, they'll need all of them by the mid-2030s.
 - **Late 2026 to January 2027:** whether China's acid export halt ends<sup><a href="#ref-50">50</a></sup><sup><a href="#ref-51">51</a></sup>; whether rare-earth oxide made outside China finds buyers<sup><a href="#ref-22">22</a></sup>; and the US–China trade truce deadline on 10 January, where analysts say a lasting deal needs "actual deliveries of rare earths"<sup><a href="#ref-75">75</a></sup><sup><a href="#ref-76">76</a></sup>.
 - **2027–28:** new glass-cloth capacity<sup><a href="#ref-17">17</a></sup>; Ajinomoto's film expansion from 2028, with a third plant around 2032<sup><a href="#ref-57">57</a></sup>; Japan's trial of mining rare-earth mud from the seabed<sup><a href="#ref-77">77</a></sup>; and Grasberg's return to full output, targeted for end-2027 but possibly early 2028<sup><a href="#ref-54">54</a></sup>.
@@ -193,7 +253,7 @@ For middle powers, the uncomfortable part is that their supply-chain leverage is
 
 ## Notes on method
 
-**The slider model.** AI capability grows only as fast as the slower of its two ingredients: ideas, which by default can raise capability ten-fold a year on existing hardware<sup><a href="#ref-87">87</a></sup>, and physical build-out, which at its fastest doubles every 1.5 years<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-4">4</a></sup>. Both are adjustable under "Change the assumptions". If a share *s* of progress needs physical things, capability grows at the smaller of $g_I/(1-s)$ and $g_P/s$, physical build-out grows at $s$ times that rate (with a floor of 5% a year), and robot production grows in proportion to $s$ again (with a floor of doubling every three years; my assumption). Copper and magnet dates use the same inputs as the race chart further down. The country strengths are my judgement, drawn from the levers described in this post. Today's mix of roughly 40–50% comes from published trends in algorithms, chip efficiency and the number of chips<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
+**The slider model.** AI capability grows only as fast as the slower of its two ingredients: ideas, which by default can raise capability ten-fold a year on existing hardware<sup><a href="#ref-87">87</a></sup>, and physical build-out, which at its fastest doubles every 1.5 years<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-4">4</a></sup>. Both are adjustable under "Change the assumptions". If a share *s* of progress needs physical things, capability grows at the smaller of $g_I/(1-s)$ and $g_P/s$, physical build-out grows at $s$ times that rate (with a floor of 5% a year), and robot production grows in proportion to $s$ again (with a floor of doubling every three years; my assumption). Copper and magnet dates use the same inputs as the race chart further down. The country strengths are my judgement, drawn from the levers described in this post. Today's mix of roughly 40% comes from published trends in algorithms, chip efficiency and the number of chips<sup><a href="#ref-82">82</a></sup><sup><a href="#ref-83">83</a></sup>.
 
 **The race chart.** Demand grows exponentially, supply grows at a fixed rate, and a fixed share of it is available to robots or data centres. It ignores prices, substitutes, stockpiles and recycling, all of which would soften the shortage, so treat the dates as illustrations. My own assumptions are labelled under each tab. If demand doubles every $T_d$ years and supply grows by a fraction $g$ a year, doubling the available supply delays the shortage by
 
@@ -229,7 +289,7 @@ Some figures come from paywalled reports read through summaries, and some prices
   <li id="ref-19">Goldman Sachs humanoid forecast, via Yahoo Finance, September 2026. <a href="https://finance.yahoo.com/technology/ai/articles/goldman-sachs-just-supercharged-humanoid-135551371.html">finance.yahoo.com</a></li>
   <li id="ref-20">Bank of America Institute, “Physical AI, part 2”, March 2026. <a href="https://institute.bankofamerica.com/content/dam/transformation/physical-ai-part-2.pdf">institute.bankofamerica.com</a></li>
   <li id="ref-21">CRU, “Humanoid robots can widen the projected rare earth supply deficit”, September 2026. <a href="https://www.crugroup.com/en/communities/thought-leadership/2026/humanoid-robots-can-widen-the-projected-rare-earth-supply-deficit">www.crugroup.com</a></li>
-  <li id="ref-22">Benchmark Mineral Intelligence, “Ex-China NdPr prices slip below $110/kg price floor as oversupply builds”, August 2026. <a href="https://source.benchmarkminerals.com/article/ex-china-ndpr-prices-slip-below-110-kg-price-floor-as-oversupply-builds">source.benchmarkminerals.com</a></li>
+  <li id="ref-22">Benchmark Mineral Intelligence, “Ex-China NdPr prices slip below &#36;110/kg price floor as oversupply builds”, August 2026. <a href="https://source.benchmarkminerals.com/article/ex-china-ndpr-prices-slip-below-110-kg-price-floor-as-oversupply-builds">source.benchmarkminerals.com</a></li>
   <li id="ref-23">International Energy Agency, Rare Earth Elements: executive summary, April 2026. <a href="https://www.iea.org/reports/rare-earth-elements/executive-summary">www.iea.org</a></li>
   <li id="ref-24">Global Times, “Japan’s H1 dysprosium raw mineral imports plunge 82%”, August 2026. <a href="https://www.globaltimes.cn/page/202608/1368583.shtml">www.globaltimes.cn</a></li>
   <li id="ref-25">Rare Earth Mining, “Lynas Rare Earths results: Q3 FY26” (quarterly Dy+Tb output), April 2026. <a href="https://rare-earth-mining.com/lynas-rare-earths-results-q3-fy26">rare-earth-mining.com</a></li>
@@ -297,4 +357,9 @@ Some figures come from paywalled reports read through summaries, and some prices
   <li id="ref-87">Tom Davidson & Tom Houlden, “How quick and big would a software intelligence explosion be?”, Forethought, 2025. <a href="https://www.forethought.org/research/how-quick-and-big-would-a-software-intelligence-explosion-be">forethought.org</a></li>
   <li id="ref-88">Konstantin Pilz et al., “Trends in AI supercomputers”, arXiv 2504.16026, 2025. <a href="https://arxiv.org/html/2504.16026v1">arxiv.org</a></li>
   <li id="ref-89">Chan et al., on the risk of a runaway intelligence explosion and biases in past estimates, arXiv 2609.36054, September 2026. <a href="https://arxiv.org/abs/2609.36054">arxiv.org</a></li>
+  <li id="ref-90">William Zhou & Daniel Freeman, “AI models may be capable of self-replicating without access to a datacenter”, Anthropic Frontier Red Team, 12 October 2026. <a href="https://www.anthropic.com/research/self-replicating-ai">anthropic.com</a></li>
+  <li id="ref-91">Epoch AI, “The frontier of the Epoch Capabilities Index has grown faster since reasoning models”, 2026. <a href="https://epoch.ai/data-insights/eci-frontier-trend">epoch.ai</a></li>
+  <li id="ref-92">Epoch AI, “Why GPT-5 used less training compute than GPT-4.5 (but GPT-6 probably won’t)”, 2025. <a href="https://epoch.ai/gradient-updates/why-gpt5-used-less-training-compute-than-gpt45-but-gpt6-probably-wont">epoch.ai</a></li>
+  <li id="ref-93">TMT Finance, “2026 hyperscaler capex tops US&#36;700bn”, 18 August 2026. <a href="https://www.tmtfinance.com/intel/2026-hyperscaler-capex-tops-us700bn-analysis">tmtfinance.com</a></li>
+  <li id="ref-94">“Welchia”, an early worm written to remove another worm and patch infected computers, which itself caused heavy network disruption. <a href="https://en.wikipedia.org/wiki/Welchia">wikipedia.org</a></li>
 </ol>

@@ -26,7 +26,7 @@ const T = ja
 <div class="pss" id="pss" data-lang={lang}>
   <label class="pss-slider">
     <span class="pss-ends"><span>{T.s0}</span><span>{T.s1}</span></span>
-    <input type="range" id="pss-s" min="0" max="1" step="0.01" value="0.45" aria-describedby="pss-share" />
+    <input type="range" id="pss-s" min="0" max="1" step="0.01" value="0.4" aria-describedby="pss-share" />
     <span class="pss-now" id="pss-nowtick">▲ {T.sNow}</span>
   </label>
   <p class="pss-share" id="pss-share" aria-live="polite"></p>
@@ -76,7 +76,7 @@ const T = ja
   .pss-slider { display: block; position: relative; padding-bottom: 1.2rem; }
   .pss-ends { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--post-caption, #737373); }
   .pss-slider input { width: 100%; accent-color: #6a4c93; }
-  .pss-now { position: absolute; left: 45%; transform: translateX(-50%); bottom: 0; font-size: 0.75rem; color: var(--post-caption, #737373); white-space: nowrap; }
+  .pss-now { position: absolute; left: 40%; transform: translateX(-50%); bottom: 0; font-size: 0.75rem; color: var(--post-caption, #737373); white-space: nowrap; }
   .pss-share { text-align: center; font-weight: 600; margin: 0.2rem 0 0.4rem; color: var(--post-heading, #1a1a1a); }
   .pss .axes line { stroke: var(--post-separator, #bbb); }
   .pss .grid line { stroke: var(--post-separator, #eee); stroke-dasharray: 2 3; }
@@ -103,6 +103,8 @@ const T = ja
 </style>
 
 <script>
+  import { DEFAULTS, rates, model, sStar, crunchYear, COPPER, MAGNETS, COUNTRIES, interp, setShared, onShared } from './physical-share/model';
+
   const root = document.getElementById('pss');
   if (root) {
     const ja = root.dataset.lang === 'ja';
@@ -110,43 +112,20 @@ const T = ja
     const sIn = $('pss-s') as HTMLInputElement;
     const giIn = $('pss-gi') as HTMLInputElement;
     const tpIn = $('pss-tp') as HTMLInputElement;
+    sIn.value = String(DEFAULTS.s);
 
-    // Baselines when growth does not need new things (my assumptions).
-    const GB = Math.log(1.05);      // data-centre build-out, 5%/yr
-    const GRB = Math.log(2) / 3;    // robot production doubles every 3 years
-    // Copper and magnet inputs match the MaterialRace defaults.
-    const CU = { ratio: Math.log((0.10 * 28000) / (18 * 60)), g: Math.log(1.02) };
-    const MAG = { ratio: Math.log((0.30 * 226) / (100e3 * 2.5 / 1e6)), g: Math.log(1.08) };
-    const START = 2026;
-
-    // [score at s=0, 0.5, 1] on 0–3, my judgement.
-    const C: [string, string, string, string, number[]][] = [
-      ['US', '米国', 'Owns most existing AI computers and the leading models', '既存のAI計算資源と最先端モデルの大半を持つ', [3, 2.5, 1.5]],
-      ['China', '中国', 'Refining, magnets, robots and fast power build-out; less compute', '精錬・磁石・ロボット・電源の急速な建設。計算資源は少ない', [1, 2, 3]],
-      ['Japan', '日本', 'Chip materials and tools; robot gears', '半導体材料と製造装置、ロボット用の歯車', [1, 3, 2]],
-      ['Taiwan', '台湾', 'Makes the most advanced chips', '最先端チップの製造', [1, 3, 2]],
-      ['Korea', '韓国', 'AI memory chips; grid equipment', 'AI用メモリ、送電設備', [1, 3, 1.5]],
-      ['Netherlands', 'オランダ', 'Chipmaking lithography machines', '半導体の露光装置', [0.5, 3, 1.5]],
-      ['Germany', 'ドイツ', 'Grid equipment, machinery, optics', '送電設備・機械・光学', [0.5, 1.5, 2.5]],
-      ['Gulf states', '湾岸諸国', 'Cheap power and capital; sulfur and helium; computers hosted there', '安価な電力と資本、硫黄とヘリウム、国内に置かれた計算資源', [1.5, 2, 3]],
-      ['Australia & Canada', 'オーストラリア・カナダ', 'Minerals, uranium, capital', '鉱物・ウラン・資本', [0.5, 1.5, 3]],
-      ['DRC, Indonesia, Chile', 'コンゴ・インドネシア・チリ', 'Cobalt, nickel, copper', 'コバルト・ニッケル・銅', [0, 1, 2.5]],
-      ['EU', 'EU', 'Market rules; chipmaking tools', '市場のルール、半導体製造装置', [1, 2, 1.5]],
-      ['UK', '英国', 'AI safety institute and research labs; little heavy industry', 'AI安全研究所と研究拠点。重工業は少ない', [2, 1.5, 0.5]],
-      ['Singapore', 'シンガポール', 'A neutral meeting place; licences for data centres', '中立的な対話の場、データセンターの免許', [1.5, 1.5, 1.5]],
-    ];
     const lev = $('pss-lev');
-    const chips = C.map(([en, jn, ren, rjn]) => {
+    const chips = COUNTRIES.map((c) => {
       const el = document.createElement('span');
-      el.textContent = ja ? jn : en;
-      el.title = ja ? rjn : ren;
+      el.textContent = ja ? c.ja : c.en;
+      el.title = ja ? c.whyJa : c.why;
       lev.appendChild(el);
       return el;
     });
 
     const X0 = 96, X1 = 640, Y0 = 20, Y1 = 290;
     const LMIN = Math.log10(1 / 24), LMAX = Math.log10(50); // two weeks to 50 years
-    const x = (s: number) => X0 + s * (X1 - X0);
+    const x = (v: number) => X0 + v * (X1 - X0);
     const y = (yrs: number) => {
       const l = Math.min(LMAX, Math.max(LMIN, Math.log10(yrs)));
       return Y1 - ((l - LMIN) / (LMAX - LMIN)) * (Y1 - Y0);
@@ -157,38 +136,28 @@ const T = ja
     grid.innerHTML = ticks.map(([v, en, jn]) => `<line x1="${X0}" x2="${X1}" y1="${y(v)}" y2="${y(v)}"/><text x="${X0 - 6}" y="${y(v) + 4}" text-anchor="end">${ja ? jn : en}</text>`).join('')
       + [0, 0.25, 0.5, 0.75, 1].map((v) => `<text x="${x(v)}" y="${Y1 + 16}" text-anchor="middle">${Math.round(v * 100)}%</text>`).join('');
 
-    function model(s: number, gI: number, gP: number) {
-      const gE = s <= 0 ? gI : s >= 1 ? gP : Math.min(gI / (1 - s), gP / s);
-      const gPhys = Math.max(GB, s * gE);
-      const gRob = Math.max(GRB, s * gPhys);
-      return { gE, gPhys, gRob };
-    }
-    const year = (ratio: number, gd: number, gs: number) => (gd <= gs ? Infinity : START + ratio / (gd - gs));
     const fmtYear = (yr: number) => (yr > 2050 ? (ja ? '2050年より後' : 'after 2050') : (ja ? `${Math.round(yr)}年ごろ` : `around ${Math.round(yr)}`));
-
-    function path(f: (s: number) => number) {
+    function path(f: (v: number) => number) {
       let d = '';
       for (let i = 0; i <= 200; i++) {
-        const s = i / 200;
-        d += `${i ? 'L' : 'M'}${x(s).toFixed(1)},${y(Math.LN2 / f(s)).toFixed(1)}`;
+        const v = i / 200;
+        d += `${i ? 'L' : 'M'}${x(v).toFixed(1)},${y(Math.LN2 / f(v)).toFixed(1)}`;
       }
       return d;
     }
 
     function render() {
       const s = parseFloat(sIn.value);
-      const gIoom = parseFloat(giIn.value);
+      const giOom = parseFloat(giIn.value);
       const tp = parseFloat(tpIn.value);
-      const gI = gIoom * Math.LN10;
-      const gP = Math.LN2 / tp;
-      $('pss-gi-v').textContent = ja ? `年${Math.pow(10, gIoom).toFixed(gIoom < 1 ? 1 : 0)}倍` : `${Math.pow(10, gIoom).toFixed(gIoom < 1 ? 1 : 0)}× a year`;
+      const { gI, gP } = rates(giOom, tp);
+      $('pss-gi-v').textContent = ja ? `年${Math.pow(10, giOom).toFixed(giOom < 1 ? 1 : 0)}倍` : `${Math.pow(10, giOom).toFixed(giOom < 1 ? 1 : 0)}× a year`;
       $('pss-tp-v').textContent = ja ? `${tp.toFixed(1)}年` : `${tp.toFixed(1)} years`;
 
-      ($('pss-cap') as unknown as SVGPathElement).setAttribute('d', path((v) => model(v, gI, gP).gE));
-      ($('pss-phys') as unknown as SVGPathElement).setAttribute('d', path((v) => model(v, gI, gP).gPhys));
-      ($('pss-robot') as unknown as SVGPathElement).setAttribute('d', path((v) => model(v, gI, gP).gRob));
-      const sStar = gP / (gI + gP);
-      $('pss-band').setAttribute('width', String(x(sStar) - X0));
+      $('pss-cap').setAttribute('d', path((v) => model(v, gI, gP).gE));
+      $('pss-phys').setAttribute('d', path((v) => model(v, gI, gP).gPhys));
+      $('pss-robot').setAttribute('d', path((v) => model(v, gI, gP).gRob));
+      $('pss-band').setAttribute('width', String(x(sStar(gI, gP)) - X0));
       const mk = $('pss-marker');
       mk.setAttribute('x1', String(x(s)));
       mk.setAttribute('x2', String(x(s)));
@@ -200,21 +169,22 @@ const T = ja
       const months = (12 * Math.LN2) / m.gE;
       const lead = Math.exp(m.gE);
       const fmtLead = lead >= 10 ? lead.toFixed(0) : lead.toFixed(1);
-      $('pss-c1').innerHTML = ja ? `AIの能力は<b>${months < 1 ? months.toFixed(1) : months.toFixed(0)}か月</b>ごとに倍増` : `AI capability doubles every <b>${months < 1 ? months.toFixed(1) : months.toFixed(0)} months</b>`;
+      const mo = months < 1 ? months.toFixed(1) : months.toFixed(0);
+      $('pss-c1').innerHTML = ja ? `AIの能力は<b>${mo}か月</b>ごとに倍増` : `AI capability doubles every <b>${mo} months</b>`;
       $('pss-c2').innerHTML = ja ? `1年先行すれば能力は<b>${fmtLead}倍</b>` : `A one-year lead means <b>${fmtLead}×</b> the capability`;
-      $('pss-c3').innerHTML = ja ? `データセンター用の銅が足りなくなるのは<b>${fmtYear(year(CU.ratio, m.gPhys, CU.g))}</b>` : `Copper for data centres runs short <b>${fmtYear(year(CU.ratio, m.gPhys, CU.g))}</b>`;
-      $('pss-c4').innerHTML = ja ? `ロボット用の磁石が足りなくなるのは<b>${fmtYear(year(MAG.ratio, m.gRob, MAG.g))}</b>` : `Magnets for robots run short <b>${fmtYear(year(MAG.ratio, m.gRob, MAG.g))}</b>`;
+      $('pss-c3').innerHTML = ja ? `データセンター用の銅が足りなくなるのは<b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>` : `Copper for data centres runs short <b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>`;
+      $('pss-c4').innerHTML = ja ? `ロボット用の磁石が足りなくなるのは<b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>` : `Magnets for robots run short <b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>`;
 
       chips.forEach((el, i) => {
-        const [a, b, c] = C[i][4];
-        const sc = s <= 0.5 ? a + (b - a) * (s / 0.5) : b + (c - b) * ((s - 0.5) / 0.5);
-        const alpha = 0.06 + 0.29 * sc;
+        const alpha = 0.06 + 0.29 * interp(s, COUNTRIES[i].score);
         el.style.backgroundColor = `rgba(0, 61, 91, ${alpha.toFixed(2)})`;
         el.style.color = alpha > 0.5 ? '#fff' : '';
       });
     }
 
-    [sIn, giIn, tpIn].forEach((el) => el.addEventListener('input', render));
+    sIn.addEventListener('input', () => { render(); setShared(parseFloat(sIn.value), 'pss'); });
+    [giIn, tpIn].forEach((el) => el.addEventListener('input', render));
+    onShared('pss', (v) => { sIn.value = String(v); render(); });
     render();
   }
 </script>
