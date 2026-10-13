@@ -5,7 +5,7 @@ const physical = lang === 'ja'
   ? [['チップ', 'CoWoS・HBM・Tガラス'], ['電力', 'タービンは2028〜30年まで予約済み'], ['送電設備', '変圧器・開閉装置'], ['基礎金属', '銅・硫酸・電磁鋼板'], ['ロボット', 'NdPr磁石・減速機'], ['鉱山・精錬', '鉱山10年超・精錬約5年']]
   : [['Chips', 'CoWoS · HBM · T-glass'], ['Power', 'turbines booked to 2028–30'], ['Grid gear', 'transformers · switchgear'], ['Bulk metals', 'copper · acid · steel'], ['Robots', 'NdPr magnets · reducers'], ['Mines & refineries', 'mines 10+ yrs · refineries ~5']];
 const software = lang === 'ja'
-  ? [['研究所の計算資源', 'AIが自らの研究を担う'], ['借りるクラウド', '実験と推論'], ['不正利用されるアカウント', '盗まれた鍵や認証情報'], ['ネット上の機器', '守りの弱い機器'], ['定着', '適応するコピー'], ['公衆衛生型の防御', '安全な初期設定・隔離']]
+  ? [['研究所のコンピューター', 'AIが自らの研究を担う'], ['クラウドの借用', '実験と推論'], ['不正利用されるアカウント', '盗まれた鍵や認証情報'], ['ネット上の機器', '守りの弱い機器'], ['定着', '適応するコピー'], ['公衆衛生型の防御', '安全な初期設定・隔離']]
   : [['Lab computers', 'AI does its own research'], ['Rented cloud', 'experiments and inference'], ['Misused accounts', 'stolen keys and logins'], ['Devices online', 'weakly secured devices'], ['Endemic', 'copies that adapt'], ['Public health', 'secure defaults · quarantine']];
 const nodes = path === 'software' ? software : physical;
 const colors = path === 'software'

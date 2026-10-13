@@ -6,12 +6,12 @@ const ja = lang === 'ja';
 const T = ja
   ? {
       s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて',
-      stakes: '保てる先行の大きさ（最大値に対する割合）', mid: 'ミドルパワーの合計シェア', us: '米国のシェア', cn: '中国のシェア',
-      y: '割合', aria: 'AIの進歩の物理的な割合に応じた、保てる先行の大きさと、ミドルパワー・米国・中国のシェア',
+      stakes: '保てる先行の大きさ（最大値に対する割合）', mid: '中堅国の合計シェア', us: '米国のシェア', cn: '中国のシェア',
+      y: '割合', aria: 'AIの進歩の物理的な割合に応じた、保てる先行の大きさと、中堅国・米国・中国のシェア',
       adv: '前提を変える',
-      cI: 'アイデアによる先行のうち、1年以内にライバルが写せる割合',
-      cP: '建設による先行のうち、1年以内にライバルが写せる割合',
-      note: '保てる先行の大きさ：1年先行した側が持つ追加の能力のうち、ライバルに一部を写された後も残る分を、対数で表したものです（式は注にあります）。影響力：上の図の各工程で各グループが占めるシェアを、選んだ割合でその工程がどれほど重要かによって重み付けしたものです。ミドルパワーは日本、台湾、韓国、オランダ、ドイツ、英国、湾岸諸国、オーストラリア、カナダです。',
+      cI: 'アイデアによる先行のうち、1年以内に競争相手がまねできる割合',
+      cP: 'モノづくりによる先行のうち、1年以内に競争相手がまねできる割合',
+      note: '保てる先行の大きさ：1年先行した側が持つ追加の能力のうち、競争相手に一部をまねされた後も残る分を、対数で表したものです（式は注にあります）。影響力：上の図の各段階で各グループが占めるシェアを、選んだ割合でその段階がどれほど重要かによって重みづけしたものです。中堅国は日本、台湾、韓国、オランダ、ドイツ、英国、湾岸諸国、オーストラリア、カナダです。',
     }
   : {
       s0: 'Software only', s1: 'Chips, power and robots',
@@ -20,7 +20,7 @@ const T = ja
       adv: 'Change the assumptions',
       cI: 'How much of a lead from ideas rivals copy within a year',
       cP: 'How much of a lead from building rivals copy within a year',
-      note: "The lead you can keep: a one-year leader's extra capability after rivals copy part of it, on a log scale (formula in the notes). Leverage: each group's share of the supply-chain stages in the chart above, weighted by how much each stage matters at the chosen mix. Middle powers: Japan, Taiwan, Korea, the Netherlands, Germany, the UK, the Gulf states, Australia and Canada.",
+      note: "The lead you can keep: a one-year leader's extra capability after rivals copy part of it, on a log scale (formula in the notes). Leverage: each group's share of the supply-chain stages in the chart above, weighted by how much each stage matters at the chosen mix. Middle powers: Japan, Taiwan, South Korea, the Netherlands, Germany, the UK, the Gulf states, Australia and Canada.",
     };
 ---
 
@@ -130,9 +130,10 @@ const T = ja
     const textW = (t: string) => t.length * (ja ? 11 : 6);
     function placeLabel(px: number, py: number, text: string, taken: Box[]) {
       const w = textW(text);
-      const curves = [stakes, mid, us, cn];
+      // The solid curves carry the labels' meaning, so crossing them costs far more than crossing the dashed ones.
+      const curves: [number[], number][] = [[stakes, 20], [mid, 20], [us, 2], [cn, 2]];
       const opts: { anchor: string; tx: number; bx0: number; dy: number }[] = [];
-      for (const dy of [-10, 18, -22, 30, 4]) {
+      for (const dy of [-10, 18, -22, 30, -34, 42, 4]) {
         const centred = px - w / 2 < X0 + 4 ? 'start' : px + w / 2 > X1 ? 'end' : 'middle';
         for (const anchor of new Set([centred, 'start', 'end'])) {
           if (dy === 4 && anchor === 'middle') continue;
@@ -148,9 +149,9 @@ const T = ja
         const box = { x0: o.bx0, x1: o.bx0 + w, y0: ty - 10, y1: ty + 2 };
         if (box.y0 < 0 || box.y1 > Y1 - 2) continue;
         let cost = 0;
-        for (const arr of curves) arr.forEach((v, i) => {
+        for (const [arr, wt] of curves) arr.forEach((v, i) => {
           const cx = x(ss[i]), cy = y(v);
-          if (cx >= box.x0 && cx <= box.x1 && cy >= box.y0 - 3 && cy <= box.y1 + 3) cost++;
+          if (cx >= box.x0 - 2 && cx <= box.x1 + 2 && cy >= box.y0 - 4 && cy <= box.y1 + 4) cost += wt;
         });
         for (const b of taken) if (b.x0 < box.x1 && box.x0 < b.x1 && b.y0 < box.y1 && box.y0 < b.y1) cost += 1000;
         cost += Math.abs(o.dy) / 100 + (o.anchor === 'middle' ? 0 : 0.5) + (o.dy === 4 ? 3 : 0);
@@ -176,8 +177,8 @@ const T = ja
       pts.forEach(([i, arr]) => taken.push({ x0: x(ss[i]) - 6, x1: x(ss[i]) + 6, y0: y(arr[i]) - 6, y1: y(arr[i]) + 6 }));
       const labels = [
         placeLabel(x(ss[iS]), y(stakes[iS]), ja ? '先行の価値が最大' : 'a lead is worth most', taken),
-        placeLabel(x(ss[iMidMax]), y(mid[iMidMax]), ja ? 'ミドルパワーが最も強い' : 'middle powers strongest', taken),
-        placeLabel(x(ss[iMidMin]), y(mid[iMidMin]), ja ? 'ミドルパワーが最も弱い' : 'middle powers weakest', taken),
+        placeLabel(x(ss[iMidMax]), y(mid[iMidMax]), ja ? '中堅国が最も強い' : 'middle powers strongest', taken),
+        placeLabel(x(ss[iMidMin]), y(mid[iMidMin]), ja ? '中堅国が最も弱い' : 'middle powers weakest', taken),
       ];
       q('.slv-peaks').innerHTML = `<line class="guide" x1="${x(ss[iS])}" x2="${x(ss[iS])}" y1="${y(stakes[iS])}" y2="${y(mid[iS])}"/>`
         + `<g class="peak">${dot(iS, stakes, '#6a4c93')}${dot(iMidMax, mid, '#00798c')}${dot(iMidMin, mid, '#00798c')}${dot(iS, mid, '#00798c', 3.5)}${labels.join('')}</g>`;
@@ -197,7 +198,7 @@ const T = ja
       const U = Math.round(leverage(s, ['US']) * 100);
       const C = Math.round(leverage(s, ['CN']) * 100);
       q('.slv-read').innerHTML = ja
-        ? `割合${X}%では、1年先行で得られる<b>${lead}倍</b>の能力は、ライバルが追いつくと<b>${kept}倍</b>に縮みます。加重したサプライチェーンのうち、ミドルパワーは<b>${M}%</b>、米国は<b>${U}%</b>、中国は<b>${C}%</b>を占めます。`
+        ? `割合${X}%では、1年先行で得られる<b>${lead}倍</b>の能力は、競争相手が追いつくと<b>${kept}倍</b>に縮みます。加重したサプライチェーンのうち、中堅国は<b>${M}%</b>、米国は<b>${U}%</b>、中国は<b>${C}%</b>を占めます。`
         : `At ${X}%, a one-year lead of <b>${lead}×</b> shrinks to <b>${kept}×</b> once rivals catch up; middle powers hold <b>${M}%</b> of the weighted supply chain, the US <b>${U}%</b> and China <b>${C}%</b>.`;
     }
 

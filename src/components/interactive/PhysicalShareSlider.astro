@@ -5,18 +5,18 @@ const ja = lang === 'ja';
 const T = ja
   ? {
       s0: 'ソフトウェアのみ', sNow: '現在（概算）', s1: 'チップ・電力・ロボットすべて',
-      ylab: '倍増にかかる時間', cap: 'AIの能力', phys: '物理的な設備の建設', robot: 'ロボット生産',
-      ideas: 'アイデアが遅い側', atoms: '物理的な建設が遅い側',
-      adv: '前提を変える', gi: 'アイデアだけで能力が伸びる速さ', tp: '物理的な建設が倍増する最短期間',
-      note: 'モデル：AIの能力は、より良いアイデアと、より多くの物理的な設備という二つの材料のうち、遅い方の速さでしか伸びない。アイデアの速さと建設の速さは調整できる仮定。銅と磁石の数値は後に出てくる素材の図の既定値と同じ。日付は例示として読んでほしい。',
-      aria: 'AIの進歩のうち物理的な設備を必要とする割合と、成長の速さ・素材不足の時期の関係',
+      ylab: '倍増にかかる時間', cap: 'AIの能力', phys: '物理的な設備の拡大', robot: 'ロボット生産',
+      ideas: 'アイデアが遅い側', atoms: 'モノづくりが遅い側',
+      adv: '前提を変える', gi: 'アイデアだけで能力が伸びる速さ', tp: '物理的な設備の拡大が倍増する最短期間',
+      note: 'モデル：AIの能力は、より良いアイデアと、より多くの物理的なモノという2つの材料のうち、遅いほうの速さでしか伸びません。アイデアの速さとモノづくりの速さは、調整できる仮定です。銅と磁石の入力値は、後に出てくる競争の図と同じです。時期は例示として扱ってください。',
+      aria: 'AIの進歩のうち新しい物理的なモノを必要とする割合と、成長の速さ・素材不足の時期の関係',
     }
   : {
       s0: 'Software only', sNow: 'Today (rough)', s1: 'Chips, power and robots',
       ylab: 'time to double', cap: 'AI capability', phys: 'physical build-out', robot: 'robot production',
       ideas: 'ideas are the slower step', atoms: 'building is the slower step',
       adv: 'Change the assumptions', gi: 'How fast ideas alone raise capability', tp: 'Fastest doubling time of physical build-out',
-      note: 'Model: AI capability grows only as fast as the slower of its two ingredients, better ideas and more physical things. The speeds of ideas and of building are adjustable assumptions; copper and magnet inputs match the materials chart further down. Treat the dates as illustrations.',
+      note: 'Model: AI capability grows only as fast as the slower of its two ingredients, better ideas and more physical things. The speeds of ideas and of building are adjustable assumptions; copper and magnet inputs match the race chart further down. Treat the dates as illustrations.',
       aria: 'How the physical share of AI progress changes growth speed and material shortage dates',
     };
 ---
@@ -41,12 +41,12 @@ const T = ja
     <path id="pss-phys" class="l-phys" />
     <path id="pss-cap" class="l-cap" />
     <line id="pss-marker" y1="20" y2="290" class="marker" />
-    <g class="legend" transform="translate(110,56)">
-      <line x1="0" y1="0" x2="22" y2="0" class="l-cap" /><text x="28" y="4">{T.cap}</text>
-      <line x1="0" y1="18" x2="22" y2="18" class="l-phys" /><text x="28" y="22">{T.phys}</text>
-      <line x1="0" y1="36" x2="22" y2="36" class="l-robot" /><text x="28" y="40">{T.robot}</text>
-    </g>
   </svg>
+  </div>
+  <div class="pss-leg">
+    <span><i class="sw cap"></i>{T.cap}</span>
+    <span><i class="sw phys"></i>{T.phys}</span>
+    <span><i class="sw robot"></i>{T.robot}</span>
   </div>
 
   <div class="pss-cells" aria-live="polite">
@@ -75,17 +75,22 @@ const T = ja
   .pss-share { text-align: center; font-weight: 600; margin: 0.2rem 0 0.4rem; color: var(--post-heading, #1a1a1a); }
   .pss .axes line { stroke: var(--post-separator, #bbb); }
   .pss .grid line { stroke: var(--post-separator, #eee); stroke-dasharray: 2 3; }
-  .pss .grid text, .pss .axlabel, .pss .legend text, .pss .bandtxt { fill: var(--post-caption, #737373); font-size: 11px; }
+  .pss .grid text, .pss .axlabel, .pss .bandtxt { fill: var(--post-caption, #737373); font-size: 11px; }
   .pss .axlabel { font-size: 12px; }
-  .pss path, .pss .legend line { fill: none; stroke-width: 2.5; }
+  .pss path { fill: none; stroke-width: 2.5; }
   .pss .l-cap { stroke: #6a4c93; }
   .pss .l-phys { stroke: #d1495b; }
   .pss .l-robot { stroke: #edae49; stroke-dasharray: 6 4; }
   .pss .band { fill: #6a4c93; opacity: 0.08; }
   .pss .marker { stroke: var(--post-heading, #1a1a1a); stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .pss-leg { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; justify-content: center; font-size: 0.8rem; color: var(--post-caption, #737373); margin-top: 0.3rem; }
+  .pss-leg .sw { display: inline-block; width: 20px; height: 0; border-top: 2.5px solid; vertical-align: middle; margin-right: 0.35rem; }
+  .pss-leg .cap { border-color: #6a4c93; }
+  .pss-leg .phys { border-color: #d1495b; }
+  .pss-leg .robot { border-top: 2.5px dashed #edae49; }
   .pss-cells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 0.6rem 0; }
   .pss-cells div { border: 1px solid var(--post-separator, #e5e5e5); border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.9rem; }
-  .pss-cells b { color: var(--post-heading, #1a1a1a); }
+  .pss-cells b { color: var(--post-heading, #1a1a1a); white-space: nowrap; }
   .pss-adv { margin-top: 0.8rem; font-size: 0.85rem; }
   .pss-adv summary { cursor: pointer; color: var(--post-caption, #737373); }
   .pss-adv label { display: block; margin: 0.5rem 0; }
@@ -147,7 +152,7 @@ const T = ja
 
       const m = model(s, gI, gP);
       const pct = Math.round(s * 100);
-      $('pss-share').textContent = ja ? `AIの進歩の約${pct}%が新しい物理的な設備を必要とする` : `About ${pct}% of AI's progress needs new physical things`;
+      $('pss-share').textContent = ja ? `AIの進歩の約${pct}%が新しい物理的なモノを必要とする` : `About ${pct}% of AI's progress needs new physical things`;
       sIn.setAttribute('aria-valuetext', $('pss-share').textContent || '');
       const months = (12 * Math.LN2) / m.gE;
       const lead = Math.exp(m.gE);

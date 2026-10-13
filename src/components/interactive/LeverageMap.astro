@@ -5,9 +5,9 @@ const { lang = 'en' } = Astro.props;
 const ja = lang === 'ja';
 const T = ja
   ? {
-      stage: '工程', total: '加重合計', s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて',
-      aria: '鉱山からAIモデルまで、各工程で影響力を持つ国',
-      key: '濃さは、世界の供給に占めるシェアに、選んだ割合でその工程がどれほど重要かを掛け合わせたものです。● は2019〜26年に供給が制限されたことを示します。行ごとに測り方が異なるため、セルにカーソルを合わせると詳細が表示されます。',
+      stage: '段階', total: '加重合計', s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて',
+      aria: '鉱山からAIモデルまで、各段階で影響力を持つ国',
+      key: '濃さは、世界の供給に占めるシェアに、選んだ割合でその段階がどれほど重要かを掛け合わせたものです。● は2019〜26年に供給が制限されたことを示します。行ごとに測り方が異なるため、セルにカーソルを合わせると詳細が表示されます。',
     }
   : {
       stage: 'Stage', total: 'Weighted total', s0: 'Software only', s1: 'Chips, power and robots',
@@ -16,7 +16,7 @@ const T = ja
     };
 const ABBR: Partial<Record<CountryKey, [string, string]>> = {
   CN: ['CN', '中国'], JP: ['JP', '日本'], TW: ['TW', '台湾'], KR: ['KR', '韓国'], NL: ['NL', '蘭'], DE: ['DE', '独'],
-  GULF: ['Gulf', '湾岸'], AUCA: ['AU/CA', '豪加'], PROD: ['Producers', '資源国'], OTH: ['Other', '他'],
+  GULF: ['Gulf', '湾岸'], AUCA: ['AU/CA', '豪加'], PROD: ['Producers', '産出国'], OTH: ['Other', '他'],
 };
 const rgb = (k: CountryKey) => {
   const c = COUNTRIES.find((x) => x.k === k)!;
@@ -120,7 +120,7 @@ const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(
     function render(s: number) {
       input.value = String(s);
       const X = Math.round(s * 100);
-      val.textContent = ja ? `新しい物理的な設備が必要な割合：${X}%` : `${X}% of progress needs new physical things`;
+      val.textContent = ja ? `新しい物理的なモノが必要な割合：${X}%` : `${X}% of progress needs new physical things`;
       const ws = STAGES.map((st) => stageWeight(st, s));
       const wMax = Math.max(...ws) || 1;
       rows.forEach((tr) => {
@@ -141,7 +141,7 @@ const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(
       const C = pct(leverage(s, ['CN']));
       const M = pct(middlePowerLeverage(s));
       read.innerHTML = ja
-        ? `割合${X}%では、加重したサプライチェーンのうち米国<b>${U}%</b>、中国<b>${C}%</b>、ミドルパワー合計<b>${M}%</b>`
+        ? `割合${X}%では、加重したサプライチェーンのうち米国<b>${U}%</b>、中国<b>${C}%</b>、中堅国の合計<b>${M}%</b>`
         : `At ${X}%: US <b>${U}%</b>, China <b>${C}%</b>, middle powers combined <b>${M}%</b> of the weighted supply chain`;
     }
     input.addEventListener('input', () => { const s = parseFloat(input.value); render(s); setShared(s, src); });
