@@ -2,36 +2,40 @@
 interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
 type Cell = { v: string; s: number; used?: boolean; kind?: 'red' | 'amber' | 'blue'; note?: string; nj?: string };
-type Row = { m: string; mj: string; cells: Record<string, Cell> };
+type Row = { m: string; mj: string; k: 'chip' | 'build' | 'robot'; cells: Record<string, Cell> };
 const cols = [
   ['CN', 'China', '中国'], ['JP', 'Japan', '日本'], ['TW', 'Taiwan', '台湾'], ['US', 'US', '米国'],
   ['CD', 'DRC', 'コンゴ民主共和国'], ['ID', 'Indonesia', 'インドネシア'], ['GULF', 'Qatar / Gulf', 'カタール・湾岸'], ['RU', 'Russia', 'ロシア'],
 ];
 const rows: Row[] = [
-  { m: 'Gallium (primary)', mj: 'ガリウム（一次生産）', cells: { CN: { v: '~99%', s: 0.95, used: true, kind: 'red', note: 'Export licensing since 2023; US ban Dec 2024, paused to Nov 2026', nj: '2023年から輸出許可制。2024年12月に対米禁輸、2026年11月まで停止' } } },
-  { m: 'Magnet rare earths (refining)', mj: '磁石用レアアース（精製）', cells: { CN: { v: '~91%', s: 0.91, used: true, kind: 'red', note: 'Refining share 2024 (IEA). Seven heavy REEs controlled since Apr 2025; from Jan 2026 dual-use exports to Japanese military end users banned (Japan\'s H1 dysprosium raw-mineral imports −82%)', nj: '精製シェア、2024年（IEA）。2025年4月から重希土類7元素を規制。2026年1月から日本の軍事エンドユーザー向けデュアルユース品の輸出を禁止（日本の上半期のジスプロシウム原鉱輸入は82%減）' }, US: { v: 'rising', s: 0.12, kind: 'blue' } } },
-  { m: 'Battery graphite', mj: '電池用黒鉛', cells: { CN: { v: '~94%', s: 0.94, used: true, kind: 'red' } } },
-  { m: 'Tungsten (mining)', mj: 'タングステン（採掘）', cells: { CN: { v: '~80%', s: 0.8, used: true, kind: 'red', note: '15 licensed exporters for 2026–27', nj: '2026〜27年の輸出許可企業は15社' } } },
-  { m: 'Cobalt (mine / refine)', mj: 'コバルト（採掘・精製）', cells: { CN: { v: '~76% refine', s: 0.76, kind: 'red', note: 'Share of 2025 refined cobalt output (IEA Global Critical Minerals Outlook 2026, annex)', nj: '2025年の精製コバルト生産に占めるシェア（IEA世界重要鉱物見通し2026、付録）' }, CD: { v: '~66% mine', s: 0.66, used: true, kind: 'red', note: 'Share of 2025 mined cobalt output (IEA GCMO 2026, annex). Export quota 87,000 t/yr plus up to 9,600 t discretionary strategic quota, 2026–27, amid oversupply', nj: '2025年の採掘コバルト生産に占めるシェア（IEA世界重要鉱物見通し2026、付録）。供給過剰のなか、2026〜27年の輸出枠は年8.7万トン＋裁量的な戦略枠最大9,600トン' } } },
-  { m: 'Copper (refining)', mj: '銅（精錬）', cells: { CN: { v: '~47%', s: 0.47, kind: 'red' } } },
-  { m: 'Nickel (refining)', mj: 'ニッケル（精製）', cells: { CN: { v: 'owns ~75% in ID', s: 0.3, kind: 'red', note: 'Ownership, not location: Chinese firms own about 75% of nickel refining capacity within Indonesia', nj: '所在地ではなく所有：インドネシア国内のニッケル精製能力の約75%を中国企業が保有' }, ID: { v: 'top', s: 0.6, used: true, kind: 'red', note: 'Ore quota (RKAB) cut for 2026', nj: '2026年の鉱石生産枠（RKAB）を削減' } } },
-  { m: 'Sulfur / sulfuric acid', mj: '硫黄・硫酸', cells: { CN: { v: '>40% of acid output', s: 0.42, used: true, kind: 'red', note: 'By-product acid exports halted 1 May 2026', nj: '2026年5月1日から副産物硫酸の輸出を停止' }, GULF: { v: '~⅓ sulfur', s: 0.33, used: true, kind: 'amber', note: 'Hormuz disruption', nj: 'ホルムズ海峡の混乱' }, RU: { v: 'export ban', s: 0.3, used: true, kind: 'amber' } } },
-  { m: 'Helium', mj: 'ヘリウム', cells: { US: { v: 'largest', s: 0.4, kind: 'blue' }, GULF: { v: '~⅓', s: 0.33, used: true, kind: 'amber', note: 'Qatar\'s pre-war share (USGS); Ras Laffan struck March 2026', nj: '戦争前のカタールのシェア（USGS）。2026年3月にラスラファンが攻撃を受ける' } } },
-  { m: 'Silicon wafers', mj: 'シリコンウェハー', cells: { JP: { v: '~44%', s: 0.44, kind: 'blue', note: 'Combined share of two leading Japanese firms (firm nationality, not plant location)', nj: '日本の大手2社の合計シェア（工場の所在地ではなく企業の国籍）' }, TW: { v: '#3', s: 0.18, kind: 'blue' } } },
-  { m: 'Photoresist', mj: 'フォトレジスト', cells: { JP: { v: '~75%', s: 0.75, used: true, kind: 'blue', note: 'Share as of 2021 (SemiAnalysis). Licensing tightened against Korea in 2019', nj: '2021年時点のシェア（SemiAnalysis）。2019年に韓国向けの輸出管理を厳格化' } } },
-  { m: 'T-glass cloth', mj: 'Tガラスクロス', cells: { JP: { v: '~85%', s: 0.85, kind: 'blue' }, TW: { v: 'scaling', s: 0.18, kind: 'blue' } } },
-  { m: 'ABF substrate film', mj: 'ABF絶縁フィルム', cells: { JP: { v: '>95%', s: 0.95, used: true, kind: 'blue', note: 'Ajinomoto cut supply to mainland China by 30% in Aug 2026 (commercial allocation)', nj: '2026年8月に味の素が中国本土向け供給を30%削減したと報道（商業的配分）' } } },
-  { m: 'Precision strain-wave reducers', mj: '波動歯車装置（精密減速機）', cells: { JP: { v: '~80%', s: 0.8, kind: 'blue', note: 'Harmonic Drive Systems; Chinese makers (Leaderdrive) scaling fast', nj: 'ハーモニック・ドライブ・システムズ。中国メーカー（Leaderdrive）が急拡大' }, CN: { v: 'scaling', s: 0.25, kind: 'red' } } },
-  { m: 'High-purity quartz', mj: '高純度石英', cells: { US: { v: 'dominant', s: 0.85, kind: 'blue', note: 'Spruce Pine, North Carolina', nj: 'ノースカロライナ州スプルースパイン' } } },
+  { m: 'Gallium (primary)', mj: 'ガリウム（一次生産）', k: 'chip', cells: { CN: { v: '~99%', s: 0.95, used: true, kind: 'red', note: 'Export licensing since 2023; US ban Dec 2024, paused to Nov 2026', nj: '2023年から輸出許可制。2024年12月に対米禁輸、2026年11月まで停止' } } },
+  { m: 'Magnet rare earths (refining)', mj: '磁石用レアアース（精製）', k: 'robot', cells: { CN: { v: '~91%', s: 0.91, used: true, kind: 'red', note: 'Refining share 2024 (IEA). Seven heavy REEs controlled since Apr 2025; from Jan 2026 dual-use exports to Japanese military end users banned (Japan\'s H1 dysprosium raw-mineral imports −82%)', nj: '精製シェア、2024年（IEA）。2025年4月から重希土類7元素を規制。2026年1月から日本の軍事エンドユーザー向けデュアルユース品の輸出を禁止（日本の上半期のジスプロシウム原鉱輸入は82%減）' }, US: { v: 'rising', s: 0.12, kind: 'blue' } } },
+  { m: 'Battery graphite', mj: '電池用黒鉛', k: 'build', cells: { CN: { v: '~94%', s: 0.94, used: true, kind: 'red' } } },
+  { m: 'Tungsten (mining)', mj: 'タングステン（採掘）', k: 'build', cells: { CN: { v: '~80%', s: 0.8, used: true, kind: 'red', note: '15 licensed exporters for 2026–27', nj: '2026〜27年の輸出許可企業は15社' } } },
+  { m: 'Cobalt (mine / refine)', mj: 'コバルト（採掘・精製）', k: 'build', cells: { CN: { v: '~76% refine', s: 0.76, kind: 'red', note: 'Share of 2025 refined cobalt output (IEA Global Critical Minerals Outlook 2026, annex)', nj: '2025年の精製コバルト生産に占めるシェア（IEA世界重要鉱物見通し2026、付録）' }, CD: { v: '~66% mine', s: 0.66, used: true, kind: 'red', note: 'Share of 2025 mined cobalt output (IEA GCMO 2026, annex). Export quota 87,000 t/yr plus up to 9,600 t discretionary strategic quota, 2026–27, amid oversupply', nj: '2025年の採掘コバルト生産に占めるシェア（IEA世界重要鉱物見通し2026、付録）。供給過剰のなか、2026〜27年の輸出枠は年8.7万トン＋裁量的な戦略枠最大9,600トン' } } },
+  { m: 'Copper (refining)', mj: '銅（精錬）', k: 'build', cells: { CN: { v: '~47%', s: 0.47, kind: 'red' } } },
+  { m: 'Nickel (refining)', mj: 'ニッケル（精製）', k: 'build', cells: { CN: { v: 'owns ~75% in ID', s: 0.3, kind: 'red', note: 'Ownership, not location: Chinese firms own about 75% of nickel refining capacity within Indonesia', nj: '所在地ではなく所有：インドネシア国内のニッケル精製能力の約75%を中国企業が保有' }, ID: { v: 'top', s: 0.6, used: true, kind: 'red', note: 'Ore quota (RKAB) cut for 2026', nj: '2026年の鉱石生産枠（RKAB）を削減' } } },
+  { m: 'Sulfur / sulfuric acid', mj: '硫黄・硫酸', k: 'build', cells: { CN: { v: '>40% of acid output', s: 0.42, used: true, kind: 'red', note: 'By-product acid exports halted 1 May 2026', nj: '2026年5月1日から副産物硫酸の輸出を停止' }, GULF: { v: '~⅓ sulfur', s: 0.33, used: true, kind: 'amber', note: 'Hormuz disruption', nj: 'ホルムズ海峡の混乱' }, RU: { v: 'export ban', s: 0.3, used: true, kind: 'amber' } } },
+  { m: 'Helium', mj: 'ヘリウム', k: 'chip', cells: { US: { v: 'largest', s: 0.4, kind: 'blue' }, GULF: { v: '~⅓', s: 0.33, used: true, kind: 'amber', note: 'Qatar\'s pre-war share (USGS); Ras Laffan struck March 2026', nj: '戦争前のカタールのシェア（USGS）。2026年3月にラスラファンが攻撃を受ける' } } },
+  { m: 'Silicon wafers', mj: 'シリコンウェハー', k: 'chip', cells: { JP: { v: '~44%', s: 0.44, kind: 'blue', note: 'Combined share of two leading Japanese firms (firm nationality, not plant location)', nj: '日本の大手2社の合計シェア（工場の所在地ではなく企業の国籍）' }, TW: { v: '#3', s: 0.18, kind: 'blue' } } },
+  { m: 'Photoresist', mj: 'フォトレジスト', k: 'chip', cells: { JP: { v: '~75%', s: 0.75, used: true, kind: 'blue', note: 'Share as of 2021 (SemiAnalysis). Licensing tightened against Korea in 2019', nj: '2021年時点のシェア（SemiAnalysis）。2019年に韓国向けの輸出管理を厳格化' } } },
+  { m: 'T-glass cloth', mj: 'Tガラスクロス', k: 'chip', cells: { JP: { v: '~85%', s: 0.85, kind: 'blue' }, TW: { v: 'scaling', s: 0.18, kind: 'blue' } } },
+  { m: 'ABF substrate film', mj: 'ABF絶縁フィルム', k: 'chip', cells: { JP: { v: '>95%', s: 0.95, used: true, kind: 'blue', note: 'Ajinomoto cut supply to mainland China by 30% in Aug 2026 (commercial allocation)', nj: '2026年8月に味の素が中国本土向け供給を30%削減したと報道（商業的配分）' } } },
+  { m: 'Precision strain-wave reducers', mj: '波動歯車装置（精密減速機）', k: 'robot', cells: { JP: { v: '~80%', s: 0.8, kind: 'blue', note: 'Harmonic Drive Systems; Chinese makers (Leaderdrive) scaling fast', nj: 'ハーモニック・ドライブ・システムズ。中国メーカー（Leaderdrive）が急拡大' }, CN: { v: 'scaling', s: 0.25, kind: 'red' } } },
+  { m: 'High-purity quartz', mj: '高純度石英', k: 'chip', cells: { US: { v: 'dominant', s: 0.85, kind: 'blue', note: 'Spruce Pine, North Carolina', nj: 'ノースカロライナ州スプルースパイン' } } },
 ];
 const VJ: Record<string, string> = { 'rising': '拡大中', 'scaling': '増強中', 'largest': '最大', 'dominant': '支配的', '>40% of acid output': '硫酸生産の40%超', 'export ban': '輸出禁止', '~76% refine': '精製約76%', '~66% mine': '採掘約66%', 'owns ~75% in ID': 'インドネシア内の約75%を保有', 'top': '首位', '#3': '3位', '~⅓ sulfur': '硫黄の約⅓' };
 const rgb: Record<string, string> = { red: '209,73,91', amber: '237,174,73', blue: '48,99,142' };
 const T = {
-  en: { mat: 'Material (controlling stage)', used: '● = supply restricted 2019–26 (policy, quota, war or commercial allocation). Shading is approximate; bases differ by row. Hover a cell for detail.' },
-  ja: { mat: '素材（支配的な工程）', used: '● = 2019〜26年に供給制限あり（政策・割当・戦争・商業的配分）。濃淡は目安で、基準は行ごとに異なります。セルにカーソルを合わせると詳細を表示。' },
+  en: { mat: 'Material (controlling stage)', used: '● = supply restricted 2019–26 (policy, quota, war or commercial allocation). Shading combines each country\'s share with how much that material matters at the chosen mix; bases differ by row. Hover a cell for detail.', s0: 'Software only', s1: 'Chips, power and robots', kinds: { chip: 'chips', build: 'build-out', robot: 'robots' } },
+  ja: { mat: '素材（支配的な工程）', used: '● = 2019〜26年に供給制限あり（政策・割当・戦争・商業的配分）。濃淡は各国のシェアと、選んだ割合でその素材がどれほど重要かを掛け合わせた目安で、基準は行ごとに異なります。セルにカーソルを合わせると詳細を表示。', s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて', kinds: { chip: 'チップ', build: '建設', robot: 'ロボット' } },
 }[lang];
 ---
-<div class="levmap">
+<div class="levmap" data-lang={lang}>
+  <label class="lm-slider">
+    <span class="lm-ends"><span>{T.s0}</span><span class="lm-val"></span><span>{T.s1}</span></span>
+    <input type="range" min="0" max="1" step="0.01" value="0.4" class="lm-s" />
+  </label>
   <div class="scroll">
     <table>
       <thead>
@@ -42,15 +46,15 @@ const T = {
       </thead>
       <tbody>
         {rows.map((r) => (
-          <tr>
-            <td class="m">{lang === 'ja' ? r.mj : r.m}</td>
+          <tr data-k={r.k}>
+            <td class="m">{lang === 'ja' ? r.mj : r.m} <span class="kind">{T.kinds[r.k]}</span></td>
             {cols.map(([k]) => {
               const c = r.cells[k];
               if (!c) return <td class="empty"></td>;
               const a = Math.max(0.15, c.s);
               const dark = a > 0.55;
               return (
-                <td style={`background: rgba(${rgb[c.kind ?? 'red']}, ${a}); color: ${dark ? '#fff' : 'inherit'}`} title={(lang === 'ja' ? c.nj : c.note) ?? ''}>
+                <td data-rgb={rgb[c.kind ?? 'red']} data-share={a} style={`background: rgba(${rgb[c.kind ?? 'red']}, ${a}); color: ${dark ? '#fff' : 'inherit'}`} title={(lang === 'ja' ? c.nj : c.note) ?? ''}>
                   {lang === 'ja' ? (VJ[c.v] ?? c.v) : c.v}{c.used && <span class="used"> ●</span>}
                 </td>
               );
@@ -73,4 +77,34 @@ const T = {
   .levmap td.empty { background: var(--post-code-bg, #f5f5f5); }
   .levmap td[title]:not([title='']) { cursor: help; }
   .levmap .key { font-size: 0.78rem; color: var(--post-caption, #737373); text-align: center; margin: 0.4rem 0 0; }
+  .levmap .lm-slider { display: block; margin-bottom: 0.5rem; }
+  .levmap .lm-ends { display: flex; justify-content: space-between; font-size: 0.78rem; color: var(--post-caption, #737373); }
+  .levmap .lm-val { font-weight: 600; color: var(--post-heading, #1a1a1a); }
+  .levmap .lm-s { width: 100%; accent-color: #6a4c93; }
+  .levmap .kind { font-weight: 400; font-size: 0.68rem; color: var(--post-caption, #737373); margin-left: 0.2rem; }
+  .levmap td { transition: background-color 0.2s, color 0.2s; }
 </style>
+<script>
+  import { DEFAULTS, relevance, setShared, onShared, getShared } from './physical-share/model';
+  document.querySelectorAll<HTMLElement>('.levmap').forEach((root, idx) => {
+    const ja = root.dataset.lang === 'ja';
+    const input = root.querySelector<HTMLInputElement>('.lm-s')!;
+    const val = root.querySelector<HTMLElement>('.lm-val')!;
+    const src = `levmap-${idx}`;
+    function render(s: number) {
+      input.value = String(s);
+      val.textContent = ja ? `新しい物理的な設備が必要な割合：${Math.round(s * 100)}%` : `${Math.round(s * 100)}% of progress needs new physical things`;
+      root.querySelectorAll<HTMLTableRowElement>('tr[data-k]').forEach((tr) => {
+        const r = relevance(tr.dataset.k as 'chip' | 'build' | 'robot', s);
+        tr.querySelectorAll<HTMLTableCellElement>('td[data-share]').forEach((td) => {
+          const a = Math.max(0.06, parseFloat(td.dataset.share!) * r);
+          td.style.background = `rgba(${td.dataset.rgb}, ${a.toFixed(2)})`;
+          td.style.color = a > 0.55 ? '#fff' : 'inherit';
+        });
+      });
+    }
+    input.addEventListener('input', () => { const s = parseFloat(input.value); render(s); setShared(s, src); });
+    onShared(src, render);
+    render(typeof window !== 'undefined' ? getShared() : DEFAULTS.s);
+  });
+</script>
