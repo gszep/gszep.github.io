@@ -30,13 +30,13 @@ const T = ja
   <p class="pss-share" id="pss-share" aria-live="polite"></p>
 
   <div class="pss-chart">
-  <svg viewBox="0 0 660 330" preserveAspectRatio="xMidYMid meet" aria-label={T.aria}>
+  <svg id="pss-svg" viewBox="0 0 660 330" preserveAspectRatio="xMidYMid meet" aria-label={T.aria}>
     <rect id="pss-band" x="96" y="20" width="0" height="270" class="band" />
     <text id="pss-band-l" x="102" y="34" class="bandtxt">{T.ideas}</text>
     <text id="pss-band-r" x="634" y="34" text-anchor="end" class="bandtxt">{T.atoms}</text>
     <g id="pss-grid" class="grid"></g>
-    <g class="axes"><line x1="96" y1="20" x2="96" y2="290" /><line x1="96" y1="290" x2="640" y2="290" /></g>
-    <text x="16" y="155" transform="rotate(-90 16 155)" text-anchor="middle" class="axlabel">{T.ylab}</text>
+    <g class="axes"><line id="pss-ax-y" x1="96" y1="20" x2="96" y2="290" /><line id="pss-ax-x" x1="96" y1="290" x2="640" y2="290" /></g>
+    <text id="pss-ylab" x="16" y="155" transform="rotate(-90 16 155)" text-anchor="middle" class="axlabel">{T.ylab}</text>
     <path id="pss-robot" class="l-robot" />
     <path id="pss-phys" class="l-phys" />
     <path id="pss-cap" class="l-cap" />
@@ -66,8 +66,7 @@ const T = ja
 
 <style is:global>
   .pss { width: 100%; max-width: 760px; margin: 0 auto; color: var(--post-text, #353535); font-family: ui-sans-serif, system-ui, sans-serif; }
-  .pss-chart { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-  .pss svg { width: 100%; min-width: 560px; height: auto; display: block; }
+  .pss svg { width: 100%; height: auto; display: block; }
   .pss-slider { display: block; position: relative; padding-bottom: 1.2rem; }
   .pss-ends { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--post-caption, #737373); }
   .pss-slider input { width: 100%; accent-color: #6a4c93; }
@@ -77,6 +76,7 @@ const T = ja
   .pss .grid line { stroke: var(--post-separator, #eee); stroke-dasharray: 2 3; }
   .pss .grid text, .pss .axlabel, .pss .bandtxt { fill: var(--post-caption, #737373); font-size: 11px; }
   .pss .axlabel { font-size: 12px; }
+  .pss.narrow .grid text, .pss.narrow .axlabel, .pss.narrow .bandtxt { font-size: 12px; }
   .pss path { fill: none; stroke-width: 2.5; }
   .pss .l-cap { stroke: #6a4c93; }
   .pss .l-phys { stroke: #d1495b; }
@@ -111,18 +111,45 @@ const T = ja
     const tpIn = $('pss-tp') as HTMLInputElement;
     sIn.value = String(DEFAULTS.s);
 
-    const X0 = 96, X1 = 640, Y0 = 20, Y1 = 290;
+    // Wide layout matches the static markup; the narrow one (container 560px or narrower) is taller, with
+    // shorter tick and band labels placed above the plot so nothing has to scroll sideways.
+    const WIDE = { W: 660, H: 330, X0: 96, X1: 640, Y0: 20, Y1: 290, axX: 16, xLabDy: 16, bandY: 34, bandInset: 6, short: false };
+    const NARROW = { W: 340, H: 326, X0: 62, X1: 324, Y0: 30, Y1: 296, axX: 12, xLabDy: 20, bandY: 18, bandInset: 0, short: true };
+    let L = WIDE;
     const LMIN = Math.log10(1 / 24), LMAX = Math.log10(50); // two weeks to 50 years
-    const x = (v: number) => X0 + v * (X1 - X0);
+    const x = (v: number) => L.X0 + v * (L.X1 - L.X0);
     const y = (yrs: number) => {
       const l = Math.min(LMAX, Math.max(LMIN, Math.log10(yrs)));
-      return Y1 - ((l - LMIN) / (LMAX - LMIN)) * (Y1 - Y0);
+      return L.Y1 - ((l - LMIN) / (LMAX - LMIN)) * (L.Y1 - L.Y0);
     };
 
     const grid = $('pss-grid');
-    const ticks: [number, string, string][] = [[1 / 12, '1 month', '1か月'], [0.5, '6 months', '6か月'], [1, '1 year', '1年'], [5, '5 years', '5年'], [20, '20 years', '20年']];
-    grid.innerHTML = ticks.map(([v, en, jn]) => `<line x1="${X0}" x2="${X1}" y1="${y(v)}" y2="${y(v)}"/><text x="${X0 - 6}" y="${y(v) + 4}" text-anchor="end">${ja ? jn : en}</text>`).join('')
-      + [0, 0.25, 0.5, 0.75, 1].map((v) => `<text x="${x(v)}" y="${Y1 + 16}" text-anchor="middle">${Math.round(v * 100)}%</text>`).join('');
+    const ticks: [number, string, string, string][] = [[1 / 12, '1 month', '1 mo', '1か月'], [0.5, '6 months', '6 mo', '6か月'], [1, '1 year', '1 yr', '1年'], [5, '5 years', '5 yrs', '5年'], [20, '20 years', '20 yrs', '20年']];
+    const bandText = {
+      l: ja ? 'アイデアが遅い側' : 'ideas are slower',
+      r: ja ? 'モノづくりが遅い側' : 'building is slower',
+    };
+    const bandL = $('pss-band-l'), bandR = $('pss-band-r');
+    const bandFull = { l: bandL.textContent || '', r: bandR.textContent || '' };
+    const attrs = (el: Element, a: Record<string, string | number>) => Object.entries(a).forEach(([k, v]) => el.setAttribute(k, String(v)));
+
+    function layout() {
+      const { W, H, X0, X1, Y0, Y1, axX, xLabDy, bandY, bandInset, short } = L;
+      root!.classList.toggle('narrow', short);
+      $('pss-svg').setAttribute('viewBox', `0 0 ${W} ${H}`);
+      attrs($('pss-band'), { x: X0, y: Y0, height: Y1 - Y0 });
+      attrs(bandL, { x: X0 + bandInset, y: bandY });
+      attrs(bandR, { x: X1 - bandInset, y: bandY });
+      bandL.textContent = short ? bandText.l : bandFull.l;
+      bandR.textContent = short ? bandText.r : bandFull.r;
+      attrs($('pss-ax-y'), { x1: X0, x2: X0, y1: Y0, y2: Y1 });
+      attrs($('pss-ax-x'), { x1: X0, x2: X1, y1: Y1, y2: Y1 });
+      const cy = (Y0 + Y1) / 2;
+      attrs($('pss-ylab'), { x: axX, y: cy, transform: `rotate(-90 ${axX} ${cy})` });
+      attrs($('pss-marker'), { y1: Y0, y2: Y1 });
+      grid.innerHTML = ticks.map(([v, en, enS, jn]) => `<line x1="${X0}" x2="${X1}" y1="${y(v)}" y2="${y(v)}"/><text x="${X0 - 6}" y="${y(v) + 4}" text-anchor="end">${ja ? jn : short ? enS : en}</text>`).join('')
+        + [0, 0.25, 0.5, 0.75, 1].map((v) => `<text x="${x(v)}" y="${Y1 + xLabDy}" text-anchor="middle">${Math.round(v * 100)}%</text>`).join('');
+    }
 
     const fmtYear = (yr: number) => (yr > 2050 ? (ja ? '2050年より後' : 'after 2050') : (ja ? `${Math.round(yr)}年ごろ` : `around ${Math.round(yr)}`));
     function path(f: (v: number) => number) {
@@ -145,7 +172,7 @@ const T = ja
       $('pss-cap').setAttribute('d', path((v) => model(v, gI, gP).gE));
       $('pss-phys').setAttribute('d', path((v) => model(v, gI, gP).gPhys));
       $('pss-robot').setAttribute('d', path((v) => model(v, gI, gP).gRob));
-      $('pss-band').setAttribute('width', String(x(sStar(gI, gP)) - X0));
+      $('pss-band').setAttribute('width', String(x(sStar(gI, gP)) - L.X0));
       const mk = $('pss-marker');
       mk.setAttribute('x1', String(x(s)));
       mk.setAttribute('x2', String(x(s)));
@@ -167,6 +194,14 @@ const T = ja
     sIn.addEventListener('input', () => { render(); setShared(parseFloat(sIn.value), 'pss'); });
     [giIn, tpIn].forEach((el) => el.addEventListener('input', render));
     onShared('pss', (v) => { sIn.value = String(v); render(); });
-    render();
+    const pick = () => {
+      const next = root.clientWidth <= 560 ? NARROW : WIDE;
+      if (next === L && grid.childElementCount) return;
+      L = next;
+      layout();
+      render();
+    };
+    new ResizeObserver(pick).observe(root);
+    pick();
   }
 </script>
