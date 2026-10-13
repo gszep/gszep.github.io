@@ -29,40 +29,90 @@ export function crunchYear(ratio: number, gDemand: number, gSupply: number) {
   return gDemand <= gSupply ? Infinity : START_YEAR + ratio / (gDemand - gSupply);
 }
 
-// Country strengths at s = 0, 0.5, 1 on a 0–3 scale (my judgement).
-export type Country = { en: string; ja: string; why: string; whyJa: string; score: [number, number, number]; middle: boolean };
-export const COUNTRIES: Country[] = [
-  { en: 'US', ja: '米国', why: 'Owns most existing AI computers and the leading models', whyJa: '既存のAI計算資源と最先端モデルの大半を持つ', score: [3, 2.5, 1.5], middle: false },
-  { en: 'China', ja: '中国', why: 'Refining, magnets, robots and fast power build-out; less compute', whyJa: '精錬・磁石・ロボット・電源の急速な建設。計算資源は少ない', score: [1, 2, 3], middle: false },
-  { en: 'Japan', ja: '日本', why: 'Chip materials and tools; robot gears', whyJa: '半導体材料と製造装置、ロボット用の歯車', score: [1, 3, 2], middle: true },
-  { en: 'Taiwan', ja: '台湾', why: 'Makes the most advanced chips', whyJa: '最先端チップの製造', score: [1, 3, 2], middle: true },
-  { en: 'Korea', ja: '韓国', why: 'AI memory chips; grid equipment', whyJa: 'AI用メモリ、送電設備', score: [1, 3, 1.5], middle: true },
-  { en: 'Netherlands', ja: 'オランダ', why: 'Chipmaking lithography machines', whyJa: '半導体の露光装置', score: [0.5, 3, 1.5], middle: true },
-  { en: 'Germany', ja: 'ドイツ', why: 'Grid equipment, machinery, optics', whyJa: '送電設備・機械・光学', score: [0.5, 1.5, 2.5], middle: true },
-  { en: 'Gulf states', ja: '湾岸諸国', why: 'Cheap power and capital; sulfur and helium; computers hosted there', whyJa: '安価な電力と資本、硫黄とヘリウム、国内に置かれた計算資源', score: [1.5, 2, 3], middle: true },
-  { en: 'Australia & Canada', ja: 'オーストラリア・カナダ', why: 'Minerals, uranium, capital', whyJa: '鉱物・ウラン・資本', score: [0.5, 1.5, 3], middle: true },
-  { en: 'DRC, Indonesia, Chile', ja: 'コンゴ・インドネシア・チリ', why: 'Cobalt, nickel, copper', whyJa: 'コバルト・ニッケル・銅', score: [0, 1, 2.5], middle: false },
-  { en: 'EU', ja: 'EU', why: 'Market rules; chipmaking tools', whyJa: '市場のルール、半導体製造装置', score: [1, 2, 1.5], middle: true },
-  { en: 'UK', ja: '英国', why: 'AI safety institute and research labs; little heavy industry', whyJa: 'AI安全研究所と研究拠点。重工業は少ない', score: [2, 1.5, 0.5], middle: true },
-  { en: 'Singapore', ja: 'シンガポール', why: 'A neutral meeting place; licences for data centres', whyJa: '中立的な対話の場、データセンターの免許', score: [1.5, 1.5, 1.5], middle: true },
-];
+// The lead a one-year leader keeps after rivals copy a share cI of the gain from ideas
+// and cP of the gain from building (log scale; my assumptions).
+export const CATCH_UP = { cI: 0.7, cP: 0.1 };
+export function keptLead(s: number, gI: number, gP: number, cI = CATCH_UP.cI, cP = CATCH_UP.cP) {
+  return model(s, gI, gP).gE * ((1 - s) * (1 - cI) + s * (1 - cP));
+}
 
 export function interp(s: number, [a, b, c]: [number, number, number]) {
   return s <= 0.5 ? a + (b - a) * (s / 0.5) : b + (c - b) * ((s - 0.5) / 0.5);
 }
 
-export function middlePowerLeverage(s: number) {
-  const mids = COUNTRIES.filter((c) => c.middle);
-  return mids.reduce((sum, c) => sum + interp(s, c.score), 0) / mids.length;
-}
+// Countries (columns of the leverage map). `middle` marks the middle powers summed in the stakes chart.
+export type CountryKey = 'US' | 'CN' | 'JP' | 'TW' | 'KR' | 'NL' | 'DE' | 'UK' | 'GULF' | 'AUCA' | 'PROD' | 'OTH';
+export const COUNTRIES: { k: CountryKey; en: string; ja: string; middle: boolean }[] = [
+  { k: 'US', en: 'US', ja: '米国', middle: false },
+  { k: 'CN', en: 'China', ja: '中国', middle: false },
+  { k: 'JP', en: 'Japan', ja: '日本', middle: true },
+  { k: 'TW', en: 'Taiwan', ja: '台湾', middle: true },
+  { k: 'KR', en: 'Korea', ja: '韓国', middle: true },
+  { k: 'NL', en: 'Netherlands', ja: 'オランダ', middle: true },
+  { k: 'DE', en: 'Germany', ja: 'ドイツ', middle: true },
+  { k: 'UK', en: 'UK', ja: '英国', middle: true },
+  { k: 'GULF', en: 'Gulf states', ja: '湾岸諸国', middle: true },
+  { k: 'AUCA', en: 'Australia & Canada', ja: '豪州・カナダ', middle: true },
+  { k: 'PROD', en: 'DRC, Indonesia, Chile, Peru', ja: 'コンゴ・インドネシア・チリ・ペルー', middle: false },
+  { k: 'OTH', en: 'Others', ja: 'その他', middle: false },
+];
 
-// How much each kind of material matters at a given s (0–1), used to fade the leverage map.
-export function relevance(kind: 'chip' | 'build' | 'robot', s: number) {
-  const clamp = (v: number) => Math.max(0, Math.min(1, v));
-  if (kind === 'chip') return s <= 0.5 ? 0.35 + 0.65 * (s / 0.5) : 1 - 0.4 * ((s - 0.5) / 0.5);
-  if (kind === 'build') { const t = clamp(s / 0.6); return 0.12 + 0.88 * t * t * (3 - 2 * t); }
-  return 0.1 + 0.9 * clamp((s - 0.4) / 0.6);
+// Stages of the AI supply chain (rows). `w` = weight at s = 0, 0.5, 1 (my judgement);
+// `share` = rough % of world supply (sources in the post); `note` explains the measure.
+export type Stage = {
+  k: string; en: string; ja: string; w: [number, number, number];
+  share: Partial<Record<CountryKey, number>>; used?: CountryKey[]; note: string; noteJa: string;
+};
+export const STAGES: Stage[] = [
+  { k: 'mine', en: 'Mining & refining', ja: '採掘・精錬', w: [0.05, 0.5, 1], share: { CN: 70, PROD: 10, JP: 3, AUCA: 2, US: 2, OTH: 13 }, used: ['CN', 'PROD'],
+    note: 'Where minerals are refined, 2025, averaged over magnet rare earths, copper, gallium, tungsten, cobalt and nickel. China refines 84% of magnet rare earths, 47% of copper, 76% of cobalt and makes 99% of gallium; Indonesia refines 45% of nickel, much of it in Chinese-owned plants.',
+    noteJa: '2025年の精錬の所在地。磁石用レアアース・銅・ガリウム・タングステン・コバルト・ニッケルの平均です。中国は磁石用レアアースの84%、銅の47%、コバルトの76%を精錬し、ガリウムの99%を生産しています。ニッケルの45%はインドネシアで精錬され、その多くは中国企業の工場です。' },
+  { k: 'magnet', en: 'Magnets & robot parts', ja: '磁石・ロボット部品', w: [0, 0.2, 1], share: { CN: 50, JP: 40, DE: 5, KR: 1, US: 1, OTH: 3 }, used: ['CN'],
+    note: 'Average of strong magnets (94% made in China), precision robot gears (mostly Japanese firms) and industrial robots (by maker nationality).',
+    noteJa: '強力な磁石（94%が中国製）、ロボット用の精密歯車（大半が日本企業）、産業用ロボット（メーカーの国籍）の平均です。' },
+  { k: 'power', en: 'Power & data-centre hosting', ja: '電力・データセンター', w: [0.1, 0.8, 1], share: { US: 45, CN: 25, JP: 5, DE: 3, UK: 2, NL: 1, KR: 2, GULF: 1, AUCA: 2, OTH: 14 },
+    note: 'Where data centres use electricity, 2024. Newly built AI capacity leans further towards the US.',
+    noteJa: 'データセンターが電力を使う場所、2024年。新しく建つAI向けの施設は、さらに米国に偏っています。' },
+  { k: 'grid', en: 'Grid equipment', ja: '送配電設備', w: [0.05, 0.6, 0.9], share: { CN: 40, US: 15, JP: 10, DE: 10, KR: 5, OTH: 20 },
+    note: 'Rough blend of transformers (where made; China about 60%) and gas turbines (maker nationality). The least certain row.',
+    noteJa: '変圧器（製造地。中国が約60%）とガスタービン（メーカーの国籍）の大まかな組み合わせです。最も不確かな行です。' },
+  { k: 'mat', en: 'Chip materials', ja: '半導体材料', w: [0.15, 0.9, 0.4], share: { JP: 60, US: 15, CN: 5, TW: 5, KR: 5, DE: 5, OTH: 5 }, used: ['JP'],
+    note: 'Average of silicon wafers (Japanese firms 44%), light-sensitive chemicals (about 60–75%), glass cloth (about 85–90%) and insulating film (over 95%) in chip packages, and high-purity quartz (mostly mined in North Carolina).',
+    noteJa: 'シリコンウェハー（日本企業44%）、フォトレジスト（約60〜75%）、チップパッケージ用のガラスクロス（約85〜90%）と絶縁フィルム（95%超）、高純度石英（大半が米ノースカロライナ州産）の平均です。' },
+  { k: 'tools', en: 'Lithography & chipmaking tools', ja: '露光装置・製造装置', w: [0.1, 1, 0.4], share: { US: 40, NL: 25, JP: 20, CN: 5, DE: 3, KR: 2, OTH: 5 }, used: ['US', 'NL', 'JP'],
+    note: 'Chipmaking equipment sales by maker nationality, 2025. One Dutch company makes every machine for the finest printing step (EUV).',
+    noteJa: '2025年の半導体製造装置の売上（メーカーの国籍）。最も微細な露光（EUV）の装置は、オランダの1社がすべて作っています。' },
+  { k: 'fab', en: 'Leading-edge chips & packaging', ja: '先端チップ製造・パッケージ', w: [0.15, 1, 0.5], share: { TW: 80, KR: 10, US: 5, CN: 3, JP: 1, OTH: 1 },
+    note: 'Where the most advanced chips are made and packaged, late 2025. Almost all is in Taiwan.',
+    noteJa: '最先端のチップが製造・パッケージされる場所、2025年末。ほぼすべてが台湾です。' },
+  { k: 'hbm', en: 'AI memory (HBM)', ja: 'AI用メモリ（HBM）', w: [0.15, 1, 0.4], share: { KR: 80, US: 20 }, used: ['US'],
+    note: 'Revenue by maker nationality, Q2 2026: two Korean firms and one American. US rules have limited sales to China since December 2024.',
+    noteJa: '2026年第2四半期の売上（メーカーの国籍）。韓国の2社と米国の1社です。米国の規則で2024年12月から中国向けの販売が制限されています。' },
+  { k: 'design', en: 'AI chip design', ja: 'AIチップ設計', w: [0.3, 0.8, 0.3], share: { US: 95, CN: 4, OTH: 1 }, used: ['US'],
+    note: 'Share of AI computing power shipped, by designer nationality, late 2025.',
+    noteJa: '2025年末に出荷されたAI計算能力の、設計企業の国籍別シェアです。' },
+  { k: 'compute', en: 'Installed AI computing power', ja: '設置済みのAI計算資源', w: [1, 0.6, 0.2], share: { US: 75, CN: 15, GULF: 2, UK: 1, JP: 1, KR: 1, DE: 1, OTH: 4 },
+    note: 'Where AI supercomputers are, 2025. Five US companies own over 70% of the world\'s AI computing power.',
+    noteJa: 'AIスーパーコンピュータの所在地、2025年。世界のAI計算資源の70%超を米国の5社が所有しています。' },
+  { k: 'model', en: 'Leading AI models', ja: '最先端のAIモデル', w: [1, 0.5, 0.1], share: { US: 55, CN: 35, KR: 5, UK: 1, AUCA: 1, OTH: 3 },
+    note: 'Notable AI models released in 2025, by developer nationality. Among the most capable models the US share is higher.',
+    noteJa: '2025年に公開された主なAIモデルの、開発者の国籍別シェアです。最も性能の高いモデルに限ると、米国のシェアはさらに高くなります。' },
+];
+
+export const stageWeight = (st: Stage, s: number) => interp(s, st.w);
+
+// Weighted share (0–1) of the supply chain held by a set of countries at mix s.
+export function leverage(s: number, keys: CountryKey[]) {
+  let num = 0, den = 0;
+  for (const st of STAGES) {
+    const w = stageWeight(st, s);
+    den += w;
+    num += w * keys.reduce((a, k) => a + (st.share[k] ?? 0), 0) / 100;
+  }
+  return den ? num / den : 0;
 }
+export const MIDDLE: CountryKey[] = COUNTRIES.filter((c) => c.middle).map((c) => c.k);
+export const middlePowerLeverage = (s: number) => leverage(s, MIDDLE);
 
 // One shared slider value across all figures on the page.
 const EVT = 'physical-share-change';

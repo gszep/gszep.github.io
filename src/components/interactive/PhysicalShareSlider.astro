@@ -7,19 +7,17 @@ const T = ja
       s0: 'ソフトウェアのみ', sNow: '現在（概算）', s1: 'チップ・電力・ロボットすべて',
       ylab: '倍増にかかる時間', cap: 'AIの能力', phys: '物理的な設備の建設', robot: 'ロボット生産',
       ideas: 'アイデアが遅い側', atoms: '物理的な建設が遅い側',
-      lev: 'どの国の影響力が強まるか（濃いほど強い。カーソルを合わせると理由が表示されます）',
       adv: '前提を変える', gi: 'アイデアだけで能力が伸びる速さ', tp: '物理的な建設が倍増する最短期間',
-      note: 'モデル：AIの能力は、より良いアイデアと、より多くの物理的な設備という二つの材料のうち、遅い方の速さでしか伸びない。アイデアの速さと建設の速さは調整できる仮定。銅と磁石の数値は後に出てくる素材の図の既定値と同じ。国ごとの強さは筆者の判断。日付は例示として読んでほしい。',
-      aria: 'AIの進歩のうち物理的な設備を必要とする割合と、成長の速さ・素材不足の時期・各国の影響力の関係',
+      note: 'モデル：AIの能力は、より良いアイデアと、より多くの物理的な設備という二つの材料のうち、遅い方の速さでしか伸びない。アイデアの速さと建設の速さは調整できる仮定。銅と磁石の数値は後に出てくる素材の図の既定値と同じ。日付は例示として読んでほしい。',
+      aria: 'AIの進歩のうち物理的な設備を必要とする割合と、成長の速さ・素材不足の時期の関係',
     }
   : {
       s0: 'Software only', sNow: 'Today (rough)', s1: 'Chips, power and robots',
       ylab: 'time to double', cap: 'AI capability', phys: 'physical build-out', robot: 'robot production',
       ideas: 'ideas are the slower step', atoms: 'building is the slower step',
-      lev: 'Whose leverage grows (darker = stronger; hover for the reason)',
       adv: 'Change the assumptions', gi: 'How fast ideas alone raise capability', tp: 'Fastest doubling time of physical build-out',
-      note: 'Model: AI capability grows only as fast as the slower of its two ingredients, better ideas and more physical things. The speeds of ideas and of building are adjustable assumptions; copper and magnet inputs match the materials chart further down; country strengths are my judgement. Treat the dates as illustrations.',
-      aria: 'How the physical share of AI progress changes growth speed, material shortage dates and country leverage',
+      note: 'Model: AI capability grows only as fast as the slower of its two ingredients, better ideas and more physical things. The speeds of ideas and of building are adjustable assumptions; copper and magnet inputs match the materials chart further down. Treat the dates as illustrations.',
+      aria: 'How the physical share of AI progress changes growth speed and material shortage dates',
     };
 ---
 
@@ -58,9 +56,6 @@ const T = ja
     <div><span id="pss-c4"></span></div>
   </div>
 
-  <p class="pss-levlab">{T.lev}</p>
-  <div class="pss-lev" id="pss-lev"></div>
-
   <details class="pss-adv">
     <summary>{T.adv}</summary>
     <label>{T.gi}: <b id="pss-gi-v"></b><input type="range" id="pss-gi" min="0.3" max="3" step="0.1" value="1" /></label>
@@ -91,9 +86,6 @@ const T = ja
   .pss-cells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 0.6rem 0; }
   .pss-cells div { border: 1px solid var(--post-separator, #e5e5e5); border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.9rem; }
   .pss-cells b { color: var(--post-heading, #1a1a1a); }
-  .pss-levlab { font-size: 0.8rem; color: var(--post-caption, #737373); margin: 0.6rem 0 0.3rem; }
-  .pss-lev { display: flex; flex-wrap: wrap; gap: 0.35rem; }
-  .pss-lev span { font-size: 0.78rem; padding: 0.25rem 0.55rem; border-radius: 999px; cursor: help; transition: background-color 0.2s, color 0.2s; border: 1px solid rgba(0, 61, 91, 0.25); }
   .pss-adv { margin-top: 0.8rem; font-size: 0.85rem; }
   .pss-adv summary { cursor: pointer; color: var(--post-caption, #737373); }
   .pss-adv label { display: block; margin: 0.5rem 0; }
@@ -103,7 +95,7 @@ const T = ja
 </style>
 
 <script>
-  import { DEFAULTS, rates, model, sStar, crunchYear, COPPER, MAGNETS, COUNTRIES, interp, setShared, onShared } from './physical-share/model';
+  import { DEFAULTS, rates, model, sStar, crunchYear, COPPER, MAGNETS, setShared, onShared } from './physical-share/model';
 
   const root = document.getElementById('pss');
   if (root) {
@@ -113,15 +105,6 @@ const T = ja
     const giIn = $('pss-gi') as HTMLInputElement;
     const tpIn = $('pss-tp') as HTMLInputElement;
     sIn.value = String(DEFAULTS.s);
-
-    const lev = $('pss-lev');
-    const chips = COUNTRIES.map((c) => {
-      const el = document.createElement('span');
-      el.textContent = ja ? c.ja : c.en;
-      el.title = ja ? c.whyJa : c.why;
-      lev.appendChild(el);
-      return el;
-    });
 
     const X0 = 96, X1 = 640, Y0 = 20, Y1 = 290;
     const LMIN = Math.log10(1 / 24), LMAX = Math.log10(50); // two weeks to 50 years
@@ -174,12 +157,6 @@ const T = ja
       $('pss-c2').innerHTML = ja ? `1年先行すれば能力は<b>${fmtLead}倍</b>` : `A one-year lead means <b>${fmtLead}×</b> the capability`;
       $('pss-c3').innerHTML = ja ? `データセンター用の銅が足りなくなるのは<b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>` : `Copper for data centres runs short <b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>`;
       $('pss-c4').innerHTML = ja ? `ロボット用の磁石が足りなくなるのは<b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>` : `Magnets for robots run short <b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>`;
-
-      chips.forEach((el, i) => {
-        const alpha = 0.06 + 0.29 * interp(s, COUNTRIES[i].score);
-        el.style.backgroundColor = `rgba(0, 61, 91, ${alpha.toFixed(2)})`;
-        el.style.color = alpha > 0.5 ? '#fff' : '';
-      });
     }
 
     sIn.addEventListener('input', () => { render(); setShared(parseFloat(sIn.value), 'pss'); });
