@@ -1,35 +1,35 @@
 ---
 interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
-// [label, physical build / commissioning (yr), queue + permitting + exploration (yr)]
+// [label, physical build / commissioning (yr), queue + permitting + exploration (yr)]; totals from sources, splits are illustrative author estimates
 const rowsEn: [string, number, number][] = [
-  ['Train a frontier model', 0.3, 0],
+  ['Train a leading AI model', 0.3, 0],
   ['Large power transformer', 0.3, 2.2],
   ['Gas-turbine delivery slot', 1, 3],
   ['Data centre (incl. grid connection)', 1.5, 1.5],
   ['Special glass-cloth furnace', 2, 0],
   ['Leading-edge fab', 2.5, 0.5],
   ['New memory fab', 3.5, 0.5],
-  ['Rebuild bombed LNG / helium trains', 4, 0],
+  ['Repair bombed Qatari LNG trains', 4, 0],
   ['Refinery or rare-earth separation plant', 3, 2],
-  ['Copper mine (discovery → production)', 3, 14],
+  ['New copper mine (discovery → production)', 3, 14],
 ];
 const rowsJa: [string, number, number][] = [
-  ['最先端モデルの学習', 0.3, 0],
+  ['最先端AIモデルの学習', 0.3, 0],
   ['大型電力用変圧器', 0.3, 2.2],
   ['ガスタービンの納入枠', 1, 3],
   ['データセンター（系統接続含む）', 1.5, 1.5],
   ['特殊ガラスクロス炉', 2, 0],
   ['最先端半導体工場', 2.5, 0.5],
   ['新しいメモリ工場', 3.5, 0.5],
-  ['被弾したLNG・ヘリウム設備の再建', 4, 0],
+  ['被弾したカタールのLNG設備の修復', 4, 0],
   ['精錬所・レアアース分離工場', 3, 2],
-  ['銅山（発見→生産）', 3, 14],
+  ['新規銅山（発見→生産）', 3, 14],
 ];
 const rows = lang === 'ja' ? rowsJa : rowsEn;
 const T = lang === 'ja'
-  ? { axis: '年', a: '物理的な建設・立ち上げ', b: '待ち行列・許認可・探査' }
-  : { axis: 'years', a: 'physical build & commissioning', b: 'queue, permitting & exploration' };
+  ? { axis: '年（区分は筆者による例示的な推定）', a: '物理的な建設・立ち上げ', b: '待ち行列・許認可・探査' }
+  : { axis: 'years (split between bars is an illustrative estimate)', a: 'physical build & commissioning', b: 'queue, permitting & exploration' };
 const X0 = 290, X1 = 700, maxY = 18;
 const x = (v: number) => X0 + (v / maxY) * (X1 - X0);
 const rowH = 28;

@@ -1,76 +1,151 @@
 ---
+import { COUNTRIES, STAGES, type CountryKey } from './physical-share/model';
 interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
-type Cell = { v: string; s: number; used?: boolean; kind?: 'red' | 'amber' | 'blue'; note?: string; nj?: string };
-type Row = { m: string; mj: string; cells: Record<string, Cell> };
-const cols = [
-  ['CN', 'China', '中国'], ['JP', 'Japan', '日本'], ['TW', 'Taiwan', '台湾'], ['US', 'US', '米国'],
-  ['CD', 'DRC', 'コンゴ民主共和国'], ['ID', 'Indonesia', 'インドネシア'], ['GULF', 'Qatar / Gulf', 'カタール・湾岸'], ['RU', 'Russia', 'ロシア'],
-];
-const rows: Row[] = [
-  { m: 'Gallium (primary)', mj: 'ガリウム（一次生産）', cells: { CN: { v: '~99%', s: 0.95, used: true, kind: 'red', note: 'Export licensing since 2023; US ban Dec 2024, paused to Nov 2026', nj: '2023年から輸出許可制。2024年12月に対米禁輸、2026年11月まで停止' } } },
-  { m: 'Magnet rare earths (refining)', mj: '磁石用レアアース（精製）', cells: { CN: { v: '~91%', s: 0.91, used: true, kind: 'red', note: 'Seven heavy REEs controlled since Apr 2025; Japan cut off Jan 2026', nj: '2025年4月から重希土類7元素を規制。2026年1月から日本向けを停止' }, US: { v: 'rising', s: 0.12, kind: 'blue' } } },
-  { m: 'Battery graphite', mj: '電池用黒鉛', cells: { CN: { v: '~94%', s: 0.94, used: true, kind: 'red' } } },
-  { m: 'Tungsten (mining)', mj: 'タングステン（採掘）', cells: { CN: { v: '~80%', s: 0.8, used: true, kind: 'red', note: '15 licensed exporters for 2026–27', nj: '2026〜27年の輸出許可企業は15社' } } },
-  { m: 'Cobalt (mine / refine)', mj: 'コバルト（採掘・精製）', cells: { CN: { v: '79% refine', s: 0.79, kind: 'red' }, CD: { v: '>70% mine', s: 0.72, used: true, kind: 'red', note: 'Export quota 87,000 t/yr plus up to 9,600 t discretionary strategic quota, 2026–27', nj: '2026〜27年の輸出枠は年8.7万トン＋裁量的な戦略枠最大9,600トン' } } },
-  { m: 'Copper (refining)', mj: '銅（精錬）', cells: { CN: { v: '~47%', s: 0.47, kind: 'red' } } },
-  { m: 'Nickel (refining)', mj: 'ニッケル（精製）', cells: { CN: { v: 'owns ~75%', s: 0.3, kind: 'red', note: 'Chinese firms own about 75% of Indonesian nickel refining capacity', nj: 'インドネシアのニッケル精製能力の約75%を中国企業が保有' }, ID: { v: 'top', s: 0.6, used: true, kind: 'red', note: 'Ore quota (RKAB) cut for 2026', nj: '2026年の鉱石生産枠（RKAB）を削減' } } },
-  { m: 'Sulfur / sulfuric acid', mj: '硫黄・硫酸', cells: { CN: { v: '>40% of acid output', s: 0.42, used: true, kind: 'red', note: 'By-product acid exports halted 1 May 2026', nj: '2026年5月1日から副産物硫酸の輸出を停止' }, GULF: { v: '~⅓ sulfur', s: 0.5, used: true, kind: 'amber', note: 'Hormuz disruption', nj: 'ホルムズ海峡の混乱' }, RU: { v: 'export ban', s: 0.3, used: true, kind: 'amber' } } },
-  { m: 'Helium', mj: 'ヘリウム', cells: { US: { v: 'largest', s: 0.4, kind: 'blue' }, GULF: { v: '~⅓', s: 0.55, used: true, kind: 'amber', note: 'Ras Laffan struck March 2026', nj: '2026年3月にラスラファンが攻撃を受ける' } } },
-  { m: 'Silicon wafers', mj: 'シリコンウェハー', cells: { JP: { v: '~44%', s: 0.44, kind: 'blue' }, TW: { v: '#3', s: 0.18, kind: 'blue' } } },
-  { m: 'Photoresist', mj: 'フォトレジスト', cells: { JP: { v: '~75%', s: 0.75, used: true, kind: 'blue', note: 'Licensing tightened against Korea in 2019', nj: '2019年に韓国向けの輸出管理を厳格化' } } },
-  { m: 'T-glass cloth', mj: 'Tガラスクロス', cells: { JP: { v: '~85%', s: 0.85, kind: 'blue' }, TW: { v: 'scaling', s: 0.18, kind: 'blue' } } },
-  { m: 'ABF substrate film', mj: 'ABF絶縁フィルム', cells: { JP: { v: '>95%', s: 0.95, used: true, kind: 'blue', note: 'Ajinomoto cut supply to mainland China by 30% in Aug 2026 (commercial allocation)', nj: '2026年8月に味の素が中国本土向け供給を30%削減したと報道（商業的配分）' } } },
-  { m: 'Precision strain-wave reducers', mj: '精密波動歯車減速機', cells: { JP: { v: '~80%', s: 0.8, kind: 'blue', note: 'Harmonic Drive Systems; Chinese makers (Leaderdrive) scaling fast', nj: 'ハーモニック・ドライブ・システムズ。中国メーカー（Leaderdrive）が急拡大' }, CN: { v: 'scaling', s: 0.25, kind: 'red' } } },
-  { m: 'High-purity quartz', mj: '高純度石英', cells: { US: { v: 'dominant', s: 0.85, kind: 'blue', note: 'Spruce Pine, North Carolina', nj: 'ノースカロライナ州スプルースパイン' } } },
-];
-const VJ: Record<string, string> = { 'rising': '拡大中', 'scaling': '増強中', 'largest': '最大', 'dominant': '支配的', 'owns ~75%': '約75%を保有', '>40% of acid output': '硫酸生産の40%超', 'export ban': '輸出禁止', '79% refine': '精製79%', '>70% mine': '採掘70%超', 'top': '首位', '#3': '3位', '~⅓ sulfur': '硫黄の約⅓' };
-const rgb: Record<string, string> = { red: '209,73,91', amber: '237,174,73', blue: '48,99,142' };
-const T = {
-  en: { mat: 'Material (controlling stage)', used: '● = supply restricted 2019–26 (policy, quota, war or commercial allocation). Hover a cell for detail.' },
-  ja: { mat: '素材（支配的な工程）', used: '● = 2019〜26年に供給制限あり（政策・割当・戦争・商業的配分）。セルにカーソルを合わせると詳細を表示。' },
-}[lang];
+const ja = lang === 'ja';
+const T = ja
+  ? {
+      stage: '段階', total: '加重合計', s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて',
+      aria: '鉱山からAIモデルまで、各段階で影響力を持つ国',
+      key: '濃さは、世界の供給に占めるシェアに、選んだ割合でその段階がどれほど重要かを掛け合わせたものです。● は2019〜26年に供給が制限されたことを示します。行ごとに測り方が異なるため、セルにカーソルを合わせると詳細が表示されます。',
+    }
+  : {
+      stage: 'Stage', total: 'Weighted total', s0: 'Software only', s1: 'Chips, power and robots',
+      aria: 'Who holds leverage, from mines to models',
+      key: 'Shading = share of world supply × how much that stage matters at the chosen mix. ● = supply restricted 2019–26. Measures differ by row; hover a cell for detail.',
+    };
+const ABBR: Partial<Record<CountryKey, [string, string]>> = {
+  CN: ['CN', '中国'], JP: ['JP', '日本'], TW: ['TW', '台湾'], KR: ['KR', '韓国'], NL: ['NL', '蘭'], DE: ['DE', '独'],
+  GULF: ['Gulf', '湾岸'], AUCA: ['AU/CA', '豪加'], PROD: ['Producers', '産出国'], OTH: ['Other', '他'],
+};
+const rgb = (k: CountryKey) => {
+  const c = COUNTRIES.find((x) => x.k === k)!;
+  return k === 'US' ? '48,99,142' : k === 'CN' ? '209,73,91' : c.middle ? '0,121,140' : '115,115,115';
+};
+const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(v)}%`);
 ---
-<div class="levmap">
+<div class="levmap" data-lang={lang}>
+  <label class="lm-slider">
+    <span class="lm-ends"><span>{T.s0}</span><span class="lm-val"></span><span>{T.s1}</span></span>
+    <input type="range" min="0" max="1" step="0.01" value="0.4" class="lm-s" />
+  </label>
+  <p class="lm-read" aria-live="polite"></p>
   <div class="scroll">
-    <table>
+    <table aria-label={T.aria}>
       <thead>
         <tr>
-          <th class="m">{T.mat}</th>
-          {cols.map(([, en, ja]) => <th>{lang === 'ja' ? ja : en}</th>)}
+          <th class="m">{T.stage}</th>
+          {COUNTRIES.map((c) => {
+            const full = ja ? c.ja : c.en;
+            const ab = ABBR[c.k]?.[ja ? 1 : 0] ?? full;
+            return <th title={full}><span class="full">{full}</span><span class="abbr" aria-hidden="true">{ab}</span></th>;
+          })}
         </tr>
       </thead>
       <tbody>
-        {rows.map((r) => (
-          <tr>
-            <td class="m">{lang === 'ja' ? r.mj : r.m}</td>
-            {cols.map(([k]) => {
-              const c = r.cells[k];
-              if (!c) return <td class="empty"></td>;
-              const a = Math.max(0.15, c.s);
-              const dark = a > 0.55;
+        {STAGES.map((st, i) => (
+          <tr data-i={i}>
+            <td class="m"><span class="nm">{ja ? st.ja : st.en}</span><span class="wbar"><i></i></span></td>
+            {COUNTRIES.map((c) => {
+              const v = st.share[c.k] ?? 0;
+              const used = st.used?.includes(c.k);
               return (
-                <td style={`background: rgba(${rgb[c.kind ?? 'red']}, ${a}); color: ${dark ? '#fff' : 'inherit'}`} title={(lang === 'ja' ? c.nj : c.note) ?? ''}>
-                  {lang === 'ja' ? (VJ[c.v] ?? c.v) : c.v}{c.used && <span class="used"> ●</span>}
+                <td class="c" data-rgb={rgb(c.k)} data-share={v} title={(ja ? st.noteJa : st.note) || undefined}>
+                  {fmt(v)}{used && <span class="used"> ●</span>}
                 </td>
               );
             })}
           </tr>
         ))}
+        <tr class="tot">
+          <td class="m"><span class="nm">{T.total}</span></td>
+          {COUNTRIES.map((c) => <td class="c" data-rgb={rgb(c.k)} data-k={c.k}></td>)}
+        </tr>
       </tbody>
     </table>
   </div>
-  <p class="key">{T.used}</p>
+  <p class="key">{T.key}</p>
 </div>
 <style>
-  .levmap { max-width: 900px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; }
-  .levmap .scroll { overflow-x: auto; }
-  .levmap table { width: 100%; border-collapse: separate; border-spacing: 3px; font-size: 0.78rem; min-width: 680px; }
-  .levmap th { font-weight: 600; color: var(--post-caption, #737373); padding: 2px 4px; text-align: center; font-size: 0.72rem; }
-  .levmap th.m, .levmap td.m { text-align: left; }
-  .levmap td { text-align: center; padding: 5px 3px; border-radius: 4px; white-space: nowrap; color: var(--post-text, #353535); }
-  .levmap td.m { font-weight: 600; white-space: normal; }
-  .levmap td.empty { background: var(--post-code-bg, #f5f5f5); }
-  .levmap td[title]:not([title='']) { cursor: help; }
+  .levmap { --lm-bg: #fff; max-width: 900px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--post-text, #353535); }
+  :global(.dark) .levmap { --lm-bg: #000; }
+  .levmap .scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .levmap table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 0.74rem; min-width: 640px; font-variant-numeric: tabular-nums; }
+  .levmap th, .levmap td { border: 1.5px solid var(--lm-bg); background-clip: padding-box; }
+  .levmap th { font-weight: 600; color: var(--post-caption, #737373); padding: 2px 3px; text-align: center; font-size: 0.68rem; line-height: 1.2; vertical-align: bottom; max-width: 5.5em; }
+  .levmap th .abbr { display: none; }
+  .levmap th.m, .levmap td.m { text-align: left; position: sticky; left: 0; z-index: 1; background: var(--lm-bg); min-width: 9.5em; max-width: 12em; }
+  .levmap td { text-align: center; padding: 4px 2px; border-radius: 4px; white-space: nowrap; transition: background-color 0.2s, color 0.2s; }
+  .levmap td.m { font-weight: 600; white-space: normal; padding-right: 6px; line-height: 1.2; }
+  .levmap td.c { background-color: var(--post-code-bg, #f5f5f5); }
+  .levmap td[title] { cursor: help; }
+  .levmap .nm { display: block; }
+  .levmap .wbar { display: block; height: 3px; margin-top: 3px; background: var(--post-separator, #e5e5e5); border-radius: 2px; overflow: hidden; }
+  .levmap .wbar i { display: block; height: 100%; width: 0; background: #6a4c93; transition: width 0.2s; }
+  .levmap .used { font-size: 0.85em; }
+  .levmap tr.tot td { border-top: 6px solid var(--lm-bg); font-weight: 700; padding: 6px 2px; }
+  .levmap tr.tot td.m { color: var(--post-heading, #1a1a1a); }
   .levmap .key { font-size: 0.78rem; color: var(--post-caption, #737373); text-align: center; margin: 0.4rem 0 0; }
+  .levmap .lm-slider { display: block; margin-bottom: 0.3rem; }
+  .levmap .lm-ends { display: flex; justify-content: space-between; gap: 0.5rem; font-size: 0.78rem; color: var(--post-caption, #737373); }
+  .levmap .lm-val { font-weight: 600; color: var(--post-heading, #1a1a1a); text-align: center; }
+  .levmap .lm-s { width: 100%; accent-color: #6a4c93; }
+  .levmap .lm-read { text-align: center; font-size: 0.9rem; margin: 0.2rem 0 0.5rem; }
+  .levmap .lm-read b { color: var(--post-heading, #1a1a1a); }
+  @media (max-width: 600px) {
+    .levmap table { min-width: 560px; font-size: 0.7rem; }
+    .levmap th .full { display: none; }
+    .levmap th .abbr { display: inline; }
+    .levmap th.m, .levmap td.m { min-width: 7.5em; }
+    .levmap .lm-ends { flex-wrap: wrap; }
+    .levmap .lm-val { order: 3; flex-basis: 100%; }
+  }
 </style>
+<script>
+  import { DEFAULTS, STAGES, COUNTRIES, stageWeight, leverage, middlePowerLeverage, setShared, onShared, getShared } from './physical-share/model';
+  const AMAX = 0.85;
+  const shade = (td: HTMLElement, a: number) => {
+    td.style.backgroundColor = a > 0.005 ? `rgba(${td.dataset.rgb}, ${a.toFixed(3)})` : '';
+    td.style.color = a > 0.5 ? '#fff' : '';
+  };
+  const pct = (v: number) => Math.round(v * 100);
+  document.querySelectorAll<HTMLElement>('.levmap').forEach((root, idx) => {
+    const ja = root.dataset.lang === 'ja';
+    const input = root.querySelector<HTMLInputElement>('.lm-s')!;
+    const val = root.querySelector<HTMLElement>('.lm-val')!;
+    const read = root.querySelector<HTMLElement>('.lm-read')!;
+    const rows = Array.from(root.querySelectorAll<HTMLTableRowElement>('tr[data-i]'));
+    const totals = Array.from(root.querySelectorAll<HTMLElement>('tr.tot td[data-k]'));
+    const src = `levmap-${idx}`;
+    function render(s: number) {
+      input.value = String(s);
+      const X = Math.round(s * 100);
+      val.textContent = ja ? `新しい物理的なモノが必要な割合：${X}%` : `${X}% of progress needs new physical things`;
+      const ws = STAGES.map((st) => stageWeight(st, s));
+      const wMax = Math.max(...ws) || 1;
+      rows.forEach((tr) => {
+        const rel = ws[Number(tr.dataset.i)] / wMax;
+        tr.querySelector<HTMLElement>('.wbar i')!.style.width = `${(rel * 100).toFixed(1)}%`;
+        tr.querySelectorAll<HTMLElement>('td[data-share]').forEach((td) => {
+          shade(td, AMAX * (parseFloat(td.dataset.share!) / 100) * rel);
+        });
+      });
+      const tv = COUNTRIES.map((c) => leverage(s, [c.k]));
+      const tMax = Math.max(...tv) || 1;
+      totals.forEach((td, i) => {
+        const v = tv[i];
+        td.textContent = v <= 0 ? '' : v < 0.005 ? '<1%' : `${pct(v)}%`;
+        shade(td, AMAX * (v / tMax));
+      });
+      const U = pct(leverage(s, ['US']));
+      const C = pct(leverage(s, ['CN']));
+      const M = pct(middlePowerLeverage(s));
+      read.innerHTML = ja
+        ? `割合${X}%では、加重したサプライチェーンのうち米国<b>${U}%</b>、中国<b>${C}%</b>、中堅国の合計<b>${M}%</b>`
+        : `At ${X}%: US <b>${U}%</b>, China <b>${C}%</b>, middle powers combined <b>${M}%</b> of the weighted supply chain`;
+    }
+    input.addEventListener('input', () => { const s = parseFloat(input.value); render(s); setShared(s, src); });
+    onShared(src, render);
+    render(typeof window !== 'undefined' ? getShared() : DEFAULTS.s);
+  });
+</script>

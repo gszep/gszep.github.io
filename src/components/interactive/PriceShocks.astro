@@ -3,20 +3,21 @@ interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
 const en = lang === 'en';
 const rows: [string, string, number, string, string][] = [
-  [en ? 'Tungsten (APT), Jan–Apr 2026' : 'タングステン（APT）2026年1〜4月', 'policy', 350, '+350%', ''],
-  [en ? 'Gallium outside China, since early 2025' : '中国国外のガリウム（2025年初から）', 'policy', 200, '+200%', ''],
-  [en ? 'Helium, late Feb → Apr 2026' : 'ヘリウム（2026年2月末→4月）', 'war', 350, '~4.5×', ''],
-  [en ? 'Power transformers' : '電力用変圧器', 'capacity', 77, '+77%', ''],
-  [en ? 'Sulfuric acid in Chile, under 7 weeks' : 'チリの硫酸（7週間未満）', 'war', 100, '~2×', ''],
-  [en ? 'Copper vs 2026 consensus forecast' : '銅（2026年の予測比）', 'capacity', 35, '+35%', ''],
+  [en ? 'Tungsten (APT), Jan → late Apr 2026' : 'タングステン（APT）2026年1月→4月下旬', 'policy', 350, '+350%', ''],
+  [en ? 'Gallium outside China, early 2025 → Apr 2026' : '中国国外のガリウム、2025年初→2026年4月', 'policy', 200, '+200%', ''],
+  [en ? 'Helium, late Feb → Apr 2026' : 'ヘリウム、2026年2月末→4月', 'war', 350, '~4.5×', ''],
+  [en ? 'Power transformers, since 2019' : '電力用変圧器、2019年以降', 'capacity', 77, '+77%', ''],
+  [en ? 'Sulfuric acid in Chile, under 7 weeks, 2026' : 'チリの硫酸、2026年の7週間未満', 'war', 100, '~2×', ''],
+  [en ? 'Copper, Aug 2026 vs 2026 forecast' : '銅、2026年8月の価格と年間予想の比較', 'capacity', 35, '+35%', ''],
+  [en ? 'Copper, year to Aug 2026' : '銅、2026年初→8月', 'capacity', 18, '~+18%', ''],
   [en ? 'Gallium inside China' : '中国国内のガリウム', 'flat', 1, en ? '~flat' : 'ほぼ横ばい', ''],
 ];
 const col: Record<string, string> = { policy: '#d1495b', war: '#edae49', capacity: '#30638e', flat: '#999' };
-const leg = en ? [['policy', 'export policy'], ['war', 'war / by-product'], ['capacity', 'capacity']] : [['policy', '輸出政策'], ['war', '戦争・副産物'], ['capacity', '生産能力']];
+const leg = en ? [['policy', 'export policy'], ['war', 'war / by-product'], ['capacity', 'capacity / outage']] : [['policy', '輸出政策'], ['war', '戦争・副産物'], ['capacity', '生産能力・操業停止']];
 const X0 = 300, X1 = 690;
 ---
 <div class="pshock">
-  <svg viewBox={`0 0 760 ${rows.length * 30 + 50}`} role="img" aria-label="2026 price shocks">
+  <svg viewBox={`0 0 760 ${rows.length * 30 + 50}`} role="img" aria-label={en ? "Selected price comparisons with different baselines" : "基準の異なる主な価格比較"}>
     <g transform="translate(300,14)">
       {leg.map(([k, t], i) => (
         <g transform={`translate(${i * 130},0)`}><rect width="10" height="10" y="-9" rx="2" fill={col[k]} /><text x="14" y="0" class="lg">{t}</text></g>

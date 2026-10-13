@@ -1,0 +1,172 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+const T = ja
+  ? {
+      s0: 'ソフトウェアのみ', sNow: '現在（概算）', s1: 'チップ・電力・ロボットすべて',
+      ylab: '倍増にかかる時間', cap: 'AIの能力', phys: '物理的な設備の拡大', robot: 'ロボット生産',
+      ideas: 'アイデアが遅い側', atoms: 'モノづくりが遅い側',
+      adv: '前提を変える', gi: 'アイデアだけで能力が伸びる速さ', tp: '物理的な設備の拡大が倍増する最短期間',
+      note: 'モデル：AIの能力は、より良いアイデアと、より多くの物理的なモノという2つの材料のうち、遅いほうの速さでしか伸びません。アイデアの速さとモノづくりの速さは、調整できる仮定です。銅と磁石の入力値は、後に出てくる競争の図と同じです。時期は例示として扱ってください。',
+      aria: 'AIの進歩のうち新しい物理的なモノを必要とする割合と、成長の速さ・素材不足の時期の関係',
+    }
+  : {
+      s0: 'Software only', sNow: 'Today (rough)', s1: 'Chips, power and robots',
+      ylab: 'time to double', cap: 'AI capability', phys: 'physical build-out', robot: 'robot production',
+      ideas: 'ideas are the slower step', atoms: 'building is the slower step',
+      adv: 'Change the assumptions', gi: 'How fast ideas alone raise capability', tp: 'Fastest doubling time of physical build-out',
+      note: 'Model: AI capability grows only as fast as the slower of its two ingredients, better ideas and more physical things. The speeds of ideas and of building are adjustable assumptions; copper and magnet inputs match the race chart further down. Treat the dates as illustrations.',
+      aria: 'How the physical share of AI progress changes growth speed and material shortage dates',
+    };
+---
+
+<div class="pss" id="pss" data-lang={lang}>
+  <label class="pss-slider">
+    <span class="pss-ends"><span>{T.s0}</span><span>{T.s1}</span></span>
+    <input type="range" id="pss-s" min="0" max="1" step="0.01" value="0.4" aria-describedby="pss-share" />
+    <span class="pss-now" id="pss-nowtick">▲ {T.sNow}</span>
+  </label>
+  <p class="pss-share" id="pss-share" aria-live="polite"></p>
+
+  <div class="pss-chart">
+  <svg viewBox="0 0 660 330" preserveAspectRatio="xMidYMid meet" aria-label={T.aria}>
+    <rect id="pss-band" x="96" y="20" width="0" height="270" class="band" />
+    <text id="pss-band-l" x="102" y="34" class="bandtxt">{T.ideas}</text>
+    <text id="pss-band-r" x="634" y="34" text-anchor="end" class="bandtxt">{T.atoms}</text>
+    <g id="pss-grid" class="grid"></g>
+    <g class="axes"><line x1="96" y1="20" x2="96" y2="290" /><line x1="96" y1="290" x2="640" y2="290" /></g>
+    <text x="16" y="155" transform="rotate(-90 16 155)" text-anchor="middle" class="axlabel">{T.ylab}</text>
+    <path id="pss-robot" class="l-robot" />
+    <path id="pss-phys" class="l-phys" />
+    <path id="pss-cap" class="l-cap" />
+    <line id="pss-marker" y1="20" y2="290" class="marker" />
+  </svg>
+  </div>
+  <div class="pss-leg">
+    <span><i class="sw cap"></i>{T.cap}</span>
+    <span><i class="sw phys"></i>{T.phys}</span>
+    <span><i class="sw robot"></i>{T.robot}</span>
+  </div>
+
+  <div class="pss-cells" aria-live="polite">
+    <div><span id="pss-c1"></span></div>
+    <div><span id="pss-c2"></span></div>
+    <div><span id="pss-c3"></span></div>
+    <div><span id="pss-c4"></span></div>
+  </div>
+
+  <details class="pss-adv">
+    <summary>{T.adv}</summary>
+    <label>{T.gi}: <b id="pss-gi-v"></b><input type="range" id="pss-gi" min="0.3" max="3" step="0.1" value="1" /></label>
+    <label>{T.tp}: <b id="pss-tp-v"></b><input type="range" id="pss-tp" min="0.5" max="4" step="0.1" value="1.5" /></label>
+  </details>
+  <p class="pss-note">{T.note}</p>
+</div>
+
+<style is:global>
+  .pss { width: 100%; max-width: 760px; margin: 0 auto; color: var(--post-text, #353535); font-family: ui-sans-serif, system-ui, sans-serif; }
+  .pss-chart { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .pss svg { width: 100%; min-width: 560px; height: auto; display: block; }
+  .pss-slider { display: block; position: relative; padding-bottom: 1.2rem; }
+  .pss-ends { display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--post-caption, #737373); }
+  .pss-slider input { width: 100%; accent-color: #6a4c93; }
+  .pss-now { position: absolute; left: 40%; transform: translateX(-50%); bottom: 0; font-size: 0.75rem; color: var(--post-caption, #737373); white-space: nowrap; }
+  .pss-share { text-align: center; font-weight: 600; margin: 0.2rem 0 0.4rem; color: var(--post-heading, #1a1a1a); }
+  .pss .axes line { stroke: var(--post-separator, #bbb); }
+  .pss .grid line { stroke: var(--post-separator, #eee); stroke-dasharray: 2 3; }
+  .pss .grid text, .pss .axlabel, .pss .bandtxt { fill: var(--post-caption, #737373); font-size: 11px; }
+  .pss .axlabel { font-size: 12px; }
+  .pss path { fill: none; stroke-width: 2.5; }
+  .pss .l-cap { stroke: #6a4c93; }
+  .pss .l-phys { stroke: #d1495b; }
+  .pss .l-robot { stroke: #edae49; stroke-dasharray: 6 4; }
+  .pss .band { fill: #6a4c93; opacity: 0.08; }
+  .pss .marker { stroke: var(--post-heading, #1a1a1a); stroke-width: 1.5; stroke-dasharray: 3 3; }
+  .pss-leg { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; justify-content: center; font-size: 0.8rem; color: var(--post-caption, #737373); margin-top: 0.3rem; }
+  .pss-leg .sw { display: inline-block; width: 20px; height: 0; border-top: 2.5px solid; vertical-align: middle; margin-right: 0.35rem; }
+  .pss-leg .cap { border-color: #6a4c93; }
+  .pss-leg .phys { border-color: #d1495b; }
+  .pss-leg .robot { border-top: 2.5px dashed #edae49; }
+  .pss-cells { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.5rem; margin: 0.6rem 0; }
+  .pss-cells div { border: 1px solid var(--post-separator, #e5e5e5); border-radius: 6px; padding: 0.5rem 0.7rem; font-size: 0.9rem; }
+  .pss-cells b { color: var(--post-heading, #1a1a1a); white-space: nowrap; }
+  .pss-adv { margin-top: 0.8rem; font-size: 0.85rem; }
+  .pss-adv summary { cursor: pointer; color: var(--post-caption, #737373); }
+  .pss-adv label { display: block; margin: 0.5rem 0; }
+  .pss-adv input { width: 100%; accent-color: #6a4c93; }
+  .pss-note { font-size: 0.78rem; color: var(--post-caption, #737373); margin-top: 0.6rem; }
+  @media (max-width: 560px) { .pss-cells { grid-template-columns: 1fr; } }
+</style>
+
+<script>
+  import { DEFAULTS, rates, model, sStar, crunchYear, COPPER, MAGNETS, setShared, onShared } from './physical-share/model';
+
+  const root = document.getElementById('pss');
+  if (root) {
+    const ja = root.dataset.lang === 'ja';
+    const $ = (id: string) => document.getElementById(id)!;
+    const sIn = $('pss-s') as HTMLInputElement;
+    const giIn = $('pss-gi') as HTMLInputElement;
+    const tpIn = $('pss-tp') as HTMLInputElement;
+    sIn.value = String(DEFAULTS.s);
+
+    const X0 = 96, X1 = 640, Y0 = 20, Y1 = 290;
+    const LMIN = Math.log10(1 / 24), LMAX = Math.log10(50); // two weeks to 50 years
+    const x = (v: number) => X0 + v * (X1 - X0);
+    const y = (yrs: number) => {
+      const l = Math.min(LMAX, Math.max(LMIN, Math.log10(yrs)));
+      return Y1 - ((l - LMIN) / (LMAX - LMIN)) * (Y1 - Y0);
+    };
+
+    const grid = $('pss-grid');
+    const ticks: [number, string, string][] = [[1 / 12, '1 month', '1か月'], [0.5, '6 months', '6か月'], [1, '1 year', '1年'], [5, '5 years', '5年'], [20, '20 years', '20年']];
+    grid.innerHTML = ticks.map(([v, en, jn]) => `<line x1="${X0}" x2="${X1}" y1="${y(v)}" y2="${y(v)}"/><text x="${X0 - 6}" y="${y(v) + 4}" text-anchor="end">${ja ? jn : en}</text>`).join('')
+      + [0, 0.25, 0.5, 0.75, 1].map((v) => `<text x="${x(v)}" y="${Y1 + 16}" text-anchor="middle">${Math.round(v * 100)}%</text>`).join('');
+
+    const fmtYear = (yr: number) => (yr > 2050 ? (ja ? '2050年より後' : 'after 2050') : (ja ? `${Math.round(yr)}年ごろ` : `around ${Math.round(yr)}`));
+    function path(f: (v: number) => number) {
+      let d = '';
+      for (let i = 0; i <= 200; i++) {
+        const v = i / 200;
+        d += `${i ? 'L' : 'M'}${x(v).toFixed(1)},${y(Math.LN2 / f(v)).toFixed(1)}`;
+      }
+      return d;
+    }
+
+    function render() {
+      const s = parseFloat(sIn.value);
+      const giOom = parseFloat(giIn.value);
+      const tp = parseFloat(tpIn.value);
+      const { gI, gP } = rates(giOom, tp);
+      $('pss-gi-v').textContent = ja ? `年${Math.pow(10, giOom).toFixed(giOom < 1 ? 1 : 0)}倍` : `${Math.pow(10, giOom).toFixed(giOom < 1 ? 1 : 0)}× a year`;
+      $('pss-tp-v').textContent = ja ? `${tp.toFixed(1)}年` : `${tp.toFixed(1)} years`;
+
+      $('pss-cap').setAttribute('d', path((v) => model(v, gI, gP).gE));
+      $('pss-phys').setAttribute('d', path((v) => model(v, gI, gP).gPhys));
+      $('pss-robot').setAttribute('d', path((v) => model(v, gI, gP).gRob));
+      $('pss-band').setAttribute('width', String(x(sStar(gI, gP)) - X0));
+      const mk = $('pss-marker');
+      mk.setAttribute('x1', String(x(s)));
+      mk.setAttribute('x2', String(x(s)));
+
+      const m = model(s, gI, gP);
+      const pct = Math.round(s * 100);
+      $('pss-share').textContent = ja ? `AIの進歩の約${pct}%が新しい物理的なモノを必要とする` : `About ${pct}% of AI's progress needs new physical things`;
+      sIn.setAttribute('aria-valuetext', $('pss-share').textContent || '');
+      const months = (12 * Math.LN2) / m.gE;
+      const lead = Math.exp(m.gE);
+      const fmtLead = lead >= 10 ? lead.toFixed(0) : lead.toFixed(1);
+      const mo = months < 1 ? months.toFixed(1) : months.toFixed(0);
+      $('pss-c1').innerHTML = ja ? `AIの能力は<b>${mo}か月</b>ごとに倍増` : `AI capability doubles every <b>${mo} months</b>`;
+      $('pss-c2').innerHTML = ja ? `1年先行すれば能力は<b>${fmtLead}倍</b>` : `A one-year lead means <b>${fmtLead}×</b> the capability`;
+      $('pss-c3').innerHTML = ja ? `データセンター用の銅が足りなくなるのは<b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>` : `Copper for data centres runs short <b>${fmtYear(crunchYear(COPPER.ratio, m.gPhys, COPPER.g))}</b>`;
+      $('pss-c4').innerHTML = ja ? `ロボット用の磁石が足りなくなるのは<b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>` : `Magnets for robots run short <b>${fmtYear(crunchYear(MAGNETS.ratio, m.gRob, MAGNETS.g))}</b>`;
+    }
+
+    sIn.addEventListener('input', () => { render(); setShared(parseFloat(sIn.value), 'pss'); });
+    [giIn, tpIn].forEach((el) => el.addEventListener('input', render));
+    onShared('pss', (v) => { sIn.value = String(v); render(); });
+    render();
+  }
+</script>
