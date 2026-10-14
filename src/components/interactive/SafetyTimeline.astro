@@ -10,19 +10,18 @@ interface Lane { name: string; events: Ev[] }
 
 const en: Lane[] = [
   { name: 'Singapore', events: [
-    { kind: 'deadline', t: 0.2, label: 'Act passed 7 Oct', above: true },
-    { kind: 'window', t0: 0.25, t1: 5, open: true, label: 'Codes of practice drafted' },
+    { kind: 'deadline', t: 0.2, label: 'Bill passed 7 Oct', above: true },
+    { kind: 'window', t0: 0.25, t1: 11, open: true, label: 'Codes drafted · commencement expected in 2027' },
   ] },
   { name: 'Japan', events: [
-    { kind: 'window', t0: 0.8, t1: 3.6, label: 'AI Act review from late Oct' },
-    { kind: 'window', t0: 3.7, t1: 8.7, open: true, label: 'Possible bill in 2027 Diet', above: true },
+    { kind: 'window', t0: 0.8, t1: 11, open: true, label: 'AI Act review from late Oct · no bill timetable set' },
   ] },
   { name: 'EU', events: [
-    { kind: 'deadline', t: 1.4, label: '12 Nov Gigafactory tender closes', above: true },
+    { kind: 'deadline', t: 2 + 2 / 31, label: '3 Dec Gigafactory tender closes (17:00 CET)', above: true },
     { kind: 'deadline', t: 2.27, label: '9 Dec liability law deadline' },
   ] },
   { name: 'EU AI Act', events: [
-    { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'Evaluator roster for model testing · Code of Practice review ~Aug 2027' },
+    { kind: 'window', t0: 0.3, t1: 11, open: true, label: 'Evaluator roster · Code review at least every two years (date not set)' },
   ] },
   { name: 'South Korea', events: [
     { kind: 'window', t0: 0, t1: 3.7, label: 'Notices before the grace period ends' },
@@ -39,18 +38,17 @@ const en: Lane[] = [
 const ja: Lane[] = [
   { name: 'シンガポール', events: [
     { kind: 'deadline', t: 0.2, label: '10/7 法案成立', above: true },
-    { kind: 'window', t0: 0.25, t1: 5, open: true, label: '実施規則・行動規範の策定' },
+    { kind: 'window', t0: 0.25, t1: 11, open: true, label: '実施規則・行動規範の策定（施行は2027年の見込み）' },
   ] },
   { name: '日本', events: [
-    { kind: 'window', t0: 0.8, t1: 3.6, label: '10月下旬からAI法見直し' },
-    { kind: 'window', t0: 3.7, t1: 8.7, open: true, label: '2027年通常国会での法案の可能性', above: true },
+    { kind: 'window', t0: 0.8, t1: 11, open: true, label: '10月下旬からAI法見直し（法案提出の日程は未定）' },
   ] },
   { name: 'EU', events: [
-    { kind: 'deadline', t: 1.4, label: '11/12 ギガファクトリー入札締切', above: true },
+    { kind: 'deadline', t: 2 + 2 / 31, label: '12/3 ギガファクトリー入札締切（17時 CET）', above: true },
     { kind: 'deadline', t: 2.27, label: '12/9 製造物責任法の期限' },
   ] },
   { name: 'EU AI法', events: [
-    { kind: 'window', t0: 0.3, t1: 10.3, open: true, label: 'モデル評価の評価者名簿・行動規範の見直し（2027年8月頃）' },
+    { kind: 'window', t0: 0.3, t1: 11, open: true, label: '評価者名簿・行動規範は少なくとも2年ごとに見直し（日程未定）' },
   ] },
   { name: '韓国', events: [
     { kind: 'window', t0: 0, t1: 3.7, label: '猶予期間終了前の告示' },
@@ -66,8 +64,8 @@ const ja: Lane[] = [
 
 const lanes = lang === 'ja' ? ja : en;
 const T = lang === 'ja'
-  ? { months: ['10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y0: '2026', y1: '2027', today: '10/12', dl: '期限', ea: '最も早い日付', win: '起草・審議の期間', sum: '首脳会議', aria: '6つの安全条件を盛り込める法的機会の時系列' }
-  : { months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], y0: '2026', y1: '2027', today: '12 Oct', dl: 'fixed deadline', ea: 'earliest date', win: 'drafting window', sum: 'summit', aria: 'Timeline of legal openings for the six safety conditions' };
+  ? { months: ['10月', '11月', '12月', '1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月'], y0: '2026', y1: '2027', today: '10/12', dl: '公表日・期限', ea: '最も早い日付', win: '起草・審議の期間', sum: '首脳会議', aria: '6つの安全条件を盛り込める法的機会の時系列' }
+  : { months: ['Oct', 'Nov', 'Dec', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'], y0: '2026', y1: '2027', today: '12 Oct', dl: 'date / deadline', ea: 'earliest date', win: 'drafting window', sum: 'summit', aria: 'Timeline of legal openings for the six safety conditions' };
 
 const X0 = 150, X1 = 740, M = 11;
 const x = (t: number) => X0 + (t / M) * (X1 - X0);
