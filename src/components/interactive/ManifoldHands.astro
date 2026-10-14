@@ -167,11 +167,23 @@ const source = lang === 'ja'
       return document.documentElement.classList.contains('dark') ? 0xdde4ff : 0x172033;
     }
 
+    // /manifold/ belongs to a separate GitHub Pages project on the live domain.
+    // Keep this post's assets outside that project's route namespace.
+    async function loadData(file) {
+      const url = `/data/manifold/${file}`;
+      const response = await fetch(url);
+      if (!response.ok) throw new Error(`${url}: HTTP ${response.status}`);
+      if (response.headers.get('content-type')?.includes('text/html')) {
+        throw new Error(`${url}: expected hand data, received HTML`);
+      }
+      return response;
+    }
+
     async function load() {
-      meta = await fetch('/manifold/data/writing-meta.json').then(r => r.json());
-      const faces = new Uint32Array(await fetch('/manifold/data/faces.bin').then(r => r.arrayBuffer()));
+      meta = await loadData('writing-meta.json').then(r => r.json());
+      const faces = new Uint32Array(await loadData('faces.bin').then(r => r.arrayBuffer()));
       trajectories = await Promise.all(meta.ids.map(async id => {
-        const q = new Uint16Array(await fetch(`/manifold/data/traj/${id}.bin`).then(r => r.arrayBuffer()));
+        const q = new Uint16Array(await loadData(`traj/${id}.bin`).then(r => r.arrayBuffer()));
         const [mn, mx] = meta.bboxes[id];
         const scale = mx.map((v, axis) => (v - mn[axis]) / 65535);
         const out = new Float32Array(q.length);
