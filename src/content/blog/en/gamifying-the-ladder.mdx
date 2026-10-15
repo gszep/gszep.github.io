@@ -1,0 +1,66 @@
+---
+title: "Gamifying the Ladder"
+description: "An interactive sketch of AI learning through useful achievements, shared work and support for the next step—without turning resource use into a ranking."
+date: 2026-10-16
+tags: ["ai", "education"]
+order: 1
+draft: false
+---
+
+import TalentEngineTree from '../../../components/interactive/TalentEngineTree.astro';
+
+*What if learning to work with AI unlocked the support for your next useful step?*
+
+You build something that works. You catch a mistake in an AI-generated answer. You help someone else reproduce a result. What should happen next?
+
+Fiza and I have been sketching an idea: make those moments visible, then connect them to another possibility. An achievement might open a new challenge, some model credits, time with an expert, or compute for an experiment. The reward would help you do something you could not quite do before.
+
+I made a small interactive tree to think with. This is a prototype, not an announced programme. The person, resources and notifications in it are fictional.
+
+<TalentEngineTree lang="en" />
+
+Pick a goal, inspect its evidence requirements, and try the demo achievement button. Then follow the paths that open.
+
+## A ladder with more than one way up
+
+The prototype has 20 achievements across five bands: get a first useful result; supervise a workflow; make knowledge reusable; verify a repeatable system; and look after something other people rely on.
+
+There are four starting routes: making software, investigating a question, helping someone succeed, and building in the physical world. They branch and cross. Someone arriving through robotics can meet someone arriving through research at the problem of reproducing a result. Helping a peer is an entrance, not a consolation prize for people who do not code.
+
+By “up,” I mean being able to frame, delegate, check, share and improve more demanding work. I do not mean using more agents, buying more tools or outranking another person. The tree is a sketch of possible development, not a validated scale of ability. It should help you find a next step without insisting that everyone takes the same route.
+
+## Give the next step what it needs
+
+The prototype keeps three resources distinct: model-token credits, expert minutes and GPU-hours. They answer different needs.
+
+Suppose you can supervise a multi-step job and check its output. More model credits could let you try that workflow on several different cases. If you have reproduced a research result, GPU-hours might support a larger experiment. If a robot behaves differently from its simulation, compute could support a simulation sweep—but a short conversation with someone who understands the hardware might be more useful.
+
+That last distinction matters. More tokens cannot fix every obstacle. Each offer should answer two questions: **What could you do next? Why would this resource help?**
+
+The demo records illustrative rewards separately. They are support balances, not scores. There is no token-spending leaderboard and no reason to burn through a balance to look committed. Getting a good result efficiently should count. So should leaving behind a method that saves someone else a week.
+
+## Let experts find people through their work
+
+The “Bounties” and “Expert demo” tabs explore another connection. An expert posts a problem, observable acceptance criteria and a promised illustrative reward. A learner can see what would count before attempting it.
+
+Try the citation-checking example. Completing the linked achievement makes the bounty ready for review; it does not prove that the bounty’s own criteria have been met. A separate “Simulate goal verified” action releases the sample reward and sends a notification to the fictional expert. You can also post a sample bounty yourself.
+
+Everything here is simulated. A real version would need someone accountable for checking the evidence. The interesting possibility is the introduction: an expert encounters a person through a piece of relevant, checked work. The learner gets a clear problem and a reason to make contact.
+
+I want that to work for shared methods too: a reproducible experiment, a correction that prevents a recurring mistake, or instructions another person can actually follow. AI-assisted work becomes more valuable to a group when people can understand, challenge and continue one another’s work.
+
+## Achievement is not the same as funding
+
+One idea we considered was to start with many small grants, then halve the recipients and double the next grant. It is an appealing allocation pattern. It is a poor definition of learning: even if everyone improves, half still miss the next award.
+
+I would separate the two decisions. Everyone meeting a milestone should be able to earn recognition. Limited additional support needs a different judgment: where is it likely to make a useful difference? The prototype’s instant rewards make the interaction visible; they do not settle how a real pool would be funded or allocated.
+
+Calling it an “unlock” does not remove the pressure of scarce resources. Whether people retain basic access, can retry, or leave a round needs an explicit answer before any real scheme starts.
+
+## Does making it playful help?
+
+I hope the tree makes possibilities easier to see. That is a design hypothesis, not an established benefit. In a [2017 experiment by Mekler and colleagues](https://doi.org/10.1016/j.chb.2015.08.048), game elements increased the quantity of image annotations without improving intrinsic motivation. A [2017 study by Sailer and colleagues](https://doi.org/10.1016/j.chb.2016.12.033) found that particular combinations supported feelings of competence or connection, but not the intended autonomy effects. Neither tested a token-grant programme.
+
+Would a beginner feel invited by this tree, or judged? Which unlock would genuinely help? How much reviewing would it demand, and where would slow projects fit? Could it sustain the less visible work of helping peers?
+
+Try the interaction and tell me where you would go next—or where you would get stuck. I am more interested in a missing path or an unhelpful reward than in whether the idea sounds exciting.
