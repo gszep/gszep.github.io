@@ -2,1518 +2,784 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="color-scheme" content="dark">
-<meta name="theme-color" content="#070C18">
-<meta name="description" content="Concept prototype: a gamified student achievement tree for the Talent Engine — different starting routes climbing one capability ladder, with illustrative rewards and expert bounties. Sample data only.">
-<title>Your next possibility — Talent Engine concept prototype</title>
+<meta name="theme-color" content="#070B16">
+<title>Capability tech tree — Talent Engine prototype</title>
+<meta name="description" content="Interactive concept prototype: a branching capability tech tree from first AI results to agent orchestration, fleet management and metacognition. Sample data only.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23F2C94C' d='M12 2.6 13.8 10.2 21.4 12 13.8 13.8 12 21.4 10.2 13.8 2.6 12 10.2 10.2Z'/%3E%3C/svg%3E">
 <style>
-/* ============================================================
-   Talent Engine — student achievement tree (concept prototype)
-   Self-contained: no external fonts, scripts, images or network.
-   ============================================================ */
 :root{
-  --bg:#070C18; --bg2:#0A1120;
-  --panel:#0F1830; --panel-2:#121D3B;
-  --line:rgba(238,231,216,.13); --line-strong:rgba(238,231,216,.26);
-  --ink:#F2EBDB; --ink-2:#CBC5B4; --mute:#8D99B4; --mute-2:#5E6B87;
-  --apps:#3ECF8E; --research:#A78BFA; --collab:#F2907B; --robots:#EFA933; --peak:#F2C94C;
-  --gold:#F2C94C; --blue:#8FB8E8; --red:#F58C8C; --ok:#3ECF8E; --comp:#5BC9E0;
-  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+  --bg:#070B16;--panel:#0E1628;--panel2:#141E37;--line:rgba(230,225,210,.12);--line2:rgba(230,225,210,.24);
+  --ink:#F1ECDF;--ink2:#C9C3B3;--mute:#8C96AE;--mute2:#5B6680;
+  --research:#A78BFA;--create:#F472B6;--make:#F5A524;--organize:#FB8A6E;
+  --agency:#34D399;--meta:#60A5FA;--bridge:#F2C94C;--cap:#F2C94C;--gold:#F2C94C;--comp:#5BC9E0;--mins:#8FB8E8;
   --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
 }
 *{box-sizing:border-box}
-html{scroll-behavior:smooth}
-body{
-  margin:0; color:var(--ink); font-family:var(--sans); font-size:15px; line-height:1.55;
-  background:
-    radial-gradient(1150px 520px at 12% -8%, #142344 0%, rgba(20,35,68,0) 62%),
-    radial-gradient(950px 460px at 88% -10%, #1B1637 0%, rgba(27,22,55,0) 58%),
-    var(--bg);
-  min-height:100vh;
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 600px at 50% -12%,#14203d,transparent 62%),var(--bg);color:var(--ink);
+  font:14px/1.5 var(--sans);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{display:flex;align-items:center;gap:10px 16px;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--gold);border:1px solid var(--line2);background:#101a31}
+.brand b{font-family:var(--serif);font-size:17px;display:block;line-height:1.1}
+.brand small{color:var(--mute);font-size:11.5px}
+.badge{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line2);border-radius:99px;padding:3px 9px;white-space:nowrap}
+.bal{display:flex;gap:8px;margin-left:auto;align-items:center;overflow-x:auto;scrollbar-width:none;max-width:100%}
+.stat{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 10px;white-space:nowrap}
+.stat .n{font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-size:10.5px;color:var(--mute)}
+.stat.t .ic{color:var(--gold)}.stat.m .ic{color:var(--mins)}.stat.g .ic{color:var(--comp)}.stat.p .ic{color:var(--agency)}
+.ghost{border:1px solid var(--line2);border-radius:9px;padding:6px 11px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.ghost:hover{color:var(--ink);border-color:var(--ink2)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{padding:6px 14px;border-radius:99px;color:var(--mute);border:1px solid transparent;white-space:nowrap;font-size:13.5px}
+.tab:hover{color:var(--ink2)}
+.tab[aria-selected="true"]{color:var(--ink);background:var(--panel2);border-color:var(--line2)}
+.tab .cnt{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:99px;background:var(--gold);color:#1a1405;font-size:11px;font-weight:700;text-align:center}
+.tab .cnt:empty{display:none}
+
+main{flex:1;min-height:0;display:flex}
+.view{flex:1;min-height:0;min-width:0}
+.view[hidden]{display:none!important}
+
+/* tree view */
+#view-tree{display:grid;grid-template-columns:minmax(0,1fr) 380px}
+.stage{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
+.dest{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.dest .lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-right:4px;white-space:nowrap}
+.dest button{white-space:nowrap;font-size:12.5px;padding:5px 11px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2)}
+.dest button:hover{color:var(--ink);border-color:var(--ink2)}
+.dest button[data-go="cap"]{border-color:rgba(242,201,76,.6);color:var(--gold)}
+#viewport{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;outline:none;
+  background-image:radial-gradient(rgba(230,225,210,.07) 1px,transparent 1px);background-size:26px 26px}
+#viewport.dragging{cursor:grabbing}
+#viewport:focus-visible{box-shadow:inset 0 0 0 2px var(--ink)}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#world.glide{transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.trunk{fill:currentColor;opacity:.07}
+.tierline{stroke:rgba(230,225,210,.06);stroke-dasharray:2 8}
+.e{fill:none;stroke:rgba(230,225,210,.18);stroke-width:2}
+.e.any{stroke-dasharray:7 6}
+.e.done{stroke:var(--c);opacity:.85;stroke-width:2.6}
+.e.hi{stroke:var(--ink);opacity:1;stroke-width:3.2}
+.tierlab{position:absolute;left:14px;width:150px;color:var(--mute)}
+.tierlab b{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:13px;color:var(--mute2)}
+.tierlab span{font-size:13px;font-weight:650;color:var(--ink2);line-height:1.25;display:block}
+.lane{position:absolute;width:200px;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--c);font-weight:700}
+.lane small{display:block;letter-spacing:0;text-transform:none;font-weight:400;color:var(--mute);font-size:11.5px}
+.trunklab{position:absolute;width:200px;text-align:center;padding:10px 8px;border:1px dashed var(--c);border-radius:12px;color:var(--c);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(7,11,22,.6)}
+.trunklab small{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink2);font-size:11.5px;margin-top:2px}
+
+.node{position:absolute;width:180px;height:84px;display:flex;flex-direction:column;justify-content:space-between;gap:3px;padding:8px 10px 8px;text-align:left;
+  border-radius:12px;background:linear-gradient(180deg,#121c33,#0b1324);border:1px solid var(--line);border-top:3px solid var(--c);
+  box-shadow:0 8px 20px rgba(0,0,0,.45);transition:opacity .2s,border-color .2s,box-shadow .2s}
+.node:hover{border-color:var(--line2);border-top-color:var(--c)}
+.node .nh{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--c);font-weight:700}
+.node .nh .ic{width:14px;height:14px}
+.node .nt{font-weight:650;font-size:12.8px;line-height:1.22;color:var(--ink)}
+.node .nr{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden}
+.node.locked{opacity:.6}
+.node.locked .nt{color:var(--ink2)}
+.node.locked .nh .st{color:var(--mute2)}
+.node.open{border-color:color-mix(in srgb,var(--c) 55%,transparent);border-top-color:var(--c);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 25%,transparent),0 0 26px color-mix(in srgb,var(--c) 28%,transparent),0 8px 20px rgba(0,0,0,.45)}
+.node.open .nh .st{color:var(--gold)}
+.node.done{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 24%,#121c33),#0b1324);border-color:var(--c)}
+.node.sel{outline:2px solid var(--ink);outline-offset:3px}
+.node.cap{width:220px;height:96px;border-top-width:4px;background:linear-gradient(180deg,#2a2412,#0b1324)}
+.node.cap .nt{font-family:var(--serif);font-size:15px}
+.node.new{animation:pop 1.6s ease-out 1}
+@keyframes pop{0%{box-shadow:0 0 0 0 var(--c)}60%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink2);border:1px solid var(--line);border-radius:99px;padding:1px 6px;white-space:nowrap;background:rgba(255,255,255,.03)}
+.chip b{font-weight:650;font-variant-numeric:tabular-nums}
+.chip.t .ic{color:var(--gold)}.chip.m .ic{color:var(--mins)}.chip.g .ic{color:var(--comp)}
+.chip.big{font-size:12.5px;padding:4px 10px}
+
+.zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
+.zoom button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:rgba(14,22,40,.92);display:grid;place-items:center;color:var(--ink2)}
+.zoom button:hover{color:var(--ink);border-color:var(--ink2)}
+.zoom .ic{width:17px;height:17px}
+.hint{position:absolute;left:12px;bottom:12px;font-size:11.5px;color:var(--mute);background:rgba(7,11,22,.8);border:1px solid var(--line);border-radius:8px;padding:4px 9px;pointer-events:none}
+
+/* panel */
+#panel{border-left:1px solid var(--line);background:rgba(10,16,30,.92);overflow:auto;min-height:0;padding:16px 18px 24px}
+.p-close{display:none}
+.p-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-radius:99px;padding:2px 9px}
+.schip{margin-left:auto;font-size:11px;font-weight:650;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--mute)}
+.schip.open{color:var(--gold);border-color:rgba(242,201,76,.5)}
+.schip.done{color:var(--agency);border-color:rgba(52,211,153,.5)}
+#panel h2{font-family:var(--serif);font-size:21px;line-height:1.2;margin:2px 0}
+#panel .tierline-t{font-size:12px;color:var(--mute);margin:0 0 6px}
+.sec{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}
+.sec h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--mute);margin:0 0 7px;font-weight:700}
+.sec p{margin:0 0 6px;color:var(--ink2)}
+.sec ul{margin:0;padding-left:18px;color:var(--ink2)}
+.sec li{margin:3px 0}
+.grp{margin-bottom:8px}
+.grp .k{font-size:12px;color:var(--mute);font-style:italic}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.link{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2)}
+.link:hover{color:var(--ink);border-color:var(--ink2)}
+.link.ok{border-color:rgba(52,211,153,.5);color:var(--ink)}
+.link.ok .ic{color:var(--agency)}
+.why{font-size:12.5px;color:var(--mute);margin-top:6px}
+.act{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--c,var(--gold));
+  background:color-mix(in srgb,var(--c,var(--gold)) 14%,transparent);color:var(--ink);font-weight:650}
+.btn:hover{background:color-mix(in srgb,var(--c,var(--gold)) 24%,transparent)}
+.btn.sub{border-color:var(--line2);background:transparent;color:var(--ink2);font-weight:500}
+.fine{font-size:11.5px;color:var(--mute)}
+.donebox{border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);border-radius:10px;padding:9px 12px;color:var(--ink2)}
+.intro h2{font-family:var(--serif)}
+.intro ul{padding-left:18px;color:var(--ink2)}
+.intro li{margin:6px 0}
+.legend{display:grid;gap:6px;font-size:12.5px;color:var(--ink2)}
+.legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--c);margin-right:7px;vertical-align:-1px}
+.legend svg.ln{width:34px;height:8px;margin-right:6px;vertical-align:1px}
+
+/* bounty cards & other views */
+.page{height:100%;overflow:auto;padding:22px 20px 60px}
+.page-in{max-width:1080px;margin:0 auto}
+.page h2{font-family:var(--serif);font-size:24px;margin:0 0 4px}
+.page .sub{color:var(--mute);margin:0 0 18px;max-width:720px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,#111a30,#0b1324);display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:15px;line-height:1.3}
+.card .by{font-size:12px;color:var(--mute)}
+.card ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13px}
+.card .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.st-pill{font-size:11px;font-weight:650;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--mute)}
+.st-pill.ready{color:var(--gold);border-color:rgba(242,201,76,.5)}
+.st-pill.ok{color:var(--agency);border-color:rgba(52,211,153,.5)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.box{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(14,22,40,.6)}
+.box h3{margin:0 0 10px;font-size:16px}
+.note{border:1px solid rgba(242,201,76,.35);background:rgba(242,201,76,.06);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.note .to{font-size:12px;color:var(--mute)}
+.note ul{margin:6px 0;padding-left:18px;color:var(--ink2);font-size:13px}
+form label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+form input,form select,form textarea{width:100%;background:#0b1324;border:1px solid var(--line2);border-radius:9px;padding:8px 10px;color:var(--ink)}
+form textarea{min-height:84px;resize:vertical}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.err{color:#F58C8C;font-size:12.5px;margin-top:8px}
+.log li{margin:6px 0;color:var(--ink2)}
+.empty{color:var(--mute);font-style:italic}
+
+#toasts{position:fixed;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:80;width:min(440px,calc(100vw - 24px));pointer-events:none}
+.toast{background:#131d36;border:1px solid var(--line2);border-left:3px solid var(--gold);border-radius:10px;padding:9px 12px;box-shadow:0 14px 40px rgba(0,0,0,.5);animation:rise .25s ease}
+.toast b{display:block;font-size:13.5px}
+.toast span{font-size:12.5px;color:var(--ink2)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media (max-width:900px){
+  .badge,.brand small{display:none}
+  .top{padding:8px 10px;gap:8px}
+  .bal{order:3;flex-basis:100%;margin-left:0}
+  .stat{padding:4px 8px}
+  .stat .l{display:none}
+  .bal{justify-content:space-between}
+  #view-tree{grid-template-columns:minmax(0,1fr)}
+  #panel{position:fixed;left:0;right:0;bottom:0;max-height:68dvh;border-left:0;border-top:1px solid var(--line2);border-radius:16px 16px 0 0;
+    transform:translateY(105%);transition:transform .25s ease;z-index:60;box-shadow:0 -24px 60px rgba(0,0,0,.6);padding-top:12px}
+  #panel.open{transform:none}
+  .p-close{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;border:1px solid var(--line2)}
+  .hint{display:none}
+  .two{grid-template-columns:1fr}
 }
-h1,h2,h3{font-family:var(--serif); font-weight:600; letter-spacing:.01em; margin:0}
-h4{font-size:11px; text-transform:uppercase; letter-spacing:.14em; color:var(--mute); margin:0 0 8px}
-p{margin:0}
-button{font:inherit; color:inherit; background:none; border:none; padding:0; cursor:pointer}
-button:focus-visible,a:focus-visible,[tabindex]:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
-  outline:2px solid var(--ink); outline-offset:2px; border-radius:6px;
-}
-::selection{background:rgba(242,201,76,.35)}
-.vh{position:absolute!important; width:1px;height:1px; margin:-1px; padding:0; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; border:0}
-.skip{position:absolute; left:-999px; top:8px; z-index:200; background:var(--ink); color:#0A1020; padding:8px 14px; border-radius:8px; font-weight:600}
-.skip:focus{left:8px}
-.ic{width:1em;height:1em; display:inline-block; vertical-align:-.14em; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
-
-/* ---------- header ---------- */
-.top{display:flex; align-items:center; gap:16px; flex-wrap:wrap; padding:12px 22px; border-bottom:1px solid var(--line)}
-.brand{display:flex; align-items:center; gap:12px}
-.brand-mark{width:34px;height:34px; border-radius:10px; display:grid; place-items:center; color:var(--gold);
-  background:linear-gradient(160deg,#162242,#0D1526); border:1px solid var(--line-strong); flex:none}
-.brand-mark .ic{width:19px;height:19px}
-.brand-name{font-family:var(--serif); font-size:18px; font-weight:700}
-.brand-sub{font-size:12px; color:var(--mute); margin-top:1px}
-.badge{font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--mute);
-  border:1px solid var(--line-strong); border-radius:99px; padding:3px 10px; white-space:nowrap}
-.who{display:flex; align-items:center; gap:10px; margin-left:6px}
-.who-av{width:34px;height:34px; border-radius:50%; background:linear-gradient(160deg,#1C2A4E,#101B33); border:1px solid var(--line-strong);
-  display:grid; place-items:center; color:var(--blue)}
-.who-av .ic{width:17px;height:17px}
-.who-name{font-weight:650; font-size:14px}
-.who-sub{font-size:11.5px; color:var(--mute)}
-.top-right{display:flex; align-items:center; gap:14px; margin-left:auto; flex-wrap:wrap}
-.stats{display:flex; gap:8px; flex-wrap:wrap}
-.stat{display:flex; align-items:center; gap:8px; background:var(--panel); border:1px solid var(--line);
-  border-radius:12px; padding:6px 11px; min-width:104px}
-.stat .ic{width:16px;height:16px; flex:none}
-.stat-t .ic{color:var(--gold)} .stat-m .ic{color:var(--blue)} .stat-p .ic{color:var(--ok)} .stat-c .ic{color:var(--comp)}
-.stat-n{font-size:13.5px; font-weight:700; font-variant-numeric:tabular-nums; line-height:1.1}
-.stat-l{font-size:10px; color:var(--mute); line-height:1.25}
-.dots{display:flex; gap:3px; margin-top:4px}
-.dot{width:8px;height:8px; border-radius:50%; background:transparent; border:1.5px solid var(--mute-2)}
-.dot.d-on{background:var(--ok); border-color:var(--ok)}
-.dot.d-cur{border-color:var(--gold)}
-.ghost{border:1px solid var(--line-strong); border-radius:10px; padding:8px 13px; font-size:12.5px; color:var(--ink-2);
-  display:inline-flex; align-items:center; gap:7px; transition:border-color .2s, color .2s}
-.ghost:hover{border-color:var(--ink-2); color:var(--ink)}
-.ghost .ic{width:14px;height:14px}
-
-/* ---------- hero ---------- */
-.hero{max-width:920px; margin:0 auto; padding:24px 24px 10px; text-align:center}
-.eyebrow{font-size:10.5px; letter-spacing:.2em; text-transform:uppercase; color:var(--mute); margin-bottom:10px}
-.hero h1{font-size:clamp(1.6rem, 2.7vw, 2.05rem); line-height:1.18}
-.hero-sub{font-size:clamp(.95rem, 1.3vw, 1.02rem); color:var(--ink-2); margin:10px auto 0; max-width:720px}
-.hero-note{font-size:11.5px; color:var(--mute); margin:9px auto 0; max-width:720px}
-
-/* ---------- tabs ---------- */
-.tabs{position:sticky; top:0; z-index:60; display:flex; gap:6px; justify-content:center; padding:8px 16px;
-  background:rgba(7,12,24,.86); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
-  border-bottom:1px solid var(--line)}
-.tab{border:1px solid transparent; border-radius:99px; padding:8px 17px; font-size:13.5px; color:var(--mute);
-  transition:color .2s, border-color .2s, background .2s; white-space:nowrap}
-.tab:hover{color:var(--ink-2)}
-.tab[aria-selected="true"]{color:var(--ink); background:var(--panel-2); border-color:var(--line-strong)}
-
-/* ---------- panels ---------- */
-.panels{max-width:1500px; margin:0 auto; padding:20px 28px 56px}
-.panel-title{font-size:1.18rem}
-.panel-sub{color:var(--mute); font-size:12.5px; margin:6px 0 14px; max-width:820px}
-[hidden]{display:none!important}
-
-/* ---------- tree toolbar ---------- */
-.toolbar{display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:10px}
-.pillgrp{display:flex; gap:7px; flex-wrap:wrap; align-items:center}
-.pillgrp .lbl{font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--mute); margin-right:2px}
-.pill{border:1px solid var(--line); border-radius:99px; padding:6px 13px; font-size:12.5px; color:var(--ink-2);
-  display:inline-flex; align-items:center; gap:7px; transition:border-color .2s, background .2s, color .2s}
-.pill .pdot{width:8px;height:8px;border-radius:50%; background:var(--rc,var(--mute))}
-.pill[aria-pressed="true"]{border-color:var(--rc,var(--ink)); background:rgba(255,255,255,.055); color:var(--ink)}
-.legend{display:flex; gap:15px; align-items:center; margin-left:auto; font-size:11.5px; color:var(--mute)}
-.legend .li{display:inline-flex; gap:6px; align-items:center}
-.legend .ic{width:13px;height:13px}
-.li-open{color:var(--gold)} .li-done{color:var(--ok)} .li-lock{color:var(--mute-2)}
-
-/* ---------- tree canvas ---------- */
-.tree-scroll{height:clamp(470px, calc(100vh - 420px), 820px); overflow:auto; border:1px solid var(--line);
-  border-radius:16px; background:linear-gradient(180deg, rgba(18,29,59,.55), rgba(9,15,30,.75));
-  scrollbar-width:thin; scrollbar-color:#2A3A63 transparent}
-.tree-scroll::-webkit-scrollbar{width:9px;height:9px}
-.tree-scroll::-webkit-scrollbar-thumb{background:#243458; border-radius:99px; border:2px solid #0A1120}
-.tree-vp{position:relative}
-.tree-canvas{position:relative; width:1480px; height:1120px; transform-origin:0 0}
-.tree-canvas:focus-within{outline:none}
-.edges{position:absolute; inset:0; width:1480px; height:1120px; pointer-events:none}
-.edge{fill:none; stroke:rgba(238,231,216,.12); stroke-width:2}
-.edge.e-open{stroke:rgba(238,231,216,.22)}
-.edge.e-done.rt-apps{stroke:rgba(62,207,142,.7)}
-.edge.e-done.rt-research{stroke:rgba(167,139,250,.65)}
-.edge.e-done.rt-collab{stroke:rgba(242,144,123,.65)}
-.edge.e-done.rt-robots{stroke:rgba(239,169,51,.65)}
-.edge.e-done.rt-peak{stroke:rgba(242,201,76,.75)}
-.edge.e-dim{opacity:.14}
-.band-line{stroke:rgba(238,231,216,.055); stroke-width:1; stroke-dasharray:2 8}
-.band-label{position:absolute; left:var(--nx,20px); top:var(--ny,0); display:flex; align-items:baseline; gap:9px; z-index:2}
-.band-n{font-family:var(--serif); font-style:italic; font-size:12px; color:var(--mute); white-space:nowrap}
-.band-name{font-size:13px; font-weight:650; color:var(--ink-2); white-space:nowrap}
-.band-hint{position:absolute; right:20px; top:var(--ny,0); font-size:11px; font-style:italic; color:var(--mute-2); text-align:right; z-index:2}
-
-/* ---------- nodes ---------- */
-.node{position:absolute; left:var(--nx); top:var(--ny); width:200px; height:116px; z-index:3;
-  display:flex; flex-direction:column; gap:5px; padding:10px 12px 9px; text-align:left;
-  background:linear-gradient(180deg,#111D39,#0C1428); border:1px solid var(--line); border-radius:13px;
-  border-left:3px solid var(--rc); box-shadow:0 10px 26px rgba(4,8,18,.5);
-  transition:border-color .25s, box-shadow .25s, opacity .25s, background .25s}
-.node:hover{border-color:var(--line-strong)}
-.node:active{transform:translateY(1px)}
-.route-apps{--rc:var(--apps); --rc-soft:rgba(62,207,142,.14)}
-.route-research{--rc:var(--research); --rc-soft:rgba(167,139,250,.15)}
-.route-collab{--rc:var(--collab); --rc-soft:rgba(242,144,123,.15)}
-.route-robots{--rc:var(--robots); --rc-soft:rgba(239,169,51,.15)}
-.route-peak{--rc:var(--peak); --rc-soft:rgba(242,201,76,.16)}
-.node.st-open{border-color:color-mix(in srgb, var(--rc) 55%, rgba(238,231,216,.13));
-  box-shadow:0 0 0 1px var(--rc-soft), 0 10px 26px rgba(4,8,18,.5), 0 0 30px var(--rc-soft)}
-.node.st-done{background:linear-gradient(180deg, color-mix(in srgb, var(--rc) 13%, #111D39), #0C1428);
-  border-color:var(--rc); border-left-color:var(--rc)}
-.node.st-locked{border-left-color:rgba(94,107,135,.6)}
-.node.st-locked .node-title{color:var(--mute)}
-.node.route-dim{opacity:.32; filter:saturate(.55)}
-.node.just-unlocked{animation:pop 1.5s ease-out 1}
-@keyframes pop{
-  0%{box-shadow:0 0 0 0 var(--rc), 0 10px 26px rgba(4,8,18,.5)}
-  60%{box-shadow:0 0 0 9px transparent, 0 10px 26px rgba(4,8,18,.5)}
-  100%{box-shadow:0 0 0 0 transparent, 0 10px 26px rgba(4,8,18,.5)}
-}
-.node-head{display:flex; align-items:center; justify-content:space-between; gap:6px}
-.node-ic{color:var(--rc); display:inline-flex}
-.node-ic .ic{width:15px;height:15px}
-.node-state{display:inline-flex}
-.node-state .ic{width:15px;height:15px}
-.st-open .node-state{color:var(--gold)} .st-done .node-state{color:var(--rc)} .st-locked .node-state{color:var(--mute-2)}
-.node-title{font-size:12.8px; font-weight:650; line-height:1.28; color:var(--ink)}
-.node-chips{display:flex; gap:4px; flex-wrap:wrap; margin-top:auto; align-items:center}
-.chip{display:inline-flex; align-items:center; gap:4px; font-size:10.5px; color:var(--ink-2);
-  border:1px solid var(--line); border-radius:99px; padding:1.5px 7px; background:rgba(255,255,255,.03); white-space:nowrap}
-.chip .ic{width:10.5px;height:10.5px}
-.chip b{font-weight:650; font-variant-numeric:tabular-nums}
-.chip-t .ic{color:var(--gold)} .chip-m .ic{color:var(--blue)} .chip-b .ic{color:var(--rc)} .chip-c .ic{color:var(--comp)}
-.chip-start{border-color:var(--rc); color:var(--ink); background:var(--rc-soft)}
-.tree-hintline{font-size:11.5px; color:var(--mute); margin-top:12px}
-
-/* ---------- inspector drawer ---------- */
-#inspector{position:fixed; right:14px; left:auto; top:64px; bottom:14px; width:min(404px, 92vw); height:calc(100dvh - 78px); overflow:hidden;
-  max-width:none; max-height:none; z-index:90;
-  margin:0; padding:0; color:var(--ink); background:linear-gradient(180deg,#101A33,#0C1428);
-  border:1px solid var(--line-strong); border-radius:16px;
-  box-shadow:-34px 0 90px rgba(2,6,15,.6); display:none; flex-direction:column}
-#inspector[open]{display:flex; animation:drawer .28s ease}
-@keyframes drawer{from{opacity:0; transform:translateX(26px)} to{opacity:1; transform:none}}
-#inspector::backdrop{background:rgba(4,8,16,.55); backdrop-filter:blur(2px)}
-.inspector-body{overflow:auto; min-height:0; padding:18px 20px 24px; flex:1; scrollbar-width:thin}
-.insp-head{display:flex; align-items:center; gap:8px; margin-bottom:12px}
-.route-chip{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:650; color:var(--ink-2);
-  border:1px solid var(--line); border-radius:99px; padding:3px 10px}
-.route-chip .ic{width:13px;height:13px; color:var(--rc)}
-.route-apps.route-chip{--rc:var(--apps)} .route-research.route-chip{--rc:var(--research)}
-.route-collab.route-chip{--rc:var(--collab)} .route-robots.route-chip{--rc:var(--robots)} .route-peak.route-chip{--rc:var(--peak)}
-.status-chip{display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:650; border-radius:99px; padding:3px 10px; margin-left:auto}
-.status-chip .ic{width:12px;height:12px}
-.sc-open{color:var(--gold); border:1px solid rgba(242,201,76,.45); background:rgba(242,201,76,.09)}
-.sc-done{color:var(--ok); border:1px solid rgba(62,207,142,.45); background:rgba(62,207,142,.09)}
-.sc-locked{color:var(--mute); border:1px solid var(--line)}
-.icon-btn{width:30px;height:30px; border-radius:9px; border:1px solid var(--line); display:grid; place-items:center; color:var(--mute); flex:none}
-.icon-btn:hover{color:var(--ink); border-color:var(--line-strong)}
-.icon-btn .ic{width:14px;height:14px}
-.insp-title{font-size:20px; line-height:1.25; margin:2px 0 2px}
-.insp-band{font-size:11.5px; color:var(--mute); margin-bottom:14px}
-.insp-sec{border-top:1px solid var(--line); padding:13px 0 4px; margin-top:11px}
-.goal{font-size:13.5px; color:var(--ink-2); line-height:1.55}
-.ev{list-style:none; margin:0; padding:0}
-.ev li{position:relative; padding:2px 0 7px 16px; font-size:12.8px; color:var(--ink-2)}
-.ev li::before{content:""; position:absolute; left:2px; top:9px; width:6px;height:6px; border-radius:2px;
-  background:var(--rc,var(--gold)); transform:rotate(45deg)}
-.pr-group{margin-bottom:6px}
-.pr-kind{font-size:12px; color:var(--mute); font-style:italic}
-.pr-group ul{list-style:none; margin:3px 0 8px; padding:0}
-.pr-group li{display:flex; gap:8px; align-items:center; font-size:12.8px; padding:2.5px 0}
-.pr-ic .ic{width:13px;height:13px}
-.pr-ok{color:var(--ink)} .pr-ok .pr-ic{color:var(--ok)}
-.pr-no{color:var(--mute)} .pr-no .pr-ic{color:var(--mute-2)}
-.muted{color:var(--mute); font-size:12.8px}
-.rew-chips{display:flex; gap:7px; flex-wrap:wrap}
-.rchip{display:inline-flex; align-items:center; gap:6px; font-size:12.5px; font-weight:650; color:var(--ink);
-  border:1px solid var(--line-strong); border-radius:99px; padding:5px 12px; background:rgba(255,255,255,.04)}
-.rchip .ic{width:13px;height:13px}
-.rchip-t .ic{color:var(--gold)} .rchip-m .ic{color:var(--blue)} .rchip-b .ic{color:var(--rc,var(--peak))} .rchip-c .ic{color:var(--comp)}
-.rew-note{font-size:11.5px; color:var(--mute); margin-top:9px}
-.opens{display:flex; gap:7px; flex-wrap:wrap}
-.open-pill{display:inline-flex; align-items:center; gap:7px; font-size:11.8px; color:var(--ink-2);
-  border:1px solid var(--line); border-radius:10px; padding:5px 10px; transition:border-color .2s}
-.open-pill:hover{border-color:var(--line-strong); color:var(--ink)}
-.open-pill .ic{width:12px;height:12px}
-.open-pill.st-done .op-ic{color:var(--ok)}
-.open-pill.st-open .op-ic{color:var(--gold)}
-.open-pill.st-locked{opacity:.62} .open-pill.st-locked .op-ic{color:var(--mute-2)}
-.op-band{font-size:10px; color:var(--mute-2)}
-.bb-box{border:1px dashed var(--line-strong); border-radius:12px; padding:11px 13px; margin-bottom:9px}
-.bb-top{display:flex; align-items:center; gap:8px; margin-bottom:5px}
-.bb-title{font-size:13px; font-weight:650; color:var(--ink)}
-.bb-by{font-size:11px; color:var(--mute)}
-.bb-rew{font-size:11.5px; color:var(--ink-2)}
-.bb-status{font-size:10.5px; border-radius:99px; padding:2px 9px; margin-left:auto; border:1px solid}
-.bb-open{color:var(--gold); border-color:rgba(242,201,76,.4)} .bb-done{color:var(--ok); border-color:rgba(62,207,142,.4)}
-.bb-wait{color:var(--mute); border-color:var(--line)}
-.demo-zone{border-top:1px solid var(--line); margin-top:13px; padding-top:14px}
-.demo-btn{width:100%; border:1px solid var(--rc); background:var(--rc-soft); border-radius:12px; padding:11px 14px;
-  font-size:13px; font-weight:650; color:var(--ink); display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  transition:filter .2s}
-.demo-btn:hover{filter:brightness(1.14)}
-.demo-btn .ic{width:15px;height:15px; color:var(--rc)}
-.demo-btn:disabled{opacity:.5; cursor:not-allowed}
-.demo-fine{font-size:10.8px; color:var(--mute); margin-top:8px; line-height:1.5}
-.done-note{display:flex; gap:9px; align-items:flex-start; border:1px solid rgba(62,207,142,.4); background:rgba(62,207,142,.08);
-  border-radius:12px; padding:11px 13px; font-size:12.8px; color:var(--ink-2)}
-.done-note .ic{width:16px;height:16px; color:var(--ok); flex:none; margin-top:1px}
-.insp-empty{color:var(--mute); font-size:13px; padding:8px 2px}
-
-/* ---------- bounties ---------- */
-.bounty-grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(330px,1fr)); gap:18px}
-.bcard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:17px 18px 16px;
-  display:flex; flex-direction:column; gap:10px}
-.bcard.achieved{border-color:rgba(62,207,142,.4)}
-.bc-top{display:flex; align-items:center; gap:10px}
-.bc-av{width:30px;height:30px; border-radius:50%; display:grid; place-items:center; color:var(--gold);
-  background:linear-gradient(160deg,#1D2A4E,#101B33); border:1px solid var(--line-strong); flex:none}
-.bc-av .ic{width:14px;height:14px}
-.bc-name{font-size:12.5px; font-weight:650}
-.bc-role{font-size:10.8px; color:var(--mute)}
-.bc-status{margin-left:auto; font-size:10.5px; font-weight:650; border-radius:99px; padding:3px 10px; border:1px solid}
-.bc-open{color:var(--gold); border-color:rgba(242,201,76,.4)}
-.bc-done{color:var(--ok); border-color:rgba(62,207,142,.45)}
-.bc-wait{color:var(--mute); border-color:var(--line)}
-.bc-verify{color:var(--gold); border-color:rgba(242,201,76,.55); background:rgba(242,201,76,.08)}
-.bcard h3{font-size:16px; line-height:1.3}
-.bc-crit{margin:0; padding:0; list-style:none}
-.bc-crit li{position:relative; padding:2px 0 2px 16px; font-size:12.6px; color:var(--ink-2)}
-.bc-crit li::before{content:""; position:absolute; left:2px; top:8.5px; width:5px;height:5px; border-radius:50%; background:var(--gold)}
-.bc-foot{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:auto; padding-top:4px}
-.goal-link{display:inline-flex; align-items:center; gap:8px; font-size:11.8px; color:var(--ink); font-weight:600;
-  border:1px solid var(--line-strong); border-radius:99px; padding:5px 12px; transition:border-color .2s}
-.goal-link:hover{border-color:var(--rc)}
-.goal-link .pdot{width:8px;height:8px;border-radius:50%; background:var(--rc)}
-.goal-link .ic{width:12px;height:12px; color:var(--mute)}
-.bc-tag{font-size:10px; color:var(--mute); border:1px dashed var(--line-strong); border-radius:99px; padding:2.5px 9px; margin-left:auto}
-.bc-note{font-size:11.5px; color:var(--mute)}
-
-/* ---------- receipts ---------- */
-.receipts{max-width:760px}
-.rc-row{display:grid; grid-template-columns:110px 1fr; gap:14px; padding:13px 2px; border-bottom:1px solid var(--line)}
-.rc-time{font-size:11px; color:var(--mute-2); padding-top:3px}
-.rc-title{font-size:13.5px; font-weight:650; color:var(--ink)}
-.rc-items{margin-top:5px}
-.rc-item{font-size:12.6px; color:var(--mute); padding:1.5px 0}
-.amt-t{color:var(--gold); font-weight:650; font-variant-numeric:tabular-nums}
-.amt-m{color:var(--blue); font-weight:650}
-.amt-g{color:var(--comp); font-weight:650; font-variant-numeric:tabular-nums}
-.rc-seed{font-size:10px; color:var(--mute-2); border:1px solid var(--line); border-radius:99px; padding:1px 8px; margin-left:7px; vertical-align:1px}
-
-/* ---------- expert ---------- */
-.exp-grid{display:grid; grid-template-columns:minmax(320px,1.05fr) minmax(330px,.95fr); gap:20px; align-items:start}
-.ecard{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:18px}
-.ehead{display:flex; align-items:center; gap:12px; margin-bottom:6px}
-.bell{position:relative; display:inline-flex; align-items:center; gap:8px; border:1px solid var(--line-strong);
-  border-radius:99px; padding:7px 13px; font-size:12.5px; font-weight:650; color:var(--ink-2); transition:border-color .2s}
-.bell:hover{border-color:var(--ink-2); color:var(--ink)}
-.bell .ic{width:15px;height:15px}
-.bell-badge{min-width:19px;height:19px; border-radius:99px; background:var(--gold); color:#141005; font-size:11px; font-weight:800;
-  display:grid; place-items:center; padding:0 5px; font-variant-numeric:tabular-nums}
-.ehead .hint{font-size:11px; color:var(--mute); margin-left:auto; text-align:right; max-width:220px}
-.inbox-list{margin-top:12px; display:flex; flex-direction:column; gap:11px}
-.note{border:1px solid var(--line); border-left:3px solid var(--gold); border-radius:12px; padding:12px 13px; background:rgba(242,201,76,.045)}
-.note-to{font-size:10.8px; color:var(--mute); margin-bottom:5px}
-.note-main{font-size:13px; color:var(--ink); line-height:1.45}
-.note-ev{margin:7px 0 6px; padding:0; list-style:none}
-.note-ev li{position:relative; padding:1.5px 0 1.5px 15px; font-size:12px; color:var(--ink-2)}
-.note-ev li::before{content:""; position:absolute; left:2px; top:8px; width:5px;height:5px; border-radius:50%; background:var(--blue)}
-.note-rew{font-size:12px; color:var(--ink-2)}
-.note-sim{font-size:10.5px; font-style:italic; color:var(--mute-2); margin-top:7px}
-.empty{border:1px dashed var(--line-strong); border-radius:12px; padding:16px; font-size:12.5px; color:var(--mute); line-height:1.55}
-.efield{display:block; margin-bottom:13px}
-.efield .lab{display:block; font-size:11px; text-transform:uppercase; letter-spacing:.12em; color:var(--mute); margin-bottom:6px}
-.efield input[type=text],.efield textarea,.efield select{width:100%; background:#0B1326; border:1px solid var(--line-strong);
-  border-radius:10px; padding:9px 11px; color:var(--ink); font:inherit; font-size:13px}
-.efield textarea{resize:vertical; min-height:64px}
-.efield .fhint{font-size:10.8px; color:var(--mute-2); margin-top:5px}
-.echoices{display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:13px}
-.echoices .efield{margin:0}
-.primary{width:100%; background:var(--ink); color:#0A1020; font-weight:700; font-size:13px; border-radius:11px; padding:11px 16px;
-  display:inline-flex; align-items:center; justify-content:center; gap:8px; transition:filter .2s}
-.primary:hover{filter:brightness(1.08)}
-.primary .ic{width:14px;height:14px}
-.ferr{margin-top:11px}
-.ferr p{color:var(--red); font-size:12px; padding:2px 0}
-.posted-list{margin-top:12px; display:flex; flex-direction:column; gap:8px}
-.posted{display:flex; align-items:center; gap:9px; font-size:12.3px; border:1px solid var(--line); border-radius:10px; padding:8px 11px}
-.posted .st{margin-left:auto; font-size:10.5px; color:var(--mute); white-space:nowrap}
-.posted .st.ok{color:var(--ok)}
-.persona{display:flex; gap:10px; align-items:center; margin:10px 0 18px; font-size:12.3px; color:var(--mute)}
-.persona .who-av{color:var(--gold)}
-.persona b{color:var(--ink-2)}
-
-/* ---------- toasts / footer ---------- */
-.toasts{position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:130; display:flex; flex-direction:column; gap:9px;
-  width:min(430px, calc(100vw - 28px)); pointer-events:none}
-.toast{display:flex; gap:11px; align-items:flex-start; background:rgba(16,27,51,.96); border:1px solid var(--line-strong);
-  border-radius:13px; padding:12px 15px; box-shadow:0 18px 50px rgba(2,6,15,.6); animation:rise .3s ease}
-.toast .ic{width:17px;height:17px; color:var(--ok); flex:none; margin-top:1px}
-.toast.bounty .ic{color:var(--gold)}
-.toast.reset .ic{color:var(--blue)}
-.toast-t{font-size:13.5px; font-weight:700; color:var(--ink)}
-.toast-s{font-size:12px; color:var(--ink-2); margin-top:2px; line-height:1.45}
-.toast.out{opacity:0; transition:opacity .25s}
-@keyframes rise{from{opacity:0; transform:translateY(14px)} to{opacity:1; transform:none}}
-footer{border-top:1px solid var(--line); margin-top:20px; padding:34px 24px 46px; text-align:center}
-.f-tag{font-family:var(--serif); font-style:italic; font-size:15px; color:var(--ink-2); margin-bottom:10px}
-.f-note{max-width:720px; margin:0 auto; font-size:11.8px; color:var(--mute); line-height:1.7}
-.noscript{border:1px solid var(--line-strong); border-radius:12px; padding:14px; color:var(--ink-2); font-size:13px}
-
-/* ---------- mobile / narrow ---------- */
-@media (max-width:1099px){
-  .top{padding:12px 14px 10px; gap:10px}
-  .hero{padding:20px 16px 8px}
-  .tabs{justify-content:flex-start; overflow-x:auto; scrollbar-width:none}
-  .panels{padding:22px 16px 56px}
-  .legend{display:none}
-  .toPeakWrap{display:none}
-  .tree-scroll{height:auto; overflow:visible; border:none; background:none; border-radius:0}
-  .tree-vp{width:auto!important; height:auto!important}
-  .tree-canvas{position:static; width:auto; height:auto; transform:none!important}
-  .edges,.band-hint{display:none}
-  .band-label{position:static; margin:24px 2px 10px}
-  .band-n{font-size:11px} .band-name{font-size:12.5px}
-  .node{position:static; width:auto; height:auto; display:grid; grid-template-columns:auto 1fr; grid-template-areas:"head title" "head chips";
-    gap:2px 12px; padding:12px 13px; margin-bottom:10px; align-items:center}
-  .node-head{grid-area:head; flex-direction:column; gap:5px; justify-content:center}
-  .node-title{grid-area:title; font-size:13.5px; align-self:center}
-  .node-chips{grid-area:chips; margin:0; justify-self:start}
-  #inspector{left:0; right:0; top:auto; bottom:0; width:auto; max-width:none; max-height:86vh; height:auto;
-    border-radius:18px 18px 0 0; border-bottom:none; box-shadow:0 -30px 80px rgba(2,6,15,.65)}
-  #inspector[open]{animation:sheet .28s ease}
-  @keyframes sheet{from{opacity:0; transform:translateY(40px)} to{opacity:1; transform:none}}
-  .bounty-grid{grid-template-columns:1fr}
-  .exp-grid{grid-template-columns:1fr}
-  .rc-row{grid-template-columns:76px 1fr; gap:10px}
-  .echoices{grid-template-columns:1fr}
-}
-@media (prefers-reduced-motion: reduce){
-  html{scroll-behavior:auto}
-  *,*::before,*::after{animation-duration:.001s!important; animation-iteration-count:1!important; transition-duration:.001s!important}
-  .toast.out{transition:none}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
 }
 </style>
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
-
 <header class="top">
   <div class="brand">
     <span class="brand-mark" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.6 13.8 10.2 21.4 12 13.8 13.8 12 21.4 10.2 13.8 2.6 12 10.2 10.2Z"/></svg></span>
-    <div>
-      <p class="brand-name">Talent Engine</p>
-      <p class="brand-sub">Your next possibility</p>
-    </div>
+    <div><b>Capability tech tree</b><small>Mina · sample student</small></div>
   </div>
-  <span class="badge">Concept prototype · sample data</span>
-  <div class="who">
-    <span class="who-av" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.6"/><path d="M5 20.2c0-3.7 3.1-6 7-6s7 2.3 7 6"/></svg></span>
-    <div>
-      <p class="who-name">Mina Okafor</p>
-      <p class="who-sub">2nd-year engineering · sample student (fictional)</p>
-    </div>
-  </div>
-  <div class="top-right">
-    <div class="stats">
-      <div class="stat stat-t"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9.4" cy="9.4" r="6.6"/><circle cx="14.6" cy="14.6" r="6.6"/></svg>
-        <div><p class="stat-n" id="statTokens">–</p><p class="stat-l">model token credits</p></div>
-      </div>
-      <div class="stat stat-m"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8.2"/><path d="M12 7.6V12l3.2 2.2"/></svg>
-        <div><p class="stat-n" id="statMinutes">–</p><p class="stat-l">expert minutes</p></div>
-      </div>
-      <div class="stat stat-c"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 4v3M15 4v3M9 17v3M15 17v3M4 9h3M4 15h3M17 9h3M17 15h3"/></svg>
-        <div><p class="stat-n" id="statGpu">–</p><p class="stat-l">GPU-hours · compute</p></div>
-      </div>
-      <div class="stat stat-p"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5 20 6v6c0 5-3.4 7.4-8 9-4.6-1.6-8-4-8-9V6z"/><path d="M9 12l2.3 2.3L15.5 10"/></svg>
-        <div><p class="stat-n" id="statProgress">–</p><p class="stat-l">achievements</p><div class="dots" id="bandDots" aria-hidden="true"></div></div>
-      </div>
-    </div>
-    <button type="button" class="ghost" id="resetBtn"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4.6 12a7.4 7.4 0 1 0 2.1-5.1"/><path d="M6.6 3.6v3.7h3.7"/></svg>Reset demo</button>
+  <span class="badge">Prototype · fictional data</span>
+  <div class="bal" aria-label="Your support balances">
+    <div class="stat t"><span id="ic-t"></span><span class="n" id="sT">0</span><span class="l">model credits</span></div>
+    <div class="stat m"><span id="ic-m"></span><span class="n" id="sM">0</span><span class="l">expert minutes</span></div>
+    <div class="stat g"><span id="ic-g"></span><span class="n" id="sG">0</span><span class="l">GPU-hours</span></div>
+    <div class="stat p"><span id="ic-p"></span><span class="n" id="sP">0/30</span><span class="l">achieved</span></div>
+    <button type="button" class="ghost" id="reset">Reset</button>
   </div>
 </header>
 
-<main id="main">
-  <section class="hero" aria-labelledby="heroTitle">
-    <p class="eyebrow">Talent Engine · student menu</p>
-    <h1 id="heroTitle">Different beginnings. More capable together.</h1>
-    <p class="hero-sub">Progress comes from what you can show, share and verify. Start on any route — build an app, investigate a question, make something move, or help a classmate — and climb the same five-band ladder as everyone else.</p>
-    <p class="hero-note">Three kinds of illustrative reward — model token credits, expert minutes, and GPU-hours of compute — earned from work you can show. Never a score, nothing expires.</p>
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button type="button" class="tab" role="tab" id="tab-tree" aria-controls="view-tree" aria-selected="true">Tech tree</button>
+  <button type="button" class="tab" role="tab" id="tab-bounties" aria-controls="view-bounties" aria-selected="false" tabindex="-1">Bounties</button>
+  <button type="button" class="tab" role="tab" id="tab-expert" aria-controls="view-expert" aria-selected="false" tabindex="-1">Expert view<span class="cnt" id="bell"></span></button>
+  <button type="button" class="tab" role="tab" id="tab-log" aria-controls="view-log" aria-selected="false" tabindex="-1">Reward log</button>
+</nav>
+
+<main>
+  <section class="view" id="view-tree" role="tabpanel" aria-labelledby="tab-tree">
+    <div class="stage">
+      <div class="dest" aria-label="Jump to">
+        <span class="lbl">Jump to</span>
+        <button type="button" data-go="start">Start routes</button>
+        <button type="button" data-go="a3">Own your layer</button>
+        <button type="button" data-go="a5">Orchestrate agents</button>
+        <button type="button" data-go="a6">Manage a fleet</button>
+        <button type="button" data-go="k6">Evaluate the evaluator</button>
+        <button type="button" data-go="cap">Steer a collective</button>
+        <button type="button" data-go="fit">Whole tree</button>
+      </div>
+      <div id="viewport" tabindex="0" aria-label="Tech tree. Drag to move, scroll to pan, Ctrl+scroll or pinch to zoom. Arrow keys pan, plus and minus zoom.">
+        <div id="world"></div>
+        <div class="zoom">
+          <button type="button" id="zin" aria-label="Zoom in"></button>
+          <button type="button" id="zout" aria-label="Zoom out"></button>
+          <button type="button" id="zfit" aria-label="Show whole tree"></button>
+        </div>
+        <div class="hint">Drag to move · Ctrl+scroll or pinch to zoom</div>
+      </div>
+    </div>
+    <aside id="panel" aria-label="Achievement details"></aside>
   </section>
 
-  <nav class="tabs" role="tablist" aria-label="Demo views" id="tablist">
-    <button type="button" class="tab" role="tab" id="tab-tree" aria-selected="true" aria-controls="panel-tree">Capability tree</button>
-    <button type="button" class="tab" role="tab" id="tab-bounties" aria-selected="false" aria-controls="panel-bounties" tabindex="-1">Bounties</button>
-    <button type="button" class="tab" role="tab" id="tab-receipts" aria-selected="false" aria-controls="panel-receipts" tabindex="-1">Reward log</button>
-    <button type="button" class="tab" role="tab" id="tab-expert" aria-selected="false" aria-controls="panel-expert" tabindex="-1">Expert demo</button>
-  </nav>
+  <section class="view" id="view-bounties" role="tabpanel" aria-labelledby="tab-bounties" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Expert bounties</h2>
+      <p class="sub">Experts post a specific problem with checkable criteria. The linked achievement is the entry ticket; verifying the bounty's own criteria pays its reward and notifies the expert once.</p>
+      <div class="cards" id="bountyList"></div>
+    </div></div>
+  </section>
 
-  <div class="panels">
-
-    <!-- ============ TREE ============ -->
-    <section id="panel-tree" role="tabpanel" aria-labelledby="tab-tree">
-      <noscript><p class="noscript">This concept prototype is fully interactive and needs JavaScript. Everything runs locally inside this file — no network, no accounts.</p></noscript>
-      <h2 class="panel-title">Your capability tree</h2>
-      <p class="panel-sub">Every route climbs the same five bands, from a first useful result to systems others rely on. Select any achievement for its goal, evidence, exact prerequisites and reward — route pills highlight one path while every goal stays reachable.</p>
-
-      <div class="toolbar">
-        <div class="pillgrp" role="group" aria-label="Highlight a route" id="routePills"><span class="vh">Route highlight</span></div>
-        <div class="legend" aria-hidden="true">
-          <span class="li li-open"><svg class="ic" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 3.2 13.7 10.3 20.8 12 13.7 13.7 12 20.8 10.3 13.7 3.2 12 10.3 10.3Z"/></svg>Available now</span>
-          <span class="li li-done"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.4l2.5 2.5 5-5.3"/></svg>Achieved</span>
-          <span class="li li-lock"><svg class="ic" viewBox="0 0 24 24"><rect x="6" y="10.5" width="12" height="9.5" rx="2.5"/><path d="M9 10.5V8a3 3 0 0 1 6 0v2.5"/></svg>Locked — see prerequisites</span>
-        </div>
-        <button type="button" class="ghost toPeakWrap" id="toPeak" style="margin-left:auto"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg><span id="toPeakLabel">To the peak</span></button>
-      </div>
-
-      <div class="tree-scroll" id="treeScroll" tabindex="-1" aria-label="Capability tree — five bands rising upward; band 1 at the bottom. Scroll to climb.">
-        <div class="tree-vp" id="treeVp">
-          <div class="tree-canvas" id="treeCanvas" role="group" aria-label="Achievements arranged in five rising bands"></div>
-        </div>
-      </div>
-      <p class="tree-hintline" id="deskHint">Not sure where to begin? Look for “Start here”. The sample student, Mina, has already taken her first two steps.</p>
-
-      <dialog id="inspector" aria-label="Achievement details"><div class="inspector-body" id="inspectorBody"></div></dialog>
-    </section>
-
-    <!-- ============ BOUNTIES ============ -->
-    <section id="panel-bounties" role="tabpanel" aria-labelledby="tab-bounties" hidden>
-      <h2 class="panel-title">Bounties — sample pre-funded challenges</h2>
-      <p class="panel-sub">Mentors can pre-fund a specific problem with a bounded reward — token credits, expert minutes or compute (GPU-hours). The linked achievement is the prerequisite; once you have achieved it, the mentor’s check of the bounty’s <em>own</em> criteria releases the reward once, on top of the achievement’s separate reward.</p>
-      <p class="muted" id="bountyCount" style="margin-bottom:14px"></p>
-      <div class="bounty-grid" id="bountyList"></div>
-    </section>
-
-    <!-- ============ RECEIPTS ============ -->
-    <section id="panel-receipts" role="tabpanel" aria-labelledby="tab-receipts" hidden>
-      <h2 class="panel-title">Reward log</h2>
-      <p class="panel-sub">Every reward Mina receives, with its source. Balances are support for bigger steps — not a score, and nothing here is ranked.</p>
-      <div class="receipts" id="receiptList"></div>
-    </section>
-
-    <!-- ============ EXPERT DEMO ============ -->
-    <section id="panel-expert" role="tabpanel" aria-labelledby="tab-expert" hidden>
-      <h2 class="panel-title">Expert demo — mentor console</h2>
-      <p class="panel-sub">A preview of what a mentor sees, with a fictional sample role. Bounties you post appear on the learner board; when a learner achieves the linked goal <em>and</em> the bounty’s own criteria check passes, a simulated notification lands here — once per bounty. No email is sent.</p>
-      <div class="persona">
-        <span class="who-av" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8.4" r="3.6"/><path d="M5 20.2c0-3.7 3.1-6 7-6s7 2.3 7 6"/></svg></span>
-        <span>Viewing as <b>Prof. Eli Moreau — visiting mentor (sample, fictional)</b>. Seed bounties below were posted by other fictional mentors.</span>
-      </div>
-      <div class="exp-grid">
-        <div class="ecard" aria-labelledby="inboxTitle">
-          <div class="ehead">
-            <h3 id="inboxTitle" style="font-size:16px">Mentor notifications</h3>
-            <button type="button" class="bell" id="bellBtn">
-              <svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16v-4.5a6 6 0 1 0-12 0V16l-1.6 2.4h15.2z"/><path d="M10.4 20.4a1.8 1.8 0 0 0 3.2 0"/></svg>
-              <span class="bell-badge" id="bellCount">0</span>
-            </button>
-            <p class="hint">Simulated console — completion notices appear here once per bounty.</p>
-          </div>
-          <div class="inbox-list" id="inboxList"></div>
-        </div>
-        <div class="ecard" aria-labelledby="postTitle">
-          <h3 id="postTitle" style="font-size:16px; margin-bottom:12px">Post a sample bounty</h3>
-          <form id="bountyForm" novalidate>
-            <label class="efield"><span class="lab">Problem title</span>
-              <input type="text" id="bTitle" maxlength="90" placeholder="e.g. Reproduce the anomaly in the shared dataset" required>
-            </label>
-            <label class="efield"><span class="lab">What counts as done (acceptance criteria)</span>
-              <textarea id="bCrit" rows="3" maxlength="320" placeholder="Observable criteria a reviewer could check…" required></textarea>
-            </label>
-            <div class="echoices">
-              <label class="efield"><span class="lab">Token top-up</span>
-                <input type="number" id="bTokens" min="0" max="2000" step="50" value="200">
-                <span class="fhint">Illustrative credits (≤ 2,000)</span>
-              </label>
-              <label class="efield"><span class="lab">Expert minutes</span>
-                <input type="number" id="bMinutes" min="0" max="240" step="15" value="30">
-                <span class="fhint">1:1 time with an expert (≤ 240)</span>
-              </label>
-              <label class="efield"><span class="lab">Compute (GPU-hours)</span>
-                <input type="number" id="bGpu" min="0" max="24" step="1" value="0">
-                <span class="fhint">e.g. 4 GPU-hours for a larger experiment (≤ 24)</span>
-              </label>
+  <section class="view" id="view-expert" role="tabpanel" aria-labelledby="tab-expert" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Expert view</h2>
+      <p class="sub">What a mentor sees: notifications when someone meets their bounty, and a form to post a new one.</p>
+      <div class="two">
+        <div class="box"><h3>Notifications</h3><div id="inbox"></div></div>
+        <div class="box"><h3>Post a bounty</h3>
+          <form id="postForm" novalidate>
+            <label for="fTitle">Problem</label><input id="fTitle" maxlength="100" placeholder="e.g. Reproduce the anomaly in our shared dataset">
+            <label for="fCrit">Acceptance criteria (one per line)</label><textarea id="fCrit" maxlength="500" placeholder="Observable things a reviewer can check"></textarea>
+            <label for="fGoal">Solver must first achieve</label><select id="fGoal"></select>
+            <div class="r3">
+              <div><label for="fT">Model credits</label><input id="fT" type="number" min="0" max="5000" step="50" value="0"></div>
+              <div><label for="fM">Expert minutes</label><input id="fM" type="number" min="0" max="240" step="15" value="30"></div>
+              <div><label for="fG">GPU-hours</label><input id="fG" type="number" min="0" max="48" step="1" value="0"></div>
             </div>
-            <label class="efield"><span class="lab">Linked goal</span>
-              <select id="bGoal"></select>
-              <span class="fhint">Only goals no one has achieved yet can carry a bounty — completed achievements don’t back-date.</span>
-            </label>
-            <button type="submit" class="primary"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 3.5 3.5 10.7l6.8 2.9 2.9 6.8z"/><path d="M10.3 13.6 20.4 3.5"/></svg>Post sample bounty</button>
-            <div class="ferr" id="bountyError" role="alert" hidden></div>
+            <div class="err" id="fErr" role="alert" hidden></div>
+            <div class="act"><button class="btn" type="submit">Post bounty</button></div>
           </form>
-          <h4 style="margin:18px 0 0">Bounties you posted (this demo)</h4>
-          <div class="posted-list" id="postedList"></div>
         </div>
       </div>
-    </section>
-  </div>
+    </div></div>
+  </section>
+
+  <section class="view" id="view-log" role="tabpanel" aria-labelledby="tab-log" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Reward log</h2>
+      <p class="sub">Support received for completed goals and verified bounties. Balances are for your next step, not a score.</p>
+      <ol class="log" id="logList"></ol>
+    </div></div>
+  </section>
 </main>
-
-<footer>
-  <p class="f-tag">Different beginnings. More capable together.</p>
-  <p class="f-note">Demo • fictional sample student, mentors, challenges and rewards — no actual grants, resources or messages are sent. Token credits, expert minutes and GPU-hours are illustrative; tool mentions are optional examples, not endorsements. Runs locally in your browser: nothing is stored, and reloading resets the demo.</p>
-</footer>
-
-<div class="toasts" id="toasts" aria-live="polite" aria-label="Demo notifications"></div>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:20px">This prototype needs JavaScript.</p></noscript>
 
 <script>
-'use strict';
-/* ================================================================
-   Talent Engine — student achievement tree (concept prototype)
-   Section 1: static data. Section 2: pure logic (runs in Node too).
-   Section 3: DOM/UI (guarded — never runs without a document).
-   ================================================================ */
-
-/* ---------- 1. Static sample data ---------- */
-
-const STUDENT = { name: 'Mina Okafor', detail: '2nd-year engineering · sample student (fictional)' };
-const EXPERT_DEMO = { name: 'Prof. Eli Moreau', role: 'Visiting mentor (sample, fictional)' };
-
-const ROUTES = {
-  apps:     { short: 'Apps',          label: 'Make something',          icon: 'apps' },
-  research: { short: 'Research',      label: 'Investigate a question',  icon: 'research' },
-  collab:   { short: 'Collaboration', label: 'Help someone succeed',    icon: 'collab' },
-  robots:   { short: 'Robotics',      label: 'Build in the real world', icon: 'robots' },
-  peak:     { short: 'All routes',    label: 'Steward',                 icon: 'peak' },
+"use strict";
+/* ---------- data ---------- */
+const W = 1660, H = 1650, NW = 180, NH = 84;
+const COL = { research:280, create:490, agency:700, bridge:900, meta:1100, make:1320, organize:1540, cap:900 };
+const TIERS = ["Get a real result","Delegate · set criteria","Supervise · calibrate","Own your layer · apply it","Close the loop","Orchestrate","Fleets · field mastery","Steer a collective"];
+const BR = {
+  research:{label:"Investigate", c:"var(--research)"}, create:{label:"Create", c:"var(--create)"},
+  make:{label:"Make", c:"var(--make)"}, organize:{label:"Organize", c:"var(--organize)"},
+  agency:{label:"Agency", c:"var(--agency)"}, meta:{label:"Metacognition", c:"var(--meta)"},
+  bridge:{label:"Collaboration", c:"var(--bridge)"}, cap:{label:"Capstone", c:"var(--cap)"}
 };
+const ROOTS = ["r0","c0","m0","o0"];
+const N = [
+  {id:"r0",b:"research",t:0,title:"Ask a sharper question",goal:"Use an AI assistant to turn a loose curiosity into a question you could actually investigate.",ev:["Your first question and the sharpened version","Three sources you opened and checked yourself","One AI claim that turned out to be unsupported"],rw:{t:200}},
+  {id:"c0",b:"create",t:0,title:"Draft, then make it yours",goal:"Make a first draft with AI — a story, image, track or design — then revise it with your own judgement.",ev:["The AI draft and your revision side by side","What you kept, cut and changed, and why"],rw:{t:200}},
+  {id:"m0",b:"make",t:0,title:"Predict before you build",goal:"Use AI to plan a small physical build — a circuit, mechanism or printed part — and write down a prediction before testing it.",ev:["Plan and parts list","Your written prediction","What actually happened, with a photo or video"],rw:{t:200}},
+  {id:"o0",b:"organize",t:0,title:"Turn talk into decisions",goal:"Use AI to turn real meeting notes into decisions, owners and open questions — then have the participants correct it.",ev:["The AI summary","At least one correction from a participant","The agreed final version"],rw:{m:15}},
 
-const BANDS = [
-  { n: 1, label: 'First useful result',        hint: 'Everyone starts here — pick any route' },
-  { n: 2, label: 'Supervise a workflow',       hint: 'You direct the work and check every step' },
-  { n: 3, label: 'Make knowledge reusable',    hint: 'Others can use it without you in the room' },
-  { n: 4, label: 'Verify a repeatable system', hint: 'It survives changes, other machines and review' },
-  { n: 5, label: 'Steward what others rely on',hint: 'You keep a shared check working and hand it on' },
+  {id:"r1",b:"research",t:1,title:"Catch a fabricated citation",goal:"Check every reference in an AI-written answer and find which exist and what they really say.",ev:["Each reference with the link you checked","A verdict for each: real, misquoted or invented"],rw:{t:300},p:[["all",["r0"]]]},
+  {id:"c1",b:"create",t:1,title:"Run a critique loop",goal:"Ask for critiques from several angles, accept or reject each with a reason, and ship version two.",ev:["The critiques you asked for","Your accept/reject reasons","Version one and version two"],rw:{t:300},p:[["all",["c0"]]]},
+  {id:"m1",b:"make",t:1,title:"Explain a surprise",goal:"When the build behaves differently from your prediction, find the cause with AI help and confirm it physically.",ev:["The mismatch","Two hypotheses you tested","The confirmed cause"],rw:{t:300},p:[["all",["m0"]]]},
+  {id:"o1",b:"organize",t:1,title:"Map the disagreement",goal:"Use AI to lay out the positions in a real disagreement fairly enough that each side signs off on its own description.",ev:["The position map","Sign-off or corrections from each side"],rw:{m:20},p:[["all",["o0"]]]},
+  {id:"a1",b:"agency",t:1,title:"Delegate a bounded task",goal:"Hand an agent a task with clear scope, inputs and a definition of done. Then compare what it did with what it said it did.",ev:["Your task brief","The agent's action log or changes","One difference between its claims and its actions"],rw:{t:400},p:[["any",ROOTS]]},
+  {id:"k1",b:"meta",t:1,title:"Write success criteria first",goal:"Before starting, write down what success looks like and how you will check it. Afterwards, grade yourself against it.",ev:["Criteria written before you began","The result graded against them","What you would change about the criteria"],rw:{m:20},p:[["any",ROOTS]]},
+
+  {id:"a2",b:"agency",t:2,title:"Supervise a multi-step job",goal:"Run a multi-step job in an agent workspace, with checkpoints where you inspect and correct course.",ev:["Your plan with checkpoints","A correction you made mid-run","A final output that passes your criteria"],rw:{t:600},p:[["all",["a1"]]]},
+  {id:"x2",b:"bridge",t:2,title:"Hand off so others can continue",goal:"Package your work — sources, prompts, checks and decisions — so a colleague can continue it without asking you.",ev:["The handoff package","A colleague continues one step without contacting you","What they still had to reconstruct"],rw:{m:30},p:[["any",["r1","c1","m1","o1"]],["any",["a1","k1"]]]},
+  {id:"k2",b:"meta",t:2,title:"Calibrate your confidence",goal:"Before checking ten AI outputs, rate how likely each is correct. Then check them and compare.",ev:["Your ratings, made before checking","The check results","Where you were over- or under-confident"],rw:{m:30},p:[["all",["k1"]]]},
+
+  {id:"r3",b:"research",t:3,title:"Reproduce a published result",goal:"With agent help, reproduce a figure or claim from a paper and report where it matches and where it does not.",ev:["Your reproduction","A match/mismatch table","One likely cause of divergence"],rw:{g:4},why:"A full reproduction often needs more compute than a laptop.",p:[["all",["r1"]],["any",["a2","x2"]]]},
+  {id:"c3",b:"create",t:3,title:"Teach your tools your style",goal:"Write a style guide and checks that agents follow, so output matches your intent across a whole project.",ev:["The style guide","Before and after examples","A check that catches off-style output"],rw:{t:500},p:[["all",["c1"]],["any",["a2","x2"]]]},
+  {id:"a3",b:"agency",t:3,title:"Own your intelligence layer",goal:"Keep your context, prompts, checks and sources somewhere you control. Switch to a different model provider and carry on.",ev:["Where your layer lives and what is in it","The same task completed on two providers","What broke on the switch and how you fixed it"],rw:{t:800},p:[["all",["a2"]],["any",["x2","k2"]]]},
+  {id:"k3",b:"meta",t:3,title:"Notice a wrong frame",goal:"Catch a moment when the problem itself was framed wrongly, stop, and change strategy.",ev:["The original framing","The signal that it was wrong","The new strategy and its result"],rw:{m:30},p:[["all",["k2"]]]},
+  {id:"m3",b:"make",t:3,title:"Close the sim-to-real gap",goal:"Make a simulation predict your physical build well enough to trust it for the next design change.",ev:["Simulated and real measurements","The gap before and after","A design change the simulation correctly predicted"],rw:{g:6},why:"Parameter sweeps in simulation need GPU time.",p:[["all",["m1"]],["any",["a2","x2"]]]},
+  {id:"o3",b:"organize",t:3,title:"Make a reusable decision process",goal:"Turn a one-off facilitated decision into a template that another group uses successfully.",ev:["The template","Another group's use of it","What they changed"],rw:{m:30},p:[["all",["o1"]],["any",["x2","k2"]]]},
+
+  {id:"a4",b:"agency",t:4,title:"Build a verified improvement loop",goal:"Set up a loop where agents attempt, objective checks score, and failures feed revisions. Show it beats your starting version.",ev:["The objective checks","Scores across iterations against the baseline","A failure the loop recovered from"],rw:{t:1000,g:4},why:"Repeated evaluation runs consume model credits and compute.",p:[["all",["a3","k2"]]]},
+  {id:"k4",b:"meta",t:4,title:"Decide what not to automate",goal:"Map a whole workflow, mark which steps stay with people and why, then test one of those assumptions.",ev:["The workflow map with human steps marked","A reason for each human step","The assumption you tested and what you learned"],rw:{m:45},p:[["all",["k3"]],["any",["a3","x2"]]]},
+
+  {id:"a5",b:"agency",t:5,title:"Orchestrate an agent team",goal:"Give several agents distinct roles, interfaces, a budget and an independent reviewer. Beat a single-agent baseline on quality per cost.",ev:["Roles and handoff interfaces","Budget and actual spend","Comparison with the single-agent baseline"],rw:{t:1500,m:30},p:[["all",["a4","k4"]]]},
+  {id:"k5",b:"meta",t:5,title:"Allocate your review attention",goal:"When agents produce more than you can read, decide what to inspect deeply by risk — and measure what your reviewing catches.",ev:["Your risk-based review rule","Errors caught per hour of review","One error the rule missed"],rw:{m:45},p:[["all",["k4"]],["any",["a4","o3"]]]},
+
+  {id:"r6",b:"research",t:6,title:"Run a parallel investigation",goal:"Split a research question across agents with independent evidence trails, then reconcile the conflicts yourself.",ev:["How you split the question","Conflicts found between trails","Your reconciled conclusion"],rw:{g:6},why:"Independent trails multiply model and compute use.",p:[["all",["r3"]],["any",["a5","a4"]]]},
+  {id:"c6",b:"create",t:6,title:"Direct a multi-agent production",goal:"Lead a creative production where agents handle parts and you hold the vision across all of them.",ev:["Roles and creative brief","Where you overruled the agents","The finished work"],rw:{t:1200},p:[["all",["c3","a5"]]]},
+  {id:"a6",b:"agency",t:6,title:"Manage an agent fleet",goal:"Run many agents on dependent tasks: dispatch, triage, contain failures, stop and recover — with evidence of what each produced.",ev:["Dispatch and dependency plan","A contained failure and recovery","Resource use against outcomes"],rw:{t:2000,g:8},why:"Fleet runs need sustained model and compute budgets.",p:[["all",["a5","k5"]]]},
+  {id:"k6",b:"meta",t:6,title:"Evaluate the evaluator",goal:"Find where your checks or reviewer agents agree for the wrong reason, then improve the check.",ev:["Cases where reviewers agreed but were wrong","Why their errors were correlated","An improved check and its effect"],rw:{m:60},p:[["all",["k5"]],["any",["a5","o3"]]]},
+  {id:"m6",b:"make",t:6,title:"Run a robot design sweep",goal:"Have agents explore designs in simulation in parallel, then build and test the best candidate for real.",ev:["Search space and agent setup","Top candidates from simulation","A real-world test of the chosen design"],rw:{g:12},why:"Parallel simulation sweeps are GPU-heavy.",p:[["all",["m3"]],["any",["a5","a4"]]]},
+  {id:"o6",b:"organize",t:6,title:"Facilitate a human–agent deliberation",goal:"Run a group decision where agents synthesize input and people decide, with a record everyone can audit.",ev:["The process design","The audit trail","Participants' assessment of fairness"],rw:{m:60},p:[["all",["o3"]],["any",["k5","a5"]]]},
+
+  {id:"cap",b:"cap",t:7,title:"Steer an adaptive collective",goal:"Set goals for a group of people and agents, evaluate results honestly, and change course when the evidence says so — over weeks, not one run.",ev:["Goals and how they are measured","A course change driven by evidence","What the people involved learned"],rw:{t:3000,m:120,g:16},why:"Sustained collective work needs all three kinds of support.",p:[["all",["a6","k6"]],["any",["r6","c6","m6","o6"]]]}
+];
+const byId = Object.create(null);
+for (const n of N){ n.p = n.p || []; n.x = COL[n.b]; n.w = n.b === "cap" ? 220 : NW; n.h = n.b === "cap" ? 96 : NH; n.y = 60 + (7 - n.t) * 200; byId[n.id] = n; }
+const KIDS = Object.create(null);
+for (const n of N) KIDS[n.id] = [];
+for (const n of N) for (const [, ids] of n.p) for (const i of ids) if (!KIDS[i].includes(n.id)) KIDS[i].push(n.id);
+
+const SEED_BOUNTIES = [
+  {title:"Find every fabricated citation in an AI-written review",by:"Dr. R. Sato",role:"Research mentor (sample)",goal:"r1",rw:{t:300,m:30},crit:["Every reference checked, with the link used","Each marked real, misquoted or invented","At least one partially supported claim explained"]},
+  {title:"Get the gripper simulation within 10% of the real gripper",by:"J. Reyes",role:"Robotics engineer (sample)",goal:"m3",rw:{m:30,g:6},crit:["Grip force measured on hardware and in simulation","Error under 10% across three objects","Calibration steps someone else can rerun"]},
+  {title:"Show where reviewer agents agree for the wrong reason",by:"Prof. E. Moreau",role:"Evaluation researcher (sample)",goal:"k6",rw:{t:800,m:60},crit:["A review set where several agents agree but are wrong","An explanation of why their errors are correlated","A revised check that catches those cases"]}
 ];
 
-/* Tree geometry (desktop canvas; narrow screens reflow to a list). */
-const SLOTS = [140, 340, 540, 740, 940, 1140, 1340];
-const TREE_W = 1480, TREE_H = 1120, NODE_W = 200, NODE_H = 116, BAND_GAP = 212;
-const bandTop = b => TREE_H - 176 - (b - 1) * BAND_GAP;
-
-/* Each node: exact prerequisites (ALL groups must hold; each group is
-   'all' or 'any'), concrete acceptance evidence, and an illustrative reward.
-   tokens = sample token top-up; minutes = expert minutes; neither = mark only. */
-const NODES = [
-  { id:'a1', route:'apps', band:1, slot:1, title:'Ship a tiny tool',
-    goal:'Make one small app or script that does something useful for you or a friend — with any tools you choose — and run it end to end.',
-    evidence:['The tool itself (link or file) with a short note on what it does and one thing it can’t do','A screenshot or run transcript of it working once','One bug you hit on the way, and how you fixed it'],
-    prereqs:[], tokens:500, minutes:0 },
-  { id:'r1', route:'research', band:1, slot:3, title:'Answer a real question',
-    goal:'Pick a question someone actually cares about and write a one-page answer using real sources.',
-    evidence:['A one-page answer with citations where claims appear','A source list with links and dates','One sentence on what the sources do not establish'],
-    prereqs:[], tokens:0, minutes:30 },
-  { id:'c1', route:'collab', band:1, slot:5, title:'Unstick a classmate',
-    goal:'Spend about half an hour helping one classmate past a blocker on their own project, then capture what worked.',
-    evidence:['A short note: the blocker, what you tried, what unblocked them','A one-line confirmation from the classmate','One tip that would help the next person'],
-    prereqs:[], tokens:0, minutes:0 },
-  { id:'b1', route:'robots', band:1, slot:7, title:'Make something move',
-    goal:'Get a physical or simulated robot — or a printed part you designed — to complete one simple motion task you defined yourself.',
-    evidence:['The task written down: start, goal, and what counts as passing','A short video or annotated screenshot of the attempt','One thing that went wrong and the fix'],
-    prereqs:[], tokens:400, minutes:0 },
-
-  { id:'a2', route:'apps', band:2, slot:1, title:'Supervise a multi-step job',
-    goal:'Run a three-step-or-more AI-assisted job where you check every step’s output before moving on.',
-    evidence:['Your plan: the steps, and what does each one','Check notes per step, including one correction you made','The final output and what you’d watch out for next time'],
-    prereqs:[{ type:'any', ids:['a1','c1'] }], tokens:600, minutes:0 },
-  { id:'a3', route:'apps', band:2, slot:2, title:'Ship a second version',
-    goal:'Collect real feedback from one user and ship a second version that answers it.',
-    evidence:['The feedback, summarised with the user’s okay','A short changelog from v1 to v2','One line from the user confirming v2 works better for them'],
-    prereqs:[{ type:'any', ids:['a1'] }], tokens:0, minutes:30 },
-  { id:'r2', route:'research', band:2, slot:3, title:'Check a suspicious citation',
-    goal:'Take a citation an AI tool produced, verify whether it exists and what it really says, and write a short verdict.',
-    evidence:['The citation and where it appeared','The checks you ran — searches, databases, links','A verdict note: does it exist, and what does the source actually support'],
-    prereqs:[{ type:'any', ids:['r1','a1'] }], tokens:300, minutes:0 },
-  { id:'r3', route:'research', band:2, slot:4, title:'Reproduce someone’s result',
-    goal:'Pick a published result — a chart, a number, a claim — and reproduce it yourself; note where it matches and where it diverges.',
-    evidence:['The claim, with its source','Your method and result (table or chart)','A match-or-divergence note with one likely cause'],
-    prereqs:[{ type:'any', ids:['r1','a1'] }], tokens:0, minutes:45, gpu:4,
-    computeWhy:'reproducing on the sample fits a laptop; re-running the reproduction on the full dataset is the next step these GPU-hours are sized for' },
-  { id:'c2', route:'collab', band:2, slot:5, title:'Hand off what you learned',
-    goal:'Write a one-page handoff so a classmate can repeat what you did without asking you anything.',
-    evidence:['The handoff page: method, files, commands','One gotcha and how to avoid it','A classmate confirms they got one step further using it'],
-    prereqs:[{ type:'any', ids:['a1','r1','b1','c1'] }], tokens:0, minutes:30 },
-  { id:'c3', route:'collab', band:2, slot:6, title:'Review a peer’s result',
-    goal:'Take one classmate’s finished artifact and check it against its own acceptance criteria; write down what you find.',
-    evidence:['The criteria you checked against','What passed, and what stays unclear','One concrete suggestion, phrased kindly'],
-    prereqs:[{ type:'any', ids:['a1','r1','b1','c1'] }], tokens:0, minutes:0 },
-  { id:'b2', route:'robots', band:2, slot:7, title:'Match sim to reality',
-    goal:'Run the same motion task in simulation and on hardware — or a second simulator — and document the mismatch and one fix.',
-    evidence:['Both runs of the same task (video or screenshots)','A mismatch table with at least two causes','One fix you tried, and what it changed'],
-    prereqs:[{ type:'any', ids:['b1','a1'] }], tokens:500, minutes:0, gpu:2,
-    computeWhy:'a wider simulation sweep before the next hardware attempt needs more than a laptop' },
-
-  { id:'a4', route:'apps', band:3, slot:2, title:'Publish a reusable component',
-    goal:'Turn your tool or checker into something another student can run without you nearby.',
-    evidence:['A README with install, run and one worked example','A classmate — not you — runs it once successfully','A tagged version and where to ask questions'],
-    prereqs:[{ type:'any', ids:['a2','a3','r2'] }], tokens:600, minutes:30 },
-  { id:'r4', route:'research', band:3, slot:4, title:'Write the missing how-to',
-    goal:'Turn your verification work into a how-to another student can follow on their own topic.',
-    evidence:['A step-by-step guide with a worked example','One common failure and its fix','A classmate confirms they followed it once'],
-    prereqs:[{ type:'any', ids:['r3','r2','b2'] }], tokens:0, minutes:45 },
-  { id:'c4', route:'collab', band:3, slot:5, title:'Curate what the group knows',
-    goal:'Collect three or more handoffs, reviews and how-tos into one indexed hub page your cohort can navigate.',
-    evidence:['The hub page, each item titled with a one-line summary','Tags or an index so the right page is findable','One item you updated after hub feedback'],
-    prereqs:[{ type:'all', ids:['c2','c3'] }], tokens:0, minutes:45 },
-  { id:'b3', route:'robots', band:3, slot:6, title:'Leave a calibration note',
-    goal:'Write the sim-vs-real calibration note and pre-flight checklist the next student uses before touching hardware.',
-    evidence:['The checklist with pass thresholds for the demo task','The numbers you measured, with setup notes','One other student’s run using it (their note)'],
-    prereqs:[{ type:'any', ids:['b2','c3'] }], tokens:700, minutes:0 },
-
-  { id:'a5', route:'apps', band:4, slot:2, title:'Prove it still works',
-    goal:'Add an automated check that catches a seeded break in your component or how-to — then passes after the fix.',
-    evidence:['The check, and the seeded break it catches','A failing run, then a passing run after the fix','The same result on a second machine — a classmate’s or CI'],
-    prereqs:[{ type:'any', ids:['a4','r4'] }], tokens:900, minutes:0 },
-  { id:'r5', route:'research', band:4, slot:4, title:'Stress-test a reused method',
-    goal:'Take a method your group reuses and attack it with three edge cases; report what breaks and what holds.',
-    evidence:['The method, and where the group uses it','Three edge cases with outcomes','A verdict — keep, fix, or retire — with reasons'],
-    prereqs:[{ type:'any', ids:['r4','c4'] }], tokens:0, minutes:60 },
-  { id:'b4', route:'robots', band:4, slot:6, title:'Repeat it on another machine',
-    goal:'Have another student reproduce your sim-vs-real check on different hardware or another simulator.',
-    evidence:['Their independent run notes, including deltas','What held and what drifted, with numbers','One update to the calibration note from what you learned'],
-    prereqs:[{ type:'any', ids:['b3','c4'] }], tokens:800, minutes:30 },
-  { id:'c5', route:'collab', band:4, slot:5, title:'Run a review that changes something',
-    goal:'Facilitate a group review where at least one finding actually changes an artifact — and publish the before and after.',
-    evidence:['The agenda, and who took part','The finding and the change it caused — before / after','The group’s one-line takeaway, agreed by participants'],
-    prereqs:[{ type:'all', ids:['c4'] }, { type:'any', ids:['a4','r4','b3'] }], tokens:500, minutes:30 },
-
-  { id:'p1', route:'peak', band:5, slot:4, title:'Become a steward',
-    goal:'Own one repeatable check for the group: keep its checklist current, review others’ results, and hand it to a successor.',
-    evidence:['The check you own, with its current version','Two results you reviewed, and your findings','Your succession note so someone else can take over'],
-    prereqs:[{ type:'any', ids:['a5','r5','b4','c5'] }], tokens:1200, minutes:60 },
-];
-
-/* Sample pre-funded challenges. goalId must be a real, not-yet-completed goal.
-   Each bounty pays exactly once, only if the goal completes after posting. */
-const BOUNTY_SEEDS = [
-  { title:'Verify a hallucinated citation', byName:'Dr. R. Sato', byRole:'Research mentor (sample)', goalId:'r2',
-    tokens:200, minutes:30,
-    criteria:['The citation is checked against real searches — steps and links included','A verdict note: does it exist, and what the source actually supports','A classmate could repeat your check from the note alone'] },
-  { title:'Close the sim-to-real gap on the line-follower demo', byName:'Cap. J. Reyes', byRole:'Robotics coach (sample)', goalId:'b2',
-    tokens:300, minutes:0, gpu:4,
-    computeWhy:'the re-run sweeps the fix has to survive need more GPU time than a laptop',
-    criteria:['The same task run in sim and on hardware — or a second simulator','A mismatch table with at least two causes','One tested fix, shown by a re-run'] },
-  { title:'A reproducibility check for the shared study-notes app', byName:'Ms. K. Tanaka', byRole:'Product engineer (sample)', goalId:'a5',
-    tokens:250, minutes:30,
-    criteria:['An automated check that fails on a seeded break, then passes','The same result on a second machine','Steps documented so the next maintainer can run it'] },
-];
-
-const START_TOKENS = 500;       /* illustrative welcome top-up */
-const SEED_COMPLETED = ['a1','c1']; /* Mina's starting progress */
-
-const NODE_MAP = Object.create(null);
-for (const n of NODES) NODE_MAP[n.id] = n;
-const CHILDREN = Object.create(null);
-for (const n of NODES) CHILDREN[n.id] = NODES.filter(m => m.prereqs.some(g => g.ids.includes(n.id)));
-
-/* ---------- 2. Pure logic (DOM-free; also runs under Node) ---------- */
-
-function fmt(x){ return Number(x).toLocaleString('en-US'); }
-
-function makeInitialState(){
-  return {
-    completed: Object.create(null), /* id -> completion step (monotonic clock) */
-    tokens: 0, minutes: 0, gpu: 0,
-    receipts: [], notifications: [],
-    bounties: BOUNTY_SEEDS.map((b,i) => ({ id:'bs'+(i+1), verified:false, source:'seed', ...b })),
-    activeRoute: 'all', selected: null, tab: 'tree',
-    clock: 0, bountySeq: 0, seeding: false, flash: null,
-  };
+/* ---------- pure logic ---------- */
+function fresh(){
+  return { done:Object.create(null), t:0, m:0, g:0, log:[], notes:[], clock:0, seq:0,
+    bounties: SEED_BOUNTIES.map((b, i) => ({ ...b, id:"b" + (i + 1), crit:b.crit.slice(), rw:{ ...b.rw }, ok:false })) };
 }
-
-function pushReceipt(s, r){
-  r.time = Date.now();
-  r.seeded = !!s.seeding;
-  s.receipts.push(r);
+const groupMet = (s, [k, ids]) => k === "all" ? ids.every(i => s.done[i]) : ids.some(i => s.done[i]);
+const ready = (s, n) => n.p.every(g => groupMet(s, g));
+function pay(s, rw, entry){ s.t += rw.t || 0; s.m += rw.m || 0; s.g += rw.g || 0; s.log.push({ ...entry, rw:{ ...rw } }); }
+function complete(s, id, seeded){
+  const n = byId[id];
+  if (!n) return "unknown";
+  if (s.done[id]) return "already";
+  if (!ready(s, n)) return "locked";
+  s.done[id] = ++s.clock;
+  pay(s, n.rw, { kind:"achievement", title:n.title, seeded:!!seeded });
+  return "ok";
 }
-
-function prereqGroupMet(s, g){
-  if (g.type === 'all') return g.ids.every(id => !!s.completed[id]);
-  return g.ids.some(id => !!s.completed[id]);
+/* Minimal set of goals to reach id, in a valid order (prerequisites are always in lower tiers). */
+function pathTo(s, id){
+  const need = new Set();
+  (function walk(i){
+    if (s.done[i] || need.has(i)) return;
+    for (const [k, ids] of byId[i].p){
+      if (k === "all") ids.forEach(walk);
+      else if (!ids.some(x => s.done[x] || need.has(x))) walk(ids.slice().sort((a, b) => byId[a].t - byId[b].t)[0]);
+    }
+    need.add(i);
+  })(id);
+  return [...need].sort((a, b) => byId[a].t - byId[b].t);
 }
-function prereqsMet(s, n){ return n.prereqs.every(g => prereqGroupMet(s, g)); }
-function isAvailable(s, n){ return !s.completed[n.id] && prereqsMet(s, n); }
-
-/* Completes a goal once. Respects prerequisites and never double-awards.
-   Tree achievements pay only their own base reward; bounties linked to the
-   goal are separate and are released only by their own verification step. */
-function completeNode(s, id){
-  const n = NODE_MAP[id];
-  if (!n) return { ok:false, error:'unknown' };
-  if (s.completed[id]) return { ok:false, error:'already' };
-  if (!prereqsMet(s, n)) return { ok:false, error:'prereqs' };
-  s.completed[id] = ++s.clock;
-  const rewards = { tokens: n.tokens || 0, minutes: n.minutes || 0, gpu: n.gpu || 0 };
-  s.tokens += rewards.tokens;
-  s.minutes += rewards.minutes;
-  s.gpu += rewards.gpu;
-  const items = [];
-  if (n.tokens) items.push({ label:'achievement reward', tokens:n.tokens });
-  if (n.minutes) items.push({ label:'achievement reward', minutes:n.minutes });
-  if (n.gpu) items.push({ label:'achievement reward — compute for the next step', gpu:n.gpu });
-  if (!items.length) items.push({ label:'achievement mark — recognition for the work itself' });
-  pushReceipt(s, { kind:'achievement', title:n.title, route:n.route, items });
-  return { ok:true, node:n, rewards };
+function verify(s, bid){
+  const b = s.bounties.find(x => x.id === bid);
+  if (!b) return "unknown";
+  if (b.ok) return "already";
+  if (!s.done[b.goal]) return "locked";
+  b.ok = true;
+  pay(s, b.rw, { kind:"bounty", title:b.title, from:b.by });
+  s.notes.push({ bid:b.id, to:b.by, role:b.role, title:b.title, goal:byId[b.goal].title, crit:b.crit.slice(), rw:{ ...b.rw }, at:++s.clock });
+  return "ok";
 }
-
-/* A bounty's own acceptance criteria are what the mentor checks — they can
-   differ from the linked achievement's evidence. The linked node is only the
-   prerequisite: the learner must have achieved it before this verification
-   step. Verification pays the bounty reward and notifies the mentor exactly
-   once per bounty, and never happens merely because the node was completed. */
-function criteriaList(b){
-  if (Array.isArray(b.criteria)) return b.criteria.map(x => String(x).trim().replace(/\.$/, '')).filter(Boolean);
-  return String(b.criteria).split(/\n|\.\s+/).map(x => x.trim().replace(/\.$/, '')).filter(Boolean);
-}
-function verifyBounty(s, id){
-  const b = s.bounties.find(x => x.id === id);
-  if (!b) return { ok:false, error:'unknown' };
-  if (b.verified) return { ok:false, error:'already' };
-  if (!s.completed[b.goalId]) return { ok:false, error:'prereqs' };
-  b.verified = true; b.verifiedTs = ++s.clock;
-  s.tokens += b.tokens || 0;
-  s.minutes += b.minutes || 0;
-  s.gpu += b.gpu || 0;
-  const items = [];
-  if (b.tokens) items.push({ label:'bounty top-up — ' + b.title + ' (' + b.byName + ', sample)', tokens:b.tokens });
-  if (b.minutes) items.push({ label:'expert time from ' + b.byName + ' (sample)', minutes:b.minutes });
-  if (b.gpu) items.push({ label:'compute bundle — ' + b.title + ' (illustrative GPU-hours)', gpu:b.gpu });
-  if (!items.length) items.push({ label:'bounty mark — ' + b.title });
-  pushReceipt(s, { kind:'bounty', title:'Bounty verified — ' + b.title, items });
-  s.notifications.push({
-    bountyId: b.id, ts: b.verifiedTs, toName: b.byName, toRole: b.byRole,
-    learner: STUDENT.name, bountyTitle: b.title, criteria: criteriaList(b),
-    goalTitle: NODE_MAP[b.goalId].title,
-    tokens: b.tokens || 0, minutes: b.minutes || 0, gpu: b.gpu || 0,
-  });
-  return { ok:true, bounty:b };
-}
-
-/* Experts may attach a bounty only to a goal that is available right now:
-   never to an achieved goal (no back-dating) and never to a locked one. */
-function postBounty(s, data){
-  const errors = [];
-  const title = String(data.title || '').trim();
-  const criteria = String(data.criteria || '').trim();
-  const tokens = Math.max(0, Math.round(Number(data.tokens) || 0));
-  const minutes = Math.max(0, Math.round(Number(data.minutes) || 0));
-  const gpu = Math.max(0, Math.round(Number(data.gpu) || 0));
-  const n = NODE_MAP[data.goalId];
-  if (!n) errors.push('Pick a goal to attach the bounty to.');
-  else if (s.completed[n.id]) errors.push('That goal has already been achieved — bounties don’t back-date.');
-  else if (!isAvailable(s, n)) errors.push('That goal isn’t available yet — pick a goal someone can start now.');
-  if (!title) errors.push('Give the problem a short title.');
-  if (!criteria) errors.push('Describe what counts as done.');
-  if (tokens > 2000) errors.push('Keep the token top-up within the illustrative range (max 2,000).');
-  if (minutes > 240) errors.push('Keep expert minutes within the illustrative range (max 240).');
-  if (gpu > 24) errors.push('Keep compute within the illustrative range (max 24 GPU-hours).');
-  if (!tokens && !minutes && !gpu) errors.push('Add a reward: token credits, expert minutes, compute — or a mix.');
-  if (errors.length) return { ok:false, errors };
-  const b = { id:'bu' + (++s.bountySeq), title, criteria, tokens, minutes, gpu, goalId:data.goalId,
-    byName:EXPERT_DEMO.name, byRole:EXPERT_DEMO.role,
-    verified:false, source:'user' };
+function post(s, d){
+  const errs = [];
+  const title = String(d.title || "").trim();
+  const crit = String(d.crit || "").split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const num = v => Math.round(Number(v) || 0);
+  const rw = {}; for (const k of ["t","m","g"]) { const v = num(d[k]); if (v) rw[k] = v; }
+  if (!title) errs.push("Add a short problem title.");
+  if (!crit.length) errs.push("Add at least one observable criterion (one per line).");
+  if (!byId[d.goal]) errs.push("Choose the achievement a solver needs first.");
+  else if (s.done[d.goal]) errs.push("That achievement is already done — bounties do not back-date.");
+  if ((rw.t || 0) < 0 || (rw.m || 0) < 0 || (rw.g || 0) < 0) errs.push("Rewards cannot be negative.");
+  if (!Object.keys(rw).length) errs.push("Offer at least one reward.");
+  if ((rw.t || 0) > 5000 || (rw.m || 0) > 240 || (rw.g || 0) > 48) errs.push("Keep rewards within the sample limits (5,000 credits, 240 minutes, 48 GPU-hours).");
+  if (errs.length) return { errs };
+  const b = { id:"u" + (++s.seq), title, crit, goal:d.goal, rw, by:"You (sample expert)", role:"Posted in this demo", ok:false };
   s.bounties.push(b);
-  return { ok:true, bounty:b };
+  return { b };
 }
 
-/* Seed the sample student's starting point (welcome top-up + 2 achievements). */
-function seedState(s){
-  pushReceipt(s, { kind:'start', title:'Welcome to the Talent Engine', items:[{ label:'start-up support (illustrative)', tokens:START_TOKENS }] });
-  s.tokens += START_TOKENS;
-  s.seeding = true;
-  for (const id of SEED_COMPLETED) completeNode(s, id);
-  s.seeding = false;
-}
-
-/* ---------- self-checks (run only under Node) ---------- */
-function runSelfChecks(){
+function selfTest(){
   const out = [];
-  const ok = (name, cond) => { out.push((cond ? 'PASS  ' : 'FAIL  ') + name); if (!cond) process.exitCode = 1; };
-  /* structure */
-  const ids = NODES.map(n => n.id);
-  ok('node ids unique', new Set(ids).size === ids.length);
-  let refs = true, bandsUp = true, inBounds = true;
-  for (const n of NODES){
-    for (const g of n.prereqs) for (const pid of g.ids){
-      const p = NODE_MAP[pid];
-      if (!p) refs = false;
-      else if (p.band >= n.band) bandsUp = false;
+  const ok = (c, m) => { if (!c) throw new Error("FAIL: " + m); out.push("PASS " + m); };
+  ok(N.length === 30, "30 achievements");
+  ok(new Set(N.map(n => n.id)).size === N.length, "unique ids");
+  let edges = 0;
+  for (const n of N) for (const [k, ids] of n.p) { ok(k === "all" || k === "any", n.id + " group type"); for (const i of ids) { edges++; ok(byId[i] && byId[i].t < n.t, n.id + " <- " + i + " exists in a lower tier"); } }
+  ok(["research","create","make","organize"].every(b => N.some(n => n.b === b && n.t === 0)), "four non-software entry routes");
+  ok(N.filter(n => n.b === "agency").map(n => n.t).join() === "1,2,3,4,5,6", "agency trunk spans tiers 1-6");
+  ok(N.filter(n => n.b === "meta").map(n => n.t).join() === "1,2,3,4,5,6", "metacognition trunk spans tiers 1-6");
+  ok(byId.a5.p.some(([, ids]) => ids.includes("k4")) && byId.a6.p.some(([, ids]) => ids.includes("k5")), "orchestration and fleets require metacognition");
+  ok(byId.cap.p.some(([, ids]) => ids.includes("a6")) && byId.cap.p.some(([, ids]) => ids.includes("k6")), "capstone needs fleet management and evaluator evaluation");
+  for (const r of ROOTS) { const s = fresh(); complete(s, r); for (const top of ["a6","k6","cap"]) { const s2 = fresh(); complete(s2, r); const p = pathTo(s2, top); ok(p.every(i => complete(s2, i) === "ok"), "from " + r + " reach " + top); } }
+  let s = fresh();
+  for (const n of N.slice().sort((a, b) => a.t - b.t)) for (const i of pathTo(s, n.id)) complete(s, i);
+  ok(Object.keys(s.done).length === 30, "every achievement reachable");
+  const sum = k => N.reduce((a, n) => a + (n.rw[k] || 0), 0);
+  ok(s.t === sum("t") && s.m === sum("m") && s.g === sum("g"), "each achievement pays once");
+  ok(complete(s, "a1") === "already", "no repeat award");
+  ok(s.notes.length === 0, "achievements alone never notify experts");
+  for (const b of ["b1","b2","b3"]) ok(verify(s, b) === "ok", "verify " + b);
+  ok(s.notes.length === 3 && verify(s, "b1") === "already" && s.notes.length === 3, "one notification per bounty");
+  s = fresh();
+  ok(verify(s, "b1") === "locked", "bounty needs its prerequisite");
+  ok(post(s, { title:"x", crit:"a", goal:"a5", g:4 }).b, "bounty on an advanced goal");
+  complete(s, "r0");
+  ok(post(s, { title:"x", crit:"a", goal:"r0", t:1 }).errs, "no back-dated bounty");
+  ok(post(s, { title:"", crit:"", goal:"zz" }).errs.length >= 3, "form validation");
+  out.push("ALL PASSED — " + N.length + " achievements, " + edges + " prerequisite edges");
+  return out;
+}
+
+/* ---------- UI ---------- */
+if (typeof document === "undefined") {
+  console.log(selfTest().join("\n"));
+} else {
+  const ICON = {
+    t:'<circle cx="12" cy="12" r="8"/><path d="M9 12h6M12 9v6"/>',
+    m:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    g:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>',
+    p:'<path d="M5 12.5l4.5 4.5L19 7"/>', check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+    lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>',
+    fit:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>'
+  };
+  const ic = k => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + ICON[k] + "</svg>";
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, ...kids){
+    const e = document.createElement(tag);
+    for (const k in attrs || {}) {
+      const v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k === "text") e.textContent = v;
+      else if (k === "html") e.innerHTML = v;
+      else if (k === "style") e.style.cssText = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? "" : v);
     }
-    if (n.slot < 1 || n.slot > SLOTS.length) inBounds = false;
-    if (bandTop(n.band) < 40 || bandTop(n.band) + NODE_H > TREE_H) inBounds = false;
-    if (SLOTS[n.slot-1] - NODE_W/2 < 20 || SLOTS[n.slot-1] + NODE_W/2 > TREE_W - 20) inBounds = false;
+    for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+    return e;
   }
-  ok('all prerequisite references exist', refs);
-  ok('graph acyclic (prerequisites always one band below)', bandsUp);
-  ok('node positions inside canvas', inBounds);
-  ok('compute rewards exist in tree and bounties', NODES.some(n => n.gpu) && BOUNTY_SEEDS.some(b => b.gpu));
-  ok('drawer content meaningful for every achievement (goal, 2-3 evidence, reward)',
-    NODES.every(n => n.goal.length >= 40 && n.evidence.length >= 2 && n.evidence.length <= 3
-      && n.evidence.every(e => e.length >= 15) && rewardLine(n).length > 0));
-  ok('every non-peak achievement opens toward something',
-    NODES.every(n => n.route === 'peak' || (CHILDREN[n.id] && CHILDREN[n.id].length > 0)));
-  ok('every seed bounty has its own criteria (2+) and a reward',
-    BOUNTY_SEEDS.every(b => criteriaList(b).length >= 2 && rewardLine(b).length > 0));
-  /* reachability: repeatedly complete what is available */
-  const s = makeInitialState(); seedState(s);
-  ok('initial demo state: 2 achievements done, 9 goals immediately available (nothing locked-only)',
-    Object.keys(s.completed).length === 2 && NODES.filter(n => isAvailable(s, n)).length === 9);
-  let guard = 0;
-  while (guard++ < 100){
-    const next = NODES.find(n => isAvailable(s, n));
-    if (!next) break;
-    if (!completeNode(s, next.id).ok) break;
+  const fmt = x => Number(x).toLocaleString("en-US");
+  const UNITS = { t:["model credits","t"], m:["expert minutes","m"], g:["GPU-hours","g"] };
+  function chips(rw, big){
+    return ["t","m","g"].filter(k => rw[k]).map(k => el("span", { class:"chip " + k + (big ? " big" : ""), html: ic(k) }, el("b", { text: (big ? "+" : "") + fmt(rw[k]) + (k === "m" ? (big ? "" : "m") : k === "g" ? (big ? "" : " GPU-h") : "") }), big ? " " + UNITS[k][0] : ""));
   }
-  ok('full progression reachable without editing code (' + guard + ' steps)', NODES.every(n => s.completed[n.id]));
-  /* achievements pay only their base reward; bounties never auto-claim */
-  const sumT = NODES.reduce((a,n)=>a+(n.tokens||0),0), sumM = NODES.reduce((a,n)=>a+(n.minutes||0),0), sumG = NODES.reduce((a,n)=>a+(n.gpu||0),0);
-  ok('token total = welcome + achievements only (bounties pay separately)', s.tokens === START_TOKENS + sumT);
-  ok('minutes total = achievements only', s.minutes === sumM);
-  ok('compute total = achievements only (GPU-hours)', s.gpu === sumG);
-  ok('completing achievements alone never notifies mentors', s.notifications.length === 0);
-  const t0 = s.tokens, m0 = s.minutes, g0 = s.gpu;
-  for (const n of NODES){ if (completeNode(s, n.id).ok) ok('re-completion rejected for ' + n.id, false); }
-  ok('re-completion never double-awards', s.tokens === t0 && s.minutes === m0 && s.gpu === g0);
-  /* bounty verification: own criteria, exactly once, only after prerequisite */
-  let verified = 0;
-  for (const b of s.bounties){
-    const res = verifyBounty(s, b.id);
-    if (res.ok){ verified++; if (verifyBounty(s, b.id).ok) ok('re-verification rejected for ' + b.id, false); }
-    else ok('verification possible for ' + b.title, false);
-  }
-  ok('each seed bounty verifies exactly once', verified === BOUNTY_SEEDS.length);
-  const bT = BOUNTY_SEEDS.reduce((a,b)=>a+(b.tokens||0),0), bM = BOUNTY_SEEDS.reduce((a,b)=>a+(b.minutes||0),0), bG = BOUNTY_SEEDS.reduce((a,b)=>a+(b.gpu||0),0);
-  ok('bounty rewards pay once, on verification', s.tokens === t0 + bT && s.minutes === m0 + bM && s.gpu === g0 + bG);
-  ok('exactly one notification per seed bounty', s.notifications.length === BOUNTY_SEEDS.length);
-  const n0 = s.notifications[0];
-  const nb = s.bounties.find(x => x.id === n0.bountyId);
-  ok('notification carries that bounty’s own criteria, not just the achievement',
-    !!nb && n0.bountyTitle === nb.title && n0.criteria.join(' | ') === criteriaList(nb).join(' | ') && !!n0.goalTitle);
-  /* posting rules and the post → goal → verify → notify loop */
-  const s2 = makeInitialState(); seedState(s2);
-  ok('posting on an achieved goal is rejected', !postBounty(s2, { title:'x', criteria:'y', tokens:100, minutes:0, gpu:0, goalId:'a1' }).ok);
-  ok('posting on a locked goal is rejected', !postBounty(s2, { title:'x', criteria:'y', tokens:100, minutes:0, gpu:0, goalId:'a4' }).ok);
-  ok('rewardless bounty is rejected', !postBounty(s2, { title:'x', criteria:'y', tokens:0, minutes:0, gpu:0, goalId:'r2' }).ok);
-  ok('excessive compute is rejected', !postBounty(s2, { title:'x', criteria:'y', tokens:0, minutes:0, gpu:30, goalId:'r2' }).ok);
-  const gpuOnly = postBounty(s2, { title:'GPU sweep bounty', criteria:'the sweep converges twice', tokens:0, minutes:0, gpu:4, goalId:'r2' });
-  const dup = postBounty(s2, { title:'Second citation bounty', criteria:'same bar, checked twice', tokens:120, minutes:0, gpu:0, goalId:'r2' });
-  ok('compute-only bounty accepted; second bounty on the same goal accepted', gpuOnly.ok && dup.ok);
-  ok('verification blocked before the prerequisite is achieved', !verifyBounty(s2, gpuOnly.bounty.id).ok);
-  ok('goal completes with its base reward only', completeNode(s2, 'r2').ok && s2.tokens === START_TOKENS + 500 + 300 && s2.gpu === 0);
-  ok('no notification from the achievement itself', s2.notifications.length === 0);
-  const v1 = verifyBounty(s2, gpuOnly.bounty.id);
-  const v2 = verifyBounty(s2, dup.bounty.id);
-  ok('both bounties verify after the single goal completion', v1.ok && v2.ok);
-  ok('each bounty pays its own reward exactly once', s2.tokens === START_TOKENS + 500 + 300 + 120 && s2.gpu === 4);
-  ok('exactly two notifications, one per bounty', s2.notifications.length === 2 && new Set(s2.notifications.map(x => x.bountyId)).size === 2);
-  const gpuNote = s2.notifications.find(x => x.bountyTitle === 'GPU sweep bounty');
-  ok('notification reflects the bounty’s own criteria, not the node’s', !!gpuNote && gpuNote.criteria.join(' ').indexOf('sweep converges') !== -1);
-  const before = { t:s2.tokens, g:s2.gpu, n:s2.notifications.length };
-  verifyBounty(s2, gpuOnly.bounty.id); completeNode(s2, 'r2');
-  ok('no re-verify or re-complete double-pays', s2.tokens === before.t && s2.gpu === before.g && s2.notifications.length === before.n);
-  console.log(out.join('\n'));
-  console.log((process.exitCode ? 'SELF-CHECKS FAILED' : 'ALL SELF-CHECKS PASSED') + ' — ' + out.length + ' checks, ' + NODES.length + ' nodes, ' + NODES.reduce((a,n)=>a+n.prereqs.reduce((x,g)=>x+g.ids.length,0),0) + ' edges');
-}
+  const rwText = rw => ["t","m","g"].filter(k => rw[k]).map(k => "+" + fmt(rw[k]) + " " + UNITS[k][0]).join(" · ") || "recognition";
 
-/* ---------- 3. UI (browser only) ---------- */
+  let S = fresh();
+  function seed(){ S = fresh(); for (const i of ["r0","m0"]) complete(S, i, true); }
+  seed();
+  let SEL = null;
+  const MQ = window.matchMedia("(max-width: 900px)");
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const vp = $("viewport"), world = $("world"), panel = $("panel");
+  const NODE = Object.create(null), EDGES = [];
 
-const ICONS = {
-  apps:'<rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M9.5 10l-2 2 2 2"/><path d="M14.5 10l2 2-2 2"/>',
-  research:'<circle cx="10.5" cy="10.5" r="5.5"/><path d="M14.8 14.8 20 20"/>',
-  collab:'<circle cx="8.5" cy="8.5" r="3"/><circle cx="15.6" cy="9" r="2.7"/><path d="M4 18.5c.4-3.2 2.4-5 4.5-5s4.1 1.8 4.5 5"/><path d="M14 18.5c.4-2.8 2-4.3 3.8-4.3s3.4 1.5 3.8 4.3"/>',
-  robots:'<rect x="5" y="9.5" width="14" height="9" rx="3"/><circle cx="12" cy="6.5" r="1"/><path d="M12 7.5v2"/><circle cx="9.3" cy="14" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.7" cy="14" r="1.1" fill="currentColor" stroke="none"/><path d="M9.5 17c.7.5 1.6.8 2.5.8s1.8-.3 2.5-.8"/>',
-  peak:'<path d="M12 3.5 20 6v6c0 5-3.4 7.4-8 9-4.6-1.6-8-4-8-9V6z"/><path d="M9 12l2.3 2.3L15.5 10"/>',
-  spark:'<path fill="currentColor" stroke="none" d="M12 3.2 13.7 10.3 20.8 12 13.7 13.7 12 20.8 10.3 13.7 3.2 12 10.3 10.3Z"/>',
-  check:'<circle cx="12" cy="12" r="8.5"/><path d="M8.2 12.4l2.5 2.5 5-5.3"/>',
-  lock:'<rect x="6" y="10.5" width="12" height="9.5" rx="2.5"/><path d="M9 10.5V8a3 3 0 0 1 6 0v2.5"/><path d="M12 14.5v2"/>',
-  coin:'<circle cx="9.4" cy="9.4" r="6.6"/><circle cx="14.6" cy="14.6" r="6.6"/>',
-  clock:'<circle cx="12" cy="12" r="8.2"/><path d="M12 7.6V12l3.2 2.2"/>',
-  chip:'<rect x="7" y="7" width="10" height="10" rx="2"/><path d="M9 4v3M15 4v3M9 17v3M15 17v3M4 9h3M4 15h3M17 9h3M17 15h3"/>',
-  badge:'<circle cx="12" cy="9.5" r="5"/><path d="M8.7 13.6 7.5 20.5l4.5-2.3 4.5 2.3-1.2-6.9"/>',
-  crown:'<path d="M3.5 17.5h17"/><path d="M4.5 17 3 7.5l5.5 4.3L12 4l3.5 7.8L21 7.5 19.5 17"/>',
-  bell:'<path d="M18 16v-4.5a6 6 0 1 0-12 0V16l-1.6 2.4h15.2z"/><path d="M10.4 20.4a1.8 1.8 0 0 0 3.2 0"/>',
-  close:'<path d="M6 6l12 12"/><path d="M18 6 6 18"/>',
-  dot:'<circle cx="12" cy="12" r="3" fill="currentColor" stroke="none"/>',
-  arrow:'<path d="M5 12h14"/><path d="M13 6l6 6-6 6"/>',
-  send:'<path d="M20.5 3.5 3.5 10.7l6.8 2.9 2.9 6.8z"/><path d="M10.3 13.6 20.4 3.5"/>',
-  target:'<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="4"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/>',
-  user:'<circle cx="12" cy="8.4" r="3.6"/><path d="M5 20.2c0-3.7 3.1-6 7-6s7 2.3 7 6"/>',
-};
-function icon(name){ return '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (ICONS[name] || ICONS.dot) + '</svg>'; }
+  ["t","m","g","p"].forEach(k => $("ic-" + k).innerHTML = ic(k));
+  $("zin").innerHTML = ic("plus"); $("zout").innerHTML = ic("minus"); $("zfit").innerHTML = ic("fit");
 
-const TAB_IDS = ['tree','bounties','receipts','expert'];
-const UI = {};
-let S = null;
-let inspModal = false;
-let MQ_TREE = null, PREFERS_REDUCED = null;
-
-function h(tag, attrs){
-  const e = document.createElement(tag);
-  if (attrs) for (const k in attrs){
-    const v = attrs[k];
-    if (v === false || v == null) continue;
-    if (k === 'html') e.innerHTML = v;
-    else e.setAttribute(k, v === true ? '' : String(v));
-  }
-  for (let i = 2; i < arguments.length; i++){
-    const kid = arguments[i];
-    if (kid == null) continue;
-    e.append(kid.nodeType ? kid : document.createTextNode(String(kid)));
-  }
-  return e;
-}
-
-function statusOf(n){ const done = !!S.completed[n.id]; return done ? 'done' : (prereqsMet(S, n) ? 'open' : 'locked'); }
-function routeMatches(n, route){ return route === 'all' || n.route === route || n.route === 'peak'; }
-function rewardLine(n){
-  const p = [];
-  if (n.tokens) p.push('+' + fmt(n.tokens) + ' tokens');
-  if (n.minutes) p.push('+' + n.minutes + ' expert minutes');
-  if (n.gpu) p.push('+' + n.gpu + ' GPU-hours');
-  if (!p.length) p.push('achievement mark');
-  return p.join(' · ');
-}
-function relTime(t){
-  const sec = Math.max(0, Math.round((Date.now() - t) / 1000));
-  if (sec < 45) return 'just now';
-  return Math.max(1, Math.round(sec / 60)) + ' min ago';
-}
-
-/* ----- build ----- */
-
-function chipsHTML(n){
-  let s = '';
-  if (n.tokens) s += '<span class="chip chip-t">' + icon('coin') + '<b>' + fmt(n.tokens) + '</b></span>';
-  if (n.minutes) s += '<span class="chip chip-m">' + icon('clock') + '<b>' + n.minutes + 'm</b></span>';
-  if (n.gpu) s += '<span class="chip chip-c">' + icon('chip') + '<b>' + n.gpu + ' GPU-h</b></span>';
-  s += '<span class="chip chip-b" title="Achievement mark">' + icon('badge') + '</span>';
-  if (n.band === 1) s += '<span class="chip chip-start">Start here</span>';
-  return s;
-}
-function nodeHTML(n){
-  const x = SLOTS[n.slot-1] - NODE_W/2, y = bandTop(n.band);
-  return '<button type="button" class="node route-' + n.route + '" data-id="' + n.id + '" style="--nx:' + x + 'px;--ny:' + y + 'px">'
-    + '<span class="node-head"><span class="node-ic" aria-hidden="true">' + icon(ROUTES[n.route].icon) + '</span>'
-    + '<span class="node-state" aria-hidden="true">' + icon('lock') + '</span></span>'
-    + '<span class="node-title">' + n.title + '</span>'
-    + '<span class="node-chips">' + chipsHTML(n) + '</span>'
-    + '<span class="vh" data-vh></span></button>';
-}
-function buildTree(){
-  let html = '<svg class="edges" viewBox="0 0 ' + TREE_W + ' ' + TREE_H + '" aria-hidden="true" focusable="false"><g id="edgeLayer"></g></svg>';
-  /* one loop per band: label + hint + that band's sorted nodes share DOM order,
-     so the mobile list reads as five real per-band sections. Absolute
-     coordinates, the SVG layer and edgeLayer are unchanged. */
-  for (const b of BANDS){
-    html += '<div class="band-label" style="--ny:' + (bandTop(b.n) - 46) + 'px"><span class="band-n">Band ' + b.n + '</span><span class="band-name">' + b.label + '</span></div>';
-    html += '<div class="band-hint" style="--ny:' + (bandTop(b.n) - 41) + 'px">' + b.hint + '</div>';
-    for (const n of NODES.filter(n => n.band === b.n).sort((a,z) => a.slot - z.slot)) html += nodeHTML(n);
-  }
-  UI.canvas.innerHTML = html;
-  UI.edgeLayer = document.getElementById('edgeLayer');
-  UI.nodeEls = Object.create(null);
-  for (const el of UI.canvas.querySelectorAll('.node')) UI.nodeEls[el.dataset.id] = el;
-}
-function buildRoutePills(){
-  const host = UI.routePills;
-  const mk = (route, label, rc) => h('button', { type:'button', class:'pill', 'data-route':route, 'aria-pressed': route === 'all' ? 'true' : 'false', style: rc ? '--rc:' + rc : '' },
-    route !== 'all' ? h('span', { class:'pdot', 'aria-hidden':'true' }) : null, label);
-  host.append(h('span', { class:'lbl' }, 'Routes'));
-  host.append(mk('all','All routes'));
-  for (const r of ['apps','research','collab','robots']){
-    const colors = { apps:'var(--apps)', research:'var(--research)', collab:'var(--collab)', robots:'var(--robots)' };
-    host.append(mk(r, ROUTES[r].label, colors[r]));
-  }
-  host.querySelector('.vh') && host.querySelector('.vh').remove();
-}
-function buildDots(){
-  for (let i = 0; i < BANDS.length; i++) UI.bandDots.append(h('span', { class:'dot', 'data-band': i + 1 }));
-}
-
-/* ----- render ----- */
-
-function renderEdges(){
-  const active = S.activeRoute;
-  let s = '';
-  for (const b of BANDS){
-    s += '<line class="band-line" x1="36" y1="' + (bandTop(b.n) - 38) + '" x2="' + (TREE_W - 36) + '" y2="' + (bandTop(b.n) - 38) + '"/>';
-  }
-  for (const n of NODES){
-    const tOpen = statusOf(n) === 'open';
-    for (const g of n.prereqs){
-      for (const pid of g.ids){
-        const p = NODE_MAP[pid];
-        const x1 = SLOTS[p.slot-1], y1 = bandTop(p.band);
-        const x2 = SLOTS[n.slot-1], y2 = bandTop(n.band) + NODE_H;
-        const pDone = !!S.completed[pid];
-        const cls = 'edge ' + (pDone ? 'e-done' : (tOpen ? 'e-open' : '')) + ' rt-' + n.route;
-        const dim = active !== 'all' && !(routeMatches(p, active) || routeMatches(n, active));
-        s += '<path class="' + cls + (dim ? ' e-dim' : '') + '" d="M ' + x1 + ' ' + y1 + ' C ' + x1 + ' ' + (y1 - 38) + ', ' + x2 + ' ' + (y2 + 38) + ', ' + x2 + ' ' + y2 + '"/>';
-      }
+  /* build the world once */
+  function build(){
+    world.style.width = W + "px"; world.style.height = H + "px";
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("id", "edges"); svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("aria-hidden", "true");
+    const mk = (tag, a) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); return e; };
+    for (const [b, color] of [["agency","#34D399"],["meta","#60A5FA"]]) {
+      const top = 60 + 200 - 30, bottom = 60 + 6 * 200 + NH + 30;
+      const r = mk("rect", { x:COL[b] - 112, y:top, width:224, height:bottom - top, rx:28, class:"trunk" });
+      r.style.color = color; svg.append(r);
+    }
+    for (let t = 0; t < 8; t++) { const y = 60 + (7 - t) * 200 - 36; svg.append(mk("line", { x1:0, x2:W, y1:y, y2:y, class:"tierline" })); }
+    for (const n of N) for (const [k, ids] of n.p) for (const i of ids) {
+      const a = byId[i];
+      const x1 = a.x, y1 = a.y, x2 = n.x, y2 = n.y + n.h;
+      const path = mk("path", { d:`M${x1} ${y1} C${x1} ${y1 - 80} ${x2} ${y2 + 80} ${x2} ${y2}`, class:"e" + (k === "any" ? " any" : "") });
+      path.style.setProperty("--c", BR[n.b].c);
+      path.dataset.from = i; path.dataset.to = n.id;
+      svg.append(path); EDGES.push(path);
+    }
+    world.append(svg);
+    TIERS.forEach((name, t) => world.append(el("div", { class:"tierlab", style:`top:${60 + (7 - t) * 200 + 14}px` }, el("b", { text:"Tier " + t }), el("span", { text:name }))));
+    for (const b of ["research","create","make","organize"]) world.append(el("div", { class:"lane", style:`left:${COL[b] - 100}px;top:${60 + 7 * 200 + NH + 14}px;--c:${BR[b].c}` }, BR[b].label, el("small", { text:"Start here" })));
+    for (const [b, sub] of [["agency","From one task to a fleet"],["meta","From criteria to judging judges"]]) world.append(el("div", { class:"trunklab", style:`left:${COL[b] - 100}px;top:${60 + 7 * 200 + 8}px;--c:${BR[b].c}` }, BR[b].label + " trunk", el("small", { text:sub })));
+    for (const n of N) {
+      const btn = el("button", { type:"button", class:"node" + (n.b === "cap" ? " cap" : ""), "data-id":n.id,
+        style:`left:${n.x - n.w / 2}px;top:${n.y}px;--c:${BR[n.b].c}` },
+        el("span", { class:"nh" }, el("span", { text:BR[n.b].label }), el("span", { class:"st" })),
+        el("span", { class:"nt", text:n.title }),
+        el("span", { class:"nr" }, chips(n.rw)));
+      btn.addEventListener("focus", () => ensureVisible(n.id));
+      NODE[n.id] = btn; world.append(btn);
     }
   }
-  UI.edgeLayer.innerHTML = s;
-}
-function vhText(n, done, open){
-  if (done) return 'Achieved. ' + rewardLine(n) + ' added.';
-  if (open) return 'Available now. Route: ' + ROUTES[n.route].label + '. Reward: ' + rewardLine(n) + '.';
-  const needs = n.prereqs.map(g => (g.type === 'all' ? 'all of ' : 'any of ') + g.ids.map(id => NODE_MAP[id].title).join('; ')).join(', and ');
-  return 'Locked. Needs ' + needs + '. Route: ' + ROUTES[n.route].label + '.';
-}
-function renderTree(){
-  for (const n of NODES){
-    const el = UI.nodeEls[n.id];
-    const done = !!S.completed[n.id];
-    const open = !done && prereqsMet(S, n);
-    const dim = S.activeRoute !== 'all' && !routeMatches(n, S.activeRoute);
-    const flash = S.flash && S.flash.indexOf(n.id) !== -1;
-    el.className = 'node route-' + n.route + (done ? ' st-done' : open ? ' st-open' : ' st-locked')
-      + (dim ? ' route-dim' : '') + (flash ? ' just-unlocked' : '');
-    el.querySelector('.node-state').innerHTML = icon(done ? 'check' : open ? 'spark' : 'lock');
-    el.querySelector('[data-vh]').textContent = vhText(n, done, open);
-  }
-  renderEdges();
-}
-function renderHeader(){
-  UI.statTokens.textContent = fmt(S.tokens);
-  UI.statMinutes.textContent = fmt(S.minutes);
-  UI.statGpu.textContent = fmt(S.gpu);
-  UI.statTokens.parentNode.parentNode.setAttribute('aria-label', 'Token balance: ' + fmt(S.tokens) + ' model token credits — support for your next step, never a score');
-  UI.statMinutes.parentNode.parentNode.setAttribute('aria-label', 'Expert minutes balance: ' + fmt(S.minutes));
-  UI.statGpu.parentNode.parentNode.setAttribute('aria-label', 'Compute balance: ' + fmt(S.gpu) + ' GPU-hours — illustrative; enables the next, bigger step; no real resources are reserved');
-  const done = NODES.filter(n => S.completed[n.id]).length;
-  UI.statProgress.textContent = done + ' of ' + NODES.length;
-  let reached = 0, current = 1;
-  for (const n of NODES){
-    if (S.completed[n.id]) reached = Math.max(reached, n.band);
-    else if (prereqsMet(S, n)) current = Math.max(current, n.band);
-  }
-  for (const d of UI.bandDots.children){
-    const b = Number(d.dataset.band);
-    d.className = 'dot' + (b <= reached ? ' d-on' : b === current ? ' d-cur' : '');
-  }
-  UI.statProgress.parentNode.parentNode.setAttribute('aria-label', 'Progress: ' + done + ' of ' + NODES.length + ' achievements; reached band ' + reached + ' of ' + BANDS.length);
-}
-function section(title, ...kids){
-  /* kids are rest parameters — the first child can never be dropped */
-  return h('div', { class:'insp-sec' }, h('h4', null, title), ...kids);
-}
-function renderInspector(){
-  const body = UI.inspectorBody;
-  body.replaceChildren();
-  if (!S.selected || !NODE_MAP[S.selected]){
-    body.append(h('div', { class:'insp-empty' }, 'Select an achievement on the tree to see its goal, the evidence that counts, its exact prerequisites and its reward.'));
-    return;
-  }
-  const n = NODE_MAP[S.selected];
-  const done = !!S.completed[n.id];
-  const open = !done && prereqsMet(S, n);
-  UI.inspector.setAttribute('aria-label', 'Achievement details: ' + n.title);
-  body.append(h('div', { class:'insp-head' },
-    h('span', { class:'route-chip route-' + n.route }, h('span', { class:'rc-ic', 'aria-hidden':'true', html: icon(ROUTES[n.route].icon) }), ROUTES[n.route].short),
-    h('span', { class:'status-chip ' + (done ? 'sc-done' : open ? 'sc-open' : 'sc-locked'), html: icon(done ? 'check' : open ? 'spark' : 'lock') + '<span>' + (done ? 'Achieved' : open ? 'Available now' : 'Locked') + '</span>' }),
-    h('button', { type:'button', class:'icon-btn', 'data-action':'close', 'aria-label':'Close details', html: icon('close') })
-  ));
-  body.append(h('h3', { class:'insp-title', id:'inspTitle', tabindex:'-1' }, n.title));
-  body.append(h('p', { class:'insp-band' }, 'Band ' + n.band + ' · ' + BANDS[n.band-1].label + ' · ' + ROUTES[n.route].label));
-  body.append(section('Goal', h('p', { class:'goal' }, n.goal)));
-  body.append(section('What counts as done', h('ul', { class:'ev', style:'--rc:var(--' + n.route + ')' }, ...n.evidence.map(t => h('li', null, t)))));
-  /* prerequisites — exact, with live status */
-  const prKids = [];
-  if (!n.prereqs.length) prKids.push(h('p', { class:'muted' }, 'None — start here.'));
-  for (const g of n.prereqs){
-    prKids.push(h('div', { class:'pr-group' },
-      h('span', { class:'pr-kind' }, 'Requires ' + (g.type === 'all' ? 'all of:' : 'any of:')),
-      h('ul', null, ...g.ids.map(pid => {
-        const p = NODE_MAP[pid]; const ok = !!S.completed[pid];
-        return h('li', { class: ok ? 'pr-ok' : 'pr-no' }, h('span', { class:'pr-ic', 'aria-hidden':'true', html: icon(ok ? 'check' : 'dot') }), p.title);
-      }))
-    ));
-  }
-  body.append(section('Prerequisites', ...prKids));
-  /* reward */
-  const rchips = [];
-  if (n.tokens) rchips.push(h('span', { class:'rchip rchip-t', html: icon('coin') + '<span>+' + fmt(n.tokens) + ' tokens</span>' }));
-  if (n.minutes) rchips.push(h('span', { class:'rchip rchip-m', html: icon('clock') + '<span>+' + n.minutes + ' expert minutes</span>' }));
-  if (n.gpu) rchips.push(h('span', { class:'rchip rchip-c', html: icon('chip') + '<span>+' + n.gpu + ' GPU-hours</span>' }));
-  rchips.push(h('span', { class:'rchip rchip-b', style:'--rc:var(--' + n.route + ')', html: icon('badge') + '<span>achievement mark</span>' }));
-  if (n.route === 'peak') rchips.push(h('span', { class:'rchip rchip-b', style:'--rc:var(--peak)', html: icon('crown') + '<span>steward mark</span>' }));
-  const rewKids = [
-    h('div', { class:'rew-chips' }, ...rchips),
-    h('p', { class:'rew-note' }, done ? 'Added to your balance — see the Reward log.' : 'Earned once. Use the resources when they help your next step.')
-  ];
-  if (n.gpu) rewKids.push(h('p', { class:'rew-note' }, 'Why compute: ' + n.computeWhy + ' — illustrative; no resources are actually reserved.'));
-  body.append(section('Reward', ...rewKids));
-  /* opens toward */
-  const kids = CHILDREN[n.id] || [];
-  const opensKids = kids.length
-    ? [h('div', { class:'opens' }, ...kids.map(c => {
-        const st = statusOf(c);
-        return h('button', { type:'button', class:'open-pill st-' + st, 'data-action':'goto-node', 'data-id': c.id },
-          h('span', { class:'op-ic', 'aria-hidden':'true', html: icon(st === 'done' ? 'check' : st === 'open' ? 'spark' : 'lock') }),
-          c.title, h('span', { class:'op-band' }, 'Band ' + c.band));
-      }))]
-    : [h('p', { class:'muted' }, 'This is the peak of the tree — the group leans on what you keep working.')];
-  body.append(section('Opens toward', ...opensKids));
-  /* linked bounties — each is a separate problem with its own criteria */
-  const linked = S.bounties.filter(b => b.goalId === n.id);
-  if (linked.length){
-    body.append(section('Linked bounties', ...linked.map(b => {
-      const view = bountyView(b);
-      const box = h('div', { class:'bb-box' },
-        h('div', { class:'bb-top' }, h('span', { class:'bb-title' }, b.title),
-          h('span', { class:'bb-status ' + (b.verified ? 'bb-done' : view.ready ? 'bb-open' : 'bb-wait') },
-            b.verified ? 'Verified — reward added' : view.ready ? 'Ready to verify' : view.label)),
-        h('p', { class:'bb-by' }, 'Posted by ' + b.byName + ' — ' + b.byRole),
-        h('ul', { class:'ev', style:'--rc:var(--peak)' }, ...criteriaList(b).map(t => h('li', null, t))),
-        h('p', { class:'bb-rew' }, 'Bounty reward: ' + rewardLine(b) + (b.source === 'seed' ? ' · pre-funded sample' : ' · posted in this demo')),
-        b.gpu && b.computeWhy ? h('p', { class:'bb-rew' }, 'Why compute: ' + b.computeWhy + ' — illustrative.') : null);
-      if (view.ready){
-        box.append(
-          h('button', { type:'button', class:'demo-btn', style:'--rc:var(--peak);--rc-soft:rgba(242,201,76,.09)', 'data-action':'verify-bounty', 'data-id': b.id,
-            html: icon('target') + '<span>Simulate goal verified</span>' }),
-          h('p', { class:'demo-fine' }, 'Demo shortcut — simulates the mentor checking THIS bounty’s own criteria above. The achievement’s base reward is separate and was already paid once.'));
-      }
-      return box;
-    })));
-  }
-  /* demo action */
-  if (done){
-    body.append(h('div', { class:'demo-zone' },
-      h('div', { class:'done-note' }, h('span', { 'aria-hidden':'true', html: icon('check') }),
-        h('span', null, 'Achieved — ' + rewardLine(n) + ' added. ' + (S.receipts.some(r => r.title === n.title && r.seeded) ? 'This step was seeded as Mina’s starting progress.' : 'See the Reward log for the receipt.')))));
-  } else if (open){
-    body.append(h('div', { class:'demo-zone', style:'--rc:var(--' + n.route + ');--rc-soft:rgba(238,231,216,.05)' },
-      h('button', { type:'button', class:'demo-btn', 'data-action':'demo-complete', 'data-id': n.id, html: icon('spark') + '<span>Demo: mark goal achieved</span>' }),
-      h('p', { class:'demo-fine' }, 'Demo shortcut — simulates a completed, verified goal. The real programme would review the evidence above. Rewards are illustrative samples.')));
-  } else {
-    body.append(h('div', { class:'demo-zone' },
-      h('button', { type:'button', class:'demo-btn', disabled:'disabled', html: icon('lock') + '<span>Demo: mark goal achieved</span>' }),
-      h('p', { class:'demo-fine' }, 'Locked — complete the prerequisites above first. Nothing is hidden: every requirement is listed exactly.')));
-  }
-}
-/* A bounty's lifecycle: the linked node is a prerequisite, so a bounty is
-   'ready to verify' only once that node is achieved; its own demo action then
-   pays the bounty reward once and notifies the mentor once. */
-function bountyView(b){
-  const goal = NODE_MAP[b.goalId];
-  if (b.verified) return { cls:'bc-done', label:'Verified — reward added', ready:false };
-  if (S.completed[b.goalId]) return { cls:'bc-verify', label:'Ready to verify', ready:true };
-  if (isAvailable(S, goal)) return { cls:'bc-open', label:'Open — start with the goal', ready:false };
-  return { cls:'bc-wait', label:'Pre-funded — goal unlocks later', ready:false };
-}
-function renderBounties(){
-  const openCount = S.bounties.filter(b => !b.verified).length;
-  UI.bountyCount.textContent = openCount + ' open ' + (openCount === 1 ? 'challenge' : 'challenges') + ' · rewards are bounded, illustrative samples.';
-  UI.bountyList.replaceChildren(...[...S.bounties].reverse().map(b => {
-    const goal = NODE_MAP[b.goalId];
-    const view = bountyView(b);
-    const rchips = [];
-    if (b.tokens) rchips.push(h('span', { class:'rchip rchip-t', html: icon('coin') + '<span>+' + fmt(b.tokens) + ' tokens</span>' }));
-    if (b.minutes) rchips.push(h('span', { class:'rchip rchip-m', html: icon('clock') + '<span>+' + b.minutes + ' expert minutes</span>' }));
-    if (b.gpu) rchips.push(h('span', { class:'rchip rchip-c', html: icon('chip') + '<span>+' + b.gpu + ' GPU-hours</span>' }));
-    const card = h('article', { class:'bcard' + (b.verified ? ' achieved' : ''), 'data-bid': b.id },
-      h('div', { class:'bc-top' },
-        h('span', { class:'bc-av', 'aria-hidden':'true', html: icon('user') }),
-        h('div', null, h('p', { class:'bc-name' }, b.byName), h('p', { class:'bc-role' }, b.byRole)),
-        h('span', { class:'bc-status ' + view.cls }, view.label)),
-      h('h3', { tabindex:'-1' }, b.title),
-      h('ul', { class:'bc-crit' }, ...criteriaList(b).map(t => h('li', null, t + '.'))),
-      b.gpu && b.computeWhy ? h('p', { class:'bc-note' }, 'Why compute: ' + b.computeWhy + ' — illustrative; no resources are actually reserved.') : null,
-      h('div', { class:'bc-foot' },
-        h('button', { type:'button', class:'goal-link', 'data-action':'goto-node', 'data-id': b.goalId, style:'--rc:var(--' + goal.route + ')' },
-          h('span', { class:'pdot', 'aria-hidden':'true' }), 'Prerequisite: ' + goal.title + (S.completed[b.goalId] ? ' ✓' : ''),
-          h('span', { class:'ic-wrap', 'aria-hidden':'true', html: icon('arrow') })),
-        h('span', { class:'rew-chips' }, ...rchips),
-        h('span', { class:'bc-tag' }, b.source === 'seed' ? 'pre-funded sample' : 'posted by you (demo)'))
-    );
-    if (view.ready){
-      card.append(h('div', { class:'demo-zone' },
-        h('button', { type:'button', class:'demo-btn', style:'--rc:var(--peak);--rc-soft:rgba(242,201,76,.09)', 'data-action':'verify-bounty', 'data-id': b.id,
-          html: icon('target') + '<span>Simulate goal verified</span>' }),
-        h('p', { class:'demo-fine' }, 'Demo shortcut — simulates the mentor checking THIS bounty’s own criteria above. The linked achievement’s reward is separate and was already paid once.')));
-    } else if (b.verified){
-      card.append(h('p', { class:'bc-note' }, 'Verified — ' + STUDENT.name + '’s evidence met these criteria; the reward was added once. See the Reward log.'));
-    }
-    return card;
-  }));
-}
-function renderReceipts(){
-  UI.receiptList.replaceChildren(...[...S.receipts].reverse().map(r => h('div', { class:'rc-row' },
-    h('div', { class:'rc-time' }, r.seeded ? 'at demo start' : relTime(r.time)),
-    h('div', null,
-      h('p', { class:'rc-title' }, r.title, r.seeded ? h('span', { class:'rc-seed' }, 'seeded') : null),
-      h('div', { class:'rc-items' }, ...r.items.map(it => {
-        const kids = [];
-        if (it.tokens) kids.push(h('span', { class:'amt-t' }, '+' + fmt(it.tokens) + ' tokens'));
-        if (it.minutes) kids.push(h('span', { class:'amt-m' }, '+' + it.minutes + ' expert minutes'));
-        if (it.gpu) kids.push(h('span', { class:'amt-g' }, '+' + fmt(it.gpu) + ' GPU-hours'));
-        kids.push(' — ' + it.label);
-        return h('p', { class:'rc-item' }, ...kids);
-      })))
-  )));
-}
-function renderExpert(){
-  UI.bellCount.textContent = String(S.notifications.length);
-  UI.bellBtn.setAttribute('aria-label', 'Notifications: ' + S.notifications.length + ' simulated');
-  if (!S.notifications.length){
-    UI.inboxList.replaceChildren(h('div', { class:'empty' },
-      'No notifications yet. When a learner achieves the linked goal and the mentor’s check of the bounty’s own criteria passes, a simulated notice appears here — once per bounty. Try it: complete “Check a suspicious citation” on the Capability tree, then simulate its verification in the Bounties tab.'));
-  } else {
-    UI.inboxList.replaceChildren(...[...S.notifications].reverse().map(note => h('div', { class:'note' },
-      h('p', { class:'note-to' }, 'To: ' + note.toName + ' — ' + note.toRole),
-      h('p', { class:'note-main' }, note.learner + ' met the acceptance criteria for “' + note.bountyTitle + '”.'),
-      h('ul', { class:'note-ev' }, ...note.criteria.map(c => h('li', null, c))),
-      h('p', { class:'note-rew' }, 'Prerequisite achievement: “' + note.goalTitle + '” ✓. Reward paid: '
-        + [note.tokens ? '+' + fmt(note.tokens) + ' tokens' : '', note.minutes ? '+' + note.minutes + ' expert minutes' : '', note.gpu ? '+' + note.gpu + ' GPU-hours' : ''].filter(Boolean).join(' ')
-        + ' to ' + note.learner + '.'),
-      h('p', { class:'note-sim' }, 'Simulated notification — this bounty’s own criteria were checked, not just the linked achievement. Nothing was sent.')
-    )));
-  }
-  /* posted-by-you list */
-  const mine = S.bounties.filter(b => b.source === 'user');
-  UI.postedList.replaceChildren(...(mine.length
-    ? mine.map(b => h('div', { class:'posted' }, h('span', { 'aria-hidden':'true', html: icon('target') }), b.title,
-        h('span', { class:'st' + (b.verified ? ' ok' : '') }, b.verified ? 'verified ✓' : 'open')))
-    : [h('div', { class:'empty' }, 'Bounties you post in this demo appear here and on the learner board.')]));
-  /* goal select: available goals only, preserving a still-valid choice */
-  const cur = UI.bGoal.value;
-  const avail = NODES.filter(n => isAvailable(S, n));
-  UI.bGoal.replaceChildren(h('option', { value:'' }, avail.length ? 'Choose a goal…' : 'No available goals right now'));
-  for (const n of avail) UI.bGoal.append(h('option', { value: n.id }, 'Band ' + n.band + ' · ' + n.title));
-  if (avail.some(n => n.id === cur)) UI.bGoal.value = cur;
-}
-function renderAll(){
-  renderHeader(); renderTree(); renderInspector(); renderBounties(); renderReceipts(); renderExpert();
-  for (const btn of UI.routePills.querySelectorAll('.pill')) btn.setAttribute('aria-pressed', btn.dataset.route === S.activeRoute ? 'true' : 'false');
-}
 
-/* ----- interactions ----- */
+  /* camera */
+  const V = { x:0, y:0, k:.75 };
+  const apply = () => { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; };
+  function clampV(){
+    const vw = vp.clientWidth, vh = vp.clientHeight, m = 90;
+    V.x = Math.min(vw - m, Math.max(m - W * V.k, V.x));
+    V.y = Math.min(vh - m, Math.max(m - H * V.k, V.y));
+  }
+  function glide(){ if (REDUCED.matches) return; world.classList.add("glide"); clearTimeout(glide.t); glide.t = setTimeout(() => world.classList.remove("glide"), 480); }
+  function zoomAt(f, cx, cy){
+    const k = Math.min(1.6, Math.max(.3, V.k * f)), r = k / V.k;
+    V.x = cx - (cx - V.x) * r; V.y = cy - (cy - V.y) * r; V.k = k; clampV(); apply();
+  }
+  const effH = () => (MQ.matches && panel.classList.contains("open")) ? vp.clientHeight * .34 : vp.clientHeight;
+  function centerOn(id, k){
+    const n = byId[id];
+    if (k) V.k = k;
+    V.x = vp.clientWidth / 2 - n.x * V.k;
+    V.y = effH() / 2 - (n.y + n.h / 2) * V.k;
+    clampV(); glide(); apply();
+  }
+  function ensureVisible(id){
+    const n = byId[id], vw = vp.clientWidth, vh = effH();
+    const sx = V.x + n.x * V.k, sy = V.y + (n.y + n.h / 2) * V.k;
+    if (sx < 60 || sx > vw - 60 || sy < 50 || sy > vh - 50) centerOn(id);
+  }
+  function fit(){
+    const vw = vp.clientWidth, vh = vp.clientHeight;
+    V.k = Math.max(.3, Math.min(vw / W, vh / H) * .96);
+    V.x = (vw - W * V.k) / 2; V.y = (vh - H * V.k) / 2; glide(); apply();
+  }
+  function startView(){
+    const vw = vp.clientWidth, vh = vp.clientHeight;
+    V.k = MQ.matches ? .62 : Math.min(1, Math.max(.62, vw / W));
+    V.x = (!MQ.matches && W * V.k <= vw) ? (vw - W * V.k) / 2 : vw / 2 - (MQ.matches ? 560 : 830) * V.k;
+    V.y = vh - (60 + 7 * 200 + NH + 110) * V.k;
+    clampV(); glide(); apply();
+  }
 
-function toast(title, sub, tone){
-  const t = h('div', { class:'toast' + (tone ? ' ' + tone : ''), role:'status' },
-    h('span', { 'aria-hidden':'true', html: icon('check') }),
-    h('div', null, h('p', { class:'toast-t' }, title), sub ? h('p', { class:'toast-s' }, sub) : null));
-  UI.toasts.append(t);
-  while (UI.toasts.children.length > 3) UI.toasts.firstElementChild.remove();
-  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 300); }, 4800);
-}
-function onDemoComplete(id){
-  const before = new Set(NODES.filter(n => isAvailable(S, n)).map(n => n.id));
-  const res = completeNode(S, id);
-  if (!res.ok){
-    toast(res.error === 'already' ? 'Already achieved' : 'Not yet available',
-      res.error === 'already' ? 'Rewards only pay once — nothing new to add.' : 'Complete the prerequisites first; every requirement is listed in the panel.',
-      'reset');
-    renderAll(); return;
-  }
-  const after = new Set(NODES.filter(n => isAvailable(S, n)).map(n => n.id));
-  S.flash = [...after].filter(x => !before.has(x));
-  renderAll();
-  S.flash = null;
-  toast('Achievement unlocked', res.node.title + ' · ' + rewardLine(res.node));
-  const ready = S.bounties.filter(b => b.goalId === id && !b.verified);
-  if (ready.length){
-    toast('Bounty ready to verify', '“' + ready[0].title + '” — prerequisite achieved. Simulate the mentor’s own criteria check from the Bounties tab.', 'bounty');
-  }
-  const t = document.getElementById('inspTitle');
-  if (t && UI.inspector.open) t.focus();
-}
-/* The bounty's own verification step: its criteria were checked (simulated),
-   so the bounty reward pays once and the mentor is notified once. */
-function onVerifyBounty(id, origin){
-  const res = verifyBounty(S, id);
-  if (!res.ok){
-    toast(res.error === 'already' ? 'Already verified' : 'Not yet eligible',
-      res.error === 'already' ? 'Bounty rewards pay once — nothing new to add.' : 'Achieve the linked prerequisite goal first; the bounty’s own check comes after.',
-      'reset');
-    renderAll(); return;
-  }
-  renderAll();
-  const b = res.bounty;
-  toast('Bounty verified', '“' + b.title + '” — its own criteria simulated as met. ' + rewardLine(b) + ' added; mentor notified (simulated).', 'bounty');
-  if (origin === 'inspector'){
-    const t = document.getElementById('inspTitle');
-    if (t && UI.inspector.open) t.focus();
-  } else {
-    const t = UI.bountyList.querySelector('[data-bid="' + id + '"] h3');
-    if (t) t.focus();
-  }
-}
-function selectTab(tab){
-  S.tab = tab;
-  for (const t of TAB_IDS){
-    UI.tabs[t].setAttribute('aria-selected', t === tab ? 'true' : 'false');
-    UI.tabs[t].tabIndex = t === tab ? 0 : -1;
-    UI.panels[t].hidden = t !== tab;
-  }
-  /* don't leave an open dialog inside a hidden panel; goto-node still works
-     because it selects the tree tab first */
-  if (tab !== 'tree' && UI.inspector.open) closeInspector();
-  if (tab === 'tree') layoutTree();
-}
-function selectNode(id, opts){
-  opts = opts || {};
-  S.selected = id;
-  renderInspector();
-  if (opts.open) openInspector();
-  if (opts.scroll && UI.nodeEls[id] && MQ_TREE.matches) UI.nodeEls[id].scrollIntoView({ block:'center', behavior:'auto' });
-}
-function openInspector(){
-  if (UI.inspector.open) UI.inspector.close();
-  inspModal = !MQ_TREE.matches;
-  if (inspModal) UI.inspector.showModal(); else UI.inspector.show();
-  const t = document.getElementById('inspTitle');
-  if (t) t.focus(); else UI.inspectorBody.querySelector('button') && UI.inspectorBody.querySelector('button').focus();
-}
-function closeInspector(){ if (UI.inspector.open) UI.inspector.close(); }
-function layoutTree(){
-  if (!MQ_TREE.matches){
-    UI.canvas.style.transform = ''; UI.treeVp.style.width = ''; UI.treeVp.style.height = '';
-    return;
-  }
-  const avail = UI.treeScroll.clientWidth - 2;
-  const scale = Math.min(1, Math.max(0.72, avail / TREE_W));
-  UI.canvas.style.transform = scale < 1 ? 'scale(' + scale + ')' : '';
-  UI.treeVp.style.width = (TREE_W * scale) + 'px';
-  UI.treeVp.style.height = (TREE_H * scale) + 'px';
-}
-function resetDemo(){
-  S = makeInitialState(); seedState(S);
-  if (UI.inspector.open) UI.inspector.close();
-  selectTab('tree');
-  renderAll();
-  UI.treeScroll.scrollTop = UI.treeScroll.scrollHeight;
-  toast('Demo reset', 'Back to Mina’s starting point — balances, bounties and notifications are samples again.', 'reset');
-}
-
-function bindEvents(){
-  UI.canvas.addEventListener('click', e => {
-    const btn = e.target.closest('.node');
-    if (!btn) return;
-    UI.lastTrigger = btn;
-    selectNode(btn.dataset.id, { open:true });
+  /* pan, pinch, wheel */
+  const pts = new Map(); let drag = null, moved = false, pinch = null;
+  vp.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pts.size === 1) { moved = false; drag = { id:e.pointerId, x:e.clientX, y:e.clientY, vx:V.x, vy:V.y }; }
+    else if (pts.size === 2) { drag = null; const [a, b] = [...pts.values()]; pinch = { d:Math.hypot(a.x - b.x, a.y - b.y) || 1, k:V.k }; moved = true; }
   });
-  UI.inspector.addEventListener('click', e => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const act = btn.dataset.action;
-    if (act === 'close'){ closeInspector(); }
-    else if (act === 'demo-complete'){ onDemoComplete(btn.dataset.id); }
-    else if (act === 'verify-bounty'){ onVerifyBounty(btn.dataset.id, 'inspector'); }
-    else if (act === 'goto-node'){
-      const id = btn.dataset.id;
-      selectTab('tree');
-      UI.lastTrigger = btn;
-      selectNode(id, { open:true, scroll:true });
-    }
-  });
-  UI.bountyList.addEventListener('click', e => {
-    const btn = e.target.closest('[data-action]');
-    if (!btn) return;
-    const act = btn.dataset.action;
-    if (act === 'verify-bounty'){ onVerifyBounty(btn.dataset.id, 'card'); }
-    else if (act === 'goto-node'){
-      selectTab('tree');
-      UI.lastTrigger = btn;
-      selectNode(btn.dataset.id, { open:true, scroll:true });
-    }
-  });
-  UI.inspector.addEventListener('close', () => {
-    const t = UI.lastTrigger;
-    if (t && t.isConnected && UI.inspector.open === false) t.focus();
-    UI.lastTrigger = null;
-  });
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && UI.inspector.open && !inspModal){ e.preventDefault(); closeInspector(); }
-  });
-  UI.routePills.addEventListener('click', e => {
-    const btn = e.target.closest('.pill');
-    if (!btn) return;
-    S.activeRoute = btn.dataset.route;
-    renderTree();
-    for (const p of UI.routePills.querySelectorAll('.pill')) p.setAttribute('aria-pressed', p === btn ? 'true' : 'false');
-  });
-  UI.tablist.addEventListener('click', e => {
-    const tab = e.target.closest('[role="tab"]');
-    if (tab) selectTab(tab.id.slice(4));
-  });
-  UI.tablist.addEventListener('keydown', e => {
-    const i = TAB_IDS.indexOf(S.tab);
-    let j = null;
-    if (e.key === 'ArrowRight') j = (i + 1) % TAB_IDS.length;
-    else if (e.key === 'ArrowLeft') j = (i - 1 + TAB_IDS.length) % TAB_IDS.length;
-    else if (e.key === 'Home') j = 0;
-    else if (e.key === 'End') j = TAB_IDS.length - 1;
-    if (j !== null){ e.preventDefault(); selectTab(TAB_IDS[j]); UI.tabs[TAB_IDS[j]].focus(); }
-  });
-  UI.resetBtn.addEventListener('click', () => { resetDemo(); UI.resetBtn.focus(); });
-  UI.toPeak.addEventListener('click', () => {
-    const nearTop = UI.treeScroll.scrollTop < 40;
-    UI.treeScroll.scrollTo({ top: nearTop ? UI.treeScroll.scrollHeight : 0, behavior: PREFERS_REDUCED.matches ? 'auto' : 'smooth' });
-  });
-  UI.treeScroll.addEventListener('scroll', () => {
-    UI.toPeakLabel.textContent = UI.treeScroll.scrollTop < 40 ? 'Back to start' : 'To the peak';
-  }, { passive:true });
-  UI.bellBtn.addEventListener('click', () => { const t = document.getElementById('inboxTitle'); if (t) t.focus(); });
-  UI.bountyForm.addEventListener('submit', e => {
-    e.preventDefault();
-    const res = postBounty(S, {
-      title: UI.bTitle.value, criteria: UI.bCrit.value,
-      tokens: UI.bTokens.value, minutes: UI.bMinutes.value, gpu: UI.bGpu.value, goalId: UI.bGoal.value,
-    });
-    if (!res.ok){
-      UI.bountyError.replaceChildren(...res.errors.map(t => h('p', null, t)));
-      UI.bountyError.hidden = false;
+  vp.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pinch && pts.size === 2) {
+      const [a, b] = [...pts.values()], r = vp.getBoundingClientRect();
+      zoomAt((pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d) / V.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
       return;
     }
-    UI.bountyError.hidden = true;
-    UI.bountyForm.reset();
-    renderAll();
-    toast('Bounty posted', '“' + res.bounty.title + '” (' + rewardLine(res.bounty) + ') is now on the learner board (sample), with ' + NODE_MAP[res.bounty.goalId].title + ' as its prerequisite.', 'bounty');
-  });
-  let raf = 0;
-  window.addEventListener('resize', () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(layoutTree); });
-  MQ_TREE.addEventListener('change', () => {
-    layoutTree();
-    if (UI.inspector.open){
-      const sel = S.selected;
-      UI.inspector.close();
-      if (sel){ S.selected = sel; openInspector(); }
+    if (drag && e.pointerId === drag.id) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!moved && Math.hypot(dx, dy) > 6) { moved = true; vp.setPointerCapture(e.pointerId); vp.classList.add("dragging"); }
+      if (moved) { V.x = drag.vx + dx; V.y = drag.vy + dy; clampV(); apply(); }
     }
   });
-}
+  const endPtr = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (drag && drag.id === e.pointerId) drag = null; vp.classList.remove("dragging"); };
+  vp.addEventListener("pointerup", endPtr); vp.addEventListener("pointercancel", endPtr);
+  vp.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = vp.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * .01), e.clientX - r.left, e.clientY - r.top);
+    else { V.x -= e.deltaX; V.y -= e.deltaY; clampV(); apply(); }
+  }, { passive:false });
+  vp.addEventListener("keydown", e => {
+    if (e.target !== vp) return;
+    const step = 70, c = [vp.clientWidth / 2, vp.clientHeight / 2];
+    const map = { ArrowLeft:[step,0], ArrowRight:[-step,0], ArrowUp:[0,step], ArrowDown:[0,-step] };
+    if (map[e.key]) { V.x += map[e.key][0]; V.y += map[e.key][1]; clampV(); apply(); e.preventDefault(); }
+    else if (e.key === "+" || e.key === "=") { zoomAt(1.2, ...c); e.preventDefault(); }
+    else if (e.key === "-") { zoomAt(1 / 1.2, ...c); e.preventDefault(); }
+    else if (e.key === "0") { fit(); e.preventDefault(); }
+  });
+  world.addEventListener("click", e => {
+    const b = e.target.closest(".node");
+    if (!b) return;
+    if (moved) { moved = false; return; }
+    select(b.dataset.id);
+  });
+  $("zin").addEventListener("click", () => zoomAt(1.25, vp.clientWidth / 2, vp.clientHeight / 2));
+  $("zout").addEventListener("click", () => zoomAt(1 / 1.25, vp.clientWidth / 2, vp.clientHeight / 2));
+  $("zfit").addEventListener("click", fit);
+  document.querySelector(".dest").addEventListener("click", e => {
+    const b = e.target.closest("[data-go]"); if (!b) return;
+    const g = b.dataset.go;
+    if (g === "fit") fit(); else if (g === "start") startView(); else { select(g, true); centerOn(g, Math.max(V.k, MQ.matches ? .7 : .8)); }
+  });
+  window.addEventListener("resize", () => { clampV(); apply(); });
 
-function cacheDom(){
-  const $ = id => document.getElementById(id);
-  UI.statTokens = $('statTokens'); UI.statMinutes = $('statMinutes'); UI.statGpu = $('statGpu'); UI.statProgress = $('statProgress'); UI.bandDots = $('bandDots');
-  UI.resetBtn = $('resetBtn'); UI.tablist = $('tablist'); UI.routePills = $('routePills');
-  UI.treeScroll = $('treeScroll'); UI.treeVp = $('treeVp'); UI.canvas = $('treeCanvas');
-  UI.inspector = $('inspector'); UI.inspectorBody = $('inspectorBody');
-  UI.bountyList = $('bountyList'); UI.bountyCount = $('bountyCount'); UI.receiptList = $('receiptList');
-  UI.inboxList = $('inboxList'); UI.bellBtn = $('bellBtn'); UI.bellCount = $('bellCount');
-  UI.bountyForm = $('bountyForm'); UI.bTitle = $('bTitle'); UI.bCrit = $('bCrit');
-  UI.bTokens = $('bTokens'); UI.bMinutes = $('bMinutes'); UI.bGpu = $('bGpu'); UI.bGoal = $('bGoal'); UI.bountyError = $('bountyError');
-  UI.postedList = $('postedList'); UI.toasts = $('toasts'); UI.toPeak = $('toPeak'); UI.toPeakLabel = $('toPeakLabel');
-  UI.tabs = {}; UI.panels = {};
-  for (const t of TAB_IDS){ UI.tabs[t] = $('tab-' + t); UI.panels[t] = $('panel-' + t); }
-}
+  /* selection & actions */
+  function select(id, noCenter){
+    SEL = id;
+    if (MQ.matches) panel.classList.add("open");
+    render();
+    if (!noCenter) ensureVisible(id);
+    const h = $("pTitle"); if (h && MQ.matches) h.focus({ preventScroll:true });
+  }
+  function deselect(){ const was = SEL; SEL = null; panel.classList.remove("open"); render(); if (was && NODE[was]) NODE[was].focus({ preventScroll:true }); }
+  function toast(title, sub){
+    const t = el("div", { class:"toast" }, el("b", { text:title }), el("span", { text:sub }));
+    $("toasts").append(t);
+    setTimeout(() => t.remove(), 3200);
+    while ($("toasts").children.length > 2) $("toasts").firstChild.remove();
+  }
+  function flash(ids){ for (const i of ids) { const b = NODE[i]; b.classList.remove("new"); void b.offsetWidth; b.classList.add("new"); } }
+  function achieve(ids){
+    const before = new Set(N.filter(n => !S.done[n.id] && ready(S, n)).map(n => n.id));
+    const got = [];
+    for (const i of ids) if (complete(S, i) === "ok") got.push(i);
+    if (!got.length) return;
+    const now = N.filter(n => !S.done[n.id] && ready(S, n)).map(n => n.id).filter(i => !before.has(i));
+    render(); flash(now);
+    const last = byId[got[got.length - 1]];
+    const total = {}; for (const i of got) for (const k in byId[i].rw) total[k] = (total[k] || 0) + byId[i].rw[k];
+    toast(got.length > 1 ? `Achievement unlocked · ${got.length} goals` : "Achievement unlocked", last.title + " · " + rwText(total));
+    const readyB = S.bounties.filter(b => !b.ok && got.includes(b.goal));
+    if (readyB.length) toast("Bounty ready to verify", "“" + readyB[0].title + "” — its own criteria still need checking.");
+    if (now.length) toast("New goals open", now.map(i => byId[i].title).join(" · "));
+  }
+  function doVerify(bid){
+    const r = verify(S, bid);
+    if (r !== "ok") { toast(r === "already" ? "Already verified" : "Not yet eligible", r === "already" ? "Each bounty pays once." : "Achieve the linked goal first."); return; }
+    const b = S.bounties.find(x => x.id === bid);
+    render();
+    toast("Bounty verified", "“" + b.title + "” · " + rwText(b.rw) + " · " + b.by + " notified (simulated)");
+  }
 
-function init(){
-  MQ_TREE = window.matchMedia('(min-width: 1100px)');
-  PREFERS_REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
-  cacheDom();
-  S = makeInitialState(); seedState(S);
-  buildDots(); buildRoutePills(); buildTree();
-  bindEvents();
-  selectTab('tree');
-  renderAll();
-  layoutTree();
-  UI.treeScroll.scrollTop = UI.treeScroll.scrollHeight;
-}
+  /* rendering */
+  function bountyCard(b, compact){
+    const goal = byId[b.goal], isReady = !b.ok && S.done[b.goal];
+    return el("div", { class:"card", "data-bid":b.id },
+      el("div", { class:"row" }, el("span", { class:"st-pill " + (b.ok ? "ok" : isReady ? "ready" : ""), text: b.ok ? "Verified · reward paid" : isReady ? "Ready to verify" : "Needs: " + goal.title })),
+      el("h3", { text:b.title }),
+      el("div", { class:"by", text:b.by + " — " + b.role }),
+      el("ul", null, b.crit.map(c => el("li", { text:c }))),
+      el("div", { class:"row" }, chips(b.rw)),
+      compact ? null : el("div", { class:"row" }, el("button", { type:"button", class:"link", onclick:() => { showTab("tree"); select(b.goal, true); centerOn(b.goal); } }, "Goal: " + goal.title)),
+      isReady ? el("button", { type:"button", class:"btn", "data-verify":b.id, onclick:() => doVerify(b.id) }, el("span", { html:ic("check") }), "Simulate: criteria verified") : null
+    );
+  }
+  function renderPanel(){
+    panel.replaceChildren();
+    if (!SEL) {
+      panel.append(el("div", { class:"intro" },
+        el("h2", { text:"Different ways in. One climb." }),
+        el("ul", null,
+          el("li", null, "Start where your work already is: ", el("b", { text:"investigate, create, make or organize" }), "."),
+          el("li", null, "Everyone climbs two trunks: ", el("b", { text:"agency" }), " (one bounded task → owned intelligence layer → verified loops → agent teams → fleets) and ", el("b", { text:"metacognition" }), " (criteria → calibration → reframing → what not to automate → review attention → evaluating evaluators)."),
+          el("li", null, "Orchestration and fleets need both trunks. More agents is not the goal; beating a simpler baseline is."),
+          el("li", null, "Goals unlock model credits, expert time or GPU-hours: support for the next step, not a score.")),
+        el("div", { class:"sec" }, el("h3", { text:"Legend" }), el("div", { class:"legend" },
+          ...["research","create","make","organize","agency","meta","bridge"].map(b => el("span", null, el("span", { class:"sw", style:"--c:" + BR[b].c }), BR[b].label)),
+          el("span", { html:'<svg class="ln" viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="#C9C3B3" stroke-width="2"/></svg>' }, "needs all of these"),
+          el("span", { html:'<svg class="ln" viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="#C9C3B3" stroke-width="2" stroke-dasharray="6 5"/></svg>' }, "needs any one of these"))),
+        el("p", { class:"fine", style:"margin-top:14px" }, "Mina has done two starter goals. Select any glowing node.")));
+      return;
+    }
+    const n = byId[SEL], done = !!S.done[n.id], open = !done && ready(S, n);
+    panel.append(el("div", { class:"p-head" },
+      el("span", { class:"bchip", style:"--c:" + BR[n.b].c }, BR[n.b].label),
+      el("span", { class:"schip " + (done ? "done" : open ? "open" : ""), text: done ? "Achieved" : open ? "Available now" : "Locked" }),
+      el("button", { type:"button", class:"p-close", "aria-label":"Close details", html:ic("x"), onclick:deselect })));
+    panel.append(el("h2", { id:"pTitle", tabindex:"-1", text:n.title }));
+    panel.append(el("p", { class:"tierline-t", text:"Tier " + n.t + " · " + TIERS[n.t] }));
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Goal" }), el("p", { text:n.goal })));
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Evidence that counts" }), el("ul", null, n.ev.map(x => el("li", { text:x })))));
+    const pre = el("div", { class:"sec" }, el("h3", { text:"Prerequisites" }));
+    if (!n.p.length) pre.append(el("p", { text:"None — start here." }));
+    for (const [k, ids] of n.p) pre.append(el("div", { class:"grp" }, el("span", { class:"k", text: k === "all" ? (ids.length > 1 ? "Needs all of:" : "Needs:") : "Needs any one of:" }),
+      el("div", { class:"links" }, ids.map(i => el("button", { type:"button", class:"link" + (S.done[i] ? " ok" : ""), html: S.done[i] ? ic("check") : "", onclick:() => select(i) }, byId[i].title)))));
+    panel.append(pre);
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Unlocks" }), el("div", { class:"links" }, chips(n.rw, true)), n.why ? el("p", { class:"why", text:"Why: " + n.why }) : null));
+    if (KIDS[n.id].length) panel.append(el("div", { class:"sec" }, el("h3", { text:"Leads to" }), el("div", { class:"links" }, KIDS[n.id].map(i => el("button", { type:"button", class:"link" + (S.done[i] ? " ok" : ""), onclick:() => select(i) }, byId[i].title)))));
+    const linked = S.bounties.filter(b => b.goal === n.id);
+    if (linked.length) panel.append(el("div", { class:"sec" }, el("h3", { text:"Expert bounties on this goal" }), linked.map(b => bountyCard(b, true))));
+    const act = el("div", { class:"act", style:"--c:" + BR[n.b].c });
+    if (done) act.append(el("div", { class:"donebox", text:"Achieved — " + rwText(n.rw) + " added." }));
+    else if (open) act.append(el("button", { type:"button", class:"btn", id:"doAchieve", onclick:() => achieve([n.id]) }, el("span", { html:ic("spark") }), "Demo: mark achieved"),
+      el("p", { class:"fine", text:"Simulates the evidence being checked. Nothing here is real." }));
+    else { const path = pathTo(S, n.id); act.append(el("button", { type:"button", class:"btn sub", id:"doPath", onclick:() => achieve(path) }, el("span", { html:ic("lock") }), `Demo: complete the ${path.length}-step path here`),
+      el("p", { class:"fine", text:"Shortcut for exploring: simulates the shortest set of goals that unlocks this one." })); }
+    panel.append(act);
+  }
+  function render(){
+    const doneCount = Object.keys(S.done).length;
+    $("sT").textContent = fmt(S.t); $("sM").textContent = fmt(S.m); $("sG").textContent = fmt(S.g); $("sP").textContent = doneCount + "/" + N.length;
+    const hi = new Set(SEL ? [SEL] : []);
+    for (const n of N) {
+      const b = NODE[n.id], done = !!S.done[n.id], open = !done && ready(S, n);
+      b.classList.toggle("done", done); b.classList.toggle("open", open); b.classList.toggle("locked", !done && !open); b.classList.toggle("sel", hi.has(n.id));
+      b.querySelector(".st").innerHTML = ic(done ? "check" : open ? "spark" : "lock");
+      b.setAttribute("aria-label", `${n.title}. ${BR[n.b].label}, tier ${n.t}. ${done ? "Achieved" : open ? "Available now" : "Locked"}. Reward: ${rwText(n.rw)}.`);
+    }
+    for (const p of EDGES) {
+      p.classList.toggle("done", !!(S.done[p.dataset.from] && S.done[p.dataset.to]));
+      p.classList.toggle("hi", !!SEL && (p.dataset.to === SEL || p.dataset.from === SEL));
+    }
+    renderPanel();
+    $("bountyList").replaceChildren(...S.bounties.map(b => bountyCard(b)));
+    $("bell").textContent = S.notes.length ? String(S.notes.length) : "";
+    $("inbox").replaceChildren(...(S.notes.length ? S.notes.slice().reverse().map(x => el("div", { class:"note", "data-note":x.bid },
+      el("div", { class:"to", text:"To: " + x.to + " — " + x.role }),
+      el("b", { text:"Mina met your bounty “" + x.title + "”" }),
+      el("ul", null, x.crit.map(c => el("li", { text:"✓ " + c }))),
+      el("div", { class:"fine", text:"Entry goal: " + x.goal + " · Paid: " + rwText(x.rw) + " · Simulated notification" }))) : [el("p", { class:"empty", text:"No notifications yet. They arrive when a bounty's own criteria are verified." })]));
+    $("logList").replaceChildren(...(S.log.length ? S.log.map(r => el("li", null, el("b", { text:(r.kind === "bounty" ? "Bounty: " : "") + r.title }), " — " + rwText(r.rw) + (r.seeded ? " (starting progress)" : ""))) : [el("li", { class:"empty", text:"Nothing yet." })]));
+    const sel = $("fGoal"), cur = sel.value;
+    sel.replaceChildren(...N.filter(n => !S.done[n.id]).map(n => el("option", { value:n.id, text:"Tier " + n.t + " · " + n.title })));
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
 
-if (typeof document === 'undefined'){
-  runSelfChecks();          /* Node: pure-logic validation harness */
-} else if (document.readyState === 'loading'){
-  document.addEventListener('DOMContentLoaded', init);
-} else {
-  init();
+  /* tabs */
+  const TABS = ["tree","bounties","expert","log"];
+  function showTab(t){
+    for (const x of TABS) { $("tab-" + x).setAttribute("aria-selected", x === t ? "true" : "false"); $("tab-" + x).tabIndex = x === t ? 0 : -1; $("view-" + x).hidden = x !== t; }
+    if (t !== "tree") panel.classList.remove("open");
+  }
+  document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[role=tab]"); if (b) showTab(b.id.slice(4)); });
+  document.querySelector(".tabs").addEventListener("keydown", e => {
+    const i = TABS.findIndex(x => $("tab-" + x).getAttribute("aria-selected") === "true");
+    const j = e.key === "ArrowRight" ? (i + 1) % 4 : e.key === "ArrowLeft" ? (i + 3) % 4 : null;
+    if (j !== null) { showTab(TABS[j]); $("tab-" + TABS[j]).focus(); e.preventDefault(); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && SEL) deselect(); });
+  $("reset").addEventListener("click", () => { seed(); SEL = null; panel.classList.remove("open"); render(); showTab("tree"); startView(); toast("Demo reset", "Back to Mina's starting point."); });
+  $("postForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const r = post(S, { title:$("fTitle").value, crit:$("fCrit").value, goal:$("fGoal").value, t:$("fT").value, m:$("fM").value, g:$("fG").value });
+    const err = $("fErr");
+    if (r.errs) { err.replaceChildren(...r.errs.map(x => el("div", { text:x }))); err.hidden = false; return; }
+    err.hidden = true; $("postForm").reset(); render();
+    toast("Bounty posted", "“" + r.b.title + "” · solvers first need: " + byId[r.b.goal].title);
+  });
+
+  build(); render(); startView();
+  if (/[?&]selftest\b/.test(location.search)) console.log(selfTest().join("\n"));
 }
 </script>
 </body>
