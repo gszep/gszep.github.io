@@ -8,7 +8,7 @@ order: 1
 ---
 import SafetyTimeline from '../../../components/interactive/SafetyTimeline.astro';
 
-> **要点。** シンガポール、日本、韓国、オーストラリア、EUは、これから数か月のうちに高性能AIや大規模データセンターのルールを作る。それぞれが同じ6つの条件を自国の法律に書き込み、互いの安全性試験を認め合えば、そこで学習・ホスティングされる最も高性能なモデルは公開前に独立した試験を受け、重大なインシデントは共有され、国内にあるコピーは取り上げられにくく、盗まれにくくなる。法律に書かれた条件は署名よりも強く縛る。その国が物理的に受け入れているデータセンターに対して、裁判所と許認可がそれを執行するからだ。それでAIがどれだけ安全になるかは、試験で何が見つかり、それに対して何がなされるかによる。決定はどれも、2027年6月のジュネーブAIサミットより前に来る。
+> **要点。** シンガポール、日本、韓国、オーストラリア、EUは、高性能AIや大規模データセンターのルールの起草や見直しを進めている。それぞれが同じ6つの条件を自国の法律に書き込み、互いの安全性試験を認め合えば、そこで学習・ホスティングされる最も高性能なモデルは公開前に独立した試験を受け、重大なインシデントは共有され、国内にあるコピーは取り上げられにくく、盗まれにくくなる。法律に書かれた条件は署名よりも強く縛る。その国が物理的に受け入れているデータセンターに対して、裁判所と許認可がそれを執行するからだ。それでAIがどれだけ安全になるかは、試験で何が見つかり、それに対して何がなされるかによる。2027年6月のジュネーブAIサミットより前にいくつかの機会があるが、すべての見直しに日程が決まっているわけではない。
 
 この記事は、こうした決定に関われる人に向けたものだ。[AI拡大の物理的な鍵を誰が握るかについての前回の記事](/ja/blog/speed-limits-not-walls)に続き、影響力を長続きするものに変える方法を考える。
 
@@ -81,6 +81,8 @@ import SafetyTimeline from '../../../components/interactive/SafetyTimeline.astro
 
 これらをつなぐのは2つ。一度起草して各国の法体系に合わせる**同じ文言**と、韓国の研究所の評価がシンガポールで有効になり、オーストラリアに出された報告が日本に届くような**互いの試験の承認**だ。承認には、合意された試験手順、認定された評価者、承認を取り消す方法が必要になる。ある参加国が拒否した大規模クラスターを、他の参加国が事前の協議なしに許可しないというルールを加えれば、切り崩しは難しくなる。
 
+図の日付は機会であって、実行計画ではない。各条件について、起草を担う担当者、変えられる決定、その後の実施を確認する責任者を明確にしたい。調達は公的支出を義務に結びつけられるが、一社への依存はその交渉力を弱めうる。英国の指針はすでに、調達担当者の早期参加、ベンダーロックインの回避、オープン標準、当初の契約終了後の支援を求めている<sup><a href="#ref-24">24</a></sup>。条件4では、これを明確な継続利用の条項と、試験済みの事業者切り替え手順につなげたい。相互運用性は切り替えに役立つが、それだけで撤退したモデルへのアクセスを保証するものではない。
+
 ## お願いしたいこと
 
 - **これらの文書を起草している方へ。** 合う条件を盛り込み、他の参加国の研究所による試験の承認を書き込んでほしい。
@@ -113,8 +115,8 @@ import SafetyTimeline from '../../../components/interactive/SafetyTimeline.astro
   <li id="ref-11">Commission Implementing Regulation (EU) 2026/1755 on evaluations and proceedings for general-purpose AI models, July 2026. <a href="https://eur-lex.europa.eu/eli/reg_impl/2026/1755/oj/eng">eur-lex.europa.eu</a></li>
   <li id="ref-12">Ministry of Science and ICT (Korea), "The AI Basic Act comes into force", January 2026; IAPP, "A window into South Korea's AI Basic Act". <a href="https://www.msit.go.kr/eng/bbs/view.do?bbsSeqNo=42&mId=4&mPid=2&nttSeqNo=1214&sCode=eng">msit.go.kr</a>, <a href="https://iapp.org/news/a/south-korea-s-ai-basic-act">iapp.org</a></li>
   <li id="ref-13">Federal Register, "Enhanced favorable treatment for the United Arab Emirates under the Export Administration Regulations", 14 July 2026. <a href="https://www.federalregister.gov/documents/2026/07/14/2026-14132/enhanced-favorable-treatment-for-the-united-arab-emirates-under-the-export-administration">federalregister.gov</a></li>
-  <li id="ref-14">EuroHPC Joint Undertaking, "Call for tenders for the selection of Artificial Intelligence Gigafactory Consortia and the establishment of AI Gigafactories"（締切を2026年10月14日に確認）. <a href="https://www.eurohpc-ju.europa.eu/call-tenders-selection-artificial-intelligence-gigafactory-consortia-and-establishment-ai_en">eurohpc-ju.europa.eu</a></li>
-  <li id="ref-15">Ministry of Digital Development and Information (Singapore), "Closing Speech by SMS Tan Kiat How for the Second Reading of the Digital Infrastructure Bill", 7 October 2026. <a href="https://www.mddi.gov.sg/newsroom/closing-speech-by-sms-tan-kiat-how-for-the-second-reading-of-the-digital-infrastructure-bill/">mddi.gov.sg</a></li>
+  <li id="ref-14">EuroHPC Joint Undertaking, "Call for tenders for the selection of Artificial Intelligence Gigafactory Consortia and the establishment of AI Gigafactories"（締切を2026年10月16日に確認）. <a href="https://www.eurohpc-ju.europa.eu/call-tenders-selection-artificial-intelligence-gigafactory-consortia-and-establishment-ai_en">eurohpc-ju.europa.eu</a></li>
+  <li id="ref-15">Ministry of Digital Development and Information (Singapore), "Closing Speech by SMS Tan Kiat How for the Second Reading of the Digital Infrastructure Bill", 7 October 2026；国会の法案一覧、Bill 20/2026、10月7日可決. <a href="https://www.mddi.gov.sg/newsroom/closing-speech-by-sms-tan-kiat-how-for-the-second-reading-of-the-digital-infrastructure-bill/">mddi.gov.sg</a>; <a href="https://www.parliament.gov.sg/parliamentary-business/bills-introduced">parliament.gov.sg</a></li>
   <li id="ref-16">Department of the Prime Minister and Cabinet (Australia), "Getting it right: Building AI infrastructure that works for Australia", consultation paper, September 2026. <a href="https://www.pmc.gov.au/resources/getting-it-right-building-ai-infrastructure-works-australia">pmc.gov.au</a></li>
   <li id="ref-17">デジタル庁「古川大臣記者会見（令和8年10月6日）」、AI法改正の日程に関する質疑を含む. <a href="https://www.digital.go.jp/speech/minister-261006-01">digital.go.jp</a></li>
   <li id="ref-18">Directive (EU) 2024/2853 on liability for defective products, Article 18 (derogation from the development-risk defence). <a href="https://eur-lex.europa.eu/eli/dir/2024/2853/oj">eur-lex.europa.eu</a></li>
@@ -122,5 +124,6 @@ import SafetyTimeline from '../../../components/interactive/SafetyTimeline.astro
   <li id="ref-20">Geneva AI Summit 2027, official site. <a href="https://genevaaisummit.swiss">genevaaisummit.swiss</a></li>
   <li id="ref-21">Digital Watch Observatory, "Australia unveils AI framework for data centres, copyright and infrastructure", 16 July 2026 (legislation planned for early 2027). <a href="https://dig.watch/updates/australia-ai-standards-data-centres">dig.watch</a></li>
   <li id="ref-22">Comprehensive and Progressive Agreement for Trans-Pacific Partnership, Chapter 14 (Electronic Commerce), Article 14.13 (Location of Computing Facilities). <a href="https://www.international.gc.ca/trade-commerce/trade-agreements-accords-commerciaux/agr-acc/tpp-ptp/text-texte/14.aspx?lang=eng">international.gc.ca</a></li>
-  <li id="ref-23">European Commission, "Questions and answers on the code of practice for General-Purpose AI", "How will the Code be updated?"（2026年10月14日に確認）. <a href="https://digital-strategy.ec.europa.eu/en/faqs/questions-and-answers-code-practice-general-purpose-ai">digital-strategy.ec.europa.eu</a></li>
+  <li id="ref-23">European Commission, "Questions and answers on the code of practice for General-Purpose AI", "How will the Code be updated?"（2026年10月16日に確認）. <a href="https://digital-strategy.ec.europa.eu/en/faqs/questions-and-answers-code-practice-general-purpose-ai">digital-strategy.ec.europa.eu</a></li>
+  <li id="ref-24">英国政府「Artificial Intelligence Playbook」（2025年）、原則8と「Buying AI」；「Guidelines for AI procurement」（2020年）、要件の起草と契約の実施. <a href="https://www.gov.uk/government/publications/ai-playbook-for-the-uk-government/artificial-intelligence-playbook-for-the-uk-government-html">Playbook</a>; <a href="https://www.gov.uk/government/publications/guidelines-for-ai-procurement/guidelines-for-ai-procurement">調達指針</a></li>
 </ol>
