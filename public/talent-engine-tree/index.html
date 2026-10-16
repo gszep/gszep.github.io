@@ -1,0 +1,786 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<meta name="theme-color" content="#070B16">
+<title>Capability tech tree — Talent Engine prototype</title>
+<meta name="description" content="Interactive concept prototype: a branching capability tech tree from first AI results to agent orchestration, fleet management and metacognition. Sample data only.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23F2C94C' d='M12 2.6 13.8 10.2 21.4 12 13.8 13.8 12 21.4 10.2 13.8 2.6 12 10.2 10.2Z'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#070B16;--panel:#0E1628;--panel2:#141E37;--line:rgba(230,225,210,.12);--line2:rgba(230,225,210,.24);
+  --ink:#F1ECDF;--ink2:#C9C3B3;--mute:#8C96AE;--mute2:#5B6680;
+  --research:#A78BFA;--create:#F472B6;--make:#F5A524;--organize:#FB8A6E;
+  --agency:#34D399;--meta:#60A5FA;--bridge:#F2C94C;--cap:#F2C94C;--gold:#F2C94C;--comp:#5BC9E0;--mins:#8FB8E8;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --serif:Georgia,"Iowan Old Style","Times New Roman",serif;
+}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:radial-gradient(1200px 600px at 50% -12%,#14203d,transparent 62%),var(--bg);color:var(--ink);
+  font:14px/1.5 var(--sans);display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+button,input,select,textarea{font:inherit;color:inherit}
+button{background:none;border:0;padding:0;cursor:pointer}
+:focus-visible{outline:2px solid var(--ink);outline-offset:2px;border-radius:6px}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;vertical-align:-.13em;flex:none}
+.vh{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* header */
+.top{display:flex;align-items:center;gap:10px 16px;padding:10px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;color:var(--gold);border:1px solid var(--line2);background:#101a31}
+.brand b{font-family:var(--serif);font-size:17px;display:block;line-height:1.1}
+.brand small{color:var(--mute);font-size:11.5px}
+.badge{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);border:1px solid var(--line2);border-radius:99px;padding:3px 9px;white-space:nowrap}
+.bal{display:flex;gap:8px;margin-left:auto;align-items:center;overflow-x:auto;scrollbar-width:none;max-width:100%}
+.stat{display:flex;align-items:center;gap:7px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:5px 10px;white-space:nowrap}
+.stat .n{font-weight:700;font-variant-numeric:tabular-nums}
+.stat .l{font-size:10.5px;color:var(--mute)}
+.stat.t .ic{color:var(--gold)}.stat.m .ic{color:var(--mins)}.stat.g .ic{color:var(--comp)}.stat.p .ic{color:var(--agency)}
+.ghost{border:1px solid var(--line2);border-radius:9px;padding:6px 11px;font-size:12.5px;color:var(--ink2);white-space:nowrap}
+.ghost:hover{color:var(--ink);border-color:var(--ink2)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;padding:6px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.tab{padding:6px 14px;border-radius:99px;color:var(--mute);border:1px solid transparent;white-space:nowrap;font-size:13.5px}
+.tab:hover{color:var(--ink2)}
+.tab[aria-selected="true"]{color:var(--ink);background:var(--panel2);border-color:var(--line2)}
+.tab .cnt{display:inline-block;min-width:18px;margin-left:6px;padding:0 5px;border-radius:99px;background:var(--gold);color:#1a1405;font-size:11px;font-weight:700;text-align:center}
+.tab .cnt:empty{display:none}
+
+main{flex:1;min-height:0;display:flex}
+.view{flex:1;min-height:0;min-width:0}
+.view[hidden]{display:none!important}
+
+/* tree view */
+#view-tree{display:grid;grid-template-columns:minmax(0,1fr) 380px}
+.stage{position:relative;min-width:0;min-height:0;display:flex;flex-direction:column}
+.dest{display:flex;gap:6px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--line);overflow-x:auto;scrollbar-width:none}
+.dest .lbl{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-right:4px;white-space:nowrap}
+.dest button{white-space:nowrap;font-size:12.5px;padding:5px 11px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2)}
+.dest button:hover{color:var(--ink);border-color:var(--ink2)}
+.dest button[data-go="cap"]{border-color:rgba(242,201,76,.6);color:var(--gold)}
+#viewport{flex:1;position:relative;overflow:hidden;touch-action:none;cursor:grab;outline:none;
+  background-image:radial-gradient(rgba(230,225,210,.07) 1px,transparent 1px);background-size:26px 26px}
+#viewport.dragging{cursor:grabbing}
+#viewport:focus-visible{box-shadow:inset 0 0 0 2px var(--ink)}
+#world{position:absolute;left:0;top:0;transform-origin:0 0;will-change:transform}
+#world.glide{transition:transform .45s cubic-bezier(.2,.7,.2,1)}
+#edges{position:absolute;left:0;top:0;overflow:visible;pointer-events:none}
+.trunk{fill:currentColor;opacity:.07}
+.tierline{stroke:rgba(230,225,210,.06);stroke-dasharray:2 8}
+.e{fill:none;stroke:rgba(230,225,210,.18);stroke-width:2}
+.e.any{stroke-dasharray:7 6}
+.e.done{stroke:var(--c);opacity:.85;stroke-width:2.6}
+.e.hi{stroke:var(--ink);opacity:1;stroke-width:3.2}
+.tierlab{position:absolute;left:14px;width:150px;color:var(--mute)}
+.tierlab b{display:block;font-family:var(--serif);font-style:italic;font-weight:400;font-size:13px;color:var(--mute2)}
+.tierlab span{font-size:13px;font-weight:650;color:var(--ink2);line-height:1.25;display:block}
+.lane{position:absolute;width:200px;text-align:center;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--c);font-weight:700}
+.lane small{display:block;letter-spacing:0;text-transform:none;font-weight:400;color:var(--mute);font-size:11.5px}
+.trunklab{position:absolute;width:200px;text-align:center;padding:10px 8px;border:1px dashed var(--c);border-radius:12px;color:var(--c);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:rgba(7,11,22,.6)}
+.trunklab small{display:block;text-transform:none;letter-spacing:0;font-weight:400;color:var(--ink2);font-size:11.5px;margin-top:2px}
+
+.node{position:absolute;width:180px;height:84px;display:flex;flex-direction:column;justify-content:space-between;gap:3px;padding:8px 10px 8px;text-align:left;
+  border-radius:12px;background:linear-gradient(180deg,#121c33,#0b1324);border:1px solid var(--line);border-top:3px solid var(--c);
+  box-shadow:0 8px 20px rgba(0,0,0,.45);transition:opacity .2s,border-color .2s,box-shadow .2s}
+.node:hover{border-color:var(--line2);border-top-color:var(--c)}
+.node .nh{display:flex;justify-content:space-between;align-items:center;font-size:9.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--c);font-weight:700}
+.node .nh .ic{width:14px;height:14px}
+.node .nt{font-weight:650;font-size:12.8px;line-height:1.22;color:var(--ink)}
+.node .nr{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden}
+.node.locked{opacity:.6}
+.node.locked .nt{color:var(--ink2)}
+.node.locked .nh .st{color:var(--mute2)}
+.node.open{border-color:color-mix(in srgb,var(--c) 55%,transparent);border-top-color:var(--c);
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--c) 25%,transparent),0 0 26px color-mix(in srgb,var(--c) 28%,transparent),0 8px 20px rgba(0,0,0,.45)}
+.node.open .nh .st{color:var(--gold)}
+.node.done{background:linear-gradient(180deg,color-mix(in srgb,var(--c) 24%,#121c33),#0b1324);border-color:var(--c)}
+.node.sel{outline:2px solid var(--ink);outline-offset:3px}
+.node.cap{width:220px;height:96px;border-top-width:4px;background:linear-gradient(180deg,#2a2412,#0b1324)}
+.node.cap .nt{font-family:var(--serif);font-size:15px}
+.node.new{animation:pop 1.6s ease-out 1}
+@keyframes pop{0%{box-shadow:0 0 0 0 var(--c)}60%{box-shadow:0 0 0 12px transparent}100%{box-shadow:0 0 0 0 transparent}}
+
+.chip{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:var(--ink2);border:1px solid var(--line);border-radius:99px;padding:1px 6px;white-space:nowrap;background:rgba(255,255,255,.03)}
+.chip b{font-weight:650;font-variant-numeric:tabular-nums}
+.chip.t .ic{color:var(--gold)}.chip.m .ic{color:var(--mins)}.chip.g .ic{color:var(--comp)}
+.chip.big{font-size:12.5px;padding:4px 10px}
+
+.zoom{position:absolute;right:12px;bottom:12px;display:flex;flex-direction:column;gap:6px;z-index:5}
+.zoom button{width:38px;height:38px;border-radius:10px;border:1px solid var(--line2);background:rgba(14,22,40,.92);display:grid;place-items:center;color:var(--ink2)}
+.zoom button:hover{color:var(--ink);border-color:var(--ink2)}
+.zoom .ic{width:17px;height:17px}
+.hint{position:absolute;left:12px;bottom:12px;font-size:11.5px;color:var(--mute);background:rgba(7,11,22,.8);border:1px solid var(--line);border-radius:8px;padding:4px 9px;pointer-events:none}
+
+/* panel */
+#panel{border-left:1px solid var(--line);background:rgba(10,16,30,.92);overflow:auto;min-height:0;padding:16px 18px 24px}
+.p-close{display:none}
+.p-head{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.bchip{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--c);border:1px solid color-mix(in srgb,var(--c) 45%,transparent);border-radius:99px;padding:2px 9px}
+.schip{margin-left:auto;font-size:11px;font-weight:650;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--mute)}
+.schip.open{color:var(--gold);border-color:rgba(242,201,76,.5)}
+.schip.done{color:var(--agency);border-color:rgba(52,211,153,.5)}
+#panel h2{font-family:var(--serif);font-size:21px;line-height:1.2;margin:2px 0}
+#panel .tierline-t{font-size:12px;color:var(--mute);margin:0 0 6px}
+.sec{border-top:1px solid var(--line);padding-top:11px;margin-top:11px}
+.sec h3{font-size:10.5px;text-transform:uppercase;letter-spacing:.14em;color:var(--mute);margin:0 0 7px;font-weight:700}
+.sec p{margin:0 0 6px;color:var(--ink2)}
+.sec ul{margin:0;padding-left:18px;color:var(--ink2)}
+.sec li{margin:3px 0}
+.grp{margin-bottom:8px}
+.grp .k{font-size:12px;color:var(--mute);font-style:italic}
+.links{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px}
+.link{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;padding:3px 9px;border-radius:99px;border:1px solid var(--line2);color:var(--ink2)}
+.link:hover{color:var(--ink);border-color:var(--ink2)}
+.link.ok{border-color:rgba(52,211,153,.5);color:var(--ink)}
+.link.ok .ic{color:var(--agency)}
+.why{font-size:12.5px;color:var(--mute);margin-top:6px}
+.act{margin-top:16px;display:flex;flex-direction:column;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;border-radius:10px;border:1px solid var(--c,var(--gold));
+  background:color-mix(in srgb,var(--c,var(--gold)) 14%,transparent);color:var(--ink);font-weight:650}
+.btn:hover{background:color-mix(in srgb,var(--c,var(--gold)) 24%,transparent)}
+.btn.sub{border-color:var(--line2);background:transparent;color:var(--ink2);font-weight:500}
+.fine{font-size:11.5px;color:var(--mute)}
+.donebox{border:1px solid rgba(52,211,153,.4);background:rgba(52,211,153,.08);border-radius:10px;padding:9px 12px;color:var(--ink2)}
+.intro h2{font-family:var(--serif)}
+.intro ul{padding-left:18px;color:var(--ink2)}
+.intro li{margin:6px 0}
+.legend{display:grid;gap:6px;font-size:12.5px;color:var(--ink2)}
+.legend .sw{display:inline-block;width:12px;height:12px;border-radius:3px;background:var(--c);margin-right:7px;vertical-align:-1px}
+.legend svg.ln{width:34px;height:8px;margin-right:6px;vertical-align:1px}
+
+/* bounty cards & other views */
+.page{height:100%;overflow:auto;padding:22px 20px 60px}
+.page-in{max-width:1080px;margin:0 auto}
+.page h2{font-family:var(--serif);font-size:24px;margin:0 0 4px}
+.page .sub{color:var(--mute);margin:0 0 18px;max-width:720px}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:14px}
+.card{border:1px solid var(--line);border-radius:14px;padding:14px 16px;background:linear-gradient(180deg,#111a30,#0b1324);display:flex;flex-direction:column;gap:8px}
+.card h3{margin:0;font-size:15px;line-height:1.3}
+.card .by{font-size:12px;color:var(--mute)}
+.card ul{margin:0;padding-left:18px;color:var(--ink2);font-size:13px}
+.card .row{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.st-pill{font-size:11px;font-weight:650;border-radius:99px;padding:2px 9px;border:1px solid var(--line2);color:var(--mute)}
+.st-pill.ready{color:var(--gold);border-color:rgba(242,201,76,.5)}
+.st-pill.ok{color:var(--agency);border-color:rgba(52,211,153,.5)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.box{border:1px solid var(--line);border-radius:14px;padding:16px;background:rgba(14,22,40,.6)}
+.box h3{margin:0 0 10px;font-size:16px}
+.note{border:1px solid rgba(242,201,76,.35);background:rgba(242,201,76,.06);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.note .to{font-size:12px;color:var(--mute)}
+.note ul{margin:6px 0;padding-left:18px;color:var(--ink2);font-size:13px}
+form label{display:block;font-size:12px;color:var(--mute);margin:10px 0 4px}
+form input,form select,form textarea{width:100%;background:#0b1324;border:1px solid var(--line2);border-radius:9px;padding:8px 10px;color:var(--ink)}
+form textarea{min-height:84px;resize:vertical}
+.r3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.err{color:#F58C8C;font-size:12.5px;margin-top:8px}
+.log li{margin:6px 0;color:var(--ink2)}
+.empty{color:var(--mute);font-style:italic}
+
+#toasts{position:fixed;left:50%;top:12px;transform:translateX(-50%);display:flex;flex-direction:column;gap:8px;z-index:80;width:min(440px,calc(100vw - 24px));pointer-events:none}
+.toast{background:#131d36;border:1px solid var(--line2);border-left:3px solid var(--gold);border-radius:10px;padding:9px 12px;box-shadow:0 14px 40px rgba(0,0,0,.5);animation:rise .25s ease}
+.toast b{display:block;font-size:13.5px}
+.toast span{font-size:12.5px;color:var(--ink2)}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+@media (max-width:900px){
+  .badge,.brand small{display:none}
+  .top{padding:8px 10px;gap:8px}
+  .bal{order:3;flex-basis:100%;margin-left:0}
+  .stat{padding:4px 8px}
+  .stat .l{display:none}
+  .bal{justify-content:space-between}
+  #view-tree{grid-template-columns:minmax(0,1fr)}
+  #panel{position:fixed;left:0;right:0;bottom:0;max-height:68dvh;border-left:0;border-top:1px solid var(--line2);border-radius:16px 16px 0 0;
+    transform:translateY(105%);transition:transform .25s ease;z-index:60;box-shadow:0 -24px 60px rgba(0,0,0,.6);padding-top:12px}
+  #panel.open{transform:none}
+  .p-close{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;border:1px solid var(--line2)}
+  .hint{display:none}
+  .two{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <span class="brand-mark" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path fill="currentColor" stroke="none" d="M12 2.6 13.8 10.2 21.4 12 13.8 13.8 12 21.4 10.2 13.8 2.6 12 10.2 10.2Z"/></svg></span>
+    <div><b>Capability tech tree</b><small>Mina · sample student</small></div>
+  </div>
+  <span class="badge">Prototype · fictional data</span>
+  <div class="bal" aria-label="Your support balances">
+    <div class="stat t"><span id="ic-t"></span><span class="n" id="sT">0</span><span class="l">model credits</span></div>
+    <div class="stat m"><span id="ic-m"></span><span class="n" id="sM">0</span><span class="l">expert minutes</span></div>
+    <div class="stat g"><span id="ic-g"></span><span class="n" id="sG">0</span><span class="l">GPU-hours</span></div>
+    <div class="stat p"><span id="ic-p"></span><span class="n" id="sP">0/30</span><span class="l">achieved</span></div>
+    <button type="button" class="ghost" id="reset">Reset</button>
+  </div>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button type="button" class="tab" role="tab" id="tab-tree" aria-controls="view-tree" aria-selected="true">Tech tree</button>
+  <button type="button" class="tab" role="tab" id="tab-bounties" aria-controls="view-bounties" aria-selected="false" tabindex="-1">Bounties</button>
+  <button type="button" class="tab" role="tab" id="tab-expert" aria-controls="view-expert" aria-selected="false" tabindex="-1">Expert view<span class="cnt" id="bell"></span></button>
+  <button type="button" class="tab" role="tab" id="tab-log" aria-controls="view-log" aria-selected="false" tabindex="-1">Reward log</button>
+</nav>
+
+<main>
+  <section class="view" id="view-tree" role="tabpanel" aria-labelledby="tab-tree">
+    <div class="stage">
+      <div class="dest" aria-label="Jump to">
+        <span class="lbl">Jump to</span>
+        <button type="button" data-go="start">Start routes</button>
+        <button type="button" data-go="a3">Own your layer</button>
+        <button type="button" data-go="a5">Orchestrate agents</button>
+        <button type="button" data-go="a6">Manage a fleet</button>
+        <button type="button" data-go="k6">Evaluate the evaluator</button>
+        <button type="button" data-go="cap">Steer a collective</button>
+        <button type="button" data-go="fit">Whole tree</button>
+      </div>
+      <div id="viewport" tabindex="0" aria-label="Tech tree. Drag to move, scroll to pan, Ctrl+scroll or pinch to zoom. Arrow keys pan, plus and minus zoom.">
+        <div id="world"></div>
+        <div class="zoom">
+          <button type="button" id="zin" aria-label="Zoom in"></button>
+          <button type="button" id="zout" aria-label="Zoom out"></button>
+          <button type="button" id="zfit" aria-label="Show whole tree"></button>
+        </div>
+        <div class="hint">Drag to move · Ctrl+scroll or pinch to zoom</div>
+      </div>
+    </div>
+    <aside id="panel" aria-label="Achievement details"></aside>
+  </section>
+
+  <section class="view" id="view-bounties" role="tabpanel" aria-labelledby="tab-bounties" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Expert bounties</h2>
+      <p class="sub">Experts post a specific problem with checkable criteria. The linked achievement is the entry ticket; verifying the bounty's own criteria pays its reward and notifies the expert once.</p>
+      <div class="cards" id="bountyList"></div>
+    </div></div>
+  </section>
+
+  <section class="view" id="view-expert" role="tabpanel" aria-labelledby="tab-expert" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Expert view</h2>
+      <p class="sub">What a mentor sees: notifications when someone meets their bounty, and a form to post a new one.</p>
+      <div class="two">
+        <div class="box"><h3>Notifications</h3><div id="inbox"></div></div>
+        <div class="box"><h3>Post a bounty</h3>
+          <form id="postForm" novalidate>
+            <label for="fTitle">Problem</label><input id="fTitle" maxlength="100" placeholder="e.g. Reproduce the anomaly in our shared dataset">
+            <label for="fCrit">Acceptance criteria (one per line)</label><textarea id="fCrit" maxlength="500" placeholder="Observable things a reviewer can check"></textarea>
+            <label for="fGoal">Solver must first achieve</label><select id="fGoal"></select>
+            <div class="r3">
+              <div><label for="fT">Model credits</label><input id="fT" type="number" min="0" max="5000" step="50" value="0"></div>
+              <div><label for="fM">Expert minutes</label><input id="fM" type="number" min="0" max="240" step="15" value="30"></div>
+              <div><label for="fG">GPU-hours</label><input id="fG" type="number" min="0" max="48" step="1" value="0"></div>
+            </div>
+            <div class="err" id="fErr" role="alert" hidden></div>
+            <div class="act"><button class="btn" type="submit">Post bounty</button></div>
+          </form>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="view" id="view-log" role="tabpanel" aria-labelledby="tab-log" hidden>
+    <div class="page"><div class="page-in">
+      <h2>Reward log</h2>
+      <p class="sub">Support received for completed goals and verified bounties. Balances are for your next step, not a score.</p>
+      <ol class="log" id="logList"></ol>
+    </div></div>
+  </section>
+</main>
+<div id="toasts" aria-live="polite"></div>
+<noscript><p style="padding:20px">This prototype needs JavaScript.</p></noscript>
+
+<script>
+"use strict";
+/* ---------- data ---------- */
+const W = 1660, H = 1650, NW = 180, NH = 84;
+const COL = { research:280, create:490, agency:700, bridge:900, meta:1100, make:1320, organize:1540, cap:900 };
+const TIERS = ["Get a real result","Delegate · set criteria","Supervise · calibrate","Own your layer · apply it","Close the loop","Orchestrate","Fleets · field mastery","Steer a collective"];
+const BR = {
+  research:{label:"Investigate", c:"var(--research)"}, create:{label:"Create", c:"var(--create)"},
+  make:{label:"Make", c:"var(--make)"}, organize:{label:"Organize", c:"var(--organize)"},
+  agency:{label:"Agency", c:"var(--agency)"}, meta:{label:"Metacognition", c:"var(--meta)"},
+  bridge:{label:"Collaboration", c:"var(--bridge)"}, cap:{label:"Capstone", c:"var(--cap)"}
+};
+const ROOTS = ["r0","c0","m0","o0"];
+const N = [
+  {id:"r0",b:"research",t:0,title:"Ask a sharper question",goal:"Use an AI assistant to turn a loose curiosity into a question you could actually investigate.",ev:["Your first question and the sharpened version","Three sources you opened and checked yourself","One AI claim that turned out to be unsupported"],rw:{t:200}},
+  {id:"c0",b:"create",t:0,title:"Draft, then make it yours",goal:"Make a first draft with AI — a story, image, track or design — then revise it with your own judgement.",ev:["The AI draft and your revision side by side","What you kept, cut and changed, and why"],rw:{t:200}},
+  {id:"m0",b:"make",t:0,title:"Predict before you build",goal:"Use AI to plan a small physical build — a circuit, mechanism or printed part — and write down a prediction before testing it.",ev:["Plan and parts list","Your written prediction","What actually happened, with a photo or video"],rw:{t:200}},
+  {id:"o0",b:"organize",t:0,title:"Turn talk into decisions",goal:"Use AI to turn real meeting notes into decisions, owners and open questions — then have the participants correct it.",ev:["The AI summary","At least one correction from a participant","The agreed final version"],rw:{m:15}},
+
+  {id:"r1",b:"research",t:1,title:"Catch a fabricated citation",goal:"Check every reference in an AI-written answer and find which exist and what they really say.",ev:["Each reference with the link you checked","A verdict for each: real, misquoted or invented"],rw:{t:300},p:[["all",["r0"]]]},
+  {id:"c1",b:"create",t:1,title:"Run a critique loop",goal:"Ask for critiques from several angles, accept or reject each with a reason, and ship version two.",ev:["The critiques you asked for","Your accept/reject reasons","Version one and version two"],rw:{t:300},p:[["all",["c0"]]]},
+  {id:"m1",b:"make",t:1,title:"Explain a surprise",goal:"When the build behaves differently from your prediction, find the cause with AI help and confirm it physically.",ev:["The mismatch","Two hypotheses you tested","The confirmed cause"],rw:{t:300},p:[["all",["m0"]]]},
+  {id:"o1",b:"organize",t:1,title:"Map the disagreement",goal:"Use AI to lay out the positions in a real disagreement fairly enough that each side signs off on its own description.",ev:["The position map","Sign-off or corrections from each side"],rw:{m:20},p:[["all",["o0"]]]},
+  {id:"a1",b:"agency",t:1,title:"Delegate a bounded task",goal:"Hand an agent a task with clear scope, inputs and a definition of done. Then compare what it did with what it said it did.",ev:["Your task brief","The agent's action log or changes","One difference between its claims and its actions"],rw:{t:400},p:[["any",ROOTS]]},
+  {id:"k1",b:"meta",t:1,title:"Write success criteria first",goal:"Before starting, write down what success looks like and how you will check it. Afterwards, grade yourself against it.",ev:["Criteria written before you began","The result graded against them","What you would change about the criteria"],rw:{m:20},p:[["any",ROOTS]]},
+
+  {id:"a2",b:"agency",t:2,title:"Supervise a multi-step job",goal:"Run a multi-step job in an agent workspace, with checkpoints where you inspect and correct course.",ev:["Your plan with checkpoints","A correction you made mid-run","A final output that passes your criteria"],rw:{t:600},p:[["all",["a1"]]]},
+  {id:"x2",b:"bridge",t:2,title:"Hand off so others can continue",goal:"Package your work — sources, prompts, checks and decisions — so a colleague can continue it without asking you.",ev:["The handoff package","A colleague continues one step without contacting you","What they still had to reconstruct"],rw:{m:30},p:[["any",["r1","c1","m1","o1"]],["any",["a1","k1"]]]},
+  {id:"k2",b:"meta",t:2,title:"Calibrate your confidence",goal:"Before checking ten AI outputs, rate how likely each is correct. Then check them and compare.",ev:["Your ratings, made before checking","The check results","Where you were over- or under-confident"],rw:{m:30},p:[["all",["k1"]]]},
+
+  {id:"r3",b:"research",t:3,title:"Reproduce a published result",goal:"With agent help, reproduce a figure or claim from a paper and report where it matches and where it does not.",ev:["Your reproduction","A match/mismatch table","One likely cause of divergence"],rw:{g:4},why:"A full reproduction often needs more compute than a laptop.",p:[["all",["r1"]],["any",["a2","x2"]]]},
+  {id:"c3",b:"create",t:3,title:"Teach your tools your style",goal:"Write a style guide and checks that agents follow, so output matches your intent across a whole project.",ev:["The style guide","Before and after examples","A check that catches off-style output"],rw:{t:500},p:[["all",["c1"]],["any",["a2","x2"]]]},
+  {id:"a3",b:"agency",t:3,title:"Own your intelligence layer",goal:"Keep your context, prompts, checks and sources somewhere you control. Switch to a different model provider and carry on.",ev:["Where your layer lives and what is in it","The same task completed on two providers","What broke on the switch and how you fixed it"],rw:{t:800},p:[["all",["a2"]],["any",["x2","k2"]]]},
+  {id:"k3",b:"meta",t:3,title:"Notice a wrong frame",goal:"Catch a moment when the problem itself was framed wrongly, stop, and change strategy.",ev:["The original framing","The signal that it was wrong","The new strategy and its result"],rw:{m:30},p:[["all",["k2"]]]},
+  {id:"m3",b:"make",t:3,title:"Close the sim-to-real gap",goal:"Make a simulation predict your physical build well enough to trust it for the next design change.",ev:["Simulated and real measurements","The gap before and after","A design change the simulation correctly predicted"],rw:{g:6},why:"Parameter sweeps in simulation need GPU time.",p:[["all",["m1"]],["any",["a2","x2"]]]},
+  {id:"o3",b:"organize",t:3,title:"Make a reusable decision process",goal:"Turn a one-off facilitated decision into a template that another group uses successfully.",ev:["The template","Another group's use of it","What they changed"],rw:{m:30},p:[["all",["o1"]],["any",["x2","k2"]]]},
+
+  {id:"a4",b:"agency",t:4,title:"Build a verified improvement loop",goal:"Set up a loop where agents attempt, objective checks score, and failures feed revisions. Show it beats your starting version.",ev:["The objective checks","Scores across iterations against the baseline","A failure the loop recovered from"],rw:{t:1000,g:4},why:"Repeated evaluation runs consume model credits and compute.",p:[["all",["a3","k2"]]]},
+  {id:"k4",b:"meta",t:4,title:"Decide what not to automate",goal:"Map a whole workflow, mark which steps stay with people and why, then test one of those assumptions.",ev:["The workflow map with human steps marked","A reason for each human step","The assumption you tested and what you learned"],rw:{m:45},p:[["all",["k3"]],["any",["a3","x2"]]]},
+
+  {id:"a5",b:"agency",t:5,title:"Orchestrate an agent team",goal:"Give several agents distinct roles, interfaces, a budget and an independent reviewer. Beat a single-agent baseline on quality per cost.",ev:["Roles and handoff interfaces","Budget and actual spend","Comparison with the single-agent baseline"],rw:{t:1500,m:30},p:[["all",["a4","k4"]]]},
+  {id:"k5",b:"meta",t:5,title:"Allocate your review attention",goal:"When agents produce more than you can read, decide what to inspect deeply by risk — and measure what your reviewing catches.",ev:["Your risk-based review rule","Errors caught per hour of review","One error the rule missed"],rw:{m:45},p:[["all",["k4"]],["any",["a4","o3"]]]},
+
+  {id:"r6",b:"research",t:6,title:"Run a parallel investigation",goal:"Split a research question across agents with independent evidence trails, then reconcile the conflicts yourself.",ev:["How you split the question","Conflicts found between trails","Your reconciled conclusion"],rw:{g:6},why:"Independent trails multiply model and compute use.",p:[["all",["r3"]],["any",["a5","a4"]]]},
+  {id:"c6",b:"create",t:6,title:"Direct a multi-agent production",goal:"Lead a creative production where agents handle parts and you hold the vision across all of them.",ev:["Roles and creative brief","Where you overruled the agents","The finished work"],rw:{t:1200},p:[["all",["c3","a5"]]]},
+  {id:"a6",b:"agency",t:6,title:"Manage an agent fleet",goal:"Run many agents on dependent tasks: dispatch, triage, contain failures, stop and recover — with evidence of what each produced.",ev:["Dispatch and dependency plan","A contained failure and recovery","Resource use against outcomes"],rw:{t:2000,g:8},why:"Fleet runs need sustained model and compute budgets.",p:[["all",["a5","k5"]]]},
+  {id:"k6",b:"meta",t:6,title:"Evaluate the evaluator",goal:"Find where your checks or reviewer agents agree for the wrong reason, then improve the check.",ev:["Cases where reviewers agreed but were wrong","Why their errors were correlated","An improved check and its effect"],rw:{m:60},p:[["all",["k5"]],["any",["a5","o3"]]]},
+  {id:"m6",b:"make",t:6,title:"Run a robot design sweep",goal:"Have agents explore designs in simulation in parallel, then build and test the best candidate for real.",ev:["Search space and agent setup","Top candidates from simulation","A real-world test of the chosen design"],rw:{g:12},why:"Parallel simulation sweeps are GPU-heavy.",p:[["all",["m3"]],["any",["a5","a4"]]]},
+  {id:"o6",b:"organize",t:6,title:"Facilitate a human–agent deliberation",goal:"Run a group decision where agents synthesize input and people decide, with a record everyone can audit.",ev:["The process design","The audit trail","Participants' assessment of fairness"],rw:{m:60},p:[["all",["o3"]],["any",["k5","a5"]]]},
+
+  {id:"cap",b:"cap",t:7,title:"Steer an adaptive collective",goal:"Set goals for a group of people and agents, evaluate results honestly, and change course when the evidence says so — over weeks, not one run.",ev:["Goals and how they are measured","A course change driven by evidence","What the people involved learned"],rw:{t:3000,m:120,g:16},why:"Sustained collective work needs all three kinds of support.",p:[["all",["a6","k6"]],["any",["r6","c6","m6","o6"]]]}
+];
+const byId = Object.create(null);
+for (const n of N){ n.p = n.p || []; n.x = COL[n.b]; n.w = n.b === "cap" ? 220 : NW; n.h = n.b === "cap" ? 96 : NH; n.y = 60 + (7 - n.t) * 200; byId[n.id] = n; }
+const KIDS = Object.create(null);
+for (const n of N) KIDS[n.id] = [];
+for (const n of N) for (const [, ids] of n.p) for (const i of ids) if (!KIDS[i].includes(n.id)) KIDS[i].push(n.id);
+
+const SEED_BOUNTIES = [
+  {title:"Find every fabricated citation in an AI-written review",by:"Dr. R. Sato",role:"Research mentor (sample)",goal:"r1",rw:{t:300,m:30},crit:["Every reference checked, with the link used","Each marked real, misquoted or invented","At least one partially supported claim explained"]},
+  {title:"Get the gripper simulation within 10% of the real gripper",by:"J. Reyes",role:"Robotics engineer (sample)",goal:"m3",rw:{m:30,g:6},crit:["Grip force measured on hardware and in simulation","Error under 10% across three objects","Calibration steps someone else can rerun"]},
+  {title:"Show where reviewer agents agree for the wrong reason",by:"Prof. E. Moreau",role:"Evaluation researcher (sample)",goal:"k6",rw:{t:800,m:60},crit:["A review set where several agents agree but are wrong","An explanation of why their errors are correlated","A revised check that catches those cases"]}
+];
+
+/* ---------- pure logic ---------- */
+function fresh(){
+  return { done:Object.create(null), t:0, m:0, g:0, log:[], notes:[], clock:0, seq:0,
+    bounties: SEED_BOUNTIES.map((b, i) => ({ ...b, id:"b" + (i + 1), crit:b.crit.slice(), rw:{ ...b.rw }, ok:false })) };
+}
+const groupMet = (s, [k, ids]) => k === "all" ? ids.every(i => s.done[i]) : ids.some(i => s.done[i]);
+const ready = (s, n) => n.p.every(g => groupMet(s, g));
+function pay(s, rw, entry){ s.t += rw.t || 0; s.m += rw.m || 0; s.g += rw.g || 0; s.log.push({ ...entry, rw:{ ...rw } }); }
+function complete(s, id, seeded){
+  const n = byId[id];
+  if (!n) return "unknown";
+  if (s.done[id]) return "already";
+  if (!ready(s, n)) return "locked";
+  s.done[id] = ++s.clock;
+  pay(s, n.rw, { kind:"achievement", title:n.title, seeded:!!seeded });
+  return "ok";
+}
+/* Minimal set of goals to reach id, in a valid order (prerequisites are always in lower tiers). */
+function pathTo(s, id){
+  const need = new Set();
+  (function walk(i){
+    if (s.done[i] || need.has(i)) return;
+    for (const [k, ids] of byId[i].p){
+      if (k === "all") ids.forEach(walk);
+      else if (!ids.some(x => s.done[x] || need.has(x))) walk(ids.slice().sort((a, b) => byId[a].t - byId[b].t)[0]);
+    }
+    need.add(i);
+  })(id);
+  return [...need].sort((a, b) => byId[a].t - byId[b].t);
+}
+function verify(s, bid){
+  const b = s.bounties.find(x => x.id === bid);
+  if (!b) return "unknown";
+  if (b.ok) return "already";
+  if (!s.done[b.goal]) return "locked";
+  b.ok = true;
+  pay(s, b.rw, { kind:"bounty", title:b.title, from:b.by });
+  s.notes.push({ bid:b.id, to:b.by, role:b.role, title:b.title, goal:byId[b.goal].title, crit:b.crit.slice(), rw:{ ...b.rw }, at:++s.clock });
+  return "ok";
+}
+function post(s, d){
+  const errs = [];
+  const title = String(d.title || "").trim();
+  const crit = String(d.crit || "").split(/\n+/).map(x => x.trim()).filter(Boolean);
+  const num = v => Math.round(Number(v) || 0);
+  const rw = {}; for (const k of ["t","m","g"]) { const v = num(d[k]); if (v) rw[k] = v; }
+  if (!title) errs.push("Add a short problem title.");
+  if (!crit.length) errs.push("Add at least one observable criterion (one per line).");
+  if (!byId[d.goal]) errs.push("Choose the achievement a solver needs first.");
+  else if (s.done[d.goal]) errs.push("That achievement is already done — bounties do not back-date.");
+  if ((rw.t || 0) < 0 || (rw.m || 0) < 0 || (rw.g || 0) < 0) errs.push("Rewards cannot be negative.");
+  if (!Object.keys(rw).length) errs.push("Offer at least one reward.");
+  if ((rw.t || 0) > 5000 || (rw.m || 0) > 240 || (rw.g || 0) > 48) errs.push("Keep rewards within the sample limits (5,000 credits, 240 minutes, 48 GPU-hours).");
+  if (errs.length) return { errs };
+  const b = { id:"u" + (++s.seq), title, crit, goal:d.goal, rw, by:"You (sample expert)", role:"Posted in this demo", ok:false };
+  s.bounties.push(b);
+  return { b };
+}
+
+function selfTest(){
+  const out = [];
+  const ok = (c, m) => { if (!c) throw new Error("FAIL: " + m); out.push("PASS " + m); };
+  ok(N.length === 30, "30 achievements");
+  ok(new Set(N.map(n => n.id)).size === N.length, "unique ids");
+  let edges = 0;
+  for (const n of N) for (const [k, ids] of n.p) { ok(k === "all" || k === "any", n.id + " group type"); for (const i of ids) { edges++; ok(byId[i] && byId[i].t < n.t, n.id + " <- " + i + " exists in a lower tier"); } }
+  ok(["research","create","make","organize"].every(b => N.some(n => n.b === b && n.t === 0)), "four non-software entry routes");
+  ok(N.filter(n => n.b === "agency").map(n => n.t).join() === "1,2,3,4,5,6", "agency trunk spans tiers 1-6");
+  ok(N.filter(n => n.b === "meta").map(n => n.t).join() === "1,2,3,4,5,6", "metacognition trunk spans tiers 1-6");
+  ok(byId.a5.p.some(([, ids]) => ids.includes("k4")) && byId.a6.p.some(([, ids]) => ids.includes("k5")), "orchestration and fleets require metacognition");
+  ok(byId.cap.p.some(([, ids]) => ids.includes("a6")) && byId.cap.p.some(([, ids]) => ids.includes("k6")), "capstone needs fleet management and evaluator evaluation");
+  for (const r of ROOTS) { const s = fresh(); complete(s, r); for (const top of ["a6","k6","cap"]) { const s2 = fresh(); complete(s2, r); const p = pathTo(s2, top); ok(p.every(i => complete(s2, i) === "ok"), "from " + r + " reach " + top); } }
+  let s = fresh();
+  for (const n of N.slice().sort((a, b) => a.t - b.t)) for (const i of pathTo(s, n.id)) complete(s, i);
+  ok(Object.keys(s.done).length === 30, "every achievement reachable");
+  const sum = k => N.reduce((a, n) => a + (n.rw[k] || 0), 0);
+  ok(s.t === sum("t") && s.m === sum("m") && s.g === sum("g"), "each achievement pays once");
+  ok(complete(s, "a1") === "already", "no repeat award");
+  ok(s.notes.length === 0, "achievements alone never notify experts");
+  for (const b of ["b1","b2","b3"]) ok(verify(s, b) === "ok", "verify " + b);
+  ok(s.notes.length === 3 && verify(s, "b1") === "already" && s.notes.length === 3, "one notification per bounty");
+  s = fresh();
+  ok(verify(s, "b1") === "locked", "bounty needs its prerequisite");
+  ok(post(s, { title:"x", crit:"a", goal:"a5", g:4 }).b, "bounty on an advanced goal");
+  complete(s, "r0");
+  ok(post(s, { title:"x", crit:"a", goal:"r0", t:1 }).errs, "no back-dated bounty");
+  ok(post(s, { title:"", crit:"", goal:"zz" }).errs.length >= 3, "form validation");
+  out.push("ALL PASSED — " + N.length + " achievements, " + edges + " prerequisite edges");
+  return out;
+}
+
+/* ---------- UI ---------- */
+if (typeof document === "undefined") {
+  console.log(selfTest().join("\n"));
+} else {
+  const ICON = {
+    t:'<circle cx="12" cy="12" r="8"/><path d="M9 12h6M12 9v6"/>',
+    m:'<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>',
+    g:'<rect x="6" y="6" width="12" height="12" rx="2"/><rect x="9.5" y="9.5" width="5" height="5"/><path d="M9 3v3M15 3v3M9 18v3M15 18v3M3 9h3M3 15h3M18 9h3M18 15h3"/>',
+    p:'<path d="M5 12.5l4.5 4.5L19 7"/>', check:'<path d="M5 12.5l4.5 4.5L19 7"/>',
+    lock:'<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+    spark:'<path d="M12 3v5M12 16v5M3 12h5M16 12h5M6.5 6.5l2.5 2.5M15 15l2.5 2.5M17.5 6.5 15 9M9 15l-2.5 2.5"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>', minus:'<path d="M5 12h14"/>',
+    fit:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', x:'<path d="M6 6l12 12M18 6 6 18"/>'
+  };
+  const ic = k => '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true">' + ICON[k] + "</svg>";
+  const $ = id => document.getElementById(id);
+  function el(tag, attrs, ...kids){
+    const e = document.createElement(tag);
+    for (const k in attrs || {}) {
+      const v = attrs[k];
+      if (v == null || v === false) continue;
+      if (k === "class") e.className = v;
+      else if (k === "text") e.textContent = v;
+      else if (k === "html") e.innerHTML = v;
+      else if (k === "style") e.style.cssText = v;
+      else if (k.startsWith("on")) e.addEventListener(k.slice(2), v);
+      else e.setAttribute(k, v === true ? "" : v);
+    }
+    for (const c of kids.flat()) { if (c == null || c === false) continue; e.append(c.nodeType ? c : document.createTextNode(String(c))); }
+    return e;
+  }
+  const fmt = x => Number(x).toLocaleString("en-US");
+  const UNITS = { t:["model credits","t"], m:["expert minutes","m"], g:["GPU-hours","g"] };
+  function chips(rw, big){
+    return ["t","m","g"].filter(k => rw[k]).map(k => el("span", { class:"chip " + k + (big ? " big" : ""), html: ic(k) }, el("b", { text: (big ? "+" : "") + fmt(rw[k]) + (k === "m" ? (big ? "" : "m") : k === "g" ? (big ? "" : " GPU-h") : "") }), big ? " " + UNITS[k][0] : ""));
+  }
+  const rwText = rw => ["t","m","g"].filter(k => rw[k]).map(k => "+" + fmt(rw[k]) + " " + UNITS[k][0]).join(" · ") || "recognition";
+
+  let S = fresh();
+  function seed(){ S = fresh(); for (const i of ["r0","m0"]) complete(S, i, true); }
+  seed();
+  let SEL = null;
+  const MQ = window.matchMedia("(max-width: 900px)");
+  const REDUCED = window.matchMedia("(prefers-reduced-motion: reduce)");
+  const vp = $("viewport"), world = $("world"), panel = $("panel");
+  const NODE = Object.create(null), EDGES = [];
+
+  ["t","m","g","p"].forEach(k => $("ic-" + k).innerHTML = ic(k));
+  $("zin").innerHTML = ic("plus"); $("zout").innerHTML = ic("minus"); $("zfit").innerHTML = ic("fit");
+
+  /* build the world once */
+  function build(){
+    world.style.width = W + "px"; world.style.height = H + "px";
+    const NS = "http://www.w3.org/2000/svg";
+    const svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("id", "edges"); svg.setAttribute("width", W); svg.setAttribute("height", H); svg.setAttribute("aria-hidden", "true");
+    const mk = (tag, a) => { const e = document.createElementNS(NS, tag); for (const k in a) e.setAttribute(k, a[k]); return e; };
+    for (const [b, color] of [["agency","#34D399"],["meta","#60A5FA"]]) {
+      const top = 60 + 200 - 30, bottom = 60 + 6 * 200 + NH + 30;
+      const r = mk("rect", { x:COL[b] - 112, y:top, width:224, height:bottom - top, rx:28, class:"trunk" });
+      r.style.color = color; svg.append(r);
+    }
+    for (let t = 0; t < 8; t++) { const y = 60 + (7 - t) * 200 - 36; svg.append(mk("line", { x1:0, x2:W, y1:y, y2:y, class:"tierline" })); }
+    for (const n of N) for (const [k, ids] of n.p) for (const i of ids) {
+      const a = byId[i];
+      const x1 = a.x, y1 = a.y, x2 = n.x, y2 = n.y + n.h;
+      const path = mk("path", { d:`M${x1} ${y1} C${x1} ${y1 - 80} ${x2} ${y2 + 80} ${x2} ${y2}`, class:"e" + (k === "any" ? " any" : "") });
+      path.style.setProperty("--c", BR[n.b].c);
+      path.dataset.from = i; path.dataset.to = n.id;
+      svg.append(path); EDGES.push(path);
+    }
+    world.append(svg);
+    TIERS.forEach((name, t) => world.append(el("div", { class:"tierlab", style:`top:${60 + (7 - t) * 200 + 14}px` }, el("b", { text:"Tier " + t }), el("span", { text:name }))));
+    for (const b of ["research","create","make","organize"]) world.append(el("div", { class:"lane", style:`left:${COL[b] - 100}px;top:${60 + 7 * 200 + NH + 14}px;--c:${BR[b].c}` }, BR[b].label, el("small", { text:"Start here" })));
+    for (const [b, sub] of [["agency","From one task to a fleet"],["meta","From criteria to judging judges"]]) world.append(el("div", { class:"trunklab", style:`left:${COL[b] - 100}px;top:${60 + 7 * 200 + 8}px;--c:${BR[b].c}` }, BR[b].label + " trunk", el("small", { text:sub })));
+    for (const n of N) {
+      const btn = el("button", { type:"button", class:"node" + (n.b === "cap" ? " cap" : ""), "data-id":n.id,
+        style:`left:${n.x - n.w / 2}px;top:${n.y}px;--c:${BR[n.b].c}` },
+        el("span", { class:"nh" }, el("span", { text:BR[n.b].label }), el("span", { class:"st" })),
+        el("span", { class:"nt", text:n.title }),
+        el("span", { class:"nr" }, chips(n.rw)));
+      btn.addEventListener("focus", () => ensureVisible(n.id));
+      NODE[n.id] = btn; world.append(btn);
+    }
+  }
+
+  /* camera */
+  const V = { x:0, y:0, k:.75 };
+  const apply = () => { world.style.transform = `translate(${V.x}px,${V.y}px) scale(${V.k})`; };
+  function clampV(){
+    const vw = vp.clientWidth, vh = vp.clientHeight, m = 90;
+    V.x = Math.min(vw - m, Math.max(m - W * V.k, V.x));
+    V.y = Math.min(vh - m, Math.max(m - H * V.k, V.y));
+  }
+  function glide(){ if (REDUCED.matches) return; world.classList.add("glide"); clearTimeout(glide.t); glide.t = setTimeout(() => world.classList.remove("glide"), 480); }
+  function zoomAt(f, cx, cy){
+    const k = Math.min(1.6, Math.max(.3, V.k * f)), r = k / V.k;
+    V.x = cx - (cx - V.x) * r; V.y = cy - (cy - V.y) * r; V.k = k; clampV(); apply();
+  }
+  const effH = () => (MQ.matches && panel.classList.contains("open")) ? vp.clientHeight * .34 : vp.clientHeight;
+  function centerOn(id, k){
+    const n = byId[id];
+    if (k) V.k = k;
+    V.x = vp.clientWidth / 2 - n.x * V.k;
+    V.y = effH() / 2 - (n.y + n.h / 2) * V.k;
+    clampV(); glide(); apply();
+  }
+  function ensureVisible(id){
+    const n = byId[id], vw = vp.clientWidth, vh = effH();
+    const sx = V.x + n.x * V.k, sy = V.y + (n.y + n.h / 2) * V.k;
+    if (sx < 60 || sx > vw - 60 || sy < 50 || sy > vh - 50) centerOn(id);
+  }
+  function fit(){
+    const vw = vp.clientWidth, vh = vp.clientHeight;
+    V.k = Math.max(.3, Math.min(vw / W, vh / H) * .96);
+    V.x = (vw - W * V.k) / 2; V.y = (vh - H * V.k) / 2; glide(); apply();
+  }
+  function startView(){
+    const vw = vp.clientWidth, vh = vp.clientHeight;
+    V.k = MQ.matches ? .62 : Math.min(1, Math.max(.62, vw / W));
+    V.x = (!MQ.matches && W * V.k <= vw) ? (vw - W * V.k) / 2 : vw / 2 - (MQ.matches ? 560 : 830) * V.k;
+    V.y = vh - (60 + 7 * 200 + NH + 110) * V.k;
+    clampV(); glide(); apply();
+  }
+
+  /* pan, pinch, wheel */
+  const pts = new Map(); let drag = null, moved = false, pinch = null;
+  vp.addEventListener("pointerdown", e => {
+    if (e.pointerType === "mouse" && e.button !== 0) return;
+    pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pts.size === 1) { moved = false; drag = { id:e.pointerId, x:e.clientX, y:e.clientY, vx:V.x, vy:V.y }; }
+    else if (pts.size === 2) { drag = null; const [a, b] = [...pts.values()]; pinch = { d:Math.hypot(a.x - b.x, a.y - b.y) || 1, k:V.k }; moved = true; }
+  });
+  vp.addEventListener("pointermove", e => {
+    if (!pts.has(e.pointerId)) return;
+    pts.set(e.pointerId, { x:e.clientX, y:e.clientY });
+    if (pinch && pts.size === 2) {
+      const [a, b] = [...pts.values()], r = vp.getBoundingClientRect();
+      zoomAt((pinch.k * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d) / V.k, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+      return;
+    }
+    if (drag && e.pointerId === drag.id) {
+      const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!moved && Math.hypot(dx, dy) > 6) { moved = true; vp.setPointerCapture(e.pointerId); vp.classList.add("dragging"); }
+      if (moved) { V.x = drag.vx + dx; V.y = drag.vy + dy; clampV(); apply(); }
+    }
+  });
+  const endPtr = e => { pts.delete(e.pointerId); if (pts.size < 2) pinch = null; if (drag && drag.id === e.pointerId) drag = null; vp.classList.remove("dragging"); };
+  vp.addEventListener("pointerup", endPtr); vp.addEventListener("pointercancel", endPtr);
+  vp.addEventListener("wheel", e => {
+    e.preventDefault();
+    const r = vp.getBoundingClientRect();
+    if (e.ctrlKey || e.metaKey) zoomAt(Math.exp(-e.deltaY * .01), e.clientX - r.left, e.clientY - r.top);
+    else { V.x -= e.deltaX; V.y -= e.deltaY; clampV(); apply(); }
+  }, { passive:false });
+  vp.addEventListener("keydown", e => {
+    if (e.target !== vp) return;
+    const step = 70, c = [vp.clientWidth / 2, vp.clientHeight / 2];
+    const map = { ArrowLeft:[step,0], ArrowRight:[-step,0], ArrowUp:[0,step], ArrowDown:[0,-step] };
+    if (map[e.key]) { V.x += map[e.key][0]; V.y += map[e.key][1]; clampV(); apply(); e.preventDefault(); }
+    else if (e.key === "+" || e.key === "=") { zoomAt(1.2, ...c); e.preventDefault(); }
+    else if (e.key === "-") { zoomAt(1 / 1.2, ...c); e.preventDefault(); }
+    else if (e.key === "0") { fit(); e.preventDefault(); }
+  });
+  world.addEventListener("click", e => {
+    const b = e.target.closest(".node");
+    if (!b) return;
+    if (moved) { moved = false; return; }
+    select(b.dataset.id);
+  });
+  $("zin").addEventListener("click", () => zoomAt(1.25, vp.clientWidth / 2, vp.clientHeight / 2));
+  $("zout").addEventListener("click", () => zoomAt(1 / 1.25, vp.clientWidth / 2, vp.clientHeight / 2));
+  $("zfit").addEventListener("click", fit);
+  document.querySelector(".dest").addEventListener("click", e => {
+    const b = e.target.closest("[data-go]"); if (!b) return;
+    const g = b.dataset.go;
+    if (g === "fit") fit(); else if (g === "start") startView(); else { select(g, true); centerOn(g, Math.max(V.k, MQ.matches ? .7 : .8)); }
+  });
+  window.addEventListener("resize", () => { clampV(); apply(); });
+
+  /* selection & actions */
+  function select(id, noCenter){
+    SEL = id;
+    if (MQ.matches) panel.classList.add("open");
+    render();
+    if (!noCenter) ensureVisible(id);
+    const h = $("pTitle"); if (h && MQ.matches) h.focus({ preventScroll:true });
+  }
+  function deselect(){ const was = SEL; SEL = null; panel.classList.remove("open"); render(); if (was && NODE[was]) NODE[was].focus({ preventScroll:true }); }
+  function toast(title, sub){
+    const t = el("div", { class:"toast" }, el("b", { text:title }), el("span", { text:sub }));
+    $("toasts").append(t);
+    setTimeout(() => t.remove(), 3200);
+    while ($("toasts").children.length > 2) $("toasts").firstChild.remove();
+  }
+  function flash(ids){ for (const i of ids) { const b = NODE[i]; b.classList.remove("new"); void b.offsetWidth; b.classList.add("new"); } }
+  function achieve(ids){
+    const before = new Set(N.filter(n => !S.done[n.id] && ready(S, n)).map(n => n.id));
+    const got = [];
+    for (const i of ids) if (complete(S, i) === "ok") got.push(i);
+    if (!got.length) return;
+    const now = N.filter(n => !S.done[n.id] && ready(S, n)).map(n => n.id).filter(i => !before.has(i));
+    render(); flash(now);
+    const last = byId[got[got.length - 1]];
+    const total = {}; for (const i of got) for (const k in byId[i].rw) total[k] = (total[k] || 0) + byId[i].rw[k];
+    toast(got.length > 1 ? `Achievement unlocked · ${got.length} goals` : "Achievement unlocked", last.title + " · " + rwText(total));
+    const readyB = S.bounties.filter(b => !b.ok && got.includes(b.goal));
+    if (readyB.length) toast("Bounty ready to verify", "“" + readyB[0].title + "” — its own criteria still need checking.");
+    if (now.length) toast("New goals open", now.map(i => byId[i].title).join(" · "));
+  }
+  function doVerify(bid){
+    const r = verify(S, bid);
+    if (r !== "ok") { toast(r === "already" ? "Already verified" : "Not yet eligible", r === "already" ? "Each bounty pays once." : "Achieve the linked goal first."); return; }
+    const b = S.bounties.find(x => x.id === bid);
+    render();
+    toast("Bounty verified", "“" + b.title + "” · " + rwText(b.rw) + " · " + b.by + " notified (simulated)");
+  }
+
+  /* rendering */
+  function bountyCard(b, compact){
+    const goal = byId[b.goal], isReady = !b.ok && S.done[b.goal];
+    return el("div", { class:"card", "data-bid":b.id },
+      el("div", { class:"row" }, el("span", { class:"st-pill " + (b.ok ? "ok" : isReady ? "ready" : ""), text: b.ok ? "Verified · reward paid" : isReady ? "Ready to verify" : "Needs: " + goal.title })),
+      el("h3", { text:b.title }),
+      el("div", { class:"by", text:b.by + " — " + b.role }),
+      el("ul", null, b.crit.map(c => el("li", { text:c }))),
+      el("div", { class:"row" }, chips(b.rw)),
+      compact ? null : el("div", { class:"row" }, el("button", { type:"button", class:"link", onclick:() => { showTab("tree"); select(b.goal, true); centerOn(b.goal); } }, "Goal: " + goal.title)),
+      isReady ? el("button", { type:"button", class:"btn", "data-verify":b.id, onclick:() => doVerify(b.id) }, el("span", { html:ic("check") }), "Simulate: criteria verified") : null
+    );
+  }
+  function renderPanel(){
+    panel.replaceChildren();
+    if (!SEL) {
+      panel.append(el("div", { class:"intro" },
+        el("h2", { text:"Different ways in. One climb." }),
+        el("ul", null,
+          el("li", null, "Start where your work already is: ", el("b", { text:"investigate, create, make or organize" }), "."),
+          el("li", null, "Everyone climbs two trunks: ", el("b", { text:"agency" }), " (one bounded task → owned intelligence layer → verified loops → agent teams → fleets) and ", el("b", { text:"metacognition" }), " (criteria → calibration → reframing → what not to automate → review attention → evaluating evaluators)."),
+          el("li", null, "Orchestration and fleets need both trunks. More agents is not the goal; beating a simpler baseline is."),
+          el("li", null, "Goals unlock model credits, expert time or GPU-hours: support for the next step, not a score.")),
+        el("div", { class:"sec" }, el("h3", { text:"Legend" }), el("div", { class:"legend" },
+          ...["research","create","make","organize","agency","meta","bridge"].map(b => el("span", null, el("span", { class:"sw", style:"--c:" + BR[b].c }), BR[b].label)),
+          el("span", { html:'<svg class="ln" viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="#C9C3B3" stroke-width="2"/></svg>' }, "needs all of these"),
+          el("span", { html:'<svg class="ln" viewBox="0 0 34 8"><line x1="0" y1="4" x2="34" y2="4" stroke="#C9C3B3" stroke-width="2" stroke-dasharray="6 5"/></svg>' }, "needs any one of these"))),
+        el("p", { class:"fine", style:"margin-top:14px" }, "Mina has done two starter goals. Select any glowing node.")));
+      return;
+    }
+    const n = byId[SEL], done = !!S.done[n.id], open = !done && ready(S, n);
+    panel.append(el("div", { class:"p-head" },
+      el("span", { class:"bchip", style:"--c:" + BR[n.b].c }, BR[n.b].label),
+      el("span", { class:"schip " + (done ? "done" : open ? "open" : ""), text: done ? "Achieved" : open ? "Available now" : "Locked" }),
+      el("button", { type:"button", class:"p-close", "aria-label":"Close details", html:ic("x"), onclick:deselect })));
+    panel.append(el("h2", { id:"pTitle", tabindex:"-1", text:n.title }));
+    panel.append(el("p", { class:"tierline-t", text:"Tier " + n.t + " · " + TIERS[n.t] }));
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Goal" }), el("p", { text:n.goal })));
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Evidence that counts" }), el("ul", null, n.ev.map(x => el("li", { text:x })))));
+    const pre = el("div", { class:"sec" }, el("h3", { text:"Prerequisites" }));
+    if (!n.p.length) pre.append(el("p", { text:"None — start here." }));
+    for (const [k, ids] of n.p) pre.append(el("div", { class:"grp" }, el("span", { class:"k", text: k === "all" ? (ids.length > 1 ? "Needs all of:" : "Needs:") : "Needs any one of:" }),
+      el("div", { class:"links" }, ids.map(i => el("button", { type:"button", class:"link" + (S.done[i] ? " ok" : ""), html: S.done[i] ? ic("check") : "", onclick:() => select(i) }, byId[i].title)))));
+    panel.append(pre);
+    panel.append(el("div", { class:"sec" }, el("h3", { text:"Unlocks" }), el("div", { class:"links" }, chips(n.rw, true)), n.why ? el("p", { class:"why", text:"Why: " + n.why }) : null));
+    if (KIDS[n.id].length) panel.append(el("div", { class:"sec" }, el("h3", { text:"Leads to" }), el("div", { class:"links" }, KIDS[n.id].map(i => el("button", { type:"button", class:"link" + (S.done[i] ? " ok" : ""), onclick:() => select(i) }, byId[i].title)))));
+    const linked = S.bounties.filter(b => b.goal === n.id);
+    if (linked.length) panel.append(el("div", { class:"sec" }, el("h3", { text:"Expert bounties on this goal" }), linked.map(b => bountyCard(b, true))));
+    const act = el("div", { class:"act", style:"--c:" + BR[n.b].c });
+    if (done) act.append(el("div", { class:"donebox", text:"Achieved — " + rwText(n.rw) + " added." }));
+    else if (open) act.append(el("button", { type:"button", class:"btn", id:"doAchieve", onclick:() => achieve([n.id]) }, el("span", { html:ic("spark") }), "Demo: mark achieved"),
+      el("p", { class:"fine", text:"Simulates the evidence being checked. Nothing here is real." }));
+    else { const path = pathTo(S, n.id); act.append(el("button", { type:"button", class:"btn sub", id:"doPath", onclick:() => achieve(path) }, el("span", { html:ic("lock") }), `Demo: complete the ${path.length}-step path here`),
+      el("p", { class:"fine", text:"Shortcut for exploring: simulates the shortest set of goals that unlocks this one." })); }
+    panel.append(act);
+  }
+  function render(){
+    const doneCount = Object.keys(S.done).length;
+    $("sT").textContent = fmt(S.t); $("sM").textContent = fmt(S.m); $("sG").textContent = fmt(S.g); $("sP").textContent = doneCount + "/" + N.length;
+    const hi = new Set(SEL ? [SEL] : []);
+    for (const n of N) {
+      const b = NODE[n.id], done = !!S.done[n.id], open = !done && ready(S, n);
+      b.classList.toggle("done", done); b.classList.toggle("open", open); b.classList.toggle("locked", !done && !open); b.classList.toggle("sel", hi.has(n.id));
+      b.querySelector(".st").innerHTML = ic(done ? "check" : open ? "spark" : "lock");
+      b.setAttribute("aria-label", `${n.title}. ${BR[n.b].label}, tier ${n.t}. ${done ? "Achieved" : open ? "Available now" : "Locked"}. Reward: ${rwText(n.rw)}.`);
+    }
+    for (const p of EDGES) {
+      p.classList.toggle("done", !!(S.done[p.dataset.from] && S.done[p.dataset.to]));
+      p.classList.toggle("hi", !!SEL && (p.dataset.to === SEL || p.dataset.from === SEL));
+    }
+    renderPanel();
+    $("bountyList").replaceChildren(...S.bounties.map(b => bountyCard(b)));
+    $("bell").textContent = S.notes.length ? String(S.notes.length) : "";
+    $("inbox").replaceChildren(...(S.notes.length ? S.notes.slice().reverse().map(x => el("div", { class:"note", "data-note":x.bid },
+      el("div", { class:"to", text:"To: " + x.to + " — " + x.role }),
+      el("b", { text:"Mina met your bounty “" + x.title + "”" }),
+      el("ul", null, x.crit.map(c => el("li", { text:"✓ " + c }))),
+      el("div", { class:"fine", text:"Entry goal: " + x.goal + " · Paid: " + rwText(x.rw) + " · Simulated notification" }))) : [el("p", { class:"empty", text:"No notifications yet. They arrive when a bounty's own criteria are verified." })]));
+    $("logList").replaceChildren(...(S.log.length ? S.log.map(r => el("li", null, el("b", { text:(r.kind === "bounty" ? "Bounty: " : "") + r.title }), " — " + rwText(r.rw) + (r.seeded ? " (starting progress)" : ""))) : [el("li", { class:"empty", text:"Nothing yet." })]));
+    const sel = $("fGoal"), cur = sel.value;
+    sel.replaceChildren(...N.filter(n => !S.done[n.id]).map(n => el("option", { value:n.id, text:"Tier " + n.t + " · " + n.title })));
+    if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  }
+
+  /* tabs */
+  const TABS = ["tree","bounties","expert","log"];
+  function showTab(t){
+    for (const x of TABS) { $("tab-" + x).setAttribute("aria-selected", x === t ? "true" : "false"); $("tab-" + x).tabIndex = x === t ? 0 : -1; $("view-" + x).hidden = x !== t; }
+    if (t !== "tree") panel.classList.remove("open");
+  }
+  document.querySelector(".tabs").addEventListener("click", e => { const b = e.target.closest("[role=tab]"); if (b) showTab(b.id.slice(4)); });
+  document.querySelector(".tabs").addEventListener("keydown", e => {
+    const i = TABS.findIndex(x => $("tab-" + x).getAttribute("aria-selected") === "true");
+    const j = e.key === "ArrowRight" ? (i + 1) % 4 : e.key === "ArrowLeft" ? (i + 3) % 4 : null;
+    if (j !== null) { showTab(TABS[j]); $("tab-" + TABS[j]).focus(); e.preventDefault(); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && SEL) deselect(); });
+  $("reset").addEventListener("click", () => { seed(); SEL = null; panel.classList.remove("open"); render(); showTab("tree"); startView(); toast("Demo reset", "Back to Mina's starting point."); });
+  $("postForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const r = post(S, { title:$("fTitle").value, crit:$("fCrit").value, goal:$("fGoal").value, t:$("fT").value, m:$("fM").value, g:$("fG").value });
+    const err = $("fErr");
+    if (r.errs) { err.replaceChildren(...r.errs.map(x => el("div", { text:x }))); err.hidden = false; return; }
+    err.hidden = true; $("postForm").reset(); render();
+    toast("Bounty posted", "“" + r.b.title + "” · solvers first need: " + byId[r.b.goal].title);
+  });
+
+  build(); render(); startView();
+  if (/[?&]selftest\b/.test(location.search)) console.log(selfTest().join("\n"));
+}
+</script>
+</body>
+</html>
