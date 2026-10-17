@@ -1,0 +1,93 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+const styles = ja ? ['平行線', '交差線', '柔らかな黒鉛', '流れる線'] : ['Parallel', 'Crosshatch', 'Soft graphite', 'Restless'];
+const moods = ja ? [
+  '規則的で開放的な線。静けさにも、無機質さにも見える。',
+  '重なりが重みをつくる。建築のような密度、あるいは閉塞感。',
+  '擦ったような陰影。柔らかさ、埃っぽさ、記憶のような曖昧さ。',
+  '曲がり、ぶつかる線。生き物のような動き、あるいは落ち着かなさ。',
+] : [
+  'Measured, open marks. A suggestion of calm — or something clinical.',
+  'Layers build weight. Architectural density, or a sense of enclosure.',
+  'Rubbed, granular tone. Softness, dust, or the uncertainty of a memory.',
+  'Marks bend and collide. Something alive — or something unsettled.',
+];
+const controls = [
+  { key: 'pressure', label: ja ? '筆圧' : 'Pressure', value: 65 },
+  { key: 'tooth', label: ja ? '紙のざらつき' : 'Paper tooth', value: 65 },
+  { key: 'wander', label: ja ? '線の揺らぎ' : 'Stroke wander', value: 20 },
+  { key: 'light', label: ja ? '光の方向' : 'Light direction', value: 35 },
+];
+---
+
+<section class="pencil-study" data-pencil-study data-lang={lang} aria-label={ja ? '鉛筆シェーダーの実験室' : 'Pencil shader study'}>
+  <div class="study-top"><span>{ja ? '素材研究 / 01' : 'MATERIAL STUDY / 01'}</span><span>GRAPHITE ON PAPER</span></div>
+  <div class="study-stage">
+    <img class="study-fallback" src="/images/pencil-study.jpg" alt={ja ? '紙の上に平行線で陰影をつけた立方体' : 'A cube shaded with pencil hatching on warm paper'} width="898" height="499" />
+    <canvas tabindex="0" role="img" aria-label={ja ? '回転できる鉛筆画の立方体。矢印キーで回転、プラスとマイナスで拡大縮小、Homeでリセット。' : 'Interactive pencil-shaded cube. Arrow keys rotate, plus and minus zoom, Home resets.'}></canvas>
+    <span class="study-hint">{ja ? 'ドラッグで回転 · 矢印キーでも操作可' : 'Drag to turn · or use arrow keys'}</span>
+  </div>
+  <p class="study-status" role="status" hidden></p>
+  <noscript><p class="study-status">{ja ? '操作するにはJavaScriptを有効にしてください。' : 'Enable JavaScript to explore the live shader.'}</p></noscript>
+  <fieldset class="study-tools" disabled>
+    <legend class="sr-only">{ja ? '描画スタイルと操作' : 'Drawing styles and controls'}</legend>
+    <div class="study-styles" role="group" aria-label={ja ? '線のスタイル' : 'Stroke style'}>
+      {styles.map((name, i) => <button type="button" data-style={i} data-mood={moods[i]} aria-pressed={i === 0}>{name}</button>)}
+    </div>
+    <p class="study-mood" aria-live="polite">{moods[0]}</p>
+    <div class="study-sliders">
+      {controls.map(({key, label, value}) => <label><span>{label}<output>{value}</output></span><input data-param={key} aria-label={label} type="range" min="0" max="100" value={value} /></label>)}
+    </div>
+    <div class="study-actions">
+      <button type="button" data-spin aria-pressed="false">{ja ? '自動回転' : 'Auto-rotate'}</button>
+      <label><input type="checkbox" data-boil /> {ja ? '8fpsで描き直す' : 'Redraw at 8 fps'}</label>
+      <button type="button" data-reset>{ja ? 'リセット' : 'Reset study'}</button>
+    </div>
+  </fieldset>
+  <p class="study-footnote">{ja ? '同じ形、違う感触。上の言葉は印象の提案であり、感情を測った結果ではありません。' : 'One shape, different sensations. The mood labels are prompts for looking, not measured emotional effects.'}</p>
+</section>
+
+<style>
+  .pencil-study { width: min(900px, calc(100vw - 2rem)); margin: 1rem 0 2.5rem; position: relative; left: 50%; transform: translateX(-50%); background: #f4f1e8; color: #34322d; border: 1px solid #d6d1c5; font: 14px/1.5 ui-sans-serif, system-ui, sans-serif; }
+  .study-top { display: flex; justify-content: space-between; gap: .5rem; padding: 1rem 1.3rem; font: 10px/1.4 ui-monospace, monospace; letter-spacing: .13em; border-bottom: 1px solid #ded9cd; color: #69645a; }
+  .study-stage { position: relative; aspect-ratio: 1.8; overflow: hidden; }
+  canvas, .study-fallback { position: absolute; inset: 0; width: 100%; height: 100%; display: block; object-fit: cover; }
+  canvas { opacity: 0; cursor: grab; touch-action: none; }
+  canvas:active { cursor: grabbing; }
+  .pencil-study[data-ready] canvas { opacity: 1; }
+  .study-hint { display: none; position: absolute; bottom: 1rem; left: 0; right: 0; text-align: center; font: 11px/1.5 ui-monospace, monospace; color: #6b655a; pointer-events: none; }
+  .pencil-study[data-ready] .study-hint { display: block; }
+  .study-tools { border: 0; margin: 0; padding: 1.2rem 1.3rem; border-top: 1px solid #ded9cd; min-width: 0; }
+  .study-tools:disabled { opacity: .45; }
+  .study-styles { display: grid; grid-template-columns: repeat(4,1fr); gap: .45rem; }
+  button { min-height: 42px; padding: .5rem .7rem; border: 1px solid #c9c2b4; background: transparent; color: #36332e; border-radius: 2px; font: inherit; cursor: pointer; }
+  button:hover { background: #e8e3d8; }
+  button[aria-pressed="true"] { background: #393832; border-color: #393832; color: #f6f1e5; }
+  :is(button,input,canvas):focus-visible { outline: 2px solid #806448; outline-offset: 4px; }
+  .pencil-study .study-mood { margin: .9rem 0 1.25rem; min-height: 3em; font-family: Georgia, serif; font-style: italic; font-size: 16px; color: #5d574c; }
+  .study-sliders { display: grid; grid-template-columns: repeat(4,1fr); gap: 1.2rem; }
+  .study-sliders label { display: grid; gap: .45rem; font-size: 12px; }
+  .study-sliders span { display: flex; justify-content: space-between; gap: .4rem; }
+  output { font-family: ui-monospace, monospace; color: #746c5c; }
+  input { accent-color: #554a38; }
+  input[type="range"] { width: 100%; height: 24px; cursor: pointer; }
+  .study-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 1rem; margin-top: 1.2rem; font-size: 12px; }
+  .study-actions label { display: flex; align-items: center; gap: .5rem; min-height: 44px; cursor: pointer; }
+  .study-actions button:last-child { margin-left: auto; }
+  .pencil-study .study-footnote { padding: 0 1.3rem 1rem; margin: 0; font-size: 11px; color: #6b655a; }
+  .pencil-study .study-status { padding: .75rem 1.3rem; margin: 0; }
+  @media (max-width: 540px) {
+    .study-stage { aspect-ratio: 1.1; }
+    .study-top { padding: .8rem; font-size: 9px; }
+    .study-tools { padding: 1rem; }
+    .study-styles, .study-sliders { grid-template-columns: repeat(2,1fr); }
+    .study-actions { gap: .7rem; }
+  }
+</style>
+
+<script>
+  import { initPencilStudy } from './pencil-study';
+  document.querySelectorAll<HTMLElement>('[data-pencil-study]').forEach(initPencilStudy);
+</script>

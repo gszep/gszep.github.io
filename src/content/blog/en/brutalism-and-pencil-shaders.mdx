@@ -1,11 +1,45 @@
 ---
 title: "Brutalism and Pencil Shaders"
-description: "An experiment in pencil shaders in brutalist environments in Unity."
+description: "One cube, four ways of drawing it. An interactive study of graphite, hatching, and the feeling of a line."
 date: 2023-06-20
 image: "/images/pencil-shader-thumbnail.mp4"
 tags: ["shaders", "unity", "generative-art"]
 order: 3
 ---
+
+import PencilStudy from '../../../components/interactive/PencilStudy.astro';
+
+<PencilStudy lang="en" />
+
+## One shape, different sensations
+
+*New study — 18 October 2026.*
+
+Before building a whole world, start with a cube. Turn it with a finger or a mouse. Keep the lighting and viewpoint still, then change how it is drawn. What makes the same shape feel quiet, heavy, soft, or restless?
+
+The four treatments above are starting points, not a ranking. **Parallel** leaves breathing room between measured strokes. **Crosshatch** adds intersecting layers as the surface darkens. **Soft graphite** builds a rubbed, granular tone. **Restless** bends the strokes through a distorted field. The feelings attached to them are suggestions to test against your own experience.
+
+Try lowering the pressure until a face almost disappears. Increase the paper tooth to break up the graphite. Move the light without moving the cube. Then pause the rotation and switch on **Redraw at 8 fps**: a still object acquires a nervous, hand-drawn flicker. Does that make it feel more alive, or just harder to look at?
+
+## What is worth borrowing now?
+
+Research notes, checked in October 2026. “State of the art” is not a single look here: a convincing still drawing, editable strokes, and a stable interactive scene are different goals.
+
+- **Keep marks coherent.** Praun, Hoppe, Webb, and Finkelstein's [Real-time Hatching](https://dl.acm.org/doi/10.1145/383259.383328) (2001) remains a useful foundation: tonal art maps organize strokes across brightness and scale. For this cube, the simpler experiment is to anchor procedural marks to each face. Rotating the object should not generate an unrelated drawing every frame.
+- **Separate outline from tone.** [Maya Nedeljkovich's pencil effect](https://tympanus.net/codrops/2022/11/29/sketchy-pencil-effect-with-three-js-post-processing/) (2022) uses image and normal information for sketchy post-processing. [Maxime Heckel's Mœbius study](https://blog.maximeheckel.com/posts/moebius-style-post-processing/) (2024) explores displaced outlines and patterned shadows. Both are useful references for treating the silhouette and the shading as distinct artistic decisions.
+- **Let strokes have their own structure.** [Screen-Space Hatch Lines](https://github.com/a-johanson/blender-screen-space-hatch-lines), an add-on for Blender 4.4+, constructs Grease Pencil strokes using streamlines, stippling, and scribbling. That is a compelling direction for returning to the original moving-pencil experiment: give the marks a path and spacing, rather than only adding noise to a finished image.
+- **Make the material adjustable.** [Jan Bock's 2026 impossible-object study](https://jan-bock.com/lab/mc-escher-experiment) combines graphite tone, hatching, stippling, grain, and live controls. The useful lesson for this page is the working method: compare materials on the same geometry while changing one parameter at a time.
+- **Keep artistic control in view.** Kapil Dev's [2025 discussion of classical and neural stroke-based rendering](https://arxiv.org/html/2506.00870v1) proposes combining explicit rules with learned refinement. It is a research direction, not evidence of a best real-time pencil shader. For this first browser study, direct control over marks is the priority.
+
+## From a field of pencils to a surface of marks
+
+The cube is a small, procedural WebGL study. It uses an analytic box, lighting-driven tone, face-local strokes, grain, and pencil-like edges. The flowing treatment distorts a field of lines; it does not simulate individual pencils. There are no downloaded stroke textures or trained models.
+
+This makes a deliberate comparison with the original experiment below. There, the drawing emerged from moving agents and fading trails. Here, the drawing is stable until we choose to redraw it. A useful next experiment is to combine them: retain persistent strokes, steer them with the scene's edges and normals, and decide when a mark should be replaced. The question is not only how closely the result resembles graphite. It is what kind of place those marks make us feel we are entering.
+
+---
+
+## The original experiment · 2023
 
 ### Walking through a pencil drawing of a brutalist building
 
@@ -41,6 +75,6 @@ The shader we write will have to make a pencil:
 
 The HLSL code for these rules is available in [this repository](https://github.com/gszep/pencil-shader)
 
-### Next steps
+### The next step proposed in 2023
 
 There is too much going on with all the moving pencils. More frame-to-frame consistency is required in order to make a walking simulation playable. This can be done by running the compute shaders for multiple passes in the background and only rendering images once the pencil simulation has reached "steady state". This will give the walking simulation a stop-motion feeling like with hand-drawn animation.
