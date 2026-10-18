@@ -40,6 +40,16 @@ const controls = [
       {styles.map((name, i) => <button type="button" data-style={styleIds[i]} data-mood={moods[i]} aria-pressed={i === 0}>{name}</button>)}
     </div>
     <p class="study-mood" aria-live="polite">{moods[0]}</p>
+    <div class="study-facade" data-facade-controls>
+      <label>{ja ? '面の陰影' : 'Face shading'}
+        <select data-facade aria-label={ja ? '面の陰影' : 'Face shading'}>
+          <option value="planar" selected>{ja ? '面に沿う短い線' : 'Planar strokes'}</option>
+          <option value="contained">{ja ? '面内に留めるエージェント' : 'Contained agents'}</option>
+          <option value="loose">{ja ? '自由なエージェント（以前の描画）' : 'Loose agents (previous)'}</option>
+        </select>
+      </label>
+      <p data-facade-note aria-live="polite">{ja ? '輪郭はそのままに、面の陰影だけを比較。短い線を面ごとの方向にまとめ、境界の手前で止めます。' : 'Same contour drawing, different shading rules. Short, grouped strokes follow each face and stop before its boundary.'}</p>
+    </div>
     <div class="study-sliders">
       {controls.map(({key, label, value}) => <label><span>{label}<output>{value}</output></span><input data-param={key} aria-label={label} type="range" min="0" max="100" value={value} /></label>)}
     </div>
@@ -71,8 +81,12 @@ const controls = [
   button { min-height: 42px; padding: .5rem .7rem; border: 1px solid #c9c2b4; background: transparent; color: #36332e; border-radius: 2px; font: inherit; cursor: pointer; }
   button:hover { background: #e8e3d8; }
   button[aria-pressed="true"] { background: #393832; border-color: #393832; color: #f6f1e5; }
-  :is(button,input,canvas):focus-visible { outline: 2px solid #806448; outline-offset: 4px; }
+  :is(button,input,select,canvas):focus-visible { outline: 2px solid #806448; outline-offset: 4px; }
   .pencil-study .study-mood { margin: .9rem 0 1.25rem; min-height: 3em; font-family: Georgia, serif; font-style: italic; font-size: 16px; color: #5d574c; }
+  .study-facade { margin: 0 0 1.2rem; padding: .85rem 0; border-block: 1px solid #ded9cd; }
+  .study-facade label { display: flex; align-items: center; flex-wrap: wrap; gap: .6rem 1rem; font-size: 12px; }
+  .study-facade select { min-height: 44px; max-width: 100%; padding: .4rem .65rem; background: #f4f1e8; color: #36332e; border: 1px solid #c9c2b4; border-radius: 2px; font: inherit; }
+  .pencil-study .study-facade p { margin: .6rem 0 0; font-size: 12px; color: #69645a; }
   .study-sliders { display: grid; grid-template-columns: repeat(5,1fr); gap: 1.2rem; }
   .study-sliders label:has(input:disabled) { opacity: .4; }
   .study-sliders label { display: grid; gap: .45rem; font-size: 12px; }

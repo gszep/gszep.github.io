@@ -19,7 +19,15 @@ The building in the original reference below is compelling because of what the d
 
 My first cube study treated drawing too much like a material applied to a solid object. Crosshatching and soft graphite were useful textures, but the fully described, precisely bounded faces still felt like a rendered cube. This version starts with **Drawn marks**: the visible image consists of finite pencil strokes, with the cube supplying an invisible guide.
 
-Small drawing agents sense edges and tone ahead of them, steer their heading, and leave uneven trails. Their ink discourages other marks from crowding the same place. The strokes have different lengths and weights, may run beyond a boundary, and leave some of the construction unfinished. **Selective detail** concentrates attention near the nearest structural corner instead of distributing marks uniformly. The face guide is never painted into the drawing.
+Small drawing agents sense edges and tone ahead of them, steer their heading, and leave uneven trails. Their ink discourages other agents from crowding the same place. The contour strokes have different lengths and weights, may run beyond a boundary, and leave some of the construction unfinished. **Selective detail** concentrates attention near the nearest structural corner instead of distributing marks uniformly. The face guide is never painted into the drawing.
+
+The contours and the shading need not obey the same rules. Letting the shading agents chase edges made some marks look like hairs attached to the cube. **Face shading** now compares three experiments, with the contour drawing held constant:
+
+- **Planar strokes** — the new default. Short, gently bowed strokes share a direction within each patch of a face. They do not seek edges, and stop before their full width reaches a boundary.
+- **Contained agents** — keep the earlier steering behavior, but give each shading stroke an owning face. Stop it before its graphite footprint crosses a crease; omit marks that have too little room.
+- **Loose agents (previous)** — retain the earlier behavior, including wandering across faces, for comparison.
+
+Pause the rotation and switch between them. Does containing the old marks solve the problem, or does the surface need its own rhythm? The unfinished contour can remain expressive without every shading stroke trying to become an outline.
 
 Turn the cube with a finger or a mouse. Pause it, then change the pressure, stroke wander, or selective detail. How few marks are needed before the form stops reading as a cube? Which edge needs weight, and which can disappear? **Redraw at 8 fps** tries new sets of marks; leave it off to examine a settled drawing.
 
@@ -37,7 +45,7 @@ Research notes, checked in October 2026. “State of the art” is not a single 
 
 ## Returning to the pencils
 
-The original HLSL experiment below is the starting point for the agent drawing. This browser version uses a low-resolution guide of the cube's faces and edges, three forward sensors per pencil, finite trajectories, and a deposited-ink field. It draws the resulting paths as broken graphite filaments on a 2D canvas. Selective sampling, unequal pressure, and loose construction are artistic decisions layered onto that steering mechanism.
+The original HLSL experiment below is the starting point for the agent drawing. The contour and agent-shading modes use a low-resolution guide of the cube's faces and edges, three forward sensors per pencil, finite trajectories, and a deposited-ink field. Planar shading instead constructs short sweeps within each face, without edge-seeking. Both draw their paths as broken graphite filaments on a 2D canvas. Selective sampling, unequal pressure, and loose construction are artistic decisions layered onto those drawing rules.
 
 It is a bounded reinterpretation, not a port of the full compute simulation. For each changed view, the agents replay a seeded drawing process; a paused view stays still. It does not yet carry persistent strokes from one viewpoint to the next or simulate physical graphite deposition. That leaves a useful next question: which marks should move with the structure, and which should be erased and reconsidered?
 
