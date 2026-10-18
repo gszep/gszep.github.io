@@ -1,6 +1,6 @@
 ---
 title: "Brutalism and Pencil Shaders"
-description: "One cube, four ways of drawing it. An interactive study of graphite, hatching, and the feeling of a line."
+description: "A shape suggested by pencil marks. An interactive study of gesture, selective detail, and graphite."
 date: 2023-06-20
 image: "/images/pencil-shader-thumbnail.mp4"
 tags: ["shaders", "unity", "generative-art"]
@@ -11,31 +11,37 @@ import PencilStudy from '../../../components/interactive/PencilStudy.astro';
 
 <PencilStudy lang="en" />
 
-## One shape, different sensations
+## Let the marks suggest the building
 
 *New study — 18 October 2026.*
 
-Before building a whole world, start with a cube. Turn it with a finger or a mouse. Keep the lighting and viewpoint still, then change how it is drawn. What makes the same shape feel quiet, heavy, soft, or restless?
+The building in the original reference below is compelling because of what the drawing chooses to notice. Dark strokes carry the weight of a floor or a column. Other edges trail away, miss their meeting point, or disappear into the paper. There is no obligation to give every surface the same amount of detail, or to obey perspective perfectly.
 
-The four treatments above are starting points, not a ranking. **Parallel** leaves breathing room between measured strokes. **Crosshatch** adds intersecting layers as the surface darkens. **Soft graphite** builds a rubbed, granular tone. **Restless** bends the strokes through a distorted field. The feelings attached to them are suggestions to test against your own experience.
+My first cube study treated drawing too much like a material applied to a solid object. Crosshatching and soft graphite were useful textures, but the fully described, precisely bounded faces still felt like a rendered cube. This version starts with **Drawn marks**: the visible image consists of finite pencil strokes, with the cube supplying an invisible guide.
 
-Try lowering the pressure until a face almost disappears. Increase the paper tooth to break up the graphite. Move the light without moving the cube. Then pause the rotation and switch on **Redraw at 8 fps**: a still object acquires a nervous, hand-drawn flicker. Does that make it feel more alive, or just harder to look at?
+Small drawing agents sense edges and tone ahead of them, steer their heading, and leave uneven trails. Their ink discourages other marks from crowding the same place. The strokes have different lengths and weights, may run beyond a boundary, and leave some of the construction unfinished. **Selective detail** concentrates attention near the nearest structural corner instead of distributing marks uniformly. The face guide is never painted into the drawing.
+
+Turn the cube with a finger or a mouse. Pause it, then change the pressure, stroke wander, or selective detail. How few marks are needed before the form stops reading as a cube? Which edge needs weight, and which can disappear? **Redraw at 8 fps** tries new sets of marks; leave it off to examine a settled drawing.
+
+The earlier **Crosshatch** and **Soft graphite** treatments remain as comparisons. **Graphite + hatch** combines their soft underdrawing and intersecting shadow marks. These are still surface-based studies. The aim of the new agent drawing is different: to find the character of a form through the choices made by its strokes.
 
 ## What is worth borrowing now?
 
 Research notes, checked in October 2026. “State of the art” is not a single look here: a convincing still drawing, editable strokes, and a stable interactive scene are different goals.
 
-- **Keep marks coherent.** Praun, Hoppe, Webb, and Finkelstein's [Real-time Hatching](https://dl.acm.org/doi/10.1145/383259.383328) (2001) remains a useful foundation: tonal art maps organize strokes across brightness and scale. For this cube, the simpler experiment is to anchor procedural marks to each face. Rotating the object should not generate an unrelated drawing every frame.
+- **Keep marks coherent.** Praun, Hoppe, Webb, and Finkelstein's [Real-time Hatching](https://dl.acm.org/doi/10.1145/383259.383328) (2001) remains a useful foundation: tonal art maps organize strokes across brightness and scale. The surface-based comparisons anchor their marks to each face. The new agent drawing raises a harder question: how should individual strokes survive a changing view?
 - **Separate outline from tone.** [Maya Nedeljkovich's pencil effect](https://tympanus.net/codrops/2022/11/29/sketchy-pencil-effect-with-three-js-post-processing/) (2022) uses image and normal information for sketchy post-processing. [Maxime Heckel's Mœbius study](https://blog.maximeheckel.com/posts/moebius-style-post-processing/) (2024) explores displaced outlines and patterned shadows. Both are useful references for treating the silhouette and the shading as distinct artistic decisions.
 - **Let strokes have their own structure.** [Screen-Space Hatch Lines](https://github.com/a-johanson/blender-screen-space-hatch-lines), an add-on for Blender 4.4+, constructs Grease Pencil strokes using streamlines, stippling, and scribbling. That is a compelling direction for returning to the original moving-pencil experiment: give the marks a path and spacing, rather than only adding noise to a finished image.
 - **Make the material adjustable.** [Jan Bock's 2026 impossible-object study](https://jan-bock.com/lab/mc-escher-experiment) combines graphite tone, hatching, stippling, grain, and live controls. The useful lesson for this page is the working method: compare materials on the same geometry while changing one parameter at a time.
 - **Keep artistic control in view.** Kapil Dev's [2025 discussion of classical and neural stroke-based rendering](https://arxiv.org/html/2506.00870v1) proposes combining explicit rules with learned refinement. It is a research direction, not evidence of a best real-time pencil shader. For this first browser study, direct control over marks is the priority.
 
-## From a field of pencils to a surface of marks
+## Returning to the pencils
 
-The cube is a small, procedural WebGL study. It uses an analytic box, lighting-driven tone, face-local strokes, grain, and pencil-like edges. The flowing treatment distorts a field of lines; it does not simulate individual pencils. There are no downloaded stroke textures or trained models.
+The original HLSL experiment below is the starting point for the agent drawing. This browser version uses a low-resolution guide of the cube's faces and edges, three forward sensors per pencil, finite trajectories, and a deposited-ink field. It draws the resulting paths as broken graphite filaments on a 2D canvas. Selective sampling, unequal pressure, and loose construction are artistic decisions layered onto that steering mechanism.
 
-This makes a deliberate comparison with the original experiment below. There, the drawing emerged from moving agents and fading trails. Here, the drawing is stable until we choose to redraw it. A useful next experiment is to combine them: retain persistent strokes, steer them with the scene's edges and normals, and decide when a mark should be replaced. The question is not only how closely the result resembles graphite. It is what kind of place those marks make us feel we are entering.
+It is a bounded reinterpretation, not a port of the full compute simulation. For each changed view, the agents replay a seeded drawing process; a paused view stays still. It does not yet carry persistent strokes from one viewpoint to the next or simulate physical graphite deposition. That leaves a useful next question: which marks should move with the structure, and which should be erased and reconsidered?
+
+The comparison materials use the earlier WebGL renderer. No trained models or downloaded stroke textures are involved. The question is not only how closely a result resembles graphite. It is what kind of place those marks make us feel we are entering.
 
 ---
 

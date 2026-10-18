@@ -93,6 +93,10 @@ void main() {
     } else if (uStyle == 1) {
       float c=strokes(uv,1.3,46.,.035+tone*.10,uWander*.5,face+17.);
       coverage=tone*.12+a*.64+b*smoothstep(.25,.65,tone)*.7+c*smoothstep(.55,.9,tone)*.5;
+    } else if (uStyle == 5) {
+      // Keep the soft graphite underdrawing; articulate shadow with crosshatches.
+      float rubbed=noise(uv*vec2(5.,28.)+face)*.26+noise(uv*vec2(16.,85.))*.16;
+      coverage=tone*(.32+rubbed*.6)+a*.38+b*smoothstep(.28,.72,tone)*.48;
     } else if (uStyle == 2) {
       float rubbed=noise(uv*vec2(5.,28.)+face)*.26+noise(uv*vec2(16.,85.))*.16;
       coverage=tone*(.65+rubbed)+a*.16;
