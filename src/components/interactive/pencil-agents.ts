@@ -1,3 +1,5 @@
+import { insideFace, planarStroke, type FacadeMode } from './pencil-facades';
+
 type V3 = [number, number, number];
 type Point = { x: number; y: number };
 type Face = { indices: number[]; normal: V3; tone: number; direction: number; depth: number };
@@ -5,6 +7,7 @@ type Edge = { a: Point; b: Point; tone: number; id: number };
 export interface PencilDrawing {
   pitch: number; yaw: number; zoom: number; pressure: number;
   tooth: number; wander: number; light: number; emphasis: number; frame: number;
+  facade: FacadeMode;
 }
 
 function random(seed: number) {
@@ -145,7 +148,9 @@ export class PencilAgents {
       if (i<0) return -1;
       return (contour ? this.edgeSignal[i] : this.tone[i]*.7+this.edgeSignal[i]*.15) - this.deposited[i]*.1;
     };
-    const trace=(start:Point,heading:number,steps:number,contour:boolean,seed:number)=>{
+    const trace=(start:Point,heading:number,steps:number,contour:boolean,seed:number,
+      boundary?: { polygon: Point[]; inset: number })=>{
+      if (boundary && !insideFace(start,boundary.polygon,boundary.inset)) return [];
       const r=random(seed+settings.frame*193);
       const path=[start];
       let p=start, drift=0, outside=0;
@@ -163,7 +168,9 @@ export class PencilAgents {
         }
         drift=drift*.72+(r()-.5)*(.025+settings.wander*.13);
         heading+=drift;
-        p={x:p.x+Math.cos(heading)*step,y:p.y+Math.sin(heading)*step};
+        const next={x:p.x+Math.cos(heading)*step,y:p.y+Math.sin(heading)*step};
+        if (boundary && !insideFace(next,boundary.polygon,boundary.inset)) break;
+        p=next;
         path.push(p);
         if (i>=0) this.deposited[i]+=.2;
         // Marks may overshoot the guide for a few steps, rather than being clipped.
@@ -229,7 +236,8 @@ export class PencilAgents {
         stroke(path,(2.6+r()*2.6)*settings.pressure,.9,edge.id+471);
       }
     }
-    // Tone is represented by unequal, locally grouped marks, never a face fill.
+    // Contours above are identical in all three experiments. Only facade marks
+    // below have ownership, containment, or the separate planar drawing rules.
     let accepted=0;
     const budget=190;
     for (let attempt=0;attempt<budget*6 && accepted<budget;attempt++) {
@@ -238,14 +246,36 @@ export class PencilAgents {
       const u=rng(),v=rng();
       const start=mix(mix(points[face.indices[0]],points[face.indices[1]],u),mix(points[face.indices[3]],points[face.indices[2]],u),v);
       const local=selected(start);
-      if (rng()>face.tone*local*.65) continue;
+      const polygon=face.indices.map(i=>points[i]);
+      const patch=random(face.indices[0]*129+Math.floor(u*4)*41+Math.floor(v*4)*257+101);
+      const patchWeight=settings.facade==='planar' ? .45+patch()*.85 : 1;
+      if (rng()>face.tone*local*(settings.facade==='planar' ? .9 : .65)*patchWeight) continue;
       const seed=accepted*211+131;
       let heading=face.direction+(rng()-.5)*(.3+settings.wander*.7);
       if (rng()<.17*face.tone) heading+=1.0;
       const steps=5+Math.floor(rng()*17*(.6+local));
-      const path=trace(start,heading,steps,false,seed);
-      const width=(1.1+rng()*4.5)*settings.pressure*(.5+face.tone*.7);
+      const width=(1.1+rng()*4.5)*settings.pressure*(.5+face.tone*.7)*(settings.facade==='planar' ? .65 : 1);
+      // Include the ribbon radius and graphite fibres in the clearance.
+      const inset=width*1.3+1.5;
+      let path: Point[];
+      if (settings.facade==='planar') {
+        // Neighbouring marks share an orientation, with gentle patch-to-patch
+        // variation. Short sweeps build shading instead of chasing contours.
+        heading=face.direction+(patch()-.5)*.22;
+        path=planarStroke(start,heading,12+(steps-5)*1.7,(patch()-.5)*(1+settings.wander*5),patch()*Math.PI*2,polygon,inset);
+      } else {
+        path=trace(start,heading,steps,false,seed,settings.facade==='contained' ? {polygon,inset} : undefined);
+      }
+      inkCtx.save();
+      if (settings.facade!=='loose') {
+        // A final footprint guard, including antialiasing and dry-brush fragments.
+        // Paths already stop early and taper, rather than being visibly cut off.
+        inkCtx.beginPath();
+        polygon.forEach((p,i)=>i?inkCtx.lineTo(p.x,p.y):inkCtx.moveTo(p.x,p.y));
+        inkCtx.closePath(); inkCtx.clip();
+      }
       stroke(path,width,(.40+face.tone*.5)*(.55+local*.45),seed);
+      inkCtx.restore();
       accepted++;
     }
     // Preserve grain inside heavy accents, with no exact geometric mask.

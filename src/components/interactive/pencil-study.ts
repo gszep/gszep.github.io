@@ -1,5 +1,6 @@
 import fragment from './pencil-study.frag.glsl?raw';
 import { PencilAgents } from './pencil-agents';
+import type { FacadeMode } from './pencil-facades';
 
 const vertex = `#version 300 es
 void main() {
@@ -14,6 +15,7 @@ export function initPencilStudy(root: HTMLElement) {
   const status = root.querySelector<HTMLElement>('[role="status"]')!;
   const spin = root.querySelector<HTMLButtonElement>('[data-spin]')!;
   const boil = root.querySelector<HTMLInputElement>('[data-boil]')!;
+  const facade = root.querySelector<HTMLSelectElement>('[data-facade]')!;
   const sliders = [...root.querySelectorAll<HTMLInputElement>('[data-param]')];
   const styles = [...root.querySelectorAll<HTMLButtonElement>('[data-style]')];
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
@@ -118,7 +120,7 @@ export function initPencilStudy(root: HTMLElement) {
     if (style === 4 && agents) {
       agents.draw({pitch,yaw,zoom,pressure:.3+values.pressure*1.4,tooth:values.tooth,
         wander:values.wander,light:values.light*Math.PI*2,emphasis:values.emphasis,
-        frame:boil.checked ? Math.floor(clock*8) : 0});
+        frame:boil.checked ? Math.floor(clock*8) : 0,facade:facade.value as FacadeMode});
     } else if (gl && program) {
     gl.viewport(0,0,canvas.width,canvas.height);
     gl.useProgram(program);
@@ -141,6 +143,7 @@ export function initPencilStudy(root: HTMLElement) {
   function chooseStyle(button: HTMLButtonElement) {
     style = Number(button.dataset.style);
     root.toggleAttribute('data-agent',style === 4);
+    root.querySelector<HTMLElement>('[data-facade-controls]')!.hidden = style !== 4;
     sliders.find(input => input.dataset.param === 'emphasis')!.disabled = style !== 4;
     styles.forEach(b => b.setAttribute('aria-pressed',String(b === button)));
     root.querySelector('.study-mood')!.textContent = button.dataset.mood!;
@@ -152,10 +155,25 @@ export function initPencilStudy(root: HTMLElement) {
     requestDraw();
   }));
   spin.addEventListener('click',() => setRotating(!rotating));
+  const facadeNotes = ja ? {
+    planar: '輪郭はそのままに、面の陰影だけを比較。短い線を面ごとの方向にまとめ、境界の手前で止めます。',
+    contained: '以前の操舵ルールを保ち、線の太さ全体が隣の面に渡る前に止めます。',
+    loose: '以前の描画。陰影の線も輪郭に引かれ、面をまたいだり外へはみ出したりします。',
+  } : {
+    planar: 'Same contour drawing, different shading rules. Short, grouped strokes follow each face and stop before its boundary.',
+    contained: 'The earlier steering rules, with each stroke stopped before its full width crosses onto another face.',
+    loose: 'The previous drawing: shading agents also chase edges and may wander across faces or beyond the silhouette.',
+  };
+  function updateFacade() {
+    root.querySelector('[data-facade-note]')!.textContent = facadeNotes[facade.value as FacadeMode];
+    requestDraw();
+  }
+  facade.addEventListener('change',updateFacade);
   boil.addEventListener('change',() => { clock = 0; requestDraw(); });
   root.querySelector('[data-reset]')!.addEventListener('click',() => {
     pitch = .42; yaw = .58; zoom = 1; clock = 0;
     boil.checked = false;
+    facade.value = 'planar'; updateFacade();
     sliders.forEach(input => { input.value = input.defaultValue; input.closest('label')!.querySelector('output')!.value = input.value; });
     chooseStyle(styles[0]);
     setRotating(!reduced.matches);
