@@ -1,4 +1,5 @@
 import fragment from './pencil-study.frag.glsl?raw';
+import { PencilAgents } from './pencil-agents';
 
 const vertex = `#version 300 es
 void main() {
@@ -7,7 +8,8 @@ void main() {
 }`;
 
 export function initPencilStudy(root: HTMLElement) {
-  const canvas = root.querySelector('canvas')!;
+  const canvas = root.querySelector<HTMLCanvasElement>('.pencil-surface-canvas')!;
+  const agentCanvas = root.querySelector<HTMLCanvasElement>('.pencil-agent-canvas')!;
   const tools = root.querySelector('fieldset')!;
   const status = root.querySelector<HTMLElement>('[role="status"]')!;
   const spin = root.querySelector<HTMLButtonElement>('[data-spin]')!;
@@ -19,14 +21,15 @@ export function initPencilStudy(root: HTMLElement) {
   let gl: WebGL2RenderingContext | null = null;
   let program: WebGLProgram | null = null;
   let uniforms: Record<string, WebGLUniformLocation | null> = {};
-  let pitch = .42, yaw = .58, zoom = 1, style = 0;
+  let agents: PencilAgents | null = null;
+  let pitch = .42, yaw = .58, zoom = 1, style = 4;
   let rotating = !reduced.matches, visible = false, lost = false;
-  let frame = 0, last = 0, clock = 0;
+  let frame = 0, last = 0, clock = 0, lastPaint = 0;
   let drag: { id: number; x: number; y: number } | null = null;
 
   function stop() { cancelAnimationFrame(frame); frame = 0; last = 0; }
   function requestDraw() {
-    if (!frame && visible && !document.hidden && !lost && program) frame = requestAnimationFrame(draw);
+    if (!frame && visible && !document.hidden && (style === 4 ? agents : !lost && program)) frame = requestAnimationFrame(draw);
   }
   function setRotating(value: boolean) {
     rotating = value;
@@ -35,6 +38,17 @@ export function initPencilStudy(root: HTMLElement) {
   }
   function fail(error: unknown) {
     stop();
+    styles.filter(button => Number(button.dataset.style) !== 4).forEach(button => button.disabled = true);
+    if (agents) {
+      tools.disabled = false;
+      if (style !== 4) {
+        chooseStyle(styles.find(button => Number(button.dataset.style) === 4)!);
+        status.hidden = false;
+        status.textContent = ja ? '素材シェーダーを利用できないため、線の描画に切り替えました。' : 'Material shaders are unavailable; switched to the pencil drawing.';
+      }
+      requestDraw();
+      return;
+    }
     delete root.dataset.ready;
     tools.disabled = true;
     status.hidden = false;
@@ -70,6 +84,7 @@ export function initPencilStudy(root: HTMLElement) {
       uniforms = Object.fromEntries(['Resolution','Rotation','Zoom','Pressure','Tooth','Wander','Light','Frame','Style'].map(name => [name, gl!.getUniformLocation(program!, `u${name}`)]));
       lost = false;
       tools.disabled = false;
+      styles.forEach(button => button.disabled = Number(button.dataset.style) === 4 && !agents);
       status.hidden = true;
       resize();
       requestDraw();
@@ -82,17 +97,29 @@ export function initPencilStudy(root: HTMLElement) {
     const height = Math.max(1, Math.round(rect.height * dpr));
     if (canvas.width !== width || canvas.height !== height) {
       canvas.width = width; canvas.height = height;
+      agentCanvas.width = width; agentCanvas.height = height;
     }
     requestDraw();
   }
   function draw(time: number) {
     frame = 0;
-    if (!gl || !program || lost || !visible || document.hidden) { last = 0; return; }
+    if (!visible || document.hidden || (style === 4 ? !agents : !gl || !program || lost)) { last = 0; return; }
+    // The bounded agent solve is capped at 24 Hz while in motion; a paused drawing
+    // is rendered only when an input changes. No background simulation is running.
+    if (style === 4 && (rotating || boil.checked) && time-lastPaint < 1000/24) {
+      requestDraw(); return;
+    }
+    lastPaint = time;
     const dt = last ? Math.min((time-last)/1000, .05) : 0;
     last = time;
     if (rotating && !drag) yaw += dt * .15;
     if (boil.checked) clock += dt;
     const values = Object.fromEntries(sliders.map(input => [input.dataset.param!, Number(input.value)/100]));
+    if (style === 4 && agents) {
+      agents.draw({pitch,yaw,zoom,pressure:.3+values.pressure*1.4,tooth:values.tooth,
+        wander:values.wander,light:values.light*Math.PI*2,emphasis:values.emphasis,
+        frame:boil.checked ? Math.floor(clock*8) : 0});
+    } else if (gl && program) {
     gl.viewport(0,0,canvas.width,canvas.height);
     gl.useProgram(program);
     gl.uniform2f(uniforms.Resolution,canvas.width,canvas.height);
@@ -106,12 +133,15 @@ export function initPencilStudy(root: HTMLElement) {
     gl.uniform1f(uniforms.Frame,boil.checked ? Math.floor(clock*8) : 0);
     gl.uniform1i(uniforms.Style,style);
     gl.drawArrays(gl.TRIANGLES,0,3);
+    }
     root.dataset.ready = '';
     if (rotating || boil.checked) requestDraw();
     else last = 0;
   }
   function chooseStyle(button: HTMLButtonElement) {
     style = Number(button.dataset.style);
+    root.toggleAttribute('data-agent',style === 4);
+    sliders.find(input => input.dataset.param === 'emphasis')!.disabled = style !== 4;
     styles.forEach(b => b.setAttribute('aria-pressed',String(b === button)));
     root.querySelector('.study-mood')!.textContent = button.dataset.mood!;
     requestDraw();
@@ -131,7 +161,7 @@ export function initPencilStudy(root: HTMLElement) {
     setRotating(!reduced.matches);
   });
   canvas.addEventListener('pointerdown',event => {
-    if (!event.isPrimary || event.button !== 0 || !program || lost) return;
+    if (!event.isPrimary || event.button !== 0 || (style === 4 ? !agents : !program || lost)) return;
     drag = { id: event.pointerId, x: event.clientX, y: event.clientY };
     canvas.setPointerCapture(event.pointerId);
     setRotating(false);
@@ -182,5 +212,8 @@ export function initPencilStudy(root: HTMLElement) {
   });
   addEventListener('pageshow',requestDraw);
   spin.setAttribute('aria-pressed',String(rotating));
+  try { agents = new PencilAgents(agentCanvas); }
+  catch (error) { console.warn('Pencil agents:',error); style = 1; }
+  chooseStyle(styles.find(button => Number(button.dataset.style) === style)!);
   initialize();
 }
