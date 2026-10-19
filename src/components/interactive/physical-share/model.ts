@@ -66,6 +66,9 @@ export type Stage = {
   share: Partial<Record<CountryKey, number>>; used?: CountryKey[]; note: string; noteJa: string;
 };
 export const STAGES: Stage[] = [
+  { k: 'ore', en: 'Mining', ja: '採掘', w: [0.05, 0.4, 0.8], share: { PROD: 41, CN: 32, AUCA: 4, US: 4, OTH: 19 }, used: ['CN', 'PROD'],
+    note: 'My average of where ore is mined, 2025 (USGS), over rare earths, copper, cobalt, nickel and tungsten; gallium is not mined on its own. Congo mines 74% of cobalt, Indonesia 67% of nickel, Chile, the Congo and Peru together 49% of copper, and China 69% of rare earths and 79% of tungsten. Chinese firms own many of the mines in the Congo and Indonesia.',
+    noteJa: '2025年に鉱石が採掘された場所（USGS）を、レアアース・銅・コバルト・ニッケル・タングステンについて私が平均したものです。ガリウムは単独では採掘されません。コバルトの74%はコンゴ、ニッケルの67%はインドネシア、銅の49%はチリ・コンゴ・ペルーの合計、レアアースの69%とタングステンの79%は中国で採掘されています。コンゴとインドネシアの鉱山の多くは中国企業が所有しています。' },
   { k: 'mine', en: 'Mineral refining', ja: '鉱物の精錬', w: [0.05, 0.5, 1], share: { CN: 70, PROD: 10, JP: 3, AUCA: 2, US: 2, OTH: 13 }, used: ['CN', 'PROD'],
     note: 'My rough average of where minerals are refined (tungsten: mined), 2025, over magnet rare earths, copper, gallium, tungsten, cobalt and nickel. China refines about 90% of magnet rare earths, 47% of copper, 76% of cobalt and makes 99% of gallium; Indonesia refines 45% of nickel, much of it in Chinese-owned plants.',
     noteJa: '2025年の精錬の所在地（タングステンは採掘地）を、磁石用レアアース・銅・ガリウム・タングステン・コバルト・ニッケルについて私が大まかに平均したものです。中国は磁石用レアアースの約90%、銅の47%、コバルトの76%を精錬し、ガリウムの99%を生産しています。ニッケルの45%はインドネシアで精錬され、その多くは中国企業の工場です。' },
