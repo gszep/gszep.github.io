@@ -66,9 +66,9 @@ export type Stage = {
   share: Partial<Record<CountryKey, number>>; used?: CountryKey[]; note: string; noteJa: string;
 };
 export const STAGES: Stage[] = [
-  { k: 'mine', en: 'Mining & refining', ja: '採掘・精錬', w: [0.05, 0.5, 1], share: { CN: 70, PROD: 10, JP: 3, AUCA: 2, US: 2, OTH: 13 }, used: ['CN', 'PROD'],
-    note: 'My rough average of where minerals are refined (tungsten: mined), 2025, over magnet rare earths, copper, gallium, tungsten, cobalt and nickel. China refines 84% of magnet rare earths, 47% of copper, 76% of cobalt and makes 99% of gallium; Indonesia refines 45% of nickel, much of it in Chinese-owned plants.',
-    noteJa: '2025年の精錬の所在地（タングステンは採掘地）を、磁石用レアアース・銅・ガリウム・タングステン・コバルト・ニッケルについて私が大まかに平均したものです。中国は磁石用レアアースの84%、銅の47%、コバルトの76%を精錬し、ガリウムの99%を生産しています。ニッケルの45%はインドネシアで精錬され、その多くは中国企業の工場です。' },
+  { k: 'mine', en: 'Mineral refining', ja: '鉱物の精錬', w: [0.05, 0.5, 1], share: { CN: 70, PROD: 10, JP: 3, AUCA: 2, US: 2, OTH: 13 }, used: ['CN', 'PROD'],
+    note: 'My rough average of where minerals are refined (tungsten: mined), 2025, over magnet rare earths, copper, gallium, tungsten, cobalt and nickel. China refines about 90% of magnet rare earths, 47% of copper, 76% of cobalt and makes 99% of gallium; Indonesia refines 45% of nickel, much of it in Chinese-owned plants.',
+    noteJa: '2025年の精錬の所在地（タングステンは採掘地）を、磁石用レアアース・銅・ガリウム・タングステン・コバルト・ニッケルについて私が大まかに平均したものです。中国は磁石用レアアースの約90%、銅の47%、コバルトの76%を精錬し、ガリウムの99%を生産しています。ニッケルの45%はインドネシアで精錬され、その多くは中国企業の工場です。' },
   { k: 'magnet', en: 'Magnets & robot parts', ja: '磁石・ロボット部品', w: [0, 0.2, 1], share: { CN: 50, JP: 40, DE: 5, KR: 1, US: 1, OTH: 3 }, used: ['CN'],
     note: 'My rough average of strong magnets (94% made in China), precision robot gears (mostly Japanese firms) and industrial robots (by maker nationality).',
     noteJa: '強力な磁石（94%が中国製）、ロボット用の精密歯車（大半が日本企業）、産業用ロボット（メーカーの国籍）を私が大まかに平均したものです。' },
