@@ -5,6 +5,7 @@ description: "What the PHP vulnerabilities can teach us about information, prepa
 tags: ["cybersecurity", "ai", "policy", "resilience"]
 draft: false
 ---
+import PhpResponseTimeline from '../../../components/interactive/PhpResponseTimeline.astro';
 
 *Working draft, published for review.*
 
@@ -17,6 +18,17 @@ On 21 October 2026, the PHP project released fixes for two critical vulnerabilit
 The response also had costs. Sakura Internet suspended member functions and some service functions, while stating that its VPS service itself was unaffected. ValueDesign stopped Arara Cashless and online charging while keeping Value Card ASP operating. SpiderPlus suspended several named services.<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup> These notices describe different scopes of interruption, not entire companies disappearing from the internet.
 
 Nor did American services simply stay up. BambooHR reported a precautionary shutdown linked to PHP2SHELL, affecting application components labelled United States, Canada and Ireland, followed by restoration.<sup><a href="#ref-5">5</a></sup> These operator notices establish preventive action, not confirmed compromise. Without decision timelines and credible alternatives available at the time, calling the Japanese responses an overreaction would be premature.
+
+## A fix is not yet a restored service
+
+BambooHR's status history separates stages that a single “time to patch” figure would conceal. At 15:03 UTC on 21 October, it reported that the recommended fix had been applied and systems were being tested. At 16:01, initial tests had passed but feature validation continued. Its back-online report came at 18:01 and still warned of possible slower loads and intermittent errors.<sup><a href="#ref-5">5</a></sup>
+
+<figure>
+  <PhpResponseTimeline lang="en" />
+  <figcaption>BambooHR's published update times, 21 October 2026. The shaded 2h 58m is the spacing between reports of an applied fix and restored access—not a measured testing duration or an estimate for other companies. Source: the operator's incident history.<sup><a href="#ref-5">5</a></sup></figcaption>
+</figure>
+
+**Patch delivery and service recovery are different outcomes.** This record does not tell us whether testing, continuing rollout or another constraint consumed most of that interval. It does show why faster code generation or earlier access to a patch cannot, by themselves, establish faster recovery. It also supplies a concrete counterexample to a blanket contrast between Japanese shutdowns and uninterrupted US services. The missing comparison is not merely a larger count of notices: it is equivalent functions, configurations and response stages.
 
 ## Separate the warning from the evidence
 
@@ -56,11 +68,7 @@ Insurance offers one incentive: making baseline security improvements a conditio
 
 Certification can also set expectations. The UK's Cyber Essentials requires qualifying security updates within 14 days for software in certification scope, not every update at every British company.<sup><a href="#ref-13">13</a></sup> Such conditions should be paired with the capacity to meet them. For Japan and other countries, I would fund plain-language advisory translation, shared assessment and small-business testing and maintenance support. Public procurement should pay for demonstrated recovery and ongoing upkeep. Evaluate insurance assistance by actual control improvements, not policies sold.
 
-## What I am asking
-
-**Individuals:** know what you host, keep it maintained, and test a restore. **Companies:** name the person responsible for updates and rehearse which essential functions can safely continue. **Governments:** fund the shared expertise and maintenance capacity that make those choices practical, then evaluate the results.
-
-The aim is to make the next urgent decision less improvised. For context, the accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg91JTgZPMesneDDS1T1vCkkeQmnHNCg) is access-controlled; the original public sources are below. Corrections to the evidence and practical examples of tested recovery are welcome.
+The accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg91JTgZPMesneDDS1T1vCkkeQmnHNCg) contains the supporting analysis and its limitations. The original public sources are below.
 
 ## References
 

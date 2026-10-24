@@ -1,0 +1,66 @@
+---
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+// Displayed report timestamps, not instrumented transition times.
+// BambooHR incident record, 21 October 2026; original notice is reference 5.
+const events = [
+  { utc: '11:51', offset: 0, en: 'Precautionary interruption reported', ja: '予防的な停止を報告' },
+  { utc: '15:03', offset: 192, en: 'Fix applied; testing affected systems', ja: '修正を適用、対象システムを試験中' },
+  { utc: '16:01', offset: 250, en: 'Initial tests passed; validating features', ja: '初期試験を通過、機能を確認中' },
+  { utc: '17:31', offset: 340, en: 'Validation continuing', ja: '機能の確認を継続' },
+  { utc: '18:01', offset: 370, en: 'Back online; possible degraded performance', ja: '再開を報告、遅延やエラーの可能性あり' },
+];
+const left = 334;
+const width = 500;
+const x = (offset: number) => left + offset / 370 * width;
+const ticks = [{ t: '12:00', offset: 9 }, { t: '14:00', offset: 129 }, { t: '16:00', offset: 249 }, { t: '18:00', offset: 369 }];
+---
+<div class="response-timeline">
+  <div class="timeline-scroll" tabindex="0" aria-label={ja ? '時系列の図。横にスクロールできます。' : 'Timeline chart; horizontally scrollable on small screens.'}>
+    <svg viewBox="0 0 900 390" role="img" aria-labelledby={`php-timeline-title-${lang} php-timeline-desc-${lang}`}>
+      <title id={`php-timeline-title-${lang}`}>{ja ? 'BambooHR：修正の適用報告から再開報告まで' : 'BambooHR: from a reported fix to reported restoration'}</title>
+      <desc id={`php-timeline-desc-${lang}`}>{ja ? '2026年10月21日の報告時刻（UTC）。15時03分に修正適用済み、18時01分に再開と報告されました。その間の2時間58分は報告間隔であり、試験そのものに要した時間ではありません。' : 'Report times on 21 October 2026, UTC. The fix was reported applied at 15:03; access restored at 18:01. The 2 hours 58 minutes between these reports is not a measured testing duration.'}</desc>
+      <rect x={x(192)} y="51" width={x(370)-x(192)} height="278" class="interval" />
+      <text x="20" y="27" class="chart-title">{ja ? '事業者の報告内容' : 'Operator-reported state'}</text>
+      <text x={left} y="27" class="chart-title">{ja ? '2026年10月21日・UTC' : '21 October 2026 · UTC'}</text>
+      {ticks.map(t => <>
+        <line x1={x(t.offset)} y1="51" x2={x(t.offset)} y2="329" class="grid" />
+        <text x={x(t.offset)} y="350" text-anchor="middle" class="tick">{t.t}</text>
+      </>)}
+      {events.map((event, i) => <>
+        <text x="20" y={80+i*54} class="event">{ja ? event.ja : event.en}</text>
+        <line x1={left} y1={75+i*54} x2={x(event.offset)} y2={75+i*54} class="guide" />
+        <circle cx={x(event.offset)} cy={75+i*54} r="6" class="point" />
+        <text x={x(event.offset)+(i===4 ? -12 : 12)} y={80+i*54} text-anchor={i===4 ? 'end' : 'start'} class="time">{event.utc}</text>
+      </>)}
+      <text x="20" y="380" class="note">{ja ? '薄い帯：修正適用の報告から再開の報告まで（2時間58分）。作業時間の内訳は不明です。' : 'Shaded interval: 2h 58m between the fix-applied and back-online reports. The activity breakdown is unknown.'}</text>
+    </svg>
+  </div>
+  <details>
+    <summary>{ja ? '数値と読み方' : 'Data and interpretation'}</summary>
+    <table>
+      <thead><tr><th>{ja ? '報告時刻（UTC）' : 'Report time (UTC)'}</th><th>{ja ? '報告内容' : 'Reported state'}</th></tr></thead>
+      <tbody>{events.map(e => <tr><td>{e.utc}</td><td>{ja ? e.ja : e.en}</td></tr>)}</tbody>
+    </table>
+    <p>{ja ? '同じ事業者の公開報告を並べたものです。正確な停止開始時刻や作業時間を測った記録ではなく、国別の平均でもありません。表示される時刻と、実際の作業時刻は区別しています。' : 'These are public reports from one operator, not instrumented event times or a national average. Reporting delays, continuing rollout and regression work cannot be separated from testing using this record alone.'}</p>
+  </details>
+</div>
+<style>
+  .response-timeline { margin: 1rem 0; color: #24272b; }
+  .timeline-scroll { overflow-x: auto; border: 1px solid #d8dde3; background: #fff; }
+  svg { display: block; width: 100%; min-width: 700px; height: auto; font-family: system-ui, sans-serif; }
+  .interval { fill: #eaf2ff; }
+  .grid { stroke: #d8dde3; stroke-width: 1; }
+  .guide { stroke: #a5adb8; stroke-width: 1; stroke-dasharray: 3 4; }
+  .point { fill: #235c9e; }
+  .chart-title { font-size: 15px; font-weight: 650; }
+  .event { font-size: 13px; }
+  .time { font-size: 14px; font-weight: 650; }
+  .tick, .note { font-size: 12px; fill: #52606d; }
+  details { font-size: .9rem; margin-top: .7rem; }
+  summary { cursor: pointer; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: .45rem; text-align: left; border-bottom: 1px solid #d8dde3; }
+  td:first-child { white-space: nowrap; }
+  @media print { svg { min-width: 0; } .timeline-scroll { overflow: visible; } }
+</style>
