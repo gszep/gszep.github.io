@@ -1,0 +1,81 @@
+---
+title: "Measured responses to cybersecurity warnings"
+date: 2026-10-24
+description: "What the PHP vulnerabilities can teach us about information, preparedness and keeping essential services running."
+tags: ["cybersecurity", "ai", "policy", "resilience"]
+draft: false
+---
+
+*Working draft, published for review.*
+
+> **In short.** A cybersecurity warning can interrupt ordinary life before anyone establishes a breach. The recent PHP warnings prompted preventive shutdowns in Japan and elsewhere. The useful question is how to reduce both exposure to attack and the cost of responding. That means clearer information, knowing what software we depend on, rehearsed ways to keep essential functions available, and incentives that pay for maintenance. Cheaper AI-assisted coding could help, but it does not make testing, recovery or human judgment free.
+
+## A warning becomes an interruption
+
+On 21 October 2026, the PHP project released fixes for two critical vulnerabilities in software used to run websites. Its advisory described a demonstrated attack against one configuration before application code even runs.<sup><a href="#ref-1">1</a></sup> This was a serious warning, not merely an alarming headline.
+
+The response also had costs. Sakura Internet suspended member functions and some service functions, while stating that its VPS service itself was unaffected. ValueDesign stopped Arara Cashless and online charging while keeping Value Card ASP operating. SpiderPlus suspended several named services.<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup> These notices describe different scopes of interruption, not entire companies disappearing from the internet.
+
+Nor did American services simply stay up. BambooHR reported a precautionary shutdown linked to PHP2SHELL, affecting application components labelled United States, Canada and Ireland, followed by restoration.<sup><a href="#ref-5">5</a></sup> These operator notices establish preventive action, not confirmed compromise. Without decision timelines and credible alternatives available at the time, calling the Japanese responses an overreaction would be premature.
+
+## Separate the warning from the evidence
+
+**A vulnerable component, a demonstrated attack, publicly available attack code and a compromised organisation are different things.** PHP's advisory establishes a demonstrated route in a particular environment. It does not establish that every installation was reachable through that route or that the operators above were breached.<sup><a href="#ref-1">1</a></sup>
+
+Our limited search found Japanese response episodes and the BambooHR counterexample. It did not establish national totals or comparable rates. Limited and unsuccessful retrieval in South Korea and the UK cannot establish uninterrupted service there. The lesson is about decisions under uncertainty, not a country league table.
+
+A useful public notice should say what is affected, what is known, what remains uncertain, what action is being taken, and when the next update will arrive. Link to the software maintainer or national security agency, and timestamp the assessment. A widely shared discussion can help discover a warning; it should not become the authority for shutting down a service.
+
+## Start with what you actually run
+
+For individuals, begin with an inventory: the devices, hosted sites and accounts you control, and who maintains them. Keep trusted software and deployment images current, use multifactor authentication, and check that backups can actually be restored. Japan's IPA already recommends keeping operating systems and software updated in its small-business guidance.<sup><a href="#ref-6">6</a></sup>
+
+An AI assistant can help organise this work. Existing tools such as Trivy inspect software packages and configurations; an agent can explain their findings against trusted advisories.<sup><a href="#ref-7">7</a></sup> My suggested starting point is a scoped, read-only review of authorised assets, with commands reviewed by a person, no automatic changes and no uploading credentials or raw sensitive findings. Open-source code or an agent connection is not a security guarantee.
+
+When asking others for help, share a redacted summary: check date, evidence, confidence, unresolved questions and the feedback wanted. Keep identifying infrastructure details private. An inventory is a starting point for decisions, not certification that a system is safe.
+
+## Prepare a smaller service before the emergency
+
+Preparedness creates options between doing nothing and switching everything off. Where the architecture permits, an operator can test an update on a small subset, replace instances gradually, or isolate an affected function. These are conditional options, not universal instructions. Rolling replacement is different from hotpatching a running process; NIST's patch guidance explicitly includes restarts and redeployment, followed by verification.<sup><a href="#ref-8">8</a></sup>
+
+A separately prepared, limited service is another option. A static information page could bypass an affected PHP runtime, but only if requests genuinely avoid it. Removing application packages while retaining vulnerable PHP does not achieve that.<sup><a href="#ref-1">1</a></sup> Read-only accounts still need privacy and access controls. Orders and payments add harder questions about duplicate charges and reconciling records.
+
+Safety-critical engineering offers a useful habit: identify unacceptable failures, connect them to controls, and test those controls. NASA's software safety guidance describes that discipline.<sup><a href="#ref-9">9</a></sup> For an ordinary website, I would adapt it into a short agreement about essential functions, safe stopping points and recovery rehearsals.
+
+**Fallback is not automatically safer.** Amazon describes an alternative path that overloaded a database and extended an outage into fulfilment.<sup><a href="#ref-10">10</a></sup> Test both activation and restoration. A backup service that preserves a page while weakening authentication is not a successful recovery.
+
+## Cheaper code still needs assurance
+
+Suppose AI makes implementing that limited service cheaper. This could help smaller teams adopt practices previously beyond their budget. But implementation is only part of the bill: independent review, functional testing, maintenance, training and rehearsals remain. If code production gets cheaper faster than those activities, assurance becomes the constraint.
+
+The worthwhile experiment is therefore a funded pilot pairing website operators with safety and security practitioners. Compare a limited fallback with conventional, tested patch response under the same drills. Measure useful functions preserved, correctness, recovery time and total human effort, including later maintenance. Stop if the alternative weakens security or exceeds its maintenance budget. Drill results would show what worked in those conditions, not how many real attacks were prevented. Neither positive lifetime savings nor a general benefit from minimising dependencies is established here.
+
+## Reward maintenance that works
+
+Insurance offers one incentive: making baseline security improvements a condition of coverage. Qualitative research documents tighter underwriting standards, but also selection of better-protected customers; it does not isolate how much insurance reduces incidents.<sup><a href="#ref-11">11</a></sup> Japan already has a cyber-insurance market.<sup><a href="#ref-12">12</a></sup> Underwriting questions are not universal requirements, and this evidence cannot explain a national difference in shutdown decisions.
+
+Certification can also set expectations. The UK's Cyber Essentials requires qualifying security updates within 14 days for software in certification scope, not every update at every British company.<sup><a href="#ref-13">13</a></sup> Such conditions should be paired with the capacity to meet them. For Japan and other countries, I would fund plain-language advisory translation, shared assessment and small-business testing and maintenance support. Public procurement should pay for demonstrated recovery and ongoing upkeep. Evaluate insurance assistance by actual control improvements, not policies sold.
+
+## What I am asking
+
+**Individuals:** know what you host, keep it maintained, and test a restore. **Companies:** name the person responsible for updates and rehearse which essential functions can safely continue. **Governments:** fund the shared expertise and maintenance capacity that make those choices practical, then evaluate the results.
+
+The aim is to make the next urgent decision less improvised. For context, the accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg91JTgZPMesneDDS1T1vCkkeQmnHNCg) is access-controlled; the original public sources are below. Corrections to the evidence and practical examples of tested recovery are welcome.
+
+## References
+
+<ol class="refs">
+  <li id="ref-1">The PHP Group, security advisory and security releases, 21 October 2026. <a href="https://www.php.net/archive/2026.php">php.net</a></li>
+  <li id="ref-2">Sakura Internet, PHP vulnerability emergency-maintenance notice, 22 October 2026. <a href="https://www.sakura.ad.jp/corporate/information/announcements/2026/10/22/1968226117/">sakura.ad.jp</a></li>
+  <li id="ref-3">ValueDesign, PHP vulnerability service notice, 22 October 2026. <a href="https://www.valuedesign.jp/news/info/20261022">valuedesign.jp</a></li>
+  <li id="ref-4">SpiderPlus, service-suspension notice, 22 October 2026. <a href="https://spiderplus.co.jp/news/news-release/9804">spiderplus.co.jp</a></li>
+  <li id="ref-5">BambooHR, PHP2SHELL incident updates, 21 October 2026. <a href="https://status.bamboohr.com/pages/incident/54f0de009d6f51e7140002b7/6ad897f670d2d304e082ebdb">status.bamboohr.com</a></li>
+  <li id="ref-6">IPA, Information Security Guidelines for Small and Medium-sized Enterprises, Japanese edition 4.0, pp. 20, 23. <a href="https://www.ipa.go.jp/security/guide/sme/ug65p90000019cbk-att/sme_guideline_v4.0.pdf">ipa.go.jp</a></li>
+  <li id="ref-7">Aqua Security, Trivy project documentation; capabilities, not an independent efficacy assessment. <a href="https://github.com/aquasecurity/trivy">github.com/aquasecurity</a></li>
+  <li id="ref-8">NIST, SP 800-40 Revision 4, Guide to Enterprise Patch Management Planning, 2022, sections 2.3 and 3. <a href="https://nvlpubs.nist.gov/nistpubs/SpecialPublications/NIST.SP.800-40r4.pdf">nist.gov</a></li>
+  <li id="ref-9">NASA Software Engineering Handbook, Software Safety and Hazard Analysis. <a href="https://swehb.nasa.gov/spaces/SWEHBVD/pages/140641657/Software+Safety+and+Hazard+Analysis">nasa.gov</a></li>
+  <li id="ref-10">Amazon Builders' Library, Avoiding fallback in distributed systems. <a href="https://aws.amazon.com/builders-library/avoiding-fallback-in-distributed-systems/">aws.amazon.com</a></li>
+  <li id="ref-11">Mott et al., Between a rock and a hard(ening) place, 2023; verified repository abstract and bibliographic record. <a href="https://kar.kent.ac.uk/100308/">kent.ac.uk</a></li>
+  <li id="ref-12">General Insurance Association of Japan, SME cyber-insurance information; coverage varies by product. <a href="https://www.sonpo.or.jp/sme_insurance/cyber-hoken/">sonpo.or.jp</a></li>
+  <li id="ref-13">NCSC, Cyber Essentials: Requirements for IT infrastructure, v3.3, April 2026, pp. 17–18. <a href="https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf">ncsc.gov.uk</a></li>
+</ol>
