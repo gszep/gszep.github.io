@@ -6,10 +6,13 @@ tags: ["cybersecurity", "ai", "policy", "resilience"]
 draft: false
 ---
 import PhpResponseTimeline from '../../../components/interactive/PhpResponseTimeline.astro';
+import EvidenceComparison from '../../../components/interactive/EvidenceComparison.astro';
 
 *Working draft, published for review.*
 
-> **In short.** A cybersecurity warning can interrupt ordinary life before anyone establishes a breach. The recent PHP warnings prompted preventive shutdowns in Japan and elsewhere. The useful question is how to reduce both exposure to attack and the cost of responding. That means clearer information, knowing what software we depend on, rehearsed ways to keep essential functions available, and incentives that pay for maintenance. Cheaper AI-assisted coding could help, but it does not make testing, recovery or human judgment free.
+*Revised 25 October 2026: added the UK minister's report, Pixiv's completion notice and a Korean-language game-service example, and clarified what these selected cases can establish.*
+
+> **In short.** The PHP warnings prompted precautionary interruptions in Japan, at BambooHR and across UK government services. Advance warning did not eliminate interruption in the UK; a patch being available did not mean a service was ready to reopen. These cases separate preparation, patching, validation and restoration. They do not rank countries or establish that a shutdown was excessive. The useful comparison is which essential functions remained available, at what risk, and with what recovery effort—not simply who stayed online.
 
 ## A warning becomes an interruption
 
@@ -17,7 +20,11 @@ On 21 October 2026, the PHP project released fixes for two critical vulnerabilit
 
 The response also had costs. Sakura Internet suspended member functions and some service functions, while stating that its VPS service itself was unaffected. ValueDesign stopped Arara Cashless and online charging while keeping Value Card ASP operating. SpiderPlus suspended several named services.<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup> These notices describe different scopes of interruption, not entire companies disappearing from the internet.
 
-Nor did American services simply stay up. BambooHR reported a precautionary shutdown linked to PHP2SHELL, affecting application components labelled United States, Canada and Ireland, followed by restoration.<sup><a href="#ref-5">5</a></sup> These operator notices establish preventive action, not confirmed compromise. Without decision timelines and credible alternatives available at the time, calling the Japanese responses an overreaction would be premature.
+Nor did American services simply stay up. BambooHR reported a precautionary shutdown linked to PHP2SHELL, affecting application components labelled United States, Canada and Ireland, followed by restoration.<sup><a href="#ref-5">5</a></sup> These operator notices establish preventive action, not confirmed compromise.
+
+The UK record is more specific than the earlier version of this article could establish. In the 22 October Hansard debate, Baroness Lloyd of Effra reported that 32 government services were unavailable and four were partially unavailable, based on the latest cross-government reports. She attributed the interruption largely to precautionary measures during security updates and mitigation.<sup><a href="#ref-14">14</a></sup> This is a minister's report of service states—not independent uptime measurement, 36 companies, or evidence of 36 compromises. It supplies neither a whole-country total nor a denominator for a national rate.
+
+In the same debate, the minister said departments had been alerted before public disclosure and asked to identify affected systems and prepare mitigations. **Prior warning did not eliminate precautionary interruption.** That does not show that warning was useless: it may have changed the options available, but this record cannot tell us what would have happened without it. Receiving a warning, obtaining a usable patch, validating the updated system and safely restoring access are separate milestones. Without the decision timeline and credible alternatives available at the time, calling a shutdown an overreaction—or proof of poor preparation—would be premature.<sup><a href="#ref-14">14</a></sup>
 
 ## A fix is not yet a restored service
 
@@ -30,21 +37,42 @@ BambooHR's status history separates stages that a single “time to patch” fig
 
 **Patch delivery and service recovery are different outcomes.** This record does not tell us whether testing, continuing rollout or another constraint consumed most of that interval. It does show why faster code generation or earlier access to a patch cannot, by themselves, establish faster recovery. It also supplies a concrete counterexample to a blanket contrast between Japanese shutdowns and uninterrupted US services. The missing comparison is not merely a larger count of notices: it is equivalent functions, configurations and response stages.
 
+## What the records actually measure
+
+Pixiv's completion notice, published on 22 October, reports that affected services including pixiv were taken offline from 19:00 to 23:30 JST on 21 October for PHP security updates and checks. This is a report of completed work, not merely a planned maintenance window. The notice explicitly links the action to PHP vulnerabilities, but its body does not identify the specific CVEs or PHP2SHELL. Its endpoints are operator-reported, not independently observed availability.<sup><a href="#ref-15">15</a></sup>
+
+A Korean-language Final Fantasy XIV recovery notice describes a narrower interruption: new logins were restricted from 01:25 on 22 October to 02:50 on 23 October—25 hours 25 minutes on the notice's local clock—during PHP-related patch-server security work. The same recovery page also listed client and character settings backup as still disabled. Restoring new logins did not mean every function had recovered. This is evidence about a particular game service, not an outage of the NAVER portal that carries its notices.<sup><a href="#ref-16">16</a></sup>
+
+The following comparison keeps the unit of observation visible:
+
+<EvidenceComparison lang="en">
+
+| Observation | Scope | What it does not measure |
+| --- | --- | --- |
+| UK minister: 32 services unavailable, four partially unavailable | Government service states reported on 22 October; largely precautionary measures during updates | Companies affected, a national rate, or confirmed compromise |
+| Pixiv: 19:00–23:30 JST on 21 October | Operator-reported interruption for PHP updating and checks | Independent uptime, an exact CVE attribution, or time spent testing alone |
+| BambooHR: 178 minutes between reports | Applied-fix report at 15:03 UTC to back-online report at 18:01 | Measured testing duration, total outage duration, or a recovery benchmark |
+| Final Fantasy XIV game-channel notices: 25h 25m | Operator-reported restriction of new logins, followed by login recovery | A NAVER-portal outage, complete game-function recovery, or a national rate |
+
+</EvidenceComparison>
+
+Sources: Hansard, Pixiv, BambooHR and the Final Fantasy XIV notices respectively.<sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup><sup><a href="#ref-5">5</a></sup><sup><a href="#ref-16">16</a></sup> These are not interchangeable outage statistics. Sakura Internet adds another distinction: its notice, updated at 17:30 JST on 23 October, reported emergency maintenance completed while some cloud functions remained suspended. Completion of maintenance was not full restoration of every function; a suspension notice alone does not establish permanent retirement.<sup><a href="#ref-2">2</a></sup>
+
 ## Separate the warning from the evidence
 
 **A vulnerable component, a demonstrated attack, publicly available attack code and a compromised organisation are different things.** PHP's advisory establishes a demonstrated route in a particular environment. It does not establish that every installation was reachable through that route or that the operators above were breached.<sup><a href="#ref-1">1</a></sup>
 
-Our limited search found Japanese response episodes and the BambooHR counterexample. It did not establish national totals or comparable rates. Limited and unsuccessful retrieval in South Korea and the UK cannot establish uninterrupted service there. The lesson is about decisions under uncertainty, not a country league table.
+The wider study is ongoing. Its frozen frame contains 200 visitor-market entries across Japan, the UK, South Korea and the US, representing 150 unique listed websites—not 150 companies or verified PHP deployments. Discovery and classification remain incomplete, and collection used mixed search providers. These selected cases are therefore not national rates. Unknown outcomes cannot be counted as uninterrupted service, and visitor-market membership does not establish an operator's nationality.
 
-A useful public notice should say what is affected, what is known, what remains uncertain, what action is being taken, and when the next update will arrive. Link to the software maintainer or national security agency, and timestamp the assessment. A widely shared discussion can help discover a warning; it should not become the authority for shutting down a service.
+A notice is most informative when it separates affected functions, evidence of exposure, action taken and the remaining conditions for reopening. A timestamped update can establish a reporting checkpoint without establishing the exact moment a system changed state. That is why the BambooHR interval and the Pixiv window need different labels even though both are expressed in hours.
 
-## Start with what you actually run
+## What would distinguish poor preparation from a justified shutdown?
 
-For individuals, begin with an inventory: the devices, hosted sites and accounts you control, and who maintains them. Keep trusted software and deployment images current, use multifactor authentication, and check that backups can actually be restored. Japan's IPA already recommends keeping operating systems and software updated in its small-business guidance.<sup><a href="#ref-6">6</a></sup>
+An interruption alone cannot answer that question. A fair comparison would need the affected configuration and exposure, when actionable guidance and a deployable patch reached the operator, when the operator identified its affected systems, and what prevented safe reopening. It would also need the service's consequences of failure: an unavailable information page and an incorrect payment are not equivalent losses.
 
-An AI assistant can help organise this work. Existing tools such as Trivy inspect software packages and configurations; an agent can explain their findings against trusted advisories.<sup><a href="#ref-7">7</a></sup> My suggested starting point is a scoped, read-only review of authorised assets, with commands reviewed by a person, no automatic changes and no uploading credentials or raw sensitive findings. Open-source code or an agent connection is not a security guarantee.
+Evidence of preparation would include a usable software inventory, assigned maintenance responsibility, tested deployment and rollback procedures, and recovery exercises. IPA's small-business guidance recommends software updates; tools such as Trivy can inspect packages and configurations.<sup><a href="#ref-6">6</a></sup><sup><a href="#ref-7">7</a></sup> Neither a checklist nor a scan establishes that a particular service could safely remain online. The relevant question is whether those preparations produced workable options in this incident.
 
-When asking others for help, share a redacted summary: check date, evidence, confidence, unresolved questions and the feedback wanted. Keep identifying infrastructure details private. An inventory is a starting point for decisions, not certification that a system is safe.
+Unexplained delay after a compatible patch and successful validation would raise a different question from time spent resolving a failed test. Likewise, continued availability is not automatically success if exposure or incorrect processing went unobserved. To distinguish these explanations, a comparison would need decision records, validation results, function-level availability and the reasons for residual restrictions. The notices here do not provide that complete record; their sequences alone cannot establish causation.
 
 ## Prepare a smaller service before the emergency
 
@@ -52,7 +80,7 @@ Preparedness creates options between doing nothing and switching everything off.
 
 A separately prepared, limited service is another option. A static information page could bypass an affected PHP runtime, but only if requests genuinely avoid it. Removing application packages while retaining vulnerable PHP does not achieve that.<sup><a href="#ref-1">1</a></sup> Read-only accounts still need privacy and access controls. Orders and payments add harder questions about duplicate charges and reconciling records.
 
-Safety-critical engineering offers a useful habit: identify unacceptable failures, connect them to controls, and test those controls. NASA's software safety guidance describes that discipline.<sup><a href="#ref-9">9</a></sup> For an ordinary website, I would adapt it into a short agreement about essential functions, safe stopping points and recovery rehearsals.
+Safety-critical engineering offers a useful habit: identify unacceptable failures, connect them to controls, and test those controls. NASA's software safety guidance describes that discipline.<sup><a href="#ref-9">9</a></sup> Applied to a website, that shifts the comparison from whether a page loaded to whether essential functions remained correct and secure, and whether restoration had been rehearsed.
 
 **Fallback is not automatically safer.** Amazon describes an alternative path that overloaded a database and extended an outage into fulfilment.<sup><a href="#ref-10">10</a></sup> Test both activation and restoration. A backup service that preserves a page while weakening authentication is not a successful recovery.
 
@@ -60,13 +88,13 @@ Safety-critical engineering offers a useful habit: identify unacceptable failure
 
 Suppose AI makes implementing that limited service cheaper. This could help smaller teams adopt practices previously beyond their budget. But implementation is only part of the bill: independent review, functional testing, maintenance, training and rehearsals remain. If code production gets cheaper faster than those activities, assurance becomes the constraint.
 
-The worthwhile experiment is therefore a funded pilot pairing website operators with safety and security practitioners. Compare a limited fallback with conventional, tested patch response under the same drills. Measure useful functions preserved, correctness, recovery time and total human effort, including later maintenance. Stop if the alternative weakens security or exceeds its maintenance budget. Drill results would show what worked in those conditions, not how many real attacks were prevented. Neither positive lifetime savings nor a general benefit from minimising dependencies is established here.
+A meaningful test of that possibility would compare a limited fallback with conventional, tested patch response under the same drills. The outcomes would be useful functions preserved, correctness, recovery time and total human effort, including later maintenance—not lines of code generated. An alternative that weakens security or cannot be maintained would fail that comparison. Drill results would show what worked in those conditions, not how many real attacks were prevented. Neither positive lifetime savings nor a general benefit from minimising dependencies is established here.
 
 ## Reward maintenance that works
 
 Insurance offers one incentive: making baseline security improvements a condition of coverage. Qualitative research documents tighter underwriting standards, but also selection of better-protected customers; it does not isolate how much insurance reduces incidents.<sup><a href="#ref-11">11</a></sup> Japan already has a cyber-insurance market.<sup><a href="#ref-12">12</a></sup> Underwriting questions are not universal requirements, and this evidence cannot explain a national difference in shutdown decisions.
 
-Certification can also set expectations. The UK's Cyber Essentials requires qualifying security updates within 14 days for software in certification scope, not every update at every British company.<sup><a href="#ref-13">13</a></sup> Such conditions should be paired with the capacity to meet them. For Japan and other countries, I would fund plain-language advisory translation, shared assessment and small-business testing and maintenance support. Public procurement should pay for demonstrated recovery and ongoing upkeep. Evaluate insurance assistance by actual control improvements, not policies sold.
+Certification can also set expectations. The UK's Cyber Essentials requires qualifying security updates within 14 days for software in certification scope, not every update at every British company.<sup><a href="#ref-13">13</a></sup> That requirement is not evidence of how the government services in Hansard were configured, certified or recovered. Patch deadlines, insurance conditions and service continuity describe different things. The cases here make a narrower point: preparation needs to be assessed through the options it creates and the functions it preserves, not inferred from a country's reputation or a single shutdown notice.
 
 The accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg91JTgZPMesneDDS1T1vCkkeQmnHNCg) contains the supporting analysis and its limitations. The original public sources are below.
 
@@ -74,7 +102,7 @@ The accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg
 
 <ol class="refs">
   <li id="ref-1">The PHP Group, security advisory and security releases, 21 October 2026. <a href="https://www.php.net/archive/2026.php">php.net</a></li>
-  <li id="ref-2">Sakura Internet, PHP vulnerability emergency-maintenance notice, 22 October 2026. <a href="https://www.sakura.ad.jp/corporate/information/announcements/2026/10/22/1968226117/">sakura.ad.jp</a></li>
+  <li id="ref-2">Sakura Internet, PHP vulnerability emergency-maintenance notice, 22 October 2026; updated 23 October, 17:30 JST. <a href="https://www.sakura.ad.jp/corporate/information/announcements/2026/10/22/1968226117/">sakura.ad.jp</a></li>
   <li id="ref-3">ValueDesign, PHP vulnerability service notice, 22 October 2026. <a href="https://www.valuedesign.jp/news/info/20261022">valuedesign.jp</a></li>
   <li id="ref-4">SpiderPlus, service-suspension notice, 22 October 2026. <a href="https://spiderplus.co.jp/news/news-release/9804">spiderplus.co.jp</a></li>
   <li id="ref-5">BambooHR, PHP2SHELL incident updates, 21 October 2026. <a href="https://status.bamboohr.com/pages/incident/54f0de009d6f51e7140002b7/6ad897f670d2d304e082ebdb">status.bamboohr.com</a></li>
@@ -86,4 +114,7 @@ The accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg
   <li id="ref-11">Mott et al., Between a rock and a hard(ening) place, 2023; verified repository abstract and bibliographic record. <a href="https://kar.kent.ac.uk/100308/">kent.ac.uk</a></li>
   <li id="ref-12">General Insurance Association of Japan, SME cyber-insurance information; coverage varies by product. <a href="https://www.sonpo.or.jp/sme_insurance/cyber-hoken/">sonpo.or.jp</a></li>
   <li id="ref-13">NCSC, Cyber Essentials: Requirements for IT infrastructure, v3.3, April 2026, pp. 17–18. <a href="https://www.ncsc.gov.uk/files/cyber-essentials-requirements-for-it-infrastructure-v3-3.pdf">ncsc.gov.uk</a></li>
+  <li id="ref-14">UK Parliament, Hansard, “Cyber Security: PHP Vulnerability”, 22 October 2026; ministerial report by Baroness Lloyd of Effra. <a href="https://hansard.parliament.uk/Lords/2026-10-22/debates/14CB4C6D-4E16-4377-8FCF-C2CF77BB5CC0/CyberSecurityPHPVulnerability">hansard.parliament.uk</a></li>
+  <li id="ref-15">Pixiv, completion notice for PHP-vulnerability security maintenance, 22 October 2026; reported maintenance on 21 October, 19:00–23:30 JST. <a href="https://www.pixiv.net/info.php?id=14290">pixiv.net</a></li>
+  <li id="ref-16">Final Fantasy XIV Korean-language game-channel notices, 22–23 October 2026: <a href="https://ff14.game.naver.com/news/notice/view/3151?page=1">new-login restriction</a> and <a href="https://ff14.game.naver.com/news/notice/view/3152?page=1">login recovery with residual settings-backup restriction</a>. Times are as printed in the operator notices; this is not NAVER-portal availability evidence.</li>
 </ol>
