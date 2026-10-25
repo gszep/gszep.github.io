@@ -7,6 +7,7 @@ draft: false
 ---
 import PhpResponseTimeline from '../../../components/interactive/PhpResponseTimeline.astro';
 import EvidenceComparison from '../../../components/interactive/EvidenceComparison.astro';
+import PatchixSnapshot from '../../../components/interactive/PatchixSnapshot.astro';
 
 *Working draft, published for review.*
 
@@ -88,6 +89,17 @@ Safety-critical engineering offers a useful habit: identify unacceptable failure
 
 Suppose AI makes implementing that limited service cheaper. This could help smaller teams adopt practices previously beyond their budget. But implementation is only part of the bill: independent review, functional testing, maintenance, training and rehearsals remain. If code production gets cheaper faster than those activities, assurance becomes the constraint.
 
+A separate remediation project, Patchix, makes that measurement problem concrete. It uses an agent fleet to propose small fixes across packages with bundled certificate stores. In the dashboard snapshot retrieved on 25 October, 78 fleet-associated packages split into 52 with open proposals and 26 with merged changes. A merged change has been accepted into a repository; that does not establish that users have received or installed it.<sup><a href="#ref-17">17</a></sup>
+
+<figure>
+  <PatchixSnapshot lang="en" />
+  <figcaption>Patchix's package-stage table, snapshot retrieved 25 October 2026. These approval-stage counts do not establish deployed protection. The dashboard is dynamic, and package counts differ from unique pull-request counts.<sup><a href="#ref-17">17</a></sup></figcaption>
+</figure>
+
+Its displayed merge-time medians include only pull requests that reached merge. They exclude unresolved proposals and do not control for task difficulty, so they cannot establish a causal speed difference. **Proposal, review, merge, distribution, installation and verified remediation are different outcomes**—just as an available PHP patch and a safely reopened service are different milestones.<sup><a href="#ref-17">17</a></sup>
+
+Agent interactions also need evaluation. SwarmChasers' field reports distinguish a fleet from demonstrated coordination and state where coordination was not established.<sup><a href="#ref-18">18</a></sup> A controlled naming-game experiment found that conventions could emerge through local interactions among language-model agents.<sup><a href="#ref-19">19</a></sup> A field investigation and a laboratory game provide different kinds of evidence: neither establishes a connection to the PHP incident, nor makes agent activity itself a measure of safety.
+
 A meaningful test of that possibility would compare a limited fallback with conventional, tested patch response under the same drills. The outcomes would be useful functions preserved, correctness, recovery time and total human effort, including later maintenance—not lines of code generated. An alternative that weakens security or cannot be maintained would fail that comparison. Drill results would show what worked in those conditions, not how many real attacks were prevented. Neither positive lifetime savings nor a general benefit from minimising dependencies is established here.
 
 ## Reward maintenance that works
@@ -117,4 +129,7 @@ The accompanying [password-protected evidence pack](https://talks.gszep.com/d/dg
   <li id="ref-14">UK Parliament, Hansard, “Cyber Security: PHP Vulnerability”, 22 October 2026; ministerial report by Baroness Lloyd of Effra. <a href="https://hansard.parliament.uk/Lords/2026-10-22/debates/14CB4C6D-4E16-4377-8FCF-C2CF77BB5CC0/CyberSecurityPHPVulnerability">hansard.parliament.uk</a></li>
   <li id="ref-15">Pixiv, completion notice for PHP-vulnerability security maintenance, 22 October 2026; reported maintenance on 21 October, 19:00–23:30 JST. <a href="https://www.pixiv.net/info.php?id=14290">pixiv.net</a></li>
   <li id="ref-16">Final Fantasy XIV Korean-language game-channel notices, 22–23 October 2026: <a href="https://ff14.game.naver.com/news/notice/view/3151?page=1">new-login restriction</a> and <a href="https://ff14.game.naver.com/news/notice/view/3152?page=1">login recovery with residual settings-backup restriction</a>. Times are as printed in the operator notices; this is not NAVER-portal availability evidence.</li>
+  <li id="ref-17">Patchix, <a href="https://antimemetics.institute/patchix">project article and live dashboard</a>, 24 October 2026, snapshot retrieved 25 October; <a href="https://github.com/antimemes/patchix">project README</a>. Project-reported progress, not an independent deployment or correctness audit.</li>
+  <li id="ref-18">SwarmChasers, <a href="https://swarmcha.se/posts/openai-unctad">API-field investigation</a>, 26 September 2026, and <a href="https://swarmcha.se/posts/chinese-agent-fleet-full-report">agent-fleet investigation</a>, 14 October 2026. The reports' attribution and coordination limits are retained; no PHP connection is established.</li>
+  <li id="ref-19">Ariel Flint Ashery, Luca Maria Aiello and Andrea Baronchelli, “Emergent social conventions and collective bias in LLM populations,” <em>Science Advances</em> 11(20), eadu9368, 2025. <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC12077490/">Full paper</a>; DOI 10.1126/sciadv.adu9368. Controlled naming-game experiments, not observations of cyber operations.</li>
 </ol>
