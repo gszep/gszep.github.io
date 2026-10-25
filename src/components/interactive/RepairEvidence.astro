@@ -2,21 +2,21 @@
 interface Props { lang?: 'en' | 'ja' }
 const { lang = 'en' } = Astro.props;
 const text = lang === 'ja' ? {
-  title: '判定基準で結果は変わる',
+  title: 'クラッシュが止まっても、修復完了とは限らない',
   scope: '同じPatchBench評価：C/C++の213課題、11のエージェント構成の平均。',
   crash: '提示されたクラッシュを解消',
   checks: 'セキュリティと動作の検証を通過',
-  installed: '導入先での保護',
-  unmeasured: '測定されていない',
+  installed: '稼働中のシステムの保護',
+  unmeasured: '本研究では評価していない',
   caveat: '検証を通過しても、欠陥がないとは限りません。実運用での保護率ではありません。',
   source: 'PatchBench · プレプリント · §5.2',
 } : {
-  title: 'Changing the finish line changes the result',
+  title: 'A passing crash test is not a validated repair',
   scope: 'Same PatchBench evaluation: 213 C/C++ tasks, averaged over 11 agent configurations.',
   crash: 'Stops the supplied crash',
   checks: 'Passes security + behaviour checks',
-  installed: 'Installed protection',
-  unmeasured: 'Not measured',
+  installed: 'Protection in deployed systems',
+  unmeasured: 'Not evaluated by this study',
   caveat: 'Passing validation can still miss defects. These are not real-world protection rates.',
   source: 'PatchBench · preprint · §5.2',
 };

@@ -2,7 +2,7 @@
 const { lang = 'en' } = Astro.props;
 const ja = lang === 'ja';
 // Displayed report timestamps, not instrumented transition times.
-// BambooHR incident record, 21 October 2026; original notice is reference 5.
+// BambooHR incident record, 21 October 2026; source linked by the article caption.
 const events = [
   { utc: '11:51', offset: 0, en: 'Precautionary interruption reported', ja: '予防的な停止を報告' },
   { utc: '15:03', offset: 192, en: 'Fix applied; testing affected systems', ja: '修正を適用、対象システムを試験中' },
@@ -16,6 +16,7 @@ const x = (offset: number) => left + offset / 370 * width;
 const ticks = [{ t: '12:00', offset: 9 }, { t: '14:00', offset: 129 }, { t: '16:00', offset: 249 }, { t: '18:00', offset: 369 }];
 ---
 <div class="response-timeline">
+  <p class="timeline-heading">{ja ? '修正適用の報告と、再開の報告は別' : 'A reported fix is not reported restoration'}</p>
   <div class="timeline-scroll" tabindex="0" aria-label={ja ? '時系列の図。横にスクロールできます。' : 'Timeline chart; horizontally scrollable on small screens.'}>
     <svg viewBox="0 0 900 390" role="img" aria-labelledby={`php-timeline-title-${lang} php-timeline-desc-${lang}`}>
       <title id={`php-timeline-title-${lang}`}>{ja ? 'BambooHR：修正の適用報告から再開報告まで' : 'BambooHR: from a reported fix to reported restoration'}</title>
@@ -47,6 +48,7 @@ const ticks = [{ t: '12:00', offset: 9 }, { t: '14:00', offset: 129 }, { t: '16:
 </div>
 <style>
   .response-timeline { margin: 1rem 0; color: #24272b; }
+  .response-timeline .timeline-heading { color: var(--post-heading, #1a1a1a); font-family: system-ui, sans-serif; font-size: clamp(20px, 3vw, 26px); font-weight: 650; line-height: 1.3; margin-bottom: 1rem; }
   .timeline-scroll { overflow-x: auto; border: 1px solid #d8dde3; background: #fff; }
   svg { display: block; width: 100%; min-width: 700px; height: auto; font-family: system-ui, sans-serif; }
   .interval { fill: #eaf2ff; }

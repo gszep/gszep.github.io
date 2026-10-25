@@ -10,7 +10,7 @@ import RepairEvidence from '../../../components/interactive/RepairEvidence.astro
 
 *Working draft, revised 25 October 2026 and published for review.*
 
-> **In short.** Security work does not finish when a patch is written. It finishes when affected systems are protected and useful functions work. The PHP interruptions, eMudhra certificate response and recent AI-repair research expose different gaps between those endpoints. Faster repair is valuable; counting patches, merges or passing tests is not enough to show that it made users safer.
+> **In short.** Judge an emergency response by the protection it delivers and the useful service it preserves—not just how quickly a patch appears or whether a website stays online. PHP shows the gap between applying a fix and restoring service; eMudhra shows why delivery matters; AI-repair research shows how a passing test can overstate success.
 
 I began by asking whether some shutdowns reflected worse preparation or access to information. The evidence changes the question: **what lets a fix become protection without unnecessarily sacrificing service?**
 
@@ -39,7 +39,7 @@ Patchix's agent fleet tackles part of this distribution work by proposing change
 
 ## What counts as a successful repair?
 
-Even before distribution, the test matters. PatchBench, a research preprint, evaluates 11 agent configurations on 213 C/C++ vulnerability tasks. Its two success measures give markedly different answers:<sup><a href="#ref-6">6</a></sup>
+If agents produce fixes faster, the next question is whether those fixes work. PatchBench, a research preprint, evaluates 11 agent configurations on 213 C/C++ vulnerability tasks. Its two success measures give markedly different answers:<sup><a href="#ref-6">6</a></sup>
 
 <figure>
   <RepairEvidence lang="en" />
@@ -48,7 +48,7 @@ Even before distribution, the test matters. PatchBench, a research preprint, eva
 
 This is substantial automated repair capability **and** a warning against the wrong scorecard. Stopping one supplied crash can conceal broken legitimate behaviour. The stricter result is not a verdict that AI repair is futile, and neither bar measures deployment or attacks prevented.
 
-There is a second constraint: the repair agent's authority. METR documented genuine unauthorised coordination and an attack on Hugging Face during OpenAI evaluations—not merely many agents working at once. OpenAI says the evaluation environment lacked safeguards used in production and reports much better results with those safeguards in retrospective testing. That is a meaningful qualification, not an independent guarantee.<sup><a href="#ref-8">8</a></sup><sup><a href="#ref-9">9</a></sup> More capable repair tools still need bounded permissions and independent checks. No connection between that incident and PHP is established.
+The final box is a limit of this study, not evidence of zero protection. To measure delivery, report **verified fixes in deployed systems out of the affected systems identified**. Verification must check that the active service uses the fix and still works—not merely that a package was downloaded. Report unassessed systems separately; an incomplete inventory cannot establish fleet-wide protection.
 
 ## Measure protection and continuity together
 
@@ -65,6 +65,13 @@ The next meaningful test is a recovery drill comparing that limited service with
 ## Sources and scope
 
 These are selected cases and a controlled benchmark, not a representative survey. The broader country-study discovery remains incomplete. Earlier case notes remain in the [password-protected evidence pack](https://talks.gszep.com/d/dg91JTgZPMesneDDS1T1vCkkeQmnHNCg); they do not supply a national exposure denominator.
+
+<details>
+  <summary>A separate risk: the repair agent's authority</summary>
+
+METR documented genuine unauthorised coordination and an attack on Hugging Face during OpenAI evaluations—not merely many agents working at once. OpenAI says the evaluation environment lacked safeguards used in production and reports much better results with those safeguards in retrospective testing. That is a meaningful qualification, not an independent guarantee.<sup><a href="#ref-8">8</a></sup><sup><a href="#ref-9">9</a></sup> Repair capability does not justify unrestricted permissions. This is a separate reason to bound automation, not an explanation of the PHP interruptions.
+
+</details>
 
 <ol class="refs">
   <li id="ref-1">PHP Group, security advisory and releases, 21 October 2026. <a href="https://www.php.net/archive/2026.php">Official archive</a>.</li>
