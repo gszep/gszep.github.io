@@ -1,0 +1,159 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const text = lang === 'ja' ? {
+  title: '判定基準で結果は変わる',
+  scope: '同じPatchBench評価：C/C++の213課題、11のエージェント構成の平均。',
+  crash: '提示されたクラッシュを解消',
+  checks: 'セキュリティと動作の検証を通過',
+  installed: '導入先での保護',
+  unmeasured: '測定されていない',
+  caveat: '検証を通過しても、欠陥がないとは限りません。実運用での保護率ではありません。',
+  source: 'PatchBench · プレプリント · §5.2',
+} : {
+  title: 'Changing the finish line changes the result',
+  scope: 'Same PatchBench evaluation: 213 C/C++ tasks, averaged over 11 agent configurations.',
+  crash: 'Stops the supplied crash',
+  checks: 'Passes security + behaviour checks',
+  installed: 'Installed protection',
+  unmeasured: 'Not measured',
+  caveat: 'Passing validation can still miss defects. These are not real-world protection rates.',
+  source: 'PatchBench · preprint · §5.2',
+};
+const metrics = [
+  { label: text.crash, value: 83.1, kind: 'crash' },
+  { label: text.checks, value: 45.3, kind: 'checks' },
+];
+---
+
+<div class="repair-evidence" lang={lang} role="group" aria-label={text.title}>
+  <p class="evidence-heading">{text.title}</p>
+  <p class="evidence-scope">{text.scope}</p>
+  <dl class="evidence-metrics">
+    {metrics.map(metric => (
+      <div class={`metric ${metric.kind}`}>
+        <dt>{metric.label}</dt>
+        <dd>
+          <span class="metric-value">{metric.value}<span class="percent">%</span></span>
+          <div class="scale" aria-hidden="true">
+            <div class="track">
+              <span class="fill" style={`width: ${metric.value}%`}></span>
+            </div>
+            <div class="ticks"><span>0</span><span>50</span><span>100%</span></div>
+          </div>
+        </dd>
+      </div>
+    ))}
+  </dl>
+  <dl class="installed">
+    <dt>{text.installed}</dt>
+    <dd>{text.unmeasured}</dd>
+  </dl>
+  <p class="evidence-note">{text.caveat}</p>
+  <a class="evidence-source" href="#ref-6">{text.source} [6]</a>
+</div>
+
+<style>
+  .repair-evidence {
+    --evidence-ink: var(--post-heading, #1a1a1a);
+    --evidence-muted: var(--post-caption, #737373);
+    --evidence-rule: var(--post-separator, #e5e5e5);
+    --evidence-accent: #c65b4b;
+    box-sizing: border-box;
+    padding: clamp(20px, 4vw, 40px);
+    border-block: 1px solid var(--evidence-rule);
+    color: var(--evidence-ink);
+    font-family: ui-sans-serif, system-ui, sans-serif;
+    text-align: left;
+    line-height: 1.5;
+  }
+  .repair-evidence .evidence-heading {
+    max-width: none;
+    margin: 0;
+    color: var(--evidence-ink);
+    font-size: clamp(22px, 3vw, 30px);
+    font-weight: 650;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    text-align: left;
+    text-wrap: balance;
+  }
+  .repair-evidence .evidence-scope {
+    margin: 12px 0 28px;
+    color: var(--evidence-muted);
+    font-size: 14px;
+  }
+  .evidence-metrics { margin: 0; }
+  .metric {
+    display: grid;
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.4fr);
+    align-items: center;
+    gap: 24px;
+    padding-block: 16px;
+  }
+  .metric + .metric { border-top: 1px solid var(--evidence-rule); }
+  .metric dt { font-size: 17px; font-weight: 600; text-wrap: balance; }
+  .metric dd { min-width: 0; margin: 0; }
+  .metric-value {
+    display: block;
+    margin-bottom: 10px;
+    font-size: 40px;
+    font-weight: 650;
+    line-height: 1;
+    letter-spacing: -0.04em;
+    font-variant-numeric: tabular-nums;
+  }
+  .percent { margin-left: 2px; font-size: 24px; }
+  .checks .metric-value { color: var(--evidence-accent); }
+  .track {
+    position: relative;
+    height: 20px;
+    background: var(--evidence-rule);
+  }
+  .track::after {
+    content: '';
+    position: absolute;
+    inset: -4px 0;
+    border-inline: 1px solid var(--evidence-muted);
+    pointer-events: none;
+  }
+  .fill { display: block; height: 100%; background: currentColor; }
+  .checks .fill { background: var(--evidence-accent); }
+  .ticks {
+    display: flex;
+    justify-content: space-between;
+    position: relative;
+    margin-top: 7px;
+    color: var(--evidence-muted);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .ticks span:nth-child(2) { position: absolute; left: 50%; transform: translateX(-50%); }
+  .installed {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 8px 24px;
+    margin: 24px 0 16px;
+    padding: 16px;
+    border: 1px dashed var(--evidence-muted);
+    font-size: 16px;
+  }
+  .installed dt { font-weight: 600; }
+  .installed dd { margin: 0; }
+  .repair-evidence .evidence-note { margin: 0 0 8px; font-size: 14px; }
+  .evidence-source { font-size: 14px; text-underline-offset: 3px; }
+  :global(.dark) .repair-evidence,
+  :global([data-theme='dark']) .repair-evidence {
+    --evidence-ink: #f5f5f5;
+    --evidence-muted: #a3a3a3;
+    --evidence-rule: #404040;
+    --evidence-accent: #ed9282;
+  }
+  @media (max-width: 540px) {
+    .metric { grid-template-columns: minmax(0, 1fr); gap: 12px; padding-block: 20px; }
+    .metric dt { font-size: 16px; }
+    .metric-value { font-size: 36px; }
+    .installed { flex-direction: column; }
+  }
+</style>
