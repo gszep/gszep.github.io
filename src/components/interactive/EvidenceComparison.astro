@@ -1,0 +1,22 @@
+---
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+---
+<div class="evidence-comparison">
+  <p class="table-hint">{ja ? '横にスクロールして表全体をご覧ください。' : 'Scroll sideways to view all columns.'}</p>
+  <div class="table-scroll" tabindex="0" role="region" aria-label={ja ? '対応例の比較表' : 'Comparison of response evidence'}>
+    <slot />
+  </div>
+</div>
+<style>
+  .evidence-comparison { margin: 1.5rem 0; }
+  .table-scroll { overflow-x: auto; border: 1px solid var(--post-separator); }
+  .table-scroll:focus-visible { outline: 2px solid var(--post-link); outline-offset: 3px; }
+  .table-scroll :global(table) { width: 100%; min-width: 38rem; border-collapse: collapse; table-layout: fixed; font-size: 1rem; line-height: 1.5; }
+  .table-scroll :global(th), .table-scroll :global(td) { padding: .85rem; text-align: left; vertical-align: top; overflow-wrap: break-word; border-bottom: 1px solid var(--post-separator); }
+  .table-scroll :global(th) { color: var(--post-heading); background: var(--post-aside-bg); }
+  .table-scroll :global(tbody tr:last-child td) { border-bottom: 0; }
+  .table-hint { display: none; margin: 0 0 .5rem; color: var(--post-caption); font-size: .875rem; }
+  @media (max-width: 640px) { .table-hint { display: block; } }
+  @media print { .table-scroll { overflow: visible; } .table-scroll :global(table) { min-width: 0; } .table-hint { display: none; } }
+</style>
