@@ -1,0 +1,23 @@
+---
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+---
+<div class="patchix-snapshot">
+  <p class="snapshot-title">{ja ? <>エージェント群の修正提案に対応する<br />78パッケージ</> : '78 packages associated with fleet proposals'}</p>
+  <div class="snapshot-bar" role="img" aria-label={ja ? '52パッケージは提案が審査中、26パッケージは修正が取り込み済み。利用者への適用数ではありません。' : '52 packages have open proposals; 26 have merged changes. These are not counts of user installations.'}>
+    <div class="snapshot-open"><strong>52</strong><span>{ja ? '提案が審査中' : 'Open proposals'}</span></div>
+    <div class="snapshot-merged"><strong>26</strong><span>{ja ? '取り込み' : 'Merged'}<br />{ja ? '済み' : 'changes'}</span></div>
+  </div>
+  <p class="snapshot-limit">{ja ? '単位はパッケージです。修正依頼の件数や、利用者の環境への適用数ではありません。' : 'Unit: packages—not unique pull requests or deployed installations.'}</p>
+</div>
+<style>
+  .patchix-snapshot { border: 1px solid var(--post-separator); padding: 1rem; }
+  .snapshot-title { margin: 0 0 .75rem; font-weight: 650; font-size: 1rem; color: var(--post-heading); }
+  .snapshot-bar { display: flex; min-height: 6rem; border: 1px solid var(--post-separator); }
+  .snapshot-bar > div { box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: .65rem; text-align: center; line-height: 1.35; min-width: 0; }
+  .snapshot-open { flex: 0 0 66.666667%; background: var(--post-aside-bg); color: var(--post-text); }
+  .snapshot-merged { flex: 0 0 33.333333%; background: var(--post-heading); color: var(--post-pre-bg); }
+  .snapshot-bar strong { font-size: 1.6rem; color: inherit; }
+  .snapshot-bar span { font-size: .9rem; }
+  .snapshot-limit { margin: .75rem 0 0; font-size: .85rem; line-height: 1.45; color: var(--post-caption); }
+</style>
