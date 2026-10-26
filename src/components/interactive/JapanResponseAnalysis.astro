@@ -1,0 +1,105 @@
+---
+import { japanResponses, japanReleaseReference } from './php-japan-evidence';
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+const t = ja ? {
+  title: 'pixivは、あすけんより早く止め、早く再開した',
+  subtitle: '日本の3事例を、PHPの公開予定時刻に合わせて再構成',
+  schedule: '公開予定 23:00', before: '公開予定より前', after: '公開予定より後',
+  day: '10月21日 → 22日', clock: '表示はJSTに整列*',
+  actual: '実線：事業者が報告した停止期間', point: '◇：開始のみ、継続時間不明。○：開始が概時刻',
+  pixiv: '19:00 → 23:30 · 4時間30分', asken: '22:50頃 → 翌9:25 · 約10時間35分',
+  sakura: '22:30開始。全機能の復旧時刻は特定できない。',
+  limits: '*pixivはJSTと明記。あすけん・さくらの時計はJSTと仮定して配置しています。23:00は公表された予定であり、実際の配布時刻や各社の入手時刻ではありません。',
+  data: '元の記録と計算を見る', name: '事例', start: '開始', end: '終了', lead: '予定時刻まで',
+  unknown: '特定できない', min: '分前', approx: '約', source: '出典',
+} : {
+  title: 'Pixiv closed earlier—and reopened earlier—than Asken',
+  subtitle: 'Our reconstruction of three Japanese cases around PHP’s scheduled release',
+  schedule: 'Scheduled release · 23:00', before: 'Before the scheduled release', after: 'After the scheduled release',
+  day: '21 → 22 October', clock: 'JST-aligned display*',
+  actual: 'Solid: operator-reported interruption', point: '◇: start only, duration unknown. ○: approximate start',
+  pixiv: '19:00 → 23:30 · 4h 30m', asken: '≈22:50 → next day 09:25 · ≈10h 35m',
+  sakura: '22:30 start. Full-function recovery time not established.',
+  limits: '*pixiv explicitly states JST. Asken and Sakura clocks are assumed to be JST for alignment. The 23:00 marker is the announced schedule—not observed distribution or operator receipt time.',
+  data: 'Inspect source records and arithmetic', name: 'Case', start: 'Start', end: 'End', lead: 'Before schedule',
+  unknown: 'Not established', min: ' min', approx: '≈', source: 'Source',
+};
+const left = 125, width = 690;
+const x = (minute: number) => left + minute / 960 * width;
+const labels = [t.pixiv, t.asken, t.sakura];
+---
+<div class="japan-analysis" lang={lang}>
+  <p class="japan-title">{t.title}</p>
+  <p class="japan-subtitle">{t.subtitle}</p>
+  <div class="japan-chart" tabindex="0" role="region" aria-label={ja ? '横スクロール可能な対応時系列' : 'Response timeline, horizontally scrollable'}>
+    <svg viewBox="0 0 880 370" role="img" aria-labelledby={`japan-title-${lang} japan-desc-${lang}`}>
+      <title id={`japan-title-${lang}`}>{t.title}</title>
+      <desc id={`japan-desc-${lang}`}>{labels.join('. ')} {t.limits}</desc>
+      <rect x={left} y="58" width={x(300)-left} height="252" class="before" />
+      <rect x={x(300)} y="58" width={815-x(300)} height="252" class="after" />
+      <text x={left} y="20" class="phase">{t.before}</text>
+      <text x={x(300)+18} y="20" class="phase">{t.after}</text>
+      <line x1={x(300)} x2={x(300)} y1="35" y2="310" class="release" />
+      <text x={x(300)+8} y="46" class="release-label">{t.schedule}</text>
+      {[0,180,360,540,720,900,960].map(minute => <>
+        <line x1={x(minute)} x2={x(minute)} y1="58" y2="310" class="grid" />
+        <text x={x(minute)} y="334" text-anchor="middle" class="tick">{`${Math.floor((18 + minute/60)%24)}`.padStart(2,'0')}:00</text>
+      </>)}
+      {japanResponses.map((row,i) => <>
+        <text x="8" y={103+i*82} class="case">{row.name}{!row.zoneExplicit && '*'}</text>
+        {row.end !== null ? <>
+          <rect x={x(row.start)} y={84+i*82} width={x(row.end)-x(row.start)} height="23" class:list={['window',row.id]} />
+          <circle cx={x(row.start)} cy={95.5+i*82} r="5" class:list={['start',{approx:row.approximate}]} />
+          <circle cx={x(row.end)} cy={95.5+i*82} r="4" class="end" />
+        </> : <path d={`M ${x(row.start)} ${89.5+i*82} l 6 6 l -6 6 l -6 -6 Z`} class="start approx" />}
+        <text x={left+8} y={133+i*82} class="detail">{labels[i]}</text>
+      </>)}
+      <text x={left} y="358" class="tick">{t.day}</text>
+      <text x="815" y="358" text-anchor="end" class="tick">{t.clock}</text>
+    </svg>
+  </div>
+  <p class="japan-key">{t.actual} · {t.point}</p>
+  <p class="japan-limits">{t.limits}</p>
+  <details>
+    <summary>{t.data}</summary>
+    <div class="data-scroll"><table>
+      <thead><tr><th>{t.name}</th><th>{t.start}</th><th>{t.end}</th><th>{t.lead}</th></tr></thead>
+      <tbody>{japanResponses.map(row => <tr>
+        <th scope="row"><a href={`#ref-${row.reference}`}>{row.name} [{row.reference}]</a></th>
+        <td>{row.approximate ? t.approx : ''}{row.id === 'pixiv' ? '21 Oct 19:00' : row.id === 'asken' ? '21 Oct 22:50*' : '21 Oct 22:30*'}</td>
+        <td>{row.id === 'pixiv' ? '21 Oct 23:30' : row.id === 'asken' ? '22 Oct 09:25*' : t.unknown}</td>
+        <td>{row.approximate ? t.approx : ''}{japanReleaseReference.minute-row.start}{t.min}</td>
+      </tr>)}</tbody>
+    </table></div>
+  </details>
+</div>
+<style>
+  .japan-analysis { text-align:left; font-family:system-ui,sans-serif; color:var(--post-text); min-width:0; }
+  .japan-analysis .japan-title { font-size:clamp(21px,3vw,28px); font-weight:700; line-height:1.2; color:var(--post-heading); margin:0 0 10px; text-wrap:balance; }
+  .japan-analysis .japan-subtitle { font-size:14px; margin:0 0 16px; color:var(--post-caption); }
+  .japan-chart, .data-scroll { overflow-x:auto; max-width:100%; }
+  .japan-chart:focus-visible { outline:2px solid var(--post-link); outline-offset:3px; }
+  svg { display:block; width:100%; min-width:760px; }
+  .before { fill:var(--post-aside-bg,#f5f5f5); }
+  .after { fill:color-mix(in srgb,var(--post-link) 5%,transparent); }
+  text { fill:var(--post-text); font-family:system-ui,sans-serif; }
+  .case { font-size:17px; font-weight:650; }
+  .detail { font-size:14px; }
+  .phase, .release-label { font-size:13px; font-weight:600; }
+  .tick { font-size:12px; fill:var(--post-caption); }
+  .grid { stroke:var(--post-separator); stroke-width:1; }
+  .release { stroke:var(--post-heading); stroke-width:1.5; stroke-dasharray:5 4; }
+  .window { fill:var(--post-link); opacity:.8; }
+  .window.asken { fill:#b85e47; }
+  .start, .end { fill:var(--post-heading); }
+  .start.approx { fill:var(--post-pre-bg,#fff); stroke:var(--post-heading); stroke-width:2; }
+  .japan-analysis .japan-key { font-size:12px; margin:12px 0 6px; }
+  .japan-analysis .japan-limits { font-size:12px; color:var(--post-caption); margin:0 0 10px; }
+  details { font-size:13px; }
+  summary { cursor:pointer; }
+  table { width:100%; min-width:520px; border-collapse:collapse; }
+  th,td { text-align:left; padding:8px; border-bottom:1px solid var(--post-separator); font-size:13px; }
+  @media print { svg { min-width:0; } .japan-chart,.data-scroll { overflow:visible; } }
+</style>

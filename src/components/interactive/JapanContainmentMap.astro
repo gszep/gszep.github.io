@@ -1,0 +1,48 @@
+---
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+const ja = lang === 'ja';
+const rows = ja ? [
+  { name:'Asken', type:'サービス群全体', stopped:'アプリ・Web・法人管理画面', preserved:'列挙された対象の全機能が停止', remaining:'9:25に全対象サービス再開と報告', ref:3 },
+  { name:'pixiv', type:'アカウントを共有する範囲', stopped:'pixiv・百科事典・FANBOX', preserved:'他サービスのpixivアカウント利用機能にも影響', remaining:'「3サービス」だけでは依存先の影響を数え切れない', ref:2 },
+  { name:'Sakura', type:'機能と管理責任の境界', stopped:'DBアプライアンスのWeb管理UI', preserved:'互換SQLクライアントが代替手段。DBクラスタは対象外', remaining:'VPS提供部分は影響なし。ただし利用者側PHPは別途更新が必要', ref:5 },
+] : [
+  { name:'Asken', type:'Declared service family', stopped:'Apps · website · corporate console', preserved:'All functions in the declared scope unavailable', remaining:'All affected services reported restored at 09:25', ref:3 },
+  { name:'pixiv', type:'Shared-account boundary', stopped:'pixiv · Encyclopedia · FANBOX', preserved:'Some pixiv-account features in other services also affected', remaining:'Counting three products misses dependent functions elsewhere', ref:2 },
+  { name:'Sakura', type:'Interface + responsibility boundary', stopped:'Database-appliance web administration UI', preserved:'Compatible SQL clients offered as an alternative; DB Cluster excluded', remaining:'VPS provider service unaffected; customer-run PHP still needs separate action', ref:5 },
+];
+---
+<div class="containment-map" lang={lang}>
+  <p class="map-title">{ja ? '同じ「停止」でも、切り離した範囲が違う' : 'A shutdown count hides the boundary that was isolated'}</p>
+  <p class="map-intro">{ja ? '各社の通知を、停止範囲・依存関係・管理責任で独自に分類。構成図や稼働率の実測ではありません。' : 'Our classification of the notices by scope, dependency and responsibility—not a measured architecture or uptime map.'}</p>
+  <div class="map-head" aria-hidden="true"><span>{ja ? '事例・分類' : 'Case / classification'}</span><span>{ja ? '停止した対象' : 'What was stopped'}</span><span>{ja ? '残る区別' : 'What the headline misses'}</span></div>
+  {rows.map(row => <section class="map-row" aria-label={row.name}>
+    <div class="map-case"><strong>{row.name}</strong><span>{row.type}</span><a href={`#ref-${row.ref}`}>{ja ? '出典' : 'Source'} [{row.ref}]</a></div>
+    <div class="map-stop"><span class="mobile-label">{ja ? '停止した対象' : 'Stopped'}</span>{row.stopped}</div>
+    <div class="map-detail"><p>{row.preserved}</p><p class="map-remaining">{row.remaining}{row.name==='Sakura' && <sup><a href="#ref-4">4</a></sup>}</p></div>
+  </section>)}
+  <p class="map-note">{ja ? 'さくらの「対応完了」とWeb UIの継続停止は両立します。代替手段の案内は、利用者の切替成功や無停止を証明しません。' : 'Sakura’s “response complete” can coexist with a suspended web UI. Offering an alternative does not establish successful customer switching or uninterrupted service.'}</p>
+</div>
+<style>
+  .containment-map { font:14px/1.45 system-ui,sans-serif; text-align:left; color:var(--post-text); }
+  .containment-map .map-title { font-size:clamp(21px,3vw,27px); font-weight:700; line-height:1.2; margin:0 0 10px; color:var(--post-heading); text-wrap:balance; }
+  .containment-map .map-intro { margin:0 0 16px; color:var(--post-caption); font-size:13px; }
+  .map-head,.map-row { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) minmax(0,2fr); gap:20px; }
+  .map-head { background:var(--post-aside-bg); padding:10px; font-size:12px; font-weight:650; }
+  .map-row { padding:18px 10px; border-bottom:1px solid var(--post-separator); }
+  .map-case strong { display:block; font-size:17px; color:var(--post-heading); }
+  .map-case span { display:block; margin:4px 0; font-size:12px; }
+  .map-case a { font-size:12px; }
+  .map-stop { border-inline-start:3px solid #bd6751; padding-inline-start:10px; }
+  .map-detail p { margin:0; font-size:14px; }
+  .map-detail .map-remaining { margin-top:8px; color:var(--post-caption); font-size:13px; }
+  .containment-map .map-note { margin:14px 0 0; font-size:13px; }
+  .mobile-label { display:none; }
+  @media(max-width:600px) {
+    .map-head { display:none; }
+    .map-row { grid-template-columns:minmax(0,1fr); gap:10px; }
+    .map-case { display:grid; grid-template-columns:90px minmax(0,1fr); gap:2px 8px; align-items:center; }
+    .map-case a { grid-column:2; }
+    .mobile-label { display:block; color:var(--post-caption); font-size:11px; margin-bottom:3px; }
+  }
+</style>
