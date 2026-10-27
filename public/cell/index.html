@@ -1,8 +1,17 @@
 <!doctype html>
 <html lang="en">
   <head>
+    <!-- Published from webgpu_collab_stringed_entities d8b43c6. -->
+    <script>
+      // The public entry point opens the tested preset; explicit query links
+      // continue to select their own controls and comparison settings.
+      if (!location.search) {
+        history.replaceState(null, "", "?ui=contact-recovery-d8b43c6&paused=1&seed=42&gActinField=1&areaConservation=1&membraneRestLength=0.3333333333333333&myosinStrength=0.05&membraneCoupling=0.05&polarityMode=1&rearTurnover=0.01&tetherTurnover=1&motorRearBias=1&frontAlignment=0.8&colourAge=1");
+      }
+    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" href="data:," />
     <title>String Entities</title>
     <style>
       /* canvas { causes the page to scroll on mobile devices
@@ -13,30 +22,168 @@
         margin: 0;
         overflow: hidden;
       }
-      #gpuTime {
-        position: fixed;
-        top: 10px;
-        left: 10px;
-        color: white;
-        font-family: monospace;
-        background-color: rgba(0, 0, 0, 0.7);
-        padding: 5px;
-        border-radius: 3px;
-      }
       #fpsCounter {
         position: fixed;
-        left: 10px;
-        top: 40px;
+        right: 10px;
+        top: 35px;
         color: white;
         font-family: monospace;
         background-color: rgba(0, 0, 0, 0.7);
         padding: 5px;
         border-radius: 3px;
+        z-index: 1000;
+      }
+      #main-canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+      }
+      #demo-panel {
+        position: fixed;
+        left: 10px;
+        top: 10px;
+        z-index: 1000;
+        padding: 12px;
+        max-width: min(600px, calc(100vw - 44px));
+        color: #d5e6e3;
+        background: rgba(8, 18, 24, 0.88);
+        font: 12px monospace;
+        border: 1px solid #35505b;
+        border-radius: 8px;
+      }
+      #demo-panel h1 {
+        margin: 0 0 7px;
+        font: 600 16px system-ui;
+        color: white;
+      }
+      #demo-panel p {
+        margin: 5px 0;
+        line-height: 1.5;
+      }
+      #demo-panel nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        margin: 10px 0;
+      }
+      #demo-panel a,
+      #demo-panel button {
+        color: #b8f8e5;
+        background: #16313c;
+        padding: 6px 8px;
+        border: 1px solid #35505b;
+        border-radius: 4px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+      #demo-panel a[aria-current="true"] {
+        border-color: #89f9bd;
+        background: #245444;
+      }
+      #demo-panel small a {
+        padding: 0;
+        border: 0;
+        background: none;
+      }
+      #cue-marker {
+        position: fixed;
+        pointer-events: none;
+        width: 22px;
+        height: 22px;
+        transform: translate(-50%, -50%);
+        border: 2px dashed #ffb333;
+        border-radius: 50%;
+        z-index: 900;
+      }
+      .live-controls {
+        display: grid;
+        grid-template-columns: auto 1fr 3em;
+        gap: 6px 10px;
+        align-items: center;
+        margin: 8px 0;
+      }
+      .live-controls input {
+        min-width: 70px;
+        width: 100%;
+        accent-color: #81e9bb;
       }
     </style>
-  <script defer src="runtime.bundle.js"></script><script defer src="index.bundle.js"></script></head>
+  <script defer src="runtime.bundle.js?e91644543f2ac76cfe6c"></script><script defer src="index.bundle.js?e91644543f2ac76cfe6c"></script></head>
   <body>
-    <div id="gpuTime">GPU Time: -- ms</div>
     <div id="fpsCounter">FPS: --</div>
+    <div id="cue-marker" hidden aria-hidden="true"></div>
+    <section id="demo-panel" aria-label="Explicit filament experiment controls">
+      <h1>Explicit filaments · actomyosin experiment</h1>
+      <p>
+        <label
+          >Initial circumference
+          <select id="cell-size">
+            <option value="0.6666666666666666">100% (original)</option>
+            <option value="0.5">75%</option>
+            <option value="0.3333333333333333">50%</option>
+          </select></label
+        >
+        <a
+          id="compact-demo"
+          href="?paused=1&seed=42&gActinField=1&areaConservation=1&membraneRestLength=0.3333333333333333&actinCount=65536&myosinStrength=0.05&membraneCoupling=0.05&cortexPolymerization=0"
+          >Compact contained preset</a
+        >
+      </p>
+      <nav aria-label="Matched mechanism presets">
+        <a
+          id="renewal-demo"
+          href="?paused=1&seed=42&gActinField=1&areaConservation=1&membraneRestLength=0.3333333333333333&myosinStrength=0.05&membraneCoupling=0.05&polarityMode=1&rearTurnover=0.01&tetherTurnover=1&motorRearBias=1&frontAlignment=0.8&colourAge=1"
+          >Polarized renewal</a
+        >
+        <a data-case="passive" href="?seed=42">Passive</a>
+        <a data-case="stiff" href="?seed=42&membraneStiffness=12">Stiffer membrane</a>
+        <a data-case="motors" href="?seed=42&myosinStrength=0.05">Motors</a>
+        <a data-case="tethers" href="?seed=42&membraneCoupling=0.05">Tethers</a>
+        <a data-case="coupled" href="?seed=42&myosinStrength=0.05&membraneCoupling=0.05">Motors + tethers</a>
+      </nav>
+      <p id="mechanical-status" aria-live="polite">Initializing WebGPU…</p>
+      <p id="enclosure-status"></p>
+      <p id="cue-status"></p>
+      <button id="pause-demo" type="button">Pause</button>
+      <button id="step-demo" type="button">Step · N</button>
+      <button id="clear-cue" type="button">Clear cue · Esc</button>
+      <button id="reset-demo" type="button">Replay seed</button>
+      <details>
+        <summary>Live controls · Space pauses · R resets</summary>
+        <div class="live-controls">
+          <label for="live-lamellipodiumStrength">Actin drive</label><input id="live-lamellipodiumStrength" type="range" min="0" max="2" step="0.01" /><output
+            id="value-lamellipodiumStrength"
+          ></output>
+          <label for="live-myosinStrength">Contraction</label><input id="live-myosinStrength" type="range" min="0" max="0.2" step="0.005" /><output
+            id="value-myosinStrength"
+          ></output>
+          <label for="live-membraneCoupling">Membrane coupling</label><input id="live-membraneCoupling" type="range" min="0" max="0.2" step="0.005" /><output
+            id="value-membraneCoupling"
+          ></output>
+        </div>
+        <label><input id="adaptive-frames" type="checkbox" checked /> Adaptive frame budget (fixed physical steps)</label>
+      </details>
+      <p><small>Coarse motor-work model · prescribed front polarity</small></p>
+      <details>
+        <summary>Mechanism and cortex controls</summary>
+        <p>
+          <label><input id="gActinField" type="checkbox" /> Well-mixed G-actin + filament containment</label>
+        </p>
+        <p>
+          <label><input id="areaConservation" type="checkbox" /> Preserve area (2D volume constraint)</label>
+        </p>
+        <p><span style="color: #ff40d9">Pink: motor links</span> · <span style="color: #33d9ff">Cyan: membrane tethers</span></p>
+        <p>Bright chains: F-actin. Blue: well-mixed compartment (not a density scale). Orange dots appear only in legacy particle mode.</p>
+        <p>Age view: yellow is young actin; red is mature actin. Ages are measured in fixed simulation steps.</p>
+        <p>
+          <label><input id="cortex-toggle" type="checkbox" /> Basal cortical assembly (separate hypothesis)</label>
+        </p>
+        <p>
+          <small><a href="migration/">Effective-field reference demo</a></small>
+        </p>
+      </details>
+    </section>
   </body>
 </html>
