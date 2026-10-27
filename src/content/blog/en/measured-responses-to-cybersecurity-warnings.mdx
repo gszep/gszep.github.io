@@ -7,10 +7,11 @@ draft: false
 ---
 import JapanResponseAnalysis from '../../../components/interactive/JapanResponseAnalysis.astro';
 import JapanContainmentMap from '../../../components/interactive/JapanContainmentMap.astro';
+import PhpResponseTimeline from '../../../components/interactive/PhpResponseTimeline.astro';
 
-*Updated 26 October 2026. Operator records checked on that date; historical notices are not live service-status reports.*
+*Updated 27 October 2026. The warning-aligned records were rechecked on that date, through the selected restoration on 26 October. Earlier supporting sources retain their stated dates; these notices are not live service-status reports.*
 
-> **In short.** The Japanese cases do not describe one uniform shutdown response. Pixiv isolated services early and reopened the same night; Asken started near the scheduled release and returned the next morning. Sakura separated functions and responsibilities: completing its own remediation did not reopen every interface or patch customers' PHP. The useful comparison is therefore **when isolation began, what it isolated, and what remained unresolved**—not simply whether a company went offline.
+> **In short.** The Japanese cases do not describe one uniform shutdown response. Pixiv isolated services early and reopened the same night; Asken started near the scheduled release and returned the next morning. Sakura separated functions and responsibilities. The Korean FFXIV service adds a clear example: login returned more than three days before settings backup. **Recovery is a function-specific endpoint**, not a single company-wide clock. Compare when isolation began, what it isolated, and what remained unresolved.
 
 ## Japan faced an overnight decision—not a single response
 
@@ -42,6 +43,15 @@ This changes the practical question. Instead of asking whether Japanese operator
 
 ## Benchmark the same outcome across countries
 
+Aligning these responses to PHP's **public maintainer advance warning**, at 19:33:47 UTC on 20 October, reveals another distinction. The warning is a documented reference—not the first-ever disclosure, full technical disclosure or patch availability. The scheduled release follows about 18h 26m later.<sup><a href="#ref-1">1</a></sup>
+
+<figure>
+  <PhpResponseTimeline lang="en" />
+  <figcaption>Reported restrictions and recovery checkpoints after PHP's public advance warning. Solid intervals describe named functions; dotted markers describe reports, not measured downtime. Japanese and Korean clocks are assumed local where notices omit a timezone. The separate maintenance panel compares plans with reported completed windows, not normal downtime.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-9">9</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup></figcaption>
+</figure>
+
+**The same incident can have more than one recovery time.** Korean FFXIV's new-login restriction lasted 25h 25m, but settings backup remained restricted for another **3d 15h 18m**, until 26 October 18:08 (assumed KST). Those are two functions of one response, not independent outages or whole-game downtime; the notices attribute the work to PHP without naming exact CVEs. Two earlier game/launcher maintenance pairs provide context: 4h planned versus 3h 25m reported completed, and 5h versus 4h 25m. Their different scope rules out a like-for-like downtime ratio.<sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup>
+
 The first useful Japan–Korea pair is **managed hosting: Sakura and Cafe24**, not their corporate websites. Cafe24's work notice names the same two CVEs and plans staged official patching with **1–10 minutes of downtime per server**. Its 23 October follow-up reports patch application completed for PHP 7.4 and newer, but does not measure the interruption actually experienced by each customer.<sup><a href="#ref-11">11</a></sup>
 
 <div class="hosting-benchmark" role="region" aria-label="Sakura and Cafe24 managed-hosting comparison" tabIndex={0} style="overflow-x:auto">
@@ -56,7 +66,7 @@ The first useful Japan–Korea pair is **managed hosting: Sakura and Cafe24**, n
 
 Sources: service-specific sections of the two operators' notices.<sup><a href="#ref-4">4</a></sup><sup><a href="#ref-11">11</a></sup> **The established similarity is the responsibility boundary; the disclosed rollout detail differs.** Neither “Sakura patched” nor “Cafe24 patched” covers every customer's software. The missing benchmark is actual interruption and functional validation for comparable managed-hosting configurations—not another count of company shutdown notices.
 
-For application access, BambooHR is a more useful comparator for Asken/pixiv. It reports an applied fix at 15:03 UTC and restored access at 18:01: a 178-minute **reporting gap**, not the same measure as Pixiv's stated offline window. A UK minister also reported 32 government services unavailable and four partly unavailable despite advance warning.<sup><a href="#ref-8">8</a></sup><sup><a href="#ref-9">9</a></sup> These records challenge a uniquely Japanese shutdown story, but cannot rank national response speed. The traffic-ranked frame is not a census of affected PHP installations; discovery remains incomplete. Unknown outcomes are not “no downtime.”
+BambooHR makes the interval between patching and validation visible. It reports an applied fix at 15:03 UTC and restored access at 18:01: a 178-minute **reporting gap**, not measured testing time. Its 11:51–18:01 report span is not an outage duration either; an undated edit prevents a reliable onset. A UK minister also reported 32 government services unavailable and four partly unavailable despite advance warning.<sup><a href="#ref-8">8</a></sup><sup><a href="#ref-9">9</a></sup> These records challenge a uniquely Japanese shutdown story, but cannot rank national response speed. They are not a census of affected PHP installations. Unknown outcomes are not “no downtime.”
 
 There is also a reason to follow notices forward. ValueDesign's 22 October PHP notice says Value Card ASP was operating while two other services were suspended. Its separate 23 October notice discloses unauthorised access and data leakage involving Value Card; the parent-company disclosure dates confirmation to 19 October and attributes it only to a web-server vulnerability.<sup><a href="#ref-6">6</a></sup><sup><a href="#ref-7">7</a></sup> The exact PHP linkage and deployment mapping are unestablished. This is **not** a confirmed PHP-exploitation case for our comparison, nor evidence that “operating” means “uncompromised.”
 
@@ -66,14 +76,14 @@ Our bounded Hacker News check found an important trade-off. A sampled PHP heads-
 
 The same distinction applies to agents. PatchBench reports a large gap between stopping a supplied crash and passing both security and behaviour checks; it does not measure deployed protection.<sup><a href="#ref-10">10</a></sup> That is supporting evidence for testing repairs, not an original result of this investigation or a substitute for the Japanese operator analysis.
 
-**The finding here is narrower, but concrete: Japan's shutdown headlines conceal different isolation timings, dependency boundaries and unfinished responsibilities. Those—not the country label—are the first things an international benchmark must make comparable.**
+**Japan's shutdown headlines conceal different isolation timings, dependency boundaries and unfinished responsibilities. Following the same warning across services adds a fourth distinction: which function counts as “recovered.” A useful benchmark must keep all four visible before interpreting speed.**
 
 ## Sources and method
 
-This is a purposive comparison of public operator records, not independent uptime measurement or a representative national survey. The two figures are our reconstruction and classification. The scheduled-release marker is not actual patch receipt. Asken/Sakura clocks are assumed JST; pixiv states JST explicitly. Public sources and their limitations are listed below.
+This is a purposive comparison of public operator records, not independent uptime measurement or a representative national survey. The figures are our reconstruction and classification. Asken/Sakura clocks are assumed JST and FFXIV clocks KST; pixiv states JST explicitly. Date-only notices remain day-wide bands, not invented publication times. No unknown endpoint is extended to retrieval day. Public sources and their limitations follow.
 
 <ol class="refs">
-  <li id="ref-1">PHP Group, 20 October advance notice and 21 October 2026 security releases. <a href="https://www.php.net/archive/2026.php">Official archive</a>. The 14:00 UTC time is the announced schedule.</li>
+  <li id="ref-1">PHP Group, <a href="https://news-web.php.net/php.announce/509">public advance warning</a>, header dated 20 October 2026, 19:33:47 UTC. The 21 October 14:00 UTC release is scheduled, not an observed release or operator receipt.</li>
   <li id="ref-2">pixiv, 22 October completion notice, reporting the 21 October 19:00–23:30 JST window, named services and account-dependent functions. <a href="https://www.pixiv.net/info.php?id=14290">Notice</a>.</li>
   <li id="ref-3">Asken, 22 October <a href="https://www.asken.inc/news/20261022">initial notice</a> and <a href="https://www.asken.inc/news/20261022-2">restoration notice</a>. Start approximate; stated full restoration at 09:25 replaces the initial 10:00 estimate. UTC offset not printed.</li>
   <li id="ref-4">Sakura Internet, 22 October notice updated 23 October 2026 at 17:30. <a href="https://www.sakura.ad.jp/corporate/information/announcements/2026/10/22/1968226117/">Response by service</a>. Start 21 October 22:30; no continuous all-service outage inferred.</li>
@@ -85,4 +95,7 @@ This is a purposive comparison of public operator records, not independent uptim
   <li id="ref-10">Shen et al., <em>PatchBench: Evaluating AI Agents for Vulnerability Patching</em>, arXiv:2609.04075v1, 3 September 2026, §§5.2 and 6. <a href="https://arxiv.org/html/2609.04075v1">Preprint</a>; controlled selected tasks, not a PHP deployment or country comparison.</li>
   <li id="ref-11">Cafe24, <a href="https://help.cafe24.com/notice/system-notice/20261023_php-security-official-patch">21 October official-patch work notice</a> and <a href="https://help.cafe24.com/notice/cafe24-notice/20261023_php_security_patch_response/">23 October completion/responsibility notice</a>. The work notice's title/body give 21 October despite its URL slug. The 1–10-minute per-server figure is planned impact, not measured uptime.</li>
   <li id="ref-12">Selected current HN records retrieved 26 October: <a href="https://news.ycombinator.com/item?id=50167754">PHP heads-up</a>, <a href="https://news.ycombinator.com/item?id=50174354">maintainer-sourced correction</a>, and <a href="https://news.ycombinator.com/item?id=50172041">20 October item now linking the 21 October advisory</a>. Original thread text and Algolia records inspected; historical wording and complete discussion coverage are not established.</li>
+  <li id="ref-13">Korean FFXIV service, <a href="https://ff14.game.naver.com/news/notice/view/3152?page=1">new-login restoration</a>, 23 October, and <a href="https://ff14.game.naver.com/news/notice/view/3154?page=1">settings-backup restoration</a>, 26 October. Same response, different functions; KST assumed. Existing-session availability unknown. The conditional damaged-backup warning is not confirmed data loss.</li>
+  <li id="ref-14">Korean FFXIV, 17 September game/launcher maintenance: <a href="https://ff14.game.naver.com/news/notice/view/2956?page=3">plan</a> and <a href="https://ff14.game.naver.com/news/notice/view/2961?page=2">completion</a>. Body reports 15:00–18:25 versus 15:00–19:00 planned; KST assumed. Creation at 18:10 does not date the completed wording.</li>
+  <li id="ref-15">Korean FFXIV, 13 October game/launcher maintenance: <a href="https://ff14.game.naver.com/news/notice/view/2966?page=2">plan</a> and <a href="https://ff14.game.naver.com/news/notice/view/2970?page=1">completion</a>. Body reports 14:00–18:25 versus 14:00–19:00 planned; KST assumed. Creation at 18:11 does not date the completed wording.</li>
 </ol>

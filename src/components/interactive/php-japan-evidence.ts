@@ -5,7 +5,7 @@
 export const japanReleaseReference = {
   minute: 300,
   type: 'scheduled-not-observed',
-  url: 'https://www.php.net/archive/2026.php',
+  url: 'https://news-web.php.net/php.announce/509',
 };
 export const japanResponses = [
   { id: 'pixiv', name: 'pixiv', start: 60, end: 330, approximate: false, zoneExplicit: true, reference: 2,
