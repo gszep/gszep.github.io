@@ -6,6 +6,23 @@ import { warning, responses, maintenance, offsetSeconds, minutesBetween, axisEnd
 
 // Source checks are independent of the build. Rendered checks consume its one immutable output.
 const phase = process.env.PHP_CHECK_PHASE ?? 'all';
+function assertLeadHierarchy(markup, lang, built = false) {
+  const firstFigure = markup.match(/<figure\b[^>]*>/)?.[0];
+  assert.ok(firstFigure?.includes('id="response-timeline"'), `${lang}: warning timeline must be the first figure`);
+  assert.equal((markup.match(/id="response-timeline"/g) ?? []).length,1);
+  const oldChart = markup.indexOf(built ? `japan-title-${lang}` : '<JapanResponseAnalysis');
+  const warningChart = markup.indexOf(built ? 'class="warning-comparison"' : '<PhpResponseTimeline');
+  assert.ok(warningChart >= 0 && oldChart > warningChart, `${lang}: warning comparison leads Japan detail`);
+  const stack = [];
+  for (const match of markup.slice(0,oldChart).matchAll(/<\/?details\b[^>]*>/g)) {
+    if (match[0].startsWith('</')) stack.pop();
+    else stack.push(match[0]);
+  }
+  const wrapper = stack.find(tag => /\bdata-japan-detail\b/.test(tag));
+  assert.ok(wrapper, `${lang}: old chart belongs inside its detail disclosure`);
+  assert.doesNotMatch(wrapper,/\sopen(?:\s|=|>)/, `${lang}: Japan detail is closed by default`);
+  assert.ok(markup.includes(lang === 'en' ? 'Detailed Japan timing reconstruction' : '日本の対応時刻を詳しく見る'));
+}
 if (phase !== 'built') {
 
 test('source-aligned intervals distinguish approximate times, unknown ends and scheduled release', () => {
@@ -66,6 +83,15 @@ test('date-only notices remain day intervals and maintenance has separate semant
     assert.ok(Date.parse(row.pageCreated)<Date.parse(row.reportedEnd));
   }
 });
+test('bilingual sources lead with the warning figure and preserve closed Japan details', () => {
+  for (const lang of ['en','ja']) {
+    const source = readFileSync(new URL(`../src/content/blog/${lang}/measured-responses-to-cybersecurity-warnings.mdx`,import.meta.url),'utf8');
+    assertLeadHierarchy(source,lang);
+    assert.equal(source.match(/^## (.+)$/m)?.[1],lang === 'en' ? 'One warning, several recovery clocks' : '一つの警告、機能ごとに異なる復旧時刻');
+    assert.equal((source.match(/<PhpResponseTimeline /g) ?? []).length,1);
+    assert.ok(source.includes(`<JapanContainmentMap lang="${lang}" />`));
+  }
+});
 test('public data and bilingual prose expose matching sources without private research exports', () => {
   for (const row of responses) for (const key of ['label','scope','uncertainty']) {
     assert.ok(row[key].en && row[key].ja, `${row.id}.${key}`);
@@ -84,6 +110,7 @@ test('public data and bilingual prose expose matching sources without private re
 
 if (phase !== 'source') for (const lang of ['en','ja']) test(`${lang}: built article preserves Japan analysis and exposes five classified accessible rows`, () => {
   const html=readFileSync(new URL(`../dist/${lang}/blog/measured-responses-to-cybersecurity-warnings/index.html`,import.meta.url),'utf8');
+  assertLeadHierarchy(html,lang,true);
   assert.ok(html.includes(`japan-title-${lang}`));
   assert.ok(html.includes('containment-map'));
   assert.ok(!html.includes('<repair-evidence') && !html.includes('class="repair-evidence"'));
