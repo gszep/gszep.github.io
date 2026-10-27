@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Light → cell migration · qualitative model</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <header>
+      <div>
+        <p class="eyebrow">STRING ENTITIES / MIGRATION LAB</p>
+        <h1>Light into motion<span>.</span></h1>
+      </div>
+      <p class="intro">A causal, whole-cell sketch.<br />Light → signaling → effective actin → deformable boundary.</p>
+    </header>
+    <main>
+      <section class="stage" aria-label="Interactive cell simulation">
+        <div class="stage-top">
+          <span id="playback-status" class="badge" role="status">RUNNING</span><span id="status" role="status">Localized input</span
+          ><button id="pause">Pause</button>
+        </div>
+        <canvas id="cell" aria-label="Cell boundary, signaling rings, effective-actin density and trajectory. Click to relocate light."></canvas>
+        <div class="stage-bottom">
+          <span>Click or drag to relocate light</span><label><input id="follow" type="checkbox" /> Follow cell (keeps it centered)</label
+          ><label><input id="overlays" type="checkbox" checked /> Signal rings</label>
+        </div>
+        <div class="camera-toolbar"><span id="camera-status">World-fixed camera</span><button id="recenter">Recenter view</button></div>
+        <div class="legend">
+          <span style="--color: #73aeff">PIP3-like</span><span style="--color: #f1a6d5">Rac-like</span><span style="--color: #ecb873">Delayed inhibitor</span
+          ><span style="--color: #72e8bd">Effective actin</span>
+        </div>
+      </section>
+      <aside>
+        <div class="section-label">01 / STIMULUS</div>
+        <div class="modes" role="group" aria-label="Stimulus mode">
+          <button data-mode="off">No light</button><button data-mode="local" class="selected">Local</button><button data-mode="paired">Paired</button
+          ><button data-mode="global">Global</button>
+        </div>
+        <label class="row"
+          >Reference frame<select id="frame">
+            <option value="cell">Cell-relative sector</option>
+            <option value="world">Fixed world spot</option>
+          </select></label
+        >
+        <label class="slider"
+          >Light direction <output id="angle-value">0°</output><input id="angle" type="range" min="-180" max="180" value="0" step="1"
+        /></label>
+        <label class="slider"
+          >Intensity <output id="intensity-value"></output><input id="intensity" data-param="intensity" type="range" min="0" max="1" step="0.05" value="1"
+        /></label>
+        <label class="slider"
+          >Sector width / spot radius <output id="width-value"></output
+          ><input id="width" data-param="width" type="range" min="0.25" max="1" step="0.05" value="0.55"
+        /></label>
+        <p class="hint">
+          Paired input illuminates opposite sectors equally. Global input has no direction. Cell-relative sectors track position, not polarity.
+        </p>
+        <div class="section-label">02 / RELATIVE MECHANISMS</div>
+        <label class="slider"
+          >Actin turnover <output id="turnover-value"></output
+          ><input id="turnover" data-param="turnover" type="range" min="0.1" max="1" step="0.05" value="0.35"
+        /></label>
+        <label class="slider"
+          >Adaptation timescale <output id="adaptationTime-value"></output
+          ><input id="adaptationTime" data-param="adaptationTime" type="range" min="2" max="30" step="1" value="12"
+        /></label>
+        <label class="slider"
+          >Local inhibition <output id="inhibition-value"></output
+          ><input id="inhibition" data-param="inhibition" type="range" min="0" max="8" step="0.25" value="4"
+        /></label>
+        <label class="slider"
+          >Actin–substrate coupling <output id="coupling-value"></output
+          ><input id="coupling" data-param="coupling" type="range" min="0" max="3" step="0.1" value="2"
+        /></label>
+        <div class="section-label">03 / EXPERIMENT</div>
+        <label class="row"
+          >Input protocol<select id="protocol">
+            <option value="manual">Manual</option>
+            <option value="turn">Local → 90° turn at t = 40</option>
+            <option value="global">Local → global at t = 40</option>
+          </select></label
+        >
+        <div class="actions"><button id="reset">Reset run</button><button id="defaults">Defaults</button></div>
+        <label class="row"
+          >Playback<select id="rate">
+            <option value="2" selected>2 units / s</option>
+            <option value="8">8 units / s</option>
+            <option value="20">20 units / s</option>
+          </select></label
+        >
+        <button id="export" class="export">Export trace + current state</button>
+      </aside>
+      <section class="diagnostics">
+        <div class="metrics">
+          <div><span>MODEL TIME</span><strong id="time">0.0</strong></div>
+          <div><span>SPEED</span><strong id="speed">0.000</strong></div>
+          <div><span>AREA / INITIAL</span><strong id="area">1.000</strong></div>
+          <div><span>ACTIN POLARITY</span><strong id="polarity">0.000</strong></div>
+        </div>
+        <canvas id="trace" aria-label="History of mean Rac, inhibitor, actin and signed actin polarity components"></canvas>
+        <p class="hint">
+          Solid: mean Rac, inhibitor, effective actin. Dashed: actin polarity x (white), y (blue). Relative units throughout; trace shows the last 120
+          model-time units.
+        </p>
+      </section>
+    </main>
+    <footer>
+      <strong>Mechanisms, not a video fit.</strong> A reduced continuum/effective-actin model, not individual filaments or calibrated HL-60 kinetics. Uniform
+      stimulation can reveal stored signaling asymmetry; sustained reversal is a hypothesis, not a built-in behavior.
+      <a href="README.md">Equations, controls & limitations ↗</a>
+    </footer>
+    <script type="module" src="app.mjs"></script>
+  </body>
+</html>
