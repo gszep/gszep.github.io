@@ -1,7 +1,7 @@
 ---
 title: "Measured responses to cybersecurity warnings"
 date: 2026-10-24
-description: "Japan's PHP responses differed in when services were isolated, which functions were stopped, and who still had to act. A source-based reconstruction, not a country ranking."
+description: "One PHP warning, several recovery clocks: a source-based comparison of service restrictions, reporting checkpoints and function-specific restoration—not a country ranking."
 tags: ["cybersecurity", "ai", "policy", "resilience"]
 draft: false
 ---
@@ -13,16 +13,30 @@ import PhpResponseTimeline from '../../../components/interactive/PhpResponseTime
 
 > **In short.** The Japanese cases do not describe one uniform shutdown response. Pixiv isolated services early and reopened the same night; Asken started near the scheduled release and returned the next morning. Sakura separated functions and responsibilities. The Korean FFXIV service adds a clear example: login returned more than three days before settings backup. **Recovery is a function-specific endpoint**, not a single company-wide clock. Compare when isolation began, what it isolated, and what remained unresolved.
 
+## One warning, several recovery clocks
+
+Aligning these responses to PHP's **public maintainer advance warning**, at 19:33:47 UTC on 20 October, reveals another distinction. The warning is a documented reference—not the first-ever disclosure, full technical disclosure or patch availability. The scheduled release follows about 18h 26m later.<sup><a href="#ref-1">1</a></sup>
+
+<figure id="response-timeline">
+  <PhpResponseTimeline lang="en" />
+  <figcaption>Reported restrictions and recovery checkpoints after PHP's public advance warning. Solid intervals describe named functions; dotted markers describe reports, not measured downtime. Japanese and Korean clocks are assumed local where notices omit a timezone. The separate maintenance panel compares plans with reported completed windows, not normal downtime.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-9">9</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup></figcaption>
+</figure>
+
+**The same incident can have more than one recovery time.** Korean FFXIV's new-login restriction lasted 25h 25m, but settings backup remained restricted for another **3d 15h 18m**, until 26 October 18:08 (assumed KST). Those are two functions of one response, not independent outages or whole-game downtime; the notices attribute the work to PHP without naming exact CVEs. Two earlier game/launcher maintenance pairs provide context: 4h planned versus 3h 25m reported completed, and 5h versus 4h 25m. Their different scope rules out a like-for-like downtime ratio.<sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup>
+
 ## Japan faced an overnight decision—not a single response
 
 PHP announced security releases for 21 October at 14:00 UTC: **23:00 in Japan**.<sup><a href="#ref-1">1</a></sup> That was a scheduled public release, not a timestamp for every distributor's package or each operator's receipt. It nevertheless provides a common reference for reconstructing the Japanese decisions.
 
 Pixiv reports taking pixiv, Encyclopedia and FANBOX offline at 19:00 JST, applying updates after disclosure, completing checks and reopening at 23:30. Asken reports stopping its apps, website and corporate services around 22:50 and restoring all of them at 09:25 the next morning after patching and safety checks.<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup>
 
+<details data-japan-detail>
+  <summary>Detailed Japan timing reconstruction</summary>
 <figure>
   <JapanResponseAnalysis lang="en" />
   <figcaption>Our alignment of separately published operator records. Pixiv's interval is 4h 30m; Asken's is approximately 10h 35m. Their closure points fall four hours and approximately ten minutes before the announced release, respectively, under the stated clock assumption. Sakura's start is shown without inventing a continuous outage or full-restoration endpoint.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-4">4</a></sup></figcaption>
 </figure>
+</details>
 
 **Starting isolation earlier and completing recovery later are different decisions.** In this pair, the earlier closure also reopened earlier. The records do not reveal the patching/testing split, staffing, configuration difficulty or whether either operator could safely have stayed online. Calling the difference “Japanese overreaction” would erase variation *within Japan* before explaining it. Conversely, the overnight schedule does not prove that night staffing caused delay.
 
@@ -42,15 +56,6 @@ Sakura also says its VPS service-provisioning layer did not use PHP and was unaf
 This changes the practical question. Instead of asking whether Japanese operators should shut down less, ask **which dependency can be isolated without disabling the essential function, and who owns the remaining fix**. The notices establish that these boundaries differed. They do not establish their relative security or cost.
 
 ## Benchmark the same outcome across countries
-
-Aligning these responses to PHP's **public maintainer advance warning**, at 19:33:47 UTC on 20 October, reveals another distinction. The warning is a documented reference—not the first-ever disclosure, full technical disclosure or patch availability. The scheduled release follows about 18h 26m later.<sup><a href="#ref-1">1</a></sup>
-
-<figure>
-  <PhpResponseTimeline lang="en" />
-  <figcaption>Reported restrictions and recovery checkpoints after PHP's public advance warning. Solid intervals describe named functions; dotted markers describe reports, not measured downtime. Japanese and Korean clocks are assumed local where notices omit a timezone. The separate maintenance panel compares plans with reported completed windows, not normal downtime.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-9">9</a></sup><sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup></figcaption>
-</figure>
-
-**The same incident can have more than one recovery time.** Korean FFXIV's new-login restriction lasted 25h 25m, but settings backup remained restricted for another **3d 15h 18m**, until 26 October 18:08 (assumed KST). Those are two functions of one response, not independent outages or whole-game downtime; the notices attribute the work to PHP without naming exact CVEs. Two earlier game/launcher maintenance pairs provide context: 4h planned versus 3h 25m reported completed, and 5h versus 4h 25m. Their different scope rules out a like-for-like downtime ratio.<sup><a href="#ref-13">13</a></sup><sup><a href="#ref-14">14</a></sup><sup><a href="#ref-15">15</a></sup>
 
 The first useful Japan–Korea pair is **managed hosting: Sakura and Cafe24**, not their corporate websites. Cafe24's work notice names the same two CVEs and plans staged official patching with **1–10 minutes of downtime per server**. Its 23 October follow-up reports patch application completed for PHP 7.4 and newer, but does not measure the interruption actually experienced by each customer.<sup><a href="#ref-11">11</a></sup>
 
