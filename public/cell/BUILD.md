@@ -1,7 +1,7 @@
 # Cell demo publication
 
 Source: `alife-institute/webgpu_collab_stringed_entities`, commit
-`0645608` (cell-first presentation, responsive stage fitting, microscope-inspired
+`a96bf92` (point/bond recovery without a success quota, cell-first presentation, responsive stage fitting, microscope-inspired
 transmitted light, persistent polarity, actin renewal and bounded contact recovery).
 
 The HTML, JavaScript bundles and worker are copies of the tested source build.
