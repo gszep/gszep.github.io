@@ -1,16 +1,10 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <!-- Published from webgpu_collab_stringed_entities 2edec68. -->
-    <script>
-      if (!location.search) {
-        history.replaceState(null, "", "?ui=microscope-2edec68&paused=1&seed=42&gActinField=1&areaConservation=1&membraneRestLength=0.3333333333333333&myosinStrength=0.05&membraneCoupling=0.05&polarityMode=1&rearTurnover=0.01&tetherTurnover=1&motorRearBias=1&frontAlignment=0.8&colourAge=1&microscope=1");
-      }
-    </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="data:," />
-    <title>String Entities</title>
+    <title>Living Cell</title>
     <style>
       /* canvas { causes the page to scroll on mobile devices
         border: 1px solid grey;
@@ -172,12 +166,114 @@
         opacity: 0.8;
         max-width: 340px;
       }
+      [hidden] {
+        display: none !important;
+      }
+      #fpsCounter,
+      #diagnostics {
+        display: none;
+      }
+      body[data-settings="open"] #fpsCounter,
+      body[data-settings="open"] #diagnostics {
+        display: block;
+      }
+      .demo-header {
+        position: fixed;
+        inset: max(16px, env(safe-area-inset-top)) 18px auto;
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        z-index: 1100;
+        pointer-events: none;
+        color: #34473b;
+        font: 14px system-ui;
+      }
+      .demo-header strong {
+        display: block;
+        font-size: 20px;
+        font-weight: 550;
+        letter-spacing: -0.5px;
+      }
+      .demo-header small {
+        display: block;
+        margin-top: 5px;
+        opacity: 0.7;
+      }
+      .demo-header button,
+      .demo-toolbar button {
+        pointer-events: auto;
+        padding: 10px 15px;
+        min-height: 44px;
+        border: 1px solid #61765e33;
+        border-radius: 24px;
+        color: #34473b;
+        background: #f3f6ece6;
+        font: 14px system-ui;
+        cursor: pointer;
+      }
+      .demo-toolbar {
+        position: fixed;
+        bottom: max(20px, env(safe-area-inset-bottom));
+        left: 50%;
+        transform: translateX(-50%);
+        display: flex;
+        gap: 8px;
+        z-index: 1000;
+      }
+      #demo-panel,
+      body[data-view="microscope"] #demo-panel {
+        top: 76px;
+        left: auto;
+        right: 12px;
+        max-width: min(355px, calc(100vw - 50px));
+        max-height: calc(100dvh - 115px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+      }
+      #close-settings {
+        float: right;
+      }
+      #demo-panel #diagnostics,
+      #demo-panel #fpsCounter {
+        position: static !important;
+        font-size: 10px !important;
+        margin-top: 10px;
+      }
+      #advanced-controls .lil-gui {
+        width: 100%;
+      }
+      #demo-notice {
+        position: fixed;
+        left: 50%;
+        top: 45%;
+        transform: translate(-50%, -50%);
+        max-width: min(450px, 85vw);
+        padding: 12px 16px;
+        border-radius: 12px;
+        background: #f3f6ecee;
+        color: #34473b;
+        font: 14px system-ui;
+        z-index: 1200;
+      }
+      body[data-view="diagnostic"] .demo-header {
+        color: #d5e6e3;
+      }
     </style>
-  <script defer src="runtime.bundle.js?aa65e11b19c010f01460"></script><script defer src="index.bundle.js?aa65e11b19c010f01460"></script></head>
+  <script defer src="runtime.bundle.js?df419680bc2b0863b87c"></script><script defer src="index.bundle.js?df419680bc2b0863b87c"></script></head>
   <body>
+    <header class="demo-header">
+      <div><strong>Living cell</strong><small>Drag to steer</small></div>
+      <button id="toggle-settings" type="button" aria-expanded="false" aria-controls="demo-panel">Settings</button>
+    </header>
+    <p id="demo-notice" role="status">Preparing the cell…</p>
+    <nav class="demo-toolbar" aria-label="Playback">
+      <button id="pause-demo" type="button">Pause</button>
+      <button id="reset-demo" type="button">Restart</button>
+    </nav>
     <div id="fpsCounter">FPS: --</div>
     <div id="cue-marker" hidden aria-hidden="true"></div>
-    <section id="demo-panel" aria-label="Explicit filament experiment controls">
+    <section id="demo-panel" aria-label="Optional simulation settings" hidden>
+      <button id="close-settings" type="button" aria-label="Close settings">Close</button>
       <h1 id="demo-title">Cell · transmitted light</h1>
       <label
         >View
@@ -187,7 +283,9 @@
         </select></label
       >
       <div class="view-controls">
-        <label for="view-zoom">Zoom</label><input id="view-zoom" type="range" min="1" max="6" step="0.1" value="3" /><output id="view-zoom-value">3.0×</output>
+        <label for="view-zoom">Zoom</label><input id="view-zoom" type="range" min="0.2" max="6" step="0.1" value="3" /><output id="view-zoom-value"
+          >3.0×</output
+        >
         <label for="view-focus">Focus</label><input id="view-focus" type="range" min="-1" max="1" step="0.05" value="0.15" /><span></span>
         <label for="view-contrast">Contrast</label><input id="view-contrast" type="range" min="0.2" max="2.5" step="0.05" value="1.2" /><span></span>
       </div>
@@ -226,10 +324,10 @@
       <p id="mechanical-status" aria-live="polite">Initializing WebGPU…</p>
       <p id="enclosure-status"></p>
       <p id="cue-status"></p>
-      <button id="pause-demo" type="button">Pause</button>
       <button id="step-demo" type="button">Step · N</button>
       <button id="clear-cue" type="button">Clear cue · Esc</button>
-      <button id="reset-demo" type="button">Replay seed</button>
+      <button id="fit-cell" type="button">Fit cell to screen</button>
+      <button id="restore-demo" type="button">Restore recommended demo</button>
       <details>
         <summary>Live controls · Space pauses · R resets</summary>
         <div class="live-controls">
@@ -263,6 +361,10 @@
         <p>
           <small><a href="migration/">Effective-field reference demo</a></small>
         </p>
+      </details>
+      <details>
+        <summary>Advanced parameters</summary>
+        <div id="advanced-controls"></div>
       </details>
     </section>
   </body>
