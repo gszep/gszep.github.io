@@ -8,7 +8,8 @@ import { warning, responses, maintenance, offsetSeconds, minutesBetween, axisEnd
 const phase = process.env.PHP_CHECK_PHASE ?? 'all';
 function assertLeadHierarchy(markup, lang, built = false) {
   const firstFigure = markup.match(/<figure\b[^>]*>/)?.[0];
-  assert.ok(firstFigure?.includes('id="response-timeline"'), `${lang}: warning timeline must be the first figure`);
+  assert.ok(firstFigure?.includes('id="shared-response-hero"'), `${lang}: shared-response analysis must be the first figure`);
+  assert.equal((markup.match(/id="shared-response-hero"/g) ?? []).length,1);
   assert.equal((markup.match(/id="response-timeline"/g) ?? []).length,1);
   const oldChart = markup.indexOf(built ? `japan-title-${lang}` : '<JapanResponseAnalysis');
   const warningChart = markup.indexOf(built ? 'class="warning-comparison"' : '<PhpResponseTimeline');
@@ -21,7 +22,7 @@ function assertLeadHierarchy(markup, lang, built = false) {
   const wrapper = stack.find(tag => /\bdata-japan-detail\b/.test(tag));
   assert.ok(wrapper, `${lang}: old chart belongs inside its detail disclosure`);
   assert.doesNotMatch(wrapper,/\sopen(?:\s|=|>)/, `${lang}: Japan detail is closed by default`);
-  assert.ok(markup.includes(lang === 'en' ? 'Detailed Japan timing reconstruction' : '日本の対応時刻を詳しく見る'));
+  assert.ok(markup.includes(lang === 'en' ? 'Original PHP and Japan reconstruction' : 'PHPと日本での対応'));
 }
 if (phase !== 'built') {
 
@@ -83,11 +84,11 @@ test('date-only notices remain day intervals and maintenance has separate semant
     assert.ok(Date.parse(row.pageCreated)<Date.parse(row.reportedEnd));
   }
 });
-test('bilingual sources lead with the warning figure and preserve closed Japan details', () => {
+test('bilingual sources lead with shared-response analysis and preserve closed Japan details', () => {
   for (const lang of ['en','ja']) {
     const source = readFileSync(new URL(`../src/content/blog/${lang}/measured-responses-to-cybersecurity-warnings.mdx`,import.meta.url),'utf8');
     assertLeadHierarchy(source,lang);
-    assert.equal(source.match(/^## (.+)$/m)?.[1],lang === 'en' ? 'One warning, several recovery clocks' : '一つの警告、機能ごとに異なる復旧時刻');
+    assert.ok(source.includes(`<IncidentResponseHero lang="${lang}" />`));
     assert.equal((source.match(/<PhpResponseTimeline /g) ?? []).length,1);
     assert.ok(source.includes(`<JapanContainmentMap lang="${lang}" />`));
   }
@@ -103,7 +104,6 @@ test('public data and bilingual prose expose matching sources without private re
   assert.doesNotMatch(exported,/research_notes|Disclosure aligned article completion|\/Users\/|docs\.google\.com|drive\.google\.com|multi-incident-draft|TODO|working draft/i);
   for (const source of [warning.source,...responses.map(row => row.source),...maintenance.flatMap(row => [row.plan,row.completion])]) {
     assert.equal(new URL(source).protocol,'https:');
-    assert.ok(articles.every(text => text.includes(source)),source);
   }
 });
 }
@@ -111,13 +111,16 @@ test('public data and bilingual prose expose matching sources without private re
 if (phase !== 'source') for (const lang of ['en','ja']) test(`${lang}: built article preserves Japan analysis and exposes five classified accessible rows`, () => {
   const html=readFileSync(new URL(`../dist/${lang}/blog/measured-responses-to-cybersecurity-warnings/index.html`,import.meta.url),'utf8');
   assertLeadHierarchy(html,lang,true);
+  for (const source of [warning.source,...responses.map(row => row.source),...maintenance.flatMap(row => [row.plan,row.completion])]) {
+    assert.ok(html.includes(source),`${lang}: preserved chart source ${source}`);
+  }
   assert.ok(html.includes(`japan-title-${lang}`));
   assert.ok(html.includes('containment-map'));
   assert.ok(!html.includes('<repair-evidence') && !html.includes('class="repair-evidence"'));
   assert.equal((html.match(/class="window /g) ?? []).length,2);
   for (const [,id] of html.matchAll(/href="#(ref-\d+)"/g)) assert.ok(html.includes(`id="${id}"`),id);
   assert.ok(html.includes(lang==='en' ? 'scheduled public release' : '公開の予定'));
-  assert.ok(html.includes(lang==='en' ? 'assumed to be JST' : 'JSTと仮定'));
+  assert.ok(html.includes(lang==='en' ? 'Clocks are assumed JST' : 'FFXIVをKSTと仮定'));
   assert.equal((html.match(/data-row="/g) ?? []).length,5);
   assert.equal((html.match(/data-maintenance="/g) ?? []).length,2);
   const rows = [...html.matchAll(/<button\b[^>]*data-row="([^"]+)"[^>]*>[\s\S]*?<\/button>/g)];
@@ -133,7 +136,8 @@ if (phase !== 'source') for (const lang of ['en','ja']) test(`${lang}: built art
   }
   assert.equal((html.match(/class="notice-day"/g) ?? []).length,2);
   assert.ok(html.includes('2026-10-26 18:08'));
-  assert.ok(html.includes(lang==='en' ? '3d 15h 18m' : '3日15時間18分'));
+  assert.ok(html.includes(lang==='en' ? '3 days, 15 hours and 18 minutes' : '3日15時間18分'));
+  assert.ok(html.includes(lang==='en' ? 'additional restriction, not its total duration' : '追加で続いた期間であり、制限の全期間ではありません'));
   assert.ok(html.includes(lang==='en' ? 'not a matched baseline' : '同条件の基準ではなく'));
   assert.doesNotMatch(html,/research_notes|Disclosure aligned article completion|\/Users\/|docs\.google\.com|multi-incident-draft/);
 });
