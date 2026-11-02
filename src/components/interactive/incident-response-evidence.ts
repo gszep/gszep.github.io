@@ -199,5 +199,42 @@ export const incidents: Incident[] = [
   } },
 ];
 export const counts = Object.fromEntries(jobs.map(job => [job, incidents.filter(c => c.codes[job] !== null).length])) as Record<Job, number>;
+
+// Display ordering only: average-linkage agglomeration on four equally weighted
+// binary evidence codes. Null is treated as 0 for similarity, NOT as non-action.
+// Resolve equal distances by sorted IDs; orient each merge to minimize the
+// boundary Hamming distance, then by IDs. No chronology or quality rank implied.
+export function hammingDistance(a: typeof incidents[number], b: typeof incidents[number]): number {
+  return jobs.reduce((sum, job) => sum + Number((a.codes[job] !== null) !== (b.codes[job] !== null)), 0);
+}
+export function clusterIncidents(input = incidents): typeof incidents {
+  if (new Set(input.map(row => row.id)).size !== input.length) throw new Error('Duplicate incident ID');
+  const signature = (rows: typeof incidents) => rows.map(row => row.id).join('|');
+  const compare = (a: string, b: string) => a < b ? -1 : a > b ? 1 : 0;
+  const key = (rows: typeof incidents) => signature([...rows].sort((a, b) => compare(a.id, b.id)));
+  const clusters = input.map(row => [row]).sort((a, b) => compare(key(a), key(b)));
+  while (clusters.length > 1) {
+    let best: { i: number; j: number; sum: number; pairs: number; key: string } | undefined;
+    for (let i = 0; i < clusters.length; i++) for (let j = i + 1; j < clusters.length; j++) {
+      const a = clusters[i], b = clusters[j];
+      const sum = a.reduce((n, x) => n + b.reduce((m, y) => m + hammingDistance(x, y), 0), 0);
+      const pairs = a.length * b.length;
+      const pairKey = [key(a), key(b)].sort(compare).join('::');
+      if (!best || sum * best.pairs < best.sum * pairs ||
+          (sum * best.pairs === best.sum * pairs && compare(pairKey, best.key) < 0)) best = { i, j, sum, pairs, key: pairKey };
+    }
+    const { i, j } = best!;
+    const a = clusters[i], b = clusters[j];
+    const choices = [a, [...a].reverse()].flatMap(left => [b, [...b].reverse()].flatMap(right => [
+      { rows: [...left, ...right], gap: hammingDistance(left.at(-1)!, right[0]) },
+      { rows: [...right, ...left], gap: hammingDistance(right.at(-1)!, left[0]) },
+    ]));
+    choices.sort((x, y) => x.gap - y.gap || compare(signature(x.rows), signature(y.rows)));
+    clusters.splice(j, 1); clusters.splice(i, 1); clusters.push(choices[0].rows);
+    clusters.sort((x, y) => compare(key(x), key(y)));
+  }
+  return clusters[0] ?? [];
+}
+export const clusteredIncidents = clusterIncidents();
 export const screened = 20;
 export const excluded = { id: 'moveit-2023', reason: text('MOVEit: insufficient retained incident-action evidence for the collection’s inclusion rule; not a judgement about the incident’s importance.', 'MOVEit：この収集の採用条件を満たす対応記録が不足。事件の重要性についての評価ではない。') };
