@@ -1,5 +1,5 @@
 ---
-import { incidents, jobs, counts, events, rules, originLabels, screened, excluded, type Job, type Locale } from './incident-response-evidence';
+import { incidents, clusteredIncidents, jobs, counts, events, rules, originLabels, screened, excluded, type Locale } from './incident-response-evidence';
 interface Props { lang?: Locale }
 const { lang = 'en' } = Astro.props;
 const copy = {
@@ -7,14 +7,22 @@ const copy = {
     eyebrow: '19 incidents · four recurring jobs',
     title: 'A warning is only part of the response',
     numerator: 'cases with explicit evidence in this collection',
-    sharedLabel: 'Cases with explicit evidence / 19',
-    legend: 'Filled: documented · Open: not coded',
-    caption: 'Selected examples, not a representative sample or a quality score. Open marks do not mean absence; jobs can overlap.',
-    fullCaption: 'Purposively selected examples, not a representative sample. One mark per incident, in the order below; a case can involve several jobs. These counts are not a response-quality score. Not coded is not evidence of absence.',
+    sharedLabel: 'One row per case · similar evidence patterns grouped together',
+    legend: 'Recorded evidence',
+    blank: 'Not coded in inspected records',
+    caption: 'Evidence of work, not verified completion. Pale cells do not mean “not done”; the columns are not a required sequence.',
+    fullCaption: 'Purposively selected examples, not a representative sample. One row per incident, in the order below; a case can involve several jobs. These counts are not a response-quality score. Not coded is not evidence of absence.',
+    clustering: 'Rows use average-linkage clustering with Hamming distance on four equally weighted binary codes. Identical patterns are grouped; ties use case IDs. Branch orientation minimizes the joining distance, with ID tie-breaking. This is a display order, not a quality ranking or a finding that responses followed the same process. The evidence and inclusion rules are unchanged.',
+    select: 'Inspect a case',
+    php: 'PHP highlighted',
+    chart: '19 case rows and four equal-width evidence columns, clustered by pattern. PHP is outlined. Use the case selector or the source table for each row’s details.',
+    readout: 'Selected case evidence',
+    yes: 'Recorded',
+    no: 'Not coded',
     details: 'Sources, coding rules and all 19 cases',
     method: `${screened} incidents screened; 19 qualified and one did not. Cases were deliberately selected for informative response sequences and available public records. This favours well-documented incidents. Counts describe the inspected records—not prevalence, importance, effectiveness or completeness.`,
     provenance: 'Evidence includes current pages, retrospective accounts and dated or archived records. A current page’s account of a revision does not establish when earlier readers saw either wording. Statements, tools and reported actions do not establish installation, uptake or protection. No new source retrieval was performed for this figure.',
-    matrix: 'Coding matrix · marks above follow this row order',
+    matrix: 'Source matrix · same clustered row order',
     scroll: 'The source matrix can be scrolled horizontally. Each positive cell names its reviewed event and public source; unfilled cells mean no code in the bounded records inspected.',
     noCode: 'Not coded in inspected records',
     case: 'Incident', source: 'Source',
@@ -29,14 +37,22 @@ const copy = {
     eyebrow: '19の事例に見る、繰り返し現れる四つの仕事',
     title: '警告を出すだけでは、対応は終わらない',
     numerator: '今回の収集で明確な記録を確認できた事例',
-    sharedLabel: '明確な記録がある事例数 / 全19事例',
-    legend: '塗りつぶし：記録あり · 白抜き：分類せず',
-    caption: '選んだ事例の比較で、全体の傾向や成績ではありません。白抜きは不在の証拠ではなく、一事例が複数に該当します。',
-    fullCaption: '目的に沿って選んだ事例であり、全体を代表する標本ではありません。一つの丸が一事例で、下の一覧と同じ順序です。一事例が複数の仕事に該当します。対応の良し悪しを採点したものではありません。分類しなかったことは、実施されなかった証拠ではありません。',
+    sharedLabel: '1行が1事例。記録の組み合わせが似た事例を並べています。',
+    legend: '該当する記録あり',
+    blank: '調べた記録では分類せず',
+    caption: '示すのは仕事の記録で、完了の確認ではありません。淡い色は「未実施」の意味ではなく、列も必須の順序ではありません。',
+    fullCaption: '目的に沿って選んだ事例であり、全体を代表する標本ではありません。一つの行が一事例で、下の一覧と同じ順序です。一事例が複数の仕事に該当します。対応の良し悪しを採点したものではありません。分類しなかったことは、実施されなかった証拠ではありません。',
+    clustering: '四つの分類を同じ重みの二値データとし、ハミング距離と平均連結法で似た行をまとめています。同じ組み合わせは隣り合い、同距離の場合は事例IDで順序を決めます。各結合では境界の距離が小さくなる向きを選び、同点はID順です。見やすくするための並び順であり、成績や共通の対応手順を示すものではありません。根拠と採用条件は変更していません。',
+    select: '事例を確認',
+    php: 'PHPを強調',
+    chart: '19事例を行、四つの仕事を同じ幅の列にした図。記録の組み合わせで並べ、PHPを枠で強調しています。事例の選択欄と出典一覧で各行を確認できます。',
+    readout: '選んだ事例の記録',
+    yes: '記録あり',
+    no: '分類せず',
     details: '出典・分類基準と19事例の一覧',
     method: `${screened}事例を調べ、19事例が採用条件を満たし、1事例は満たしませんでした。対応の経緯を読み取れることと、公開資料があることを重視して選んだため、記録の豊富な事例に偏っています。数値は調べた記録の件数であり、一般的な頻度、重要性、有効性、網羅性を示しません。`,
     provenance: '現行ページ、後日の報告、日付付き資料や保存版を使っています。現行ページに変更の説明があっても、当時の読者がいつどの文面を見たかは分かりません。説明やツールの公開、対応の自己報告は、導入・利用・保護の達成を保証しません。この図の作成時に出典を再取得してはいません。',
-    matrix: '分類一覧：上の丸と同じ順序',
+    matrix: '出典一覧：図と同じ並び順',
     scroll: '一覧は横にスクロールできます。該当する各欄には、確認済み記録のIDと公開出典を示しています。白抜きの欄は、調べた限りでは分類しなかったことを意味します。',
     noCode: '調べた記録では分類せず',
     case: '事例', source: '出典',
@@ -52,33 +68,44 @@ const t = copy[lang];
 const caseName = (name: string) => lang === 'ja' ? name.replace('November 2022', '2022年11月') : name;
 ---
 
-<div class="incident-hero" lang={lang} role="group" aria-label={t.title}>
+<div class="incident-hero" lang={lang} role="group" aria-label={t.title} data-incident-heatmap>
   <header>
     <p class="hero-eyebrow">{t.eyebrow}</p>
     <h2 class="hero-heading">{t.title}</h2>
     <p class="shared-label">{t.sharedLabel}</p>
   </header>
-  <div class="job-grid">
-    {jobs.map((job: Job) => (
-      <section class={`job-tile job-${job}`} aria-label={`${t.columns[job].title}: ${counts[job]} / ${incidents.length} ${t.numerator}. ${t.columns[job].insight}`}>
-        <h3>{t.columns[job].title}</h3>
-        <p class="job-count"><strong>{counts[job]}</strong><span> / {incidents.length}</span></p>
-        <div class="case-marks" aria-hidden="true">
-          {incidents.map((incident, index) => <span class:list={['case-mark', { filled: incident.codes[job] !== null }]} data-case={incident.id} data-position={index + 1}></span>)}
-        </div>
-        <p class="job-example">{t.columns[job].example}</p>
-      </section>
-    ))}
+  <div class="heatmap-head">
+    {jobs.map(job => <div><span>{t.columns[job].title}</span><small>{counts[job]} / {incidents.length}</small></div>)}
+  </div>
+  <div class="heatmap-body" role="img" aria-label={t.chart}>
+    <div class="heatmap-rows" aria-hidden="true">
+      {clusteredIncidents.map(incident => <div class:list={['heat-row', { 'php-row': incident.id === 'php-2026' }]} data-heatmap-row={incident.id} title={caseName(incident.name)}>
+        {incident.id === 'php-2026' && <span class="php-label">PHP</span>}
+        {jobs.map(job => <span class:list={['heat-cell', { filled: incident.codes[job] !== null }]} data-job={job} data-coded={String(incident.codes[job] !== null)}></span>)}
+      </div>)}
+    </div>
   </div>
   <div class="hero-caption">
-    <p class="hero-legend"><span class="legend-symbols" aria-hidden="true"><span class="case-mark filled"></span><span class="case-mark"></span></span>{t.legend}</p>
+    <p class="hero-legend"><span><i class="legend-cell filled" aria-hidden="true"></i>{t.legend}</span><span><i class="legend-cell" aria-hidden="true"></i>{t.blank}</span><span><i class="legend-php" aria-hidden="true"></i>{t.php}</span></p>
     <p>{t.caption}</p>
+  </div>
+  <div class="case-inspector">
+    <label for={`incident-case-${lang}`}>{t.select}</label>
+    <select id={`incident-case-${lang}`} data-case-select aria-controls={`incident-reading-${lang}`}>
+      {clusteredIncidents.map(incident => <option value={incident.id} selected={incident.id === 'php-2026'}>{caseName(incident.name)}</option>)}
+    </select>
+    <div id={`incident-reading-${lang}`} class="case-readings sr-only" aria-live="polite" aria-label={t.readout}>
+      {clusteredIncidents.map(incident => <div data-case-reading={incident.id} hidden={incident.id !== 'php-2026'}>
+        <div class="reading-grid">{jobs.map(job => <span class:list={{ 'not-coded': incident.codes[job] === null }}><span aria-hidden="true">{incident.codes[job] ? '●' : '○'}</span> {t.columns[job].title}: {incident.codes[job] ? t.yes : t.no}</span>)}</div>
+      </div>)}
+    </div>
   </div>
   <details class="hero-methods">
     <summary>{t.details}</summary>
     <div class="method-body">
       <p>{t.method}</p>
       <p>{t.fullCaption}</p>
+      <p>{t.clustering}</p>
       <p>{excluded.reason[lang]}</p>
       <dl class="coding-rules">
         {jobs.map(job => <div><dt>{t.columns[job].title}</dt><dd>{t.columns[job].insight} {rules[job][lang]}</dd></div>)}
@@ -90,7 +117,7 @@ const caseName = (name: string) => lang === 'ja' ? name.replace('November 2022',
           <caption>{t.matrix}</caption>
           <thead><tr><th scope="col">{t.case}</th>{jobs.map(job => <th scope="col">{t.columns[job].title}</th>)}</tr></thead>
           <tbody>
-            {incidents.map((incident, index) => <tr data-case={incident.id}>
+            {clusteredIncidents.map((incident, index) => <tr data-case={incident.id}>
               <th scope="row"><span class="row-number">{String(index + 1).padStart(2, '0')}</span>{caseName(incident.name)}<small>{incident.id}</small></th>
               {jobs.map(job => {
                 const entry = incident.codes[job];
@@ -113,30 +140,58 @@ const caseName = (name: string) => lang === 'ja' ? name.replace('November 2022',
   </details>
 </div>
 
+<script>
+  for (const root of document.querySelectorAll<HTMLElement>('[data-incident-heatmap]')) {
+    const select = root.querySelector<HTMLSelectElement>('[data-case-select]');
+    if (!select) continue;
+    const update = (id: string) => {
+      select.value = id;
+      for (const row of root.querySelectorAll<HTMLElement>('[data-heatmap-row]')) row.classList.toggle('selected-row', row.dataset.heatmapRow === id && id !== 'php-2026');
+      for (const reading of root.querySelectorAll<HTMLElement>('[data-case-reading]')) reading.hidden = reading.dataset.caseReading !== id;
+    };
+    select.addEventListener('change', () => update(select.value));
+    // Tiny visual rows are optional pointer shortcuts. The 44px native selector
+    // and full source table provide the equivalent touch/keyboard interaction.
+    for (const row of root.querySelectorAll<HTMLElement>('[data-heatmap-row]')) row.addEventListener('click', () => update(row.dataset.heatmapRow!));
+  }
+</script>
+
 <style>
   .incident-hero { --ink: #252b2b; --muted: #505b5b; --line: #d8dcd8; --accent: #476466; margin: 0; padding: clamp(14px, 2.5vw, 24px); background: #fafaf6; color: var(--ink); border: 1px solid var(--line); border-radius: 3px; font-family: ui-sans-serif, system-ui, sans-serif; line-height: 1.5; text-align: left; color-scheme: light; }
   .incident-hero * { box-sizing: border-box; }
   .incident-hero .hero-eyebrow { margin: 0 0 .45rem; color: var(--muted); font-size: .75rem; font-weight: 650; letter-spacing: .025em; }
   .incident-hero .hero-heading { margin: 0 0 .6rem; color: var(--ink); font-size: clamp(1.25rem, 2.5vw, 1.6rem); line-height: 1.25; font-weight: 650; letter-spacing: -.025em; text-wrap: balance; }
   .incident-hero .shared-label { margin: 0 0 1rem; color: var(--muted); font-size: .8rem; }
-  .job-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 22px; }
-  .job-tile { min-width: 0; border-top: 2px solid var(--accent); padding-top: 10px; }
   .job-scope { --accent: #32696a; }
   .job-revision { --accent: #81583d; }
   .job-help { --accent: #526644; }
   .job-remaining { --accent: #68577f; }
-  .incident-hero .job-tile h3 { margin: 0 0 .4rem; color: var(--ink); font-size: .95rem; line-height: 1.35; font-weight: 650; }
-  .incident-hero .job-count { margin: 0 0 .55rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
-  .incident-hero .job-count strong { color: var(--accent); font-size: 1.75rem; font-weight: 600; }
-  .incident-hero .job-count span { color: var(--muted); font-size: .8rem; }
-  .case-marks { display: grid; grid-template-columns: repeat(10, 9px); gap: 4px; margin-bottom: .6rem; }
+  .heatmap-head { margin-left: 36px; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin-bottom: 12px; }
+  .heatmap-head > div { min-width: 0; padding-right: 3px; font-size: .78rem; line-height: 1.3; font-weight: 650; }
+  .incident-hero .heatmap-head small { font-variant-numeric: tabular-nums; margin-top: 5px; font-size: .75rem; }
+  .heatmap-body { margin-left: 36px; }
+  .heatmap-rows { display: grid; gap: 2px; }
+  .heat-row { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; height: 8px; cursor: pointer; }
+  .heat-cell, .legend-cell { background: #e4e9e5; border: 1px solid #cbd5cf; }
+  .heat-cell.filled, .legend-cell.filled { background: #32696a; border-color: #32696a; }
+  .php-row { outline: 1.5px solid #9a590d; outline-offset: 1px; z-index: 1; }
+  .php-label { position: absolute; right: calc(100% + 8px); top: -3px; color: #854b09; font-size: 10px; line-height: 14px; font-weight: 750; }
+  .selected-row { outline: 1.5px solid #172d36; outline-offset: 1px; z-index: 2; }
   .case-mark { display: inline-block; flex-shrink: 0; width: 9px; height: 9px; border: 1px solid var(--accent); border-radius: 50%; background: transparent; }
   .case-mark.filled { background: var(--accent); }
-  .incident-hero .job-example { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.45; }
   .incident-hero .hero-caption { margin: 1rem 0 0; color: var(--muted); font-size: .76rem; line-height: 1.5; text-align: left; }
   .incident-hero .hero-caption p { margin: .4rem 0; }
-  .hero-legend { display: flex; gap: .6rem; align-items: flex-start; }
-  .legend-symbols { display: inline-flex; gap: 5px; padding-top: 5px; }
+  .hero-legend { display: flex; flex-wrap: wrap; gap: .4rem 1rem; align-items: center; }
+  .hero-legend > span { display: inline-flex; gap: 6px; align-items: center; }
+  .legend-cell, .legend-php { display: inline-block; width: 12px; height: 8px; }
+  .legend-php { border: 1.5px solid #9a590d; }
+  .case-inspector { margin-top: 14px; font-size: .8rem; }
+  .case-inspector label { display: block; font-size: .75rem; color: var(--muted); margin-bottom: 3px; }
+  .case-inspector select { width: 100%; min-height: 44px; border: 1px solid var(--line); border-radius: 3px; background: #fff; color: var(--ink); padding: 6px 10px; font: inherit; }
+  .reading-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px 12px; margin-top: 8px; font-size: .72rem; color: #32696a; }
+  .case-readings [hidden] { display: none; }
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; border: 0; }
+  .case-inspector select:focus-visible { outline: 3px solid #32696a; outline-offset: 3px; }
   .hero-methods { margin-top: .65rem; border-top: 1px solid var(--line); font-size: .83rem; }
   .hero-methods summary { cursor: pointer; padding: .8rem 0 0; color: var(--ink); font-weight: 600; min-height: 44px; }
   .hero-methods summary:focus-visible, .matrix-scroll:focus-visible, .incident-hero a:focus-visible { outline: 3px solid #32696a; outline-offset: 4px; }
@@ -158,7 +213,6 @@ const caseName = (name: string) => lang === 'ja' ? name.replace('November 2022',
   .incident-hero td li { margin: 0 0 .8rem; }
   .incident-hero a { color: #245a65; text-decoration: underline; text-underline-offset: 2px; }
   .not-coded { color: var(--muted); }
-  @media (max-width: 420px) { .job-grid { gap: 18px 14px; } .incident-hero .job-tile h3 { font-size: .875rem; } .case-marks { grid-template-columns: repeat(10, 8px); } .case-marks .case-mark { width: 8px; height: 8px; } }
-  @media (max-width: 350px) { .job-grid { grid-template-columns: 1fr; } }
-  @media (forced-colors: active) { .case-mark.filled { background: CanvasText; forced-color-adjust: none; border-color: CanvasText; } .case-mark { border-color: CanvasText; } }
+  @media (max-width: 420px) { .heatmap-head > div { font-size: .7rem; } .heatmap-head, .heatmap-body { margin-left: 30px; } }
+  @media (forced-colors: active) { .case-mark.filled, .heat-cell.filled { background: CanvasText; forced-color-adjust: none; border-color: CanvasText; } .case-mark, .heat-cell { border-color: CanvasText; } .php-row { outline-color: Highlight; } }
 </style>
