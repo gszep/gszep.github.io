@@ -7,12 +7,14 @@ const T = ja
   ? {
       stage: '段階', total: '加重合計', s0: 'ソフトウェアのみ', s1: 'チップ・電力・ロボットすべて',
       aria: '鉱山からAIモデルまで、各段階で影響力を持つ国',
-      key: '濃さは、世界の供給に占めるシェアに、選んだ割合でその段階がどれほど重要かを掛け合わせたものです。● は2019〜26年に供給が制限されたことを示します。行ごとに測り方が異なるため、セルにカーソルを合わせると詳細が表示されます。',
+      key: '濃さは、世界の供給に占めるシェアに、選んだ割合でその段階がどれほど重要かを掛け合わせたものです。● は2019〜26年にその国・地域の政府が供給を制限したことを示します。行ごとに測り方と年が異なります（各行の名前の下に表示）。',
+      notes: '各行の測り方',
     }
   : {
       stage: 'Stage', total: 'Weighted total', s0: 'Software only', s1: 'Chips, power and robots',
       aria: 'Who holds leverage, from mines to models',
-      key: 'Shading = share of world supply × how much that stage matters at the chosen mix. ● = supply restricted 2019–26. Measures differ by row; hover a cell for detail.',
+      key: 'Shading = share of world supply × how much that stage matters at the chosen mix. ● = that government restricted supply in 2019–26. Each row has its own measure and year, shown under its name.',
+      notes: 'How each row is measured',
     };
 const ABBR: Partial<Record<CountryKey, [string, string]>> = {
   CN: ['CN', '中国'], JP: ['JP', '日本'], TW: ['TW', '台湾'], KR: ['KR', '韓国'], NL: ['NL', '蘭'], DE: ['DE', '独'],
@@ -45,7 +47,7 @@ const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(
       <tbody>
         {STAGES.map((st, i) => (
           <tr data-i={i}>
-            <td class="m"><span class="nm">{ja ? st.ja : st.en}</span><span class="wbar"><i></i></span></td>
+            <td class="m"><span class="nm">{ja ? st.ja : st.en}</span><span class="bs">{ja ? st.basisJa : st.basis}</span><span class="wbar"><i></i></span></td>
             {COUNTRIES.map((c) => {
               const v = st.share[c.k] ?? 0;
               const used = st.used?.includes(c.k);
@@ -65,6 +67,17 @@ const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(
     </table>
   </div>
   <p class="key">{T.key}</p>
+  <details class="lm-notes">
+    <summary>{T.notes}</summary>
+    <dl>
+      {STAGES.map((st) => (
+        <>
+          <dt>{ja ? st.ja : st.en} <span class="bs">({ja ? st.basisJa : st.basis})</span></dt>
+          <dd>{ja ? st.noteJa : st.note}</dd>
+        </>
+      ))}
+    </dl>
+  </details>
 </div>
 <style>
   .levmap { --lm-bg: #fff; max-width: 900px; margin: 0 auto; font-family: ui-sans-serif, system-ui, sans-serif; color: var(--post-text, #353535); }
@@ -80,6 +93,13 @@ const fmt = (v: number | undefined) => (!v ? '' : v < 5 ? '<5%' : `${Math.round(
   .levmap td.c { background-color: var(--post-code-bg, #f5f5f5); }
   .levmap td[title] { cursor: help; }
   .levmap .nm { display: block; }
+  .levmap td.m .bs { display: block; font-weight: 400; font-size: 0.6rem; color: var(--post-caption, #737373); line-height: 1.15; margin-top: 1px; }
+  .levmap .lm-notes { font-size: 0.78rem; margin: 0.5rem auto 0; max-width: 700px; color: var(--post-text, #353535); }
+  .levmap .lm-notes summary { cursor: pointer; text-align: center; color: var(--post-caption, #737373); }
+  .levmap .lm-notes dl { margin: 0.4rem 0 0; text-align: left; }
+  .levmap .lm-notes dt { font-weight: 600; margin-top: 0.45rem; }
+  .levmap .lm-notes dt .bs { font-weight: 400; color: var(--post-caption, #737373); }
+  .levmap .lm-notes dd { margin: 0.1rem 0 0; line-height: 1.4; }
   .levmap .wbar { display: block; height: 3px; margin-top: 3px; background: var(--post-separator, #e5e5e5); border-radius: 2px; overflow: hidden; }
   .levmap .wbar i { display: block; height: 100%; width: 0; background: #6a4c93; transition: width 0.2s; }
   .levmap .used { font-size: 0.85em; }
