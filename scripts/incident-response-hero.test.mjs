@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { transform } from '@astrojs/compiler';
 import { transform as transpile } from 'esbuild';
 import { experimental_AstroContainer as AstroContainer } from 'astro/container';
-import { incidents, events, jobs, counts, rules, originLabels, screened, excluded } from '../src/components/interactive/incident-response-evidence.ts';
+import { incidents, clusteredIncidents, clusterIncidents, hammingDistance, events, jobs, counts, rules, originLabels, screened, excluded } from '../src/components/interactive/incident-response-evidence.ts';
 
 const root = new URL('../', import.meta.url);
 const component = await readFile(new URL('src/components/interactive/IncidentResponseHero.astro', root), 'utf8');
@@ -26,7 +26,7 @@ test('four exact counts are recomputed from positive cells, not hand-drawn marks
   const actual = Object.fromEntries(jobs.map(j => [j, incidents.filter(c => c.codes[j] !== null).length]));
   assert.deepEqual(counts, actual);
   assert.deepEqual(counts, { scope: 18, revision: 11, help: 13, remaining: 13 });
-  assert.match(component, /incidents\.map\(\(incident, index\) => <span/);
+  assert.match(component, /clusteredIncidents\.map\(incident => <div/);
   assert.match(component, /incident\.codes\[job\] !== null/);
   assert.match(component, /counts\[job\]/);
 });
@@ -59,7 +59,7 @@ test('all rules and provenance states are bilingual; key safeguards remain expli
     assert(value.en && value.ja);
     assert.match(value.ja, /[ぁ-んァ-ヶ一-龠]/);
   }
-  for (const phrase of ['cases with explicit evidence in this collection', 'not evidence of absence', 'not a response-quality score', 'not prevalence', 'not independently preserved', '今回の収集で明確な記録', '実施されなかった証拠ではありません', '全体を代表する標本ではありません']) {
+  for (const phrase of ['cases with explicit evidence in this collection', 'not evidence of absence', 'not a response-quality score', 'not prevalence', 'not independently preserved', '今回の収集で明確な記録', '実施されなかった証拠ではありません', '全体を代表する標本ではありません', 'not verified completion', '完了の確認ではありません']) {
     assert((component + dataSource).includes(phrase), phrase);
   }
   assert(dataSource.includes('encouraging—not requiring'));
@@ -71,13 +71,14 @@ test('native keyboard details, static evidence, readable mobile and no hover-onl
   assert.equal((component.match(/<details\b/g) || []).length, 1);
   assert.match(component, /<summary>/);
   assert(!/<details[^>]*\bopen\b/.test(component));
-  assert(!/<script\b|onmouseover|:hover|set:html/.test(component));
+  assert(!/onmouseover|:hover|set:html|innerHTML/.test(component));
   assert.match(component, /role="region" aria-label=\{t\.matrix\} tabindex="0"/);
   assert.match(component, /scope="row"/);
   assert.match(component, /scope="col"/);
   assert.match(component, /focus-visible/);
-  assert.match(component, /max-width: 350px/);
-  assert.match(component, /grid-template-columns: 1fr/);
+  assert.match(component, /min-height: 44px/);
+  assert.match(component, /data-case-select/);
+  assert.match(component, /select\.addEventListener\('change'/);
   assert.match(component, /entry\.note\[lang\]/);
   assert.match(component, /originLabels\[events\[eventId\]\.origin\]\[lang\]/);
   assert.match(component, /href=\{events\[eventId\]\.url\}/);
@@ -103,10 +104,41 @@ test('compact graphic leaves figure ownership to MDX and moves explanations into
   assert.match(component, /<div class="hero-caption">/);
   assert(!/class="job-insight"|class="count-label"/.test(component));
   assert.match(component, /<p class="shared-label">\{t\.sharedLabel\}/);
-  assert.match(component, /grid-template-columns: repeat\(10, 9px\)/);
-  assert.match(component, /gap: 4px/);
-  assert.match(component, /\.incident-hero \.job-count strong \{ color: var\(--accent\)/);
-  assert.match(component, /aria-label=\{`\$\{t\.columns\[job\]\.title\}: \$\{counts\[job\]\}/);
+  assert.match(component, /grid-template-columns: repeat\(4, minmax\(0, 1fr\)\)/);
+  assert.match(component, /height: 8px/);
+  assert.match(component, /php-row/);
+  assert.match(component, /incident\.id === 'php-2026'/);
+});
+
+test('clustering is deterministic, preserves all data and groups identical patterns', () => {
+  const snapshot = JSON.stringify(incidents);
+  const ids = rows => rows.map(row => row.id);
+  assert.deepEqual(ids(clusterIncidents([...incidents].reverse())), ids(clusteredIncidents));
+  assert.deepEqual(ids(clusterIncidents([...incidents.slice(7), ...incidents.slice(0, 7)])), ids(clusteredIncidents));
+  assert.deepEqual(ids(clusteredIncidents).sort(), [...expected].sort());
+  assert.equal(JSON.stringify(incidents), snapshot);
+  for (const row of clusteredIncidents) assert.strictEqual(row, incidents.find(x => x.id === row.id));
+  const bits = row => jobs.map(job => Number(row.codes[job] !== null)).join('');
+  const patterns = clusteredIncidents.map(bits);
+  for (const pattern of new Set(patterns)) {
+    const positions = patterns.flatMap((p, i) => p === pattern ? [i] : []);
+    assert.equal(positions.at(-1) - positions[0] + 1, positions.length);
+  }
+  assert.equal(hammingDistance(incidents[0], incidents[0]), 0);
+  assert.equal(hammingDistance(incidents[0], incidents[1]), hammingDistance(incidents[1], incidents[0]));
+  assert.deepEqual(clusterIncidents([]), []);
+  assert.deepEqual(clusterIncidents([incidents[0]]), [incidents[0]]);
+  assert.throws(() => clusterIncidents([incidents[0], incidents[0]]), /Duplicate/);
+});
+
+test('known pattern geometry and the PHP highlight cannot become a completion score', () => {
+  const byId = Object.fromEntries(incidents.map(row => [row.id, row]));
+  assert.equal(hammingDistance(byId['php-2026'], byId['notpetya-2017']), 3);
+  assert.equal(hammingDistance(byId['php-2026'], byId['heartbleed-2014']), 0);
+  assert.equal(clusteredIncidents.filter(row => row.id === 'php-2026').length, 1);
+  assert.match(component, /average-linkage clustering with Hamming distance/);
+  assert.match(component, /columns are not a required sequence/);
+  assert.match(component, /not verified completion/);
 });
 
 test('public payload excludes private paths, raw data and forbidden outcome assertions', () => {
@@ -122,8 +154,10 @@ test('Astro compiler accepts the complete component', async () => {
   assert.equal(compiled.diagnostics.filter(d => d.severity === 1).length, 0);
 });
 
-test('both locale renders expose 76 marks, 19 source rows and one initially closed keyboard control', async () => {
-  const compiled = await transform(component, { filename: 'IncidentResponseHero.astro' });
+test('both locale renders expose a clustered 19-by-4 heatmap and matching accessible sources', async () => {
+  // Test server-rendered accessibility independently of Astro's client bundler.
+  // The actual bundled selector/row interaction is exercised in browser checks.
+  const compiled = await transform(component.replace(/<script>[\s\S]*?<\/script>/g, ''), { filename: 'IncidentResponseHero.astro' });
   // A standalone, in-memory render: resolve imports without a dev server. Styles
   // are checked by the normal site build. Compiler metadata is build-time only.
   const source = compiled.code
@@ -137,9 +171,16 @@ test('both locale renders expose 76 marks, 19 source rows and one initially clos
   const container = await AstroContainer.create();
   for (const lang of ['en', 'ja']) {
     const html = await container.renderToString(Component, { props: { lang } });
-    assert.equal((html.match(/data-position=/g) || []).length, 76);
+    assert.equal((html.match(/data-coded=/g) || []).length, 76);
+    assert.equal((html.match(/data-heatmap-row=/g) || []).length, 19);
     assert.equal((html.match(/<tr data-case=/g) || []).length, 19);
-    assert.equal((html.match(/<section\b/g) || []).length, 4);
+    assert.equal((html.match(/<option\b/g) || []).length, 19);
+    assert.match(html, /<option[^>]+value="php-2026"[^>]+selected/);
+    const chartOrder = [...html.matchAll(/data-heatmap-row="([^"]+)"/g)].map(m => m[1]);
+    const tableOrder = [...html.matchAll(/<tr data-case="([^"]+)"/g)].map(m => m[1]);
+    assert.deepEqual(chartOrder, clusteredIncidents.map(row => row.id));
+    assert.deepEqual(tableOrder, chartOrder);
+    assert.equal((html.match(/class="php-label/g) || []).length, 1);
     assert.equal((html.match(/<details\b/g) || []).length, 1);
     assert.equal((html.match(/<summary\b/g) || []).length, 1);
     assert(!/<details[^>]*\bopen\b/.test(html));
@@ -149,7 +190,6 @@ test('both locale renders expose 76 marks, 19 source rows and one initially clos
     assert(html.includes(lang === 'ja' ? '残る仕事を示す' : 'Remaining work'));
     assert(!/<figure\b|<figcaption\b/.test(html));
     assert.equal((html.match(/class="shared-label/g) || []).length, 1);
-    assert.equal((html.match(/<section[^>]+aria-label=/g) || []).length, 4);
     assert(html.includes('tabindex="0"'));
     for (const id of Object.keys(events)) assert(html.includes(id), `${lang}: ${id}`);
   }
