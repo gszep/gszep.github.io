@@ -1,4 +1,5 @@
 import { insideFace, planarStroke, type FacadeMode } from './pencil-facades';
+import { graphiteStroke } from './pencil-brush';
 
 type V3 = [number, number, number];
 type Point = { x: number; y: number };
@@ -180,35 +181,7 @@ export class PencilAgents {
       return path;
     };
     const stroke=(path:Point[],weight:number,opacity:number,seed:number)=>{
-      if (path.length<3) return;
-      const r=random(seed);
-      // A pressure-shaped ribbon, not a uniform tube; dry filaments break it up.
-      const sides: Point[][] = [[],[]];
-      path.forEach((p,i)=>{
-        const before=path[Math.max(0,i-1)], after=path[Math.min(path.length-1,i+1)];
-        const len=Math.max(.01,distance(before,after));
-        const envelope=.12+.88*Math.pow(Math.sin(Math.PI*i/(path.length-1)),.65);
-        const radius=weight*envelope*(.65+r()*.3);
-        const nx=-(after.y-before.y)/len*radius, ny=(after.x-before.x)/len*radius;
-        sides[0].push({x:p.x+nx,y:p.y+ny}); sides[1].push({x:p.x-nx,y:p.y-ny});
-      });
-      inkCtx.beginPath();
-      [...sides[0],...sides[1].reverse()].forEach((p,i)=>i?inkCtx.lineTo(p.x,p.y):inkCtx.moveTo(p.x,p.y));
-      inkCtx.closePath(); inkCtx.fillStyle=`rgba(42,42,36,${opacity*.34})`; inkCtx.fill();
-      const fibers=3+Math.ceil(weight*.8);
-      for (let f=0;f<fibers;f++) {
-        const ox=(r()-.5)*weight, oy=(r()-.5)*weight;
-        inkCtx.beginPath(); let drawing=false;
-        for (let j=0;j<path.length;j++) {
-          const p=path[j], envelope=Math.sin(Math.PI*j/(path.length-1));
-          if (r()<settings.tooth*.07 || (envelope<.3 && r()<.2)) {drawing=false;continue;}
-          const x=p.x+ox+(r()-.5)*.9, y=p.y+oy+(r()-.5)*.9;
-          if (drawing) inkCtx.lineTo(x,y); else inkCtx.moveTo(x,y);
-          drawing=true;
-        }
-        inkCtx.lineWidth=(.35+r()*.65)*(1+weight*.2);
-        inkCtx.strokeStyle=`rgba(35,36,30,${opacity*(.3+r()*.35)})`; inkCtx.stroke();
-      }
+      graphiteStroke(inkCtx,path,weight,opacity,seed,settings.tooth);
     };
 
     // Loose structural accents, broken into several independently steered marks.
