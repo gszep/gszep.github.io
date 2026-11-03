@@ -39,7 +39,15 @@ export function initHorse(root:HTMLElement) {
   function resize(){
     const rect=canvas.getBoundingClientRect();
     const dpr=Math.min(devicePixelRatio||1,1.5,Math.sqrt(1_100_000/Math.max(1,rect.width*rect.height)));
-    canvas.width=Math.max(1,Math.round(rect.width*dpr));canvas.height=Math.max(1,Math.round(rect.height*dpr));request();
+    const width=Math.max(1,Math.round(rect.width*dpr)),height=Math.max(1,Math.round(rect.height*dpr));
+    if(canvas.width!==width||canvas.height!==height){
+      canvas.width=width;canvas.height=height;
+      // Resizing clears an opaque canvas to black. Repaint the current pose in
+      // the same callback rather than exposing a blank frame until the next tick.
+      drawing.draw(state,settings(),yaw,elevation,shading.checked);
+      root.dataset.ready='';
+    }
+    request();
   }
   function update(){
     root.querySelector<HTMLOutputElement>('[data-speed-label]')!.value=`${Number(speed.value).toFixed(2)}×`;
