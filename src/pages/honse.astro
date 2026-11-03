@@ -6,8 +6,8 @@ import PencilHorse from '../components/interactive/PencilHorse.astro';
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Honse — a galloping pencil sketch</title>
-    <meta name="description" content="A blocky pencil horse finds its feet. An interactive galloping sketch with springy hoof contacts and a slightly ridiculous hop." />
+    <title>Honse — a spring-powered pencil sketch</title>
+    <meta name="description" content="One invisible body spring. Three ways to flail: legs flailing, Naruto running, and paddle steamer. An interactive pencil horse." />
     <link rel="canonical" href="https://gszep.com/honse/" />
     <meta property="og:title" content="Honse" />
     <meta property="og:description" content="A few blocks. Some pencil marks. Too much enthusiasm." />
@@ -28,8 +28,9 @@ import PencilHorse from '../components/interactive/PencilHorse.astro';
         <p>Turn the sketch. Try a little less gravity. Give it a hop.</p>
         <details>
           <summary>What is moving?</summary>
-          <p>The body, neck, head, and legs follow the simple blocks of the reference sketch. A four-beat motor cycle bends the legs; gravity, springy hoof contacts, and a small balance controller move the body. This is an expressive toy, not a calibrated horse simulation.</p>
-          <p>The pencil brush and face-contained shading come from the <a href="/en/blog/brutalism-and-pencil-shaders/">drawing study</a>. <a href="https://github.com/henkaku-center/aps">APS’s Sesame simulation</a> uses a custom WebGPU rigid-body solver where available, and falls back to MuJoCo (WebAssembly) in a Web Worker; MuJoCo is also the reference it is tested against. Honse borrows the fixed-step and contact ideas, using a small original toy solver rather than either full engine.</p>
+          <p>One invisible spring attached underneath the main body does all the supporting. Gravity pulls Honse down; the spring pushes when compressed and pulls when stretched. Its rest length pulses to keep the bounce going. The legs exert no forces and have no ground contacts—they are just along for the ride.</p>
+          <p>Switch between loose flailing, a forward-leaning Naruto run, and rotating paddle legs. The same spring simulation continues underneath all three. Leaning, nodding, and leg motion are expressive poses, not a calibrated horse simulation.</p>
+          <p>The pencil brush and face-contained shading come from the <a href="/en/blog/brutalism-and-pencil-shaders/">drawing study</a>. <a href="https://github.com/henkaku-center/aps">APS’s Sesame simulation</a> uses a custom WebGPU rigid-body solver where available, and falls back to MuJoCo (WebAssembly) in a Web Worker; MuJoCo is also the reference it is tested against. Honse borrows the fixed-step approach, using a small original spring model rather than either full engine.</p>
         </details>
       </footer>
     </main>

@@ -1,22 +1,33 @@
-<section class="horse" data-horse aria-label="Honse, the interactive galloping pencil horse">
+---
+const modes = [
+  {id:'flail',label:'Legs flailing'},
+  {id:'naruto',label:'Naruto running'},
+  {id:'paddle',label:'Paddle steamer'},
+];
+---
+<section class="horse" data-horse aria-label="Honse, the spring-powered pencil horse">
   <div class="paper">
     <img src="/images/honse.jpg" width="1200" height="800" alt="Honse, a goofy horse made of rectangular blocks, drawn in pencil on tan paper" />
-    <canvas tabindex="0" role="img" aria-label="Honse, the galloping block horse. Drag or use arrow keys to turn the view. Space pauses, H hops, Home resets the view."></canvas>
+    <canvas tabindex="0" role="img" aria-label="Honse, the spring-powered block horse. Drag or use arrow keys to turn the view. Space pauses, H hops, Home resets the view."></canvas>
     <span class="hint">drag to turn · space to pause</span>
-    <span class="contact" data-contact aria-live="off"></span>
+    <span class="contact" data-bounce aria-live="off"></span>
   </div>
   <p class="status" data-status role="status">Sharpening pencils…</p>
   <noscript><p>Enable JavaScript to set the horse in motion.</p></noscript>
   <fieldset disabled>
     <legend class="sr-only">Horse controls</legend>
+    <div class="modes" role="group" aria-label="Move mode">
+      {modes.map(({id,label})=><button type="button" data-mode={id} aria-pressed={id==='flail'}>{label}</button>)}
+    </div>
+    <p class="mode-note" data-mode-note aria-live="polite">One invisible body spring. Four completely unhelpful legs.</p>
     <div class="buttons">
-      <button type="button" data-play aria-pressed="false">Gallop</button>
+      <button type="button" data-play aria-pressed="false">Go!</button>
       <button type="button" data-hop>Hop!</button>
       <button type="button" data-reset>Start over</button>
       <label class="shading"><input type="checkbox" data-shading checked /> Pencil shading</label>
     </div>
     <div class="sliders">
-      <label>Gallop <output data-speed-label>1.0×</output><input data-speed aria-label="Gallop speed" type="range" min="0.45" max="2" step="0.05" value="1" /></label>
+      <label>Tempo <output data-speed-label>1.0×</output><input data-speed aria-label="Movement tempo" type="range" min="0.45" max="2" step="0.05" value="1" /></label>
       <label>Gravity <output data-gravity-label>9.8</output><input data-gravity aria-label="Gravity" type="range" min="2" max="16" step="0.1" value="9.8" /></label>
       <label>Goofiness <output data-goofy-label>55%</output><input data-goofy aria-label="Goofiness" type="range" min="0" max="100" step="1" value="55" /></label>
     </div>
@@ -39,6 +50,10 @@
   fieldset { border: 0; margin: 0; padding: 1rem 1.2rem 1.2rem; min-width: 0; }
   fieldset:disabled { opacity: .45; }
   .buttons { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; }
+  .modes { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: .6rem; }
+  .modes button { padding: .55rem .35rem; }
+  .modes button[aria-pressed="true"] { background: #dbc7a7; border-color: #796044; }
+  .mode-note { font-size: 12px; line-height: 1.5; color: #71614f; min-height: 1.5em; margin: .7rem 0 1rem; }
   button { background: transparent; color: #352b21; border: 1px solid #bda783; border-radius: 3px; font: inherit; font-size: 14px; padding: .55rem 1rem; min-height: 44px; cursor: pointer; }
   button:hover { background: #e8ddca; }
   [data-play] { background: #423528; color: #fcf6e9; min-width: 100px; }
@@ -56,6 +71,8 @@
     fieldset { padding: .8rem; }
     .sliders { gap: .7rem; }
     .shading { margin-left: 0; }
+    .modes { gap: .35rem; }
+    .modes button { font-size: 12px; }
     .hint, .contact { font-size: 9px; }
   }
 </style>
