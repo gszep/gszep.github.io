@@ -1,4 +1,4 @@
-import { createHorse, stepHorse, hopHorse, HORSE_STEP, type HorseSettings } from './horse-model';
+import { createHorse, stepHorse, hopHorse, HORSE_STEP, type HorseSettings, type HorseMode } from './horse-model';
 import { HorseDrawing } from './horse-drawing';
 
 export function initHorse(root:HTMLElement) {
@@ -10,15 +10,17 @@ export function initHorse(root:HTMLElement) {
   const shading=root.querySelector<HTMLInputElement>('[data-shading]')!;
   const status=root.querySelector<HTMLElement>('[data-status]')!;
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
+  const modeButtons=[...root.querySelectorAll<HTMLButtonElement>('[data-mode]')];
+  let mode:HorseMode='flail';
   let state=createHorse(),yaw=-.58,elevation=.18;
   let running=!reduced.matches,visible=false,frame=0,last=0,accumulator=0;
   let drag:{id:number;x:number;y:number}|null=null;
   let drawing:HorseDrawing;
-  const settings=():HorseSettings=>({speed:Number(speed.value),gravity:Number(gravity.value),goofy:Number(goofy.value)/100});
+  const settings=():HorseSettings=>({speed:Number(speed.value),gravity:Number(gravity.value),goofy:Number(goofy.value)/100,mode});
   const stop=()=>{cancelAnimationFrame(frame);frame=0;last=0;accumulator=0;};
   const request=()=>{if(!frame&&visible&&!document.hidden)frame=requestAnimationFrame(tick);};
   function setRunning(value:boolean){
-    running=value;play.textContent=value?'Pause':'Gallop';play.setAttribute('aria-pressed',String(value));last=0;request();
+    running=value;play.textContent=value?'Pause':'Go!';play.setAttribute('aria-pressed',String(value));last=0;request();
   }
   function tick(now:number){
     frame=0;
@@ -33,7 +35,7 @@ export function initHorse(root:HTMLElement) {
     }else accumulator=0;
     drawing.draw(state,s,yaw,elevation,shading.checked);
     root.dataset.ready='';
-    root.querySelector('[data-contact]')!.textContent=state.time===0?'ready to gallop':state.contacts?`${state.contacts} hooves pushing`:'airborne, approximately';
+    root.querySelector('[data-bounce]')!.textContent=state.time===0?'ready to boing':state.springForce>1?'spring pushing':state.springForce< -1?'spring pulling':'boing';
     if(running)request();else last=0;
   }
   function resize(){
@@ -56,11 +58,23 @@ export function initHorse(root:HTMLElement) {
     request();
   }
   function hop(){hopHorse(state);setRunning(true);}
+  function selectMode(next:HorseMode){
+    mode=next;root.dataset.moveMode=mode;
+    modeButtons.forEach(button=>button.setAttribute('aria-pressed',String(button.dataset.mode===mode)));
+    root.querySelector('[data-mode-note]')!.textContent={
+      flail:'One invisible body spring. Four completely unhelpful legs.',
+      naruto:'Lean forward. Front legs swept back. Hind legs doing their best.',
+      paddle:'Four rotating paddles. Same spring. Questionable nautical credentials.',
+    }[mode];
+    request();
+  }
+  modeButtons.forEach(button=>button.addEventListener('click',()=>selectMode(button.dataset.mode as HorseMode)));
   play.addEventListener('click',()=>setRunning(!running));
   root.querySelector('[data-hop]')!.addEventListener('click',hop);
   root.querySelector('[data-reset]')!.addEventListener('click',()=>{
     state=createHorse();yaw=-.58;elevation=.18;accumulator=0;
     [speed,gravity,goofy].forEach(input=>input.value=input.defaultValue);shading.checked=true;
+    selectMode('flail');
     update();setRunning(!reduced.matches);
   });
   [speed,gravity,goofy,shading].forEach(input=>input.addEventListener('input',update));
@@ -99,5 +113,5 @@ export function initHorse(root:HTMLElement) {
   reduced.addEventListener('change',()=>{if(reduced.matches)setRunning(false);});
   addEventListener('pagehide',event=>{stop();if(!event.persisted){observer.disconnect();resizer.disconnect();}});
   addEventListener('pageshow',request);
-  update();setRunning(running);
+  selectMode(mode);update();setRunning(running);
 }
