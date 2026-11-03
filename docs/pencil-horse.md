@@ -57,3 +57,9 @@ working hop/reset/sliders/shading and keyboard/touch orbit, and no page errors.
 Rendering stopped offscreen. The existing cube's loose-mode canvas was compared
 pixel-for-pixel with the live pre-change site and was unchanged. These are browser
 viewport checks, not a physical-phone performance benchmark.
+
+The first production full-page capture exposed an opaque black frame during a
+layout resize. Direct canvas readbacks during playback showed healthy paper/ink
+pixels and no context loss. The resize callback had cleared the backing canvas
+and deferred repaint until the next animation tick. It now changes dimensions
+only when necessary and redraws the current pose synchronously after resizing.
