@@ -139,6 +139,10 @@ test('known pattern geometry and the PHP highlight cannot become a completion sc
   assert.match(component, /average-linkage clustering with Hamming distance/);
   assert.match(component, /columns are not a required sequence/);
   assert.match(component, /not verified completion/);
+  assert.match(component, /What the records cover/);
+  assert.match(component, /Documentation coverage/);
+  assert.match(component, /different organisations/);
+  assert.match(component, /複数の組織/);
 });
 
 test('public payload excludes private paths, raw data and forbidden outcome assertions', () => {
