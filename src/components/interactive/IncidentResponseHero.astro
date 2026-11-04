@@ -4,13 +4,13 @@ interface Props { lang?: Locale }
 const { lang = 'en' } = Astro.props;
 const copy = {
   en: {
-    eyebrow: '19 incidents · four recurring jobs',
-    title: 'A warning is only part of the response',
+    eyebrow: 'Documentation coverage · 19 selected incidents',
+    title: 'What the records cover',
     numerator: 'cases with explicit evidence in this collection',
     sharedLabel: 'One row per case · similar evidence patterns grouped together',
     legend: 'Recorded evidence',
     blank: 'Not coded in inspected records',
-    caption: 'Evidence of work, not verified completion. Pale cells do not mean “not done”; the columns are not a required sequence.',
+    caption: 'Recorded work, not verified completion. A full row can combine different organisations. Pale cells do not mean “not done”; the columns are not a required sequence.',
     fullCaption: 'Purposively selected examples, not a representative sample. One row per incident, in the order below; a case can involve several jobs. These counts are not a response-quality score. Not coded is not evidence of absence.',
     clustering: 'Rows use average-linkage clustering with Hamming distance on four equally weighted binary codes. Identical patterns are grouped; ties use case IDs. Branch orientation minimizes the joining distance, with ID tie-breaking. This is a display order, not a quality ranking or a finding that responses followed the same process. The evidence and inclusion rules are unchanged.',
     select: 'Inspect a case',
@@ -34,13 +34,13 @@ const copy = {
     },
   },
   ja: {
-    eyebrow: '19の事例に見る、繰り返し現れる四つの仕事',
-    title: '警告を出すだけでは、対応は終わらない',
+    eyebrow: '記録のカバー範囲・選んだ19事例',
+    title: '記録で確認できること',
     numerator: '今回の収集で明確な記録を確認できた事例',
     sharedLabel: '1行が1事例。記録の組み合わせが似た事例を並べています。',
     legend: '該当する記録あり',
     blank: '調べた記録では分類せず',
-    caption: '示すのは仕事の記録で、完了の確認ではありません。淡い色は「未実施」の意味ではなく、列も必須の順序ではありません。',
+    caption: '仕事の記録であり、完了の確認ではありません。一行に複数の組織の記録をまとめている場合があります。淡い色は「未実施」の意味ではなく、列も必須の順序ではありません。',
     fullCaption: '目的に沿って選んだ事例であり、全体を代表する標本ではありません。一つの行が一事例で、下の一覧と同じ順序です。一事例が複数の仕事に該当します。対応の良し悪しを採点したものではありません。分類しなかったことは、実施されなかった証拠ではありません。',
     clustering: '四つの分類を同じ重みの二値データとし、ハミング距離と平均連結法で似た行をまとめています。同じ組み合わせは隣り合い、同距離の場合は事例IDで順序を決めます。各結合では境界の距離が小さくなる向きを選び、同点はID順です。見やすくするための並び順であり、成績や共通の対応手順を示すものではありません。根拠と採用条件は変更していません。',
     select: '事例を確認',
