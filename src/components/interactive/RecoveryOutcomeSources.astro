@@ -1,0 +1,29 @@
+---
+import { outcomes, evidenceLabels, copy } from './recovery-outcomes';
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+---
+<div class="recovery-sources" lang={lang}>
+  <h3>{copy.sourcesTitle[lang]}</h3>
+  <ol>
+    {outcomes.map(row => <li id={`recovery-source-${row.id}`} data-source-outcome={row.id}>
+      <strong>{row.provider} · {row.function[lang]}</strong>
+      <p class="evidence-label">{evidenceLabels[row.evidence][lang]} · <time datetime={row.date}>{row.date}</time></p>
+      <p>{row.detail[lang]}</p>
+      <ul>{row.sources.map(source => <li><a href={source.url}>{source.label[lang]}</a></li>)}</ul>
+    </li>)}
+  </ol>
+</div>
+<style>
+  .recovery-sources { min-width: 0; max-width: 100%; overflow-wrap: anywhere; font-size: 15px; line-height: 1.6; }
+  .recovery-sources h3 { font-size: 20px; line-height: 1.35; }
+  .recovery-sources ol { padding-left: 1.6em; }
+  .recovery-sources ol > li { padding-left: .25em; margin-block: 1.5em; scroll-margin-top: 5rem; }
+  .recovery-sources ol > li::marker { font-weight: 650; }
+  .recovery-sources p { margin-block: .5em; }
+  .evidence-label { font-size: 13px; color: var(--post-caption, #536267); }
+  .recovery-sources ul { padding-left: 1.2em; margin-block: .5em; }
+  .recovery-sources a { color: var(--post-link, #225d72); text-decoration: underline; text-underline-offset: 3px; }
+  .recovery-sources a:focus-visible { outline: 2px solid #246674; outline-offset: 3px; }
+  .recovery-sources ol > li:target { outline: 2px solid #aac5c9; outline-offset: 6px; }
+</style>
