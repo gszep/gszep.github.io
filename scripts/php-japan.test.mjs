@@ -6,23 +6,13 @@ import { warning, responses, maintenance, offsetSeconds, minutesBetween, axisEnd
 
 // Source checks are independent of the build. Rendered checks consume its one immutable output.
 const phase = process.env.PHP_CHECK_PHASE ?? 'all';
-function assertLeadHierarchy(markup, lang, built = false) {
+// Historical data arithmetic is retained below. The article no longer renders
+// those figures: current presentation checks explicitly prevent their return.
+function assertLeadHierarchy(markup, lang) {
   const firstFigure = markup.match(/<figure\b[^>]*>/)?.[0];
-  assert.ok(firstFigure?.includes('id="shared-response-hero"'), `${lang}: shared-response analysis must be the first figure`);
-  assert.equal((markup.match(/id="shared-response-hero"/g) ?? []).length,1);
-  assert.equal((markup.match(/id="response-timeline"/g) ?? []).length,1);
-  const oldChart = markup.indexOf(built ? `japan-title-${lang}` : '<JapanResponseAnalysis');
-  const warningChart = markup.indexOf(built ? 'class="warning-comparison"' : '<PhpResponseTimeline');
-  assert.ok(warningChart >= 0 && oldChart > warningChart, `${lang}: warning comparison leads Japan detail`);
-  const stack = [];
-  for (const match of markup.slice(0,oldChart).matchAll(/<\/?details\b[^>]*>/g)) {
-    if (match[0].startsWith('</')) stack.pop();
-    else stack.push(match[0]);
-  }
-  const wrapper = stack.find(tag => /\bdata-japan-detail\b/.test(tag));
-  assert.ok(wrapper, `${lang}: old chart belongs inside its detail disclosure`);
-  assert.doesNotMatch(wrapper,/\sopen(?:\s|=|>)/, `${lang}: Japan detail is closed by default`);
-  assert.ok(markup.includes(lang === 'en' ? 'Original PHP and Japan reconstruction' : 'PHPと日本での対応'));
+  assert.ok(firstFigure?.includes('id="recovery-outcomes-hero"'), `${lang}: current outcome figure must lead`);
+  assert.equal((markup.match(/id="recovery-outcomes-hero"/g) ?? []).length,1);
+  assert.doesNotMatch(markup, /<\/?(?:details|summary)\b|data-japan-detail|id="response-timeline"|id="japan-timeline"|id="japan-containment"|data-heatmap-row=/);
 }
 if (phase !== 'built') {
 
@@ -84,13 +74,13 @@ test('date-only notices remain day intervals and maintenance has separate semant
     assert.ok(Date.parse(row.pageCreated)<Date.parse(row.reportedEnd));
   }
 });
-test('bilingual sources lead with shared-response analysis and preserve closed Japan details', () => {
+test('bilingual sources render only the current outcome figure, without legacy disclosures', () => {
   for (const lang of ['en','ja']) {
     const source = readFileSync(new URL(`../src/content/blog/${lang}/measured-responses-to-cybersecurity-warnings.mdx`,import.meta.url),'utf8');
     assertLeadHierarchy(source,lang);
-    assert.ok(source.includes(`<IncidentResponseHero lang="${lang}" />`));
-    assert.equal((source.match(/<PhpResponseTimeline /g) ?? []).length,1);
-    assert.ok(source.includes(`<JapanContainmentMap lang="${lang}" />`));
+    assert.ok(source.includes(`<RecoveryOutcomes lang="${lang}" />`));
+    assert.ok(source.includes(`<RecoveryOutcomeSources lang="${lang}" />`));
+    assert.doesNotMatch(source, /IncidentResponseHero|PhpResponseTimeline|JapanResponseAnalysis|JapanContainmentMap/);
   }
 });
 test('public data and bilingual prose expose matching sources without private research exports', () => {
@@ -108,36 +98,12 @@ test('public data and bilingual prose expose matching sources without private re
 });
 }
 
-if (phase !== 'source') for (const lang of ['en','ja']) test(`${lang}: built article preserves Japan analysis and exposes five classified accessible rows`, () => {
+if (phase !== 'source') for (const lang of ['en','ja']) test(`${lang}: built article excludes legacy charts and keeps visible sources`, () => {
   const html=readFileSync(new URL(`../dist/${lang}/blog/measured-responses-to-cybersecurity-warnings/index.html`,import.meta.url),'utf8');
-  assertLeadHierarchy(html,lang,true);
-  for (const source of [warning.source,...responses.map(row => row.source),...maintenance.flatMap(row => [row.plan,row.completion])]) {
-    assert.ok(html.includes(source),`${lang}: preserved chart source ${source}`);
-  }
-  assert.ok(html.includes(`japan-title-${lang}`));
-  assert.ok(html.includes('containment-map'));
-  assert.ok(!html.includes('<repair-evidence') && !html.includes('class="repair-evidence"'));
-  assert.equal((html.match(/class="window /g) ?? []).length,2);
+  assertLeadHierarchy(html,lang);
+  assert.equal((html.match(/data-outcome=/g) ?? []).length,8);
   for (const [,id] of html.matchAll(/href="#(ref-\d+)"/g)) assert.ok(html.includes(`id="${id}"`),id);
-  assert.ok(html.includes(lang==='en' ? 'scheduled public release' : '公開の予定'));
-  assert.ok(html.includes(lang==='en' ? 'Clocks are assumed JST' : 'FFXIVをKSTと仮定'));
-  assert.equal((html.match(/data-row="/g) ?? []).length,5);
-  assert.equal((html.match(/data-maintenance="/g) ?? []).length,2);
-  const rows = [...html.matchAll(/<button\b[^>]*data-row="([^"]+)"[^>]*>[\s\S]*?<\/button>/g)];
-  assert.equal(rows.length,5);
-  for (const [markup,id] of rows) {
-    assert.ok(markup.includes(`aria-controls="warning-detail-${id}-${lang}"`));
-    assert.ok(html.includes(`id="warning-detail-${id}-${lang}"`));
-    if (id === 'bamboohr') {
-      assert.match(markup,/class="reports"/);
-      assert.doesNotMatch(markup,/class="restriction"/);
-      assert.equal((markup.match(/<circle/g) ?? []).length,5);
-    } else assert.match(markup,/class="restriction"/);
-  }
-  assert.equal((html.match(/class="notice-day"/g) ?? []).length,2);
-  assert.ok(html.includes('2026-10-26 18:08'));
-  assert.ok(html.includes(lang==='en' ? '3 days, 15 hours and 18 minutes' : '3日15時間18分'));
-  assert.ok(html.includes(lang==='en' ? 'additional restriction, not its total duration' : '追加で続いた期間であり、制限の全期間ではありません'));
-  assert.ok(html.includes(lang==='en' ? 'not a matched baseline' : '同条件の基準ではなく'));
+  assert.ok(html.includes('recovery-source-ffxiv-backup'));
+  assert.ok(html.includes(lang==='en' ? 'not the start of the backup restriction' : '全停止期間ではありません'));
   assert.doesNotMatch(html,/research_notes|Disclosure aligned article completion|\/Users\/|docs\.google\.com|multi-incident-draft/);
 });
