@@ -1,0 +1,70 @@
+---
+import { outcomes, states, copy } from './recovery-outcomes';
+interface Props { lang?: 'en' | 'ja' }
+const { lang = 'en' } = Astro.props;
+---
+<div class="recovery-outcomes" lang={lang} role="group" aria-label={copy.title[lang]}>
+  <div class="outcomes-heading">
+    <strong>{copy.title[lang]}</strong>
+    <p>{copy.subtitle[lang]}</p>
+  </div>
+  <div role="table" aria-label={copy.title[lang]}>
+  <div class="column-headings" role="row">
+    <span role="columnheader">{copy.service[lang]}</span><span role="columnheader">{copy.action[lang]}</span>
+    <span role="columnheader">{copy.access[lang]}</span><span role="columnheader">{copy.unresolved[lang]}</span>
+  </div>
+  <div role="rowgroup">
+  {outcomes.map((row, index) => <div class="outcome-row" role="row" data-outcome={row.id} data-state={row.state}>
+      <span class="service" role="rowheader"><strong>{row.provider}</strong><span>{row.function[lang]}</span><a class="source-link" href={`#recovery-source-${row.id}`} aria-label={`${copy.sourceLabel[lang]} ${index + 1}: ${row.provider} · ${row.function[lang]}`}>{copy.sourceLabel[lang]} {index + 1}</a></span>
+      <span class="action" role="cell"><span class="mobile-label" aria-hidden="true">{copy.action[lang]}</span>{row.action[lang]}</span>
+      <span class="access" role="cell"><span class:list={['state', row.state]}><span class="state-mark" aria-hidden="true"></span>{states[row.state][lang]}</span><span>{row.access[lang]}</span><time datetime={row.date}>{row.dated[lang]}</time></span>
+      <span class="unresolved" role="cell"><span class="mobile-label" aria-hidden="true">{copy.unresolved[lang]}</span>{row.unresolved[lang]}</span>
+  </div>)}
+  </div>
+  </div>
+</div>
+<style>
+  .recovery-outcomes { --ink: #263b3d; --muted: #536267; color: var(--ink); background: #fbfcf9; color-scheme: light; width: 100%; min-width: 0; font-family: system-ui, sans-serif; font-size: 13px; line-height: 1.35; text-align: left; border-block: 2px solid #344c50; }
+  .recovery-outcomes strong { color: var(--ink); }
+  .recovery-outcomes *, .recovery-outcomes *::before { box-sizing: border-box; }
+  .outcomes-heading { padding: 14px 8px 12px; }
+  .outcomes-heading > strong { font-size: 21px; line-height: 1.25; }
+  .outcomes-heading p { margin: 5px 0 0; color: var(--muted); font-size: 12px; }
+  .column-headings, .outcome-row { display: grid; grid-template-columns: 1.1fr 1fr 1.35fr 1fr; gap: 14px; }
+  .column-headings { padding: 8px; background: #f1f3f2; font-size: 11px; font-weight: 650; }
+  .outcome-row { margin: 0; padding: 9px 8px; min-height: 70px; align-items: start; border-top: 1px solid #d8dedd; background: transparent; }
+  .outcome-row > span { min-width: 0; overflow-wrap: anywhere; }
+  .service, .access { display: flex; flex-direction: column; gap: 2px; }
+  .service strong { font-size: 13px; }
+  .source-link { width: fit-content; font-size: 12px; color: #225d72; text-decoration: underline; text-underline-offset: 3px; }
+  .source-link:focus-visible { outline: 2px solid #246674; outline-offset: 3px; }
+  time { font-size: 11px; color: var(--muted); }
+  .state { display: flex; align-items: center; gap: 5px; font-weight: 650; font-size: 12px; }
+  .state-mark { display: inline-block; width: 9px; height: 9px; flex: 0 0 9px; border: 1px solid currentColor; }
+  .observed-unavailable { color: #805116; }
+  .observed-unavailable .state-mark { background: #e9bf73; }
+  .reported-operating { color: #455b65; }
+  .reported-operating .state-mark { border-radius: 50%; }
+  .reported-restored { color: #226463; }
+  .reported-restored .state-mark { border-radius: 50%; background: #b1d9d3; }
+  .not-established { color: #585461; }
+  .not-established .state-mark { background: repeating-linear-gradient(135deg, transparent 0 2px, #aaa5b0 2px 3px); }
+  .unresolved { color: var(--muted); }
+  .mobile-label { display: none; }
+  @media (max-width: 600px) {
+    .recovery-outcomes { font-size: 14px; }
+    .outcomes-heading > strong { font-size: 20px; }
+    .column-headings { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+    .outcome-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: 10px 14px; padding: 14px 8px; }
+    .service { grid-column: 1; grid-row: 1; }
+    .access { grid-column: 2; grid-row: 1; }
+    .service strong { font-size: 15px; }
+    .action { grid-column: 1; }
+    .unresolved { grid-column: 2; }
+    .mobile-label { display: block; margin-bottom: 3px; font-size: 11px; font-weight: 650; color: var(--muted); }
+    .state { font-size: 13px; }
+    time { font-size: 12px; }
+    .source-link { min-height: 24px; display: inline-flex; align-items: center; }
+  }
+  @media print { .outcome-row { break-inside: avoid; } }
+</style>

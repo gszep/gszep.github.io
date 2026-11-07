@@ -1,49 +1,45 @@
 ---
 title: "What has actually recovered?"
 date: 2026-10-24
+image: "/images/recovery-city.jpg"
+imagePosition: "50% 50%"
 description: "Documented response work, restored service and security containment are different outcomes. What public records can—and cannot—tell us about recovery."
 tags: ["cybersecurity", "ai", "policy", "resilience"]
 draft: false
 ---
-import IncidentResponseHero from '../../../components/interactive/IncidentResponseHero.astro';
-import JapanResponseAnalysis from '../../../components/interactive/JapanResponseAnalysis.astro';
-import JapanContainmentMap from '../../../components/interactive/JapanContainmentMap.astro';
-import PhpResponseTimeline from '../../../components/interactive/PhpResponseTimeline.astro';
+import RecoveryOutcomes from '../../../components/interactive/RecoveryOutcomes.astro';
+import RecoveryOutcomeSources from '../../../components/interactive/RecoveryOutcomeSources.astro';
 
-*Revised 5 November 2026. Observations below are dated; this is not a live service-status report.*
+*Revised 7 November 2026. Observations below are dated; this is not a live service-status report.*
 
-On 4 November, at 11:29 JST, FabCafe's homepage returned HTTP 503: a maintenance page instead of the usual website. Its notice attributed the precautionary suspension to a critical PHP vulnerability. The same page said its physical locations remained open and events were continuing as scheduled.<sup><a href="#ref-25">25</a></sup>
+On 4 November, at 11:29 JST, FabCafe's homepage returned HTTP 503: a maintenance page instead of the usual website. Its notice attributed the precautionary suspension to a critical PHP vulnerability. The same page said its physical locations remained open and events were continuing as scheduled.<sup><a href="#ref-1">1</a></sup>
 
 Calling FabCafe “down” would lose the most useful distinction. The website was unavailable at that observation; the operator said the cafés were operating. Neither statement dates the website's outage onset or proves what happened between our checks.
 
 A security response involves several kinds of work: understanding local exposure, correcting advice, helping people act and assigning what remains. Those records matter. **Recovery asks a further question: which function can people use again, for whom, and since when?**
 
-<figure id="shared-response-hero">
-  <IncidentResponseHero lang="en" />
-  <figcaption>Documentation coverage across 19 selected incidents, not completed stages. PHP's filled row combines different actors. Expand the sources to see what each cell actually records.</figcaption>
+<figure id="recovery-outcomes-hero">
+  <RecoveryOutcomes lang="en" />
+  <figcaption>Functions returned at different times, while others remained available or unresolved. Each row includes its date and evidence: eight selected functions, not eight incidents or a recovery success rate.</figcaption>
 </figure>
 
-## A full row is not a successful recovery
+## Useful information gives someone a next step
 
-The PHP row combines Sakura's distinction between provider-managed and customer-managed software, a community correction to the release schedule, and May First's maintenance notice and member guidance. No single organisation completed four measured stages. The last column records evidence of remaining work; a filled cell can describe something unfinished.
+Debian's xz advisory distinguished stable releases from affected development branches, making a broad warning locally useful.<sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup> Apache explicitly explained why earlier Log4j mitigations were insufficient; its archived guidance retained class removal as a fallback, rather than discrediting every remedy.<sup><a href="#ref-4">4</a></sup> These are useful contributions, not measurements of how many users became protected.
 
-The chart tells us which kinds of evidence we found. More searching or more public documentation can fill more cells. It cannot tell us that PHP was handled best, or even that it was the most documented incident generally. Clustering similar rows makes the records easier to compare; it does not remove that selection bias.
+Heartbleed supplies stronger action evidence. Researchers sent contacts lists of vulnerable hosts and recovery guidance. After eight days, 39.5% of early-notified contacts had at least one listed host patched, versus 26.8% of those not yet notified.<sup><a href="#ref-5">5</a></sup> That is a measured contact-level difference of 12.7 percentage points. It is neither a percentage of fully secured hosts nor a trial showing that assistance beats a general warning.
 
-The work itself is still important. Debian's xz advisory distinguished stable releases from affected development branches, making a broad warning locally useful.<sup><a href="#ref-5">5</a></sup><sup><a href="#ref-6">6</a></sup> Apache explicitly explained why earlier Log4j mitigations were insufficient; its archived guidance retained class removal as a fallback, rather than discrediting every remedy.<sup><a href="#ref-10">10</a></sup> These are useful contributions, not measurements of how many users became protected.
-
-Heartbleed supplies stronger action evidence. Researchers sent contacts lists of vulnerable hosts and recovery guidance. After eight days, 39.5% of early-notified contacts had at least one listed host patched, versus 26.8% of those not yet notified.<sup><a href="#ref-14">14</a></sup> That is a measured contact-level difference of 12.7 percentage points. It is neither a percentage of fully secured hosts nor a trial showing that assistance beats a general warning.
-
-May First's PHP notice shows another form of help: it reports patching its shared webservers, including older PHP, and links instructions while encouraging members to change versions.<sup><a href="#ref-2">2</a></sup> Its maintenance commitment is qualified by members' needs and its capability.<sup><a href="#ref-17">17</a></sup> We can describe the help without claiming that every member followed it or that every site was recovered.
+May First's PHP notice shows another form of help: it reports patching its shared webservers, including older PHP, and links instructions while encouraging members to change versions.<sup><a href="#ref-6">6</a></sup> Its maintenance commitment is qualified by members' needs and its capability.<sup><a href="#ref-7">7</a></sup> We can describe the help without claiming that every member followed it or that every site was recovered.
 
 ## The website and the service can recover separately
 
-We therefore ran a separate, bounded Japan pilot: twelve provider–function pairs across internet access, banking/payments, energy, flights, rail and messaging/comms, for 20 October–3 November. Official news came first; notices guided endpoint checks and archive lookups. Providers without usable evidence stayed in the sample.
+We ran a bounded Japan pilot: twelve provider–function pairs across internet access, banking/payments, energy, flights, rail and messaging/comms, for 20 October–3 November. Official news came first; notices guided endpoint checks and archive lookups. Providers without usable evidence stayed in the sample.
 
-Three units yielded scoped historical operator reports: DOCOMO voice services, TEPCO electricity supply in part of Chiba, and JR East train operations on some Chiba lines.<sup><a href="#ref-29">29</a></sup><sup><a href="#ref-30">30</a></sup><sup><a href="#ref-31">31</a></sup> Nine lacked adequate evidence for the selected function. None of the twelve had an independently verified present function state. **Unknown did not mean unavailable—or normal.** The retained pilot notices did not explicitly establish a PHP link; this is not evidence that PHP caused no disruption.
+Three units yielded scoped historical operator reports: DOCOMO voice services, TEPCO electricity supply in part of Chiba, and JR East train operations on some Chiba lines.<sup><a href="#ref-8">8</a></sup><sup><a href="#ref-9">9</a></sup><sup><a href="#ref-10">10</a></sup> Nine lacked adequate evidence for the selected function. None of the twelve had an independently verified present function state. **Unknown did not mean unavailable—or normal.** The retained pilot notices did not explicitly establish a PHP link; this is not evidence that PHP caused no disruption.
 
-The function boundary changes the reading. Mitsubishi UFJ NICOS reported returning its members-only WEB login page to its normal presentation from 26 October and resuming some functions. It did not individually name corporate purchasing-card statement retrieval.<sup><a href="#ref-27">27</a></sup> That notice cannot settle whether statements were available, still less whether card payments worked.
+The function boundary changes the reading. Mitsubishi UFJ NICOS reported returning its members-only WEB login page to its normal presentation from 26 October and resuming some functions. It did not individually name corporate purchasing-card statement retrieval.<sup><a href="#ref-11">11</a></sup> That notice cannot settle whether statements were available, still less whether card payments worked.
 
-Kansai Transmission & Distribution reported suspending website functions, including part of its outage-information service, and restoring them in a same-date notice on 22 October.<sup><a href="#ref-28">28</a></sup> An app was offered as an alternative information channel. These are records of website disruption and recovery, not electricity-supply failure and restoration.
+Kansai Transmission & Distribution reported suspending website functions, including part of its outage-information service, and restoring them in a same-date notice on 22 October.<sup><a href="#ref-12">12</a></sup> An app was offered as an alternative information channel. These are records of website disruption and recovery, not electricity-supply failure and restoration.
 
 Even a “normal” label needs checking. Some inspected pages contained hidden or default status templates populated by JavaScript. Reading their unrendered HTML as a live all-clear would have created false normality in our results.
 
@@ -51,45 +47,15 @@ Even a “normal” label needs checking. Some inspected pages contained hidden 
 
 For a named endpoint, we look for the last observed success, first observed failure, last observed failure and first observed recovery. Those observations can bound transitions. They do not prove continuous downtime between captures, and a missing notice is not a successful service test.
 
-Operator reports can provide better clocks. DOCOMO describes a scoped voice disruption on 28 October from around 16:30 to around 17:29 JST.<sup><a href="#ref-29">29</a></sup> That supports a reported interval of roughly an hour, not an independently measured 59-minute outage for every subscriber. Its separate Okinawa restoration notice warns that temporary recovery could still leave some areas with difficulty or slower data speeds.<sup><a href="#ref-32">32</a></sup>
+Operator reports can provide better clocks. DOCOMO describes a scoped voice disruption on 28 October from around 16:30 to around 17:29 JST.<sup><a href="#ref-8">8</a></sup> That supports a reported interval of roughly an hour, not an independently measured 59-minute outage for every subscriber. Its separate Okinawa restoration notice warns that temporary recovery could still leave some areas with difficulty or slower data speeds.<sup><a href="#ref-13">13</a></sup>
 
-Archives helped recover JR East's notices, but not a complete service history. Two sampled pages carried a weather-related train-suspension banner. A separate software-related digital-services notice appeared in the later sample and expressly excluded train-operation effects.<sup><a href="#ref-31">31</a></sup> The observations must not be joined into one PHP outage or one continuous duration.
+Archives helped recover JR East's notices, but not a complete service history. Two sampled pages carried a weather-related train-suspension banner. A separate software-related digital-services notice appeared in the later sample and expressly excluded train-operation effects.<sup><a href="#ref-10">10</a></sup> The observations must not be joined into one PHP outage or one continuous duration.
 
 ## Stopping a service does not settle containment
 
-Binance's initial account of its 29 October incident adds a separate example. It says suspending withdrawals and shutting hot-wallet services did not invalidate malicious authorisations already recorded on-chain. The team needed a separate procedure to revoke those permissions.<sup><a href="#ref-26">26</a></sup>
+Binance's initial account of its 29 October incident adds a separate example. It says suspending withdrawals and shutting hot-wallet services did not invalidate malicious authorisations already recorded on-chain. The team needed a separate procedure to revoke those permissions.<sup><a href="#ref-14">14</a></sup>
 
-That is Binance's initial account, published on 3 November, not an independent forensic finding. It does not establish a PHP connection or a time when normal customer withdrawal service was restored. The operational distinction is important: a service can be suspended while a compromised capability remains usable. Containment, restoring customer access and establishing security require different evidence. This case is not included in either of the two samples above.
-
-## Different functions of one warning finished days apart
-
-PHP's release was announced for 23:00 in Japan on 21 October.<sup><a href="#ref-1">1</a></sup> Pixiv took pixiv, Encyclopedia and FANBOX offline at 19:00 JST and reopened at 23:30 after applying updates and finishing checks.<sup><a href="#ref-21">21</a></sup> Asken stopped its apps, website and corporate services around 22:50 and restored all of them at 09:25 the next morning.<sup><a href="#ref-22">22</a></sup> In this pair the earlier closure also reopened earlier, and neither record shows how patching was split from testing or whether either service could have stayed online safely.
-
-Korean FFXIV puts the split inside one response. New logins returned on 23 October after 25 hours 25 minutes; settings backup stayed restricted until 26 October at 18:08, about three days and 15 hours later.<sup><a href="#ref-23">23</a></sup><sup><a href="#ref-24">24</a></sup> Two functions of one warning, with two endpoints.
-
-<details data-japan-detail>
-<summary>Original PHP and Japan reconstruction, with the earlier figures</summary>
-
-The three figures below are the reconstruction the earlier version of this article published. They show reported restriction intervals, an alignment of the Japanese operator notices and a classification of documented response scope. Clocks are assumed JST for Asken and Sakura and KST for FFXIV; pixiv states JST. The release marker is the scheduled public release, not a measured binary-availability or operator-receipt time. Date-only notices remain day-wide bands. No unknown endpoint is extended to retrieval day, and no continuous all-service outage is inferred for Sakura.
-
-Settings backup at FFXIV remained restricted for a further 3 days, 15 hours and 18 minutes after new logins returned on 23 October, until 26 October at 18:08 (assumed KST). This is the additional restriction, not its total duration.
-
-<figure id="response-timeline">
-  <PhpResponseTimeline lang="en" />
-  <figcaption>Reported restrictions and recovery checkpoints after PHP's public advance warning. Solid intervals describe named functions; dotted markers describe reports, not measured downtime.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-2">2</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-23">23</a></sup><sup><a href="#ref-24">24</a></sup></figcaption>
-</figure>
-
-<figure id="japan-timeline">
-  <JapanResponseAnalysis lang="en" />
-  <figcaption>Our alignment of separately published operator records. Pixiv's interval is 4h 30m; Asken's is approximately 10h 35m. Sakura's start is shown without inventing a continuous outage or full-restoration endpoint.<sup><a href="#ref-1">1</a></sup><sup><a href="#ref-3">3</a></sup><sup><a href="#ref-21">21</a></sup><sup><a href="#ref-22">22</a></sup></figcaption>
-</figure>
-
-<figure id="japan-containment">
-  <JapanContainmentMap lang="en" />
-  <figcaption>Original classification from the Japanese notices: a declared service family, shared-account dependencies, and an interface and responsibility split. These labels describe documented response scope, not independently established software architecture or proof that a chosen boundary was optimal.<sup><a href="#ref-3">3</a></sup><sup><a href="#ref-18">18</a></sup><sup><a href="#ref-21">21</a></sup><sup><a href="#ref-22">22</a></sup></figcaption>
-</figure>
-
-</details>
+That is Binance's initial account, published on 3 November, not an independent forensic finding. It does not establish a PHP connection or a time when normal customer withdrawal service was restored. The operational distinction is important: a service can be suspended while a compromised capability remains usable. Containment, restoring customer access and establishing security require different evidence. Binance is an illustration separate from the Japan pilot.
 
 ## If you run the systems, report the function you checked
 
@@ -105,68 +71,33 @@ Distinguish a workaround from restoration of the original channel. Say when an o
 
 ## Ask what people can do again
 
-The next useful sentence after “we responded” names something a person can do again. Can they retrieve the statement, reach the service or use the original channel? If we cannot yet answer, that is a gap to investigate—not a box to colour as complete.
+The next useful sentence after “we responded” names something a person can do again. Can they retrieve the statement, reach the service or use the original channel? If we cannot yet answer, that is the next gap to investigate.
 
-<details>
-<summary>How the sample was chosen</summary>
+## Evidence and scope
 
-Twenty incidents were screened against one evidence rule: nineteen qualified, and one was excluded. The retained MOVEit 2023 pack lacked a qualifying vendor or operator account, and three reserve cases remain unscreened. Five cases were inherited from an earlier study, and five were added in each of three lanes: broad disclosure, active exploitation and supply-chain trust.
+The Japan pilot used dated public notices and archival captures for twelve preselected critical provider–function pairs, two per sector, over 20 October–3 November 2026. Three yielded scoped historical reports; nine target functions remained unknown, and all twelve present states were independently unverified. This is a purposeful pilot, not a national sample. The figure's selected illustrations, including FabCafe and Binance, are separate from the pilot roster.
 
-A case needed three distinct events and two primary documents. That rule selects well-documented, mostly English-language and famous episodes, so the rows show mechanisms rather than frequency, national capability or response quality. Most retained records are disclosure, guidance, assessment or correction; only a minority report an action or an outcome, and no new case independently verifies installed protection. The sample cannot test warning volume, lead time, or the effect of either.
+Search coverage, access restrictions, client-rendered pages and incomplete archives limit what can be established. An archive error may belong to the archive rather than the original site. Event, notice, capture and retrieval times are distinct. No end-user transaction, message-delivery or physical-service tests were performed; the records make no current-availability claim.
 
-The nineteen cases: Shellshock (2014), DROWN (2016), KRACK (2017), Meltdown and Spectre (2018), OpenSSL (2022), WannaCry (2017), NotPetya (2017), ProxyLogon (2021), Citrix Bleed (2023), DigiNotar (2011), SolarWinds (2020), Codecov (2021), ua-parser-js (2021), 3CX (2023), PHP (2026), eMudhra (2026), Log4Shell (2021), xz (2024) and Heartbleed (2014).
+## Figure sources
 
-</details>
+<RecoveryOutcomeSources lang="en" />
 
-<details>
-<summary>The separate Japan outcome pilot</summary>
-
-The twelve preselected provider–function pairs covered NTT East and SoftBank fixed broadband; LINE message delivery and DOCOMO mobile voice/SMS; NICOS corporate purchasing-card statements and SMBC Direct online banking; TEPCO and Kansai electricity supply; ANA and JAL domestic flight operations; and JR East passenger trains and JR Central's Tokaido Shinkansen. This was a purposeful, Japan-first pilot, not a national sample. Reports about part of a function do not establish its whole scope; the DOCOMO sources, for example, do not establish SMS outcomes.
-
-The bounded pass retained 69 direct GET attempts and 33 archive requests, including 21 exact-URL CDX queries. It inventoried 55 capture rows and attempted ten replays. These are collection counts, not outages, users affected or independent incidents. Access walls, collector TLS failures, query forms, client-rendered pages and incomplete archive coverage left substantial gaps. An archive's own error response is not necessarily the original site's error. No authenticated transaction, message delivery or physical-service test was performed; no continuous monitoring was started.
-
-Event time, notice publication, archive capture and retrieval time are separate fields. The method is intended to transfer through a different roster, language, timezone and incident definition; only this Japan application has been exercised. The archive pass also recorded a policy-check error: it initially reused a robots policy across archive origins. A later correct-origin check does not retroactively repair that deviation.
-
-The separately checked FabCafe homepage and Binance's new initial account are illustrative additions to the article, not additions to the nineteen-incident heatmap or the twelve-function pilot. Nothing from private correspondence is used here.
-
-</details>
-
-<details>
-<summary>Sources</summary>
+## Sources
 
 <ol class="refs">
-  <li id="ref-1">PHP Group, <a href="https://news-web.php.net/php.announce/509">public advance warning</a>, 20 October 2026, 19:33:47 UTC. The 21 October 14:00 UTC release is scheduled, not an observed release or operator receipt.</li>
-  <li id="ref-2">May First, <a href="https://status.mayfirst.org/2026/16/">PHP upgrade notice</a>, 21 October 2026, reporting webserver work between 14:00 and 15:00 UTC. Encouragement to move sites forward, not a requirement; operator statement, not independent runtime verification. Member outcomes are not measured.</li>
-  <li id="ref-3">Sakura Internet, <a href="https://www.sakura.ad.jp/corporate/information/announcements/2026/10/22/1968226117/">response by service</a>, 22 October 2026, updated 23 October at 17:30. Start 21 October 22:30; no continuous all-service outage inferred.</li>
-  <li id="ref-4">Cafe24, <a href="https://help.cafe24.com/notice/cafe24-notice/20261023_php_security_patch_response/">completion and responsibility notice</a>, 23 October 2026. Self-managed servers outside the completed work, except integrated-management customers.</li>
-  <li id="ref-5">xz backdoor, <a href="https://www.openwall.com/lists/oss-security/2024/03/29/4">oss-security disclosure</a>, 29 March 2024, naming build and distribution conditions.</li>
-  <li id="ref-6">Debian, <a href="https://www.debian.org/security/2024/dsa-5649">DSA-5649</a>, stable not known affected; testing and unstable affected.</li>
-  <li id="ref-7">ua-parser-js, <a href="https://github.com/faisalman/ua-parser-js/issues/536">issue 536</a>, 22 October 2021. The same reporter withdrew the ^0.7.28 range advice because 0.7.29 was already published, and pinned the exact fixed version instead of allowing automatic updates past it.</li>
-  <li id="ref-8">3CX, <a href="https://www.3cx.com/blog/news/desktopapp-security-alert/">desktop app security alert</a>, March 2023. The 1 April note corrected a Mac version list, not the security advice.</li>
-  <li id="ref-9">OpenSSL, <a href="https://www.openssl.org/news/secadv/20221101.txt">security advisory</a>, 1 November 2022. Severity HIGH after an earlier CRITICAL rating; reason given as prenotification testing; no known working exploit.</li>
-  <li id="ref-10">Apache Log4j, <a href="https://web.archive.org/web/20211220000136/https://logging.apache.org/log4j/2.x/security.html">archived security page</a>, 20 December 2021 capture. Names earlier mitigations as insufficient and retains class removal as a fallback.</li>
-  <li id="ref-11">Apache Log4j, <a href="https://logging.apache.org/log4j/2.x/security.html">current security page</a>. Carries less revision history than the archive.</li>
-  <li id="ref-12">NetScaler and Citrix, <a href="https://www.netscaler.com/blogs/2023-10/cve-2023-4966-critical-security-update-now-available-for-netscaler-adc-and-netscaler-gateway">CVE-2023-4966 update notice</a>, 10 October 2023 and later revisions. Fixed builds; reported session hijacking; instruction to terminate active sessions. The retained records do not establish which document came first.</li>
-  <li id="ref-13">Akamai, Heartbleed updates of <a href="http://blogs.akamai.com/2014/04/heartbleed-update.html">11 April 2014</a> and <a href="http://blogs.akamai.com/2014/04/heartbleed-update-v3.html">13 April 2014</a>. The first said the custom allocator protected customer keys and reported no evidence of a breach; the later one reported defects in that code, acknowledged a bug, began rotating customer keys and certificates, and kept possibility language about exposure. Calendar bylines, not a measured delay; no actual compromise is established.</li>
-  <li id="ref-14">Durumeric et al., <em>The Matter of Heartbleed</em>, IMC 2014, <a href="https://jhalderm.com/pub/papers/heartbleed-imc14.pdf">author-hosted PDF</a>. Comparison is early-notified contacts against not-yet-notified contacts; contact-level outcome means at least one listed host patched, not a fully secured host.</li>
-  <li id="ref-15">Jakob Bohm, <a href="http://www.mail-archive.com/openssl-users@openssl.org/msg73445.html">openssl-users message</a>, 9 April 2014, reporting the signing-key mismatch and the decision to use the workaround.</li>
-  <li id="ref-16">Wim Lewis, <a href="http://www.mail-archive.com/openssl-users@openssl.org/msg73450.html">reply on the same list</a>, three hours and nineteen minutes later. No subsequent install or signature verification is established.</li>
-  <li id="ref-17">May First, <a href="https://mayfirst.coop/membership-options/membership-agreement/">membership agreement</a>, assigning shared equipment and software maintenance to the cooperative, as members' needs and its capability allow, and site-specific software to members.</li>
-  <li id="ref-18">Sakura Cloud, <a href="https://cloud.sakura.ad.jp/news/2026/10/21/database-appliance-feature-suspension/">database appliance notice</a>, 21 October 2026. Web administration interfaces suspended; compatible SQL clients offered; Database Cluster excluded; resumption unspecified.</li>
-  <li id="ref-19">Codecov, <a href="https://about.codecov.io/apr-2021-post-mortem/">April 2021 post-mortem</a>. Removal of the malicious Bash Uploader change and a named HMAC key; the 15 April notice asked customers to rotate credentials and described exfiltration of environment variables and repository URLs. The 108 reported windows are periods in which the malicious uploader was in place, not confirmed exfiltration windows.</li>
-  <li id="ref-20">CISA, <a href="https://www.cisa.gov/news-events/directives/ed-21-01-mitigate-solarwinds-orion-code-compromise-closed">Emergency Directive 21-01</a>, 13 December 2020, closed. Disconnection as the known mitigation; the sunset is not evidence of cleanup.</li>
-  <li id="ref-21">pixiv, <a href="https://www.pixiv.net/info.php?id=14290">completion notice</a>, 22 October 2026, reporting the 21 October 19:00-23:30 JST window and account-dependent functions.</li>
-  <li id="ref-22">Asken, <a href="https://www.asken.inc/news/20261022">initial notice</a> and <a href="https://www.asken.inc/news/20261022-2">restoration notice</a>, 22 October 2026. Start approximate; stated restoration at 09:25 replaces the initial 10:00 estimate; UTC offset not printed.</li>
-  <li id="ref-23">Korean FFXIV, <a href="https://ff14.game.naver.com/news/notice/view/3152?page=1">new-login restoration</a>, 23 October 2026. KST assumed; existing-session availability unknown.</li>
-  <li id="ref-24">Korean FFXIV, <a href="https://ff14.game.naver.com/news/notice/view/3154?page=1">settings-backup restoration</a>, 26 October 2026. Same response as ref 23, different function; the conditional damaged-backup warning is not confirmed data loss.</li>
-  <li id="ref-25">FabCafe, <a href="https://fabcafe.com/">homepage maintenance notice</a>, observed 4 November 2026 at 11:29 JST with HTTP 503. The notice attributes website suspension to a PHP vulnerability and says venues/events continue. This endpoint observation does not establish onset, continuous duration, physical operations independently, or every locale's website availability.</li>
-  <li id="ref-26">Binance Blog, <a href="https://www.binance.com/en/square/post/384312159834579">initial incident account</a>, 3 November 2026, also linked to the <a href="https://www.binance.com/en/blog/community/3229153443759566763">canonical blog</a>. Operator account, not independent forensic validation or a current withdrawal-availability statement.</li>
-  <li id="ref-27">Mitsubishi UFJ NICOS, <a href="https://info.cr.mufg.jp/info/down2.php?attach_id=1091&amp;seq=11195&amp;category=2&amp;page=2">26 October 2026 WEB-service resumption notice</a>. Login-page presentation and some functions; corporate purchasing-card statement retrieval is not separately named. Generic software-vulnerability attribution, not an explicit PHP identification.</li>
-  <li id="ref-28">Kansai Transmission &amp; Distribution, 22 October 2026 <a href="https://www.kansai-td.co.jp/corporate/information/2026/pdf/20261022_1_01.pdf">website-function suspension</a> and <a href="https://www.kansai-td.co.jp/corporate/information/2026/pdf/20261022_3_01.pdf">restoration notice</a>. Sequential start from 00:00, no end hour; not electricity-supply interruption/restoration. Software is not named as PHP.</li>
-  <li id="ref-29">NTT DOCOMO, <a href="https://www.docomo.ne.jp/info/network/kanto/pages/261028_01_m.html">28 October 2026 voice-service restoration report</a>. Approximate 16:30–17:29 JST interval, scoped possible impact across named eastern areas; emergency calls affected for some users. Cause under confirmation; no PHP attribution.</li>
-  <li id="ref-30">TEPCO Power Grid, <a href="https://www.tepco.co.jp/pg/emergency/pdf/261027j0101.pdf">27 October 2026 emergency notice</a>. Twenty households in difficult-access areas of Chiba still without power at 12:00 after Typhoon 25. Snapshot, not a restoration clock; the September peak is outside the study window and is not onset.</li>
-  <li id="ref-31">JR East homepage captures of <a href="https://web.archive.org/web/20261020070813id_/https://www.jreast.co.jp/">20 October</a> and <a href="https://web.archive.org/web/20261028200332id_/https://www.jreast.co.jp/">29 October JST</a>. Both carry the weather-related Chiba train banner. The separate software-related group-service notice is present in the later sample and says train operation is unaffected by that issue. Its earlier absence is not evidence of successful service.</li>
-  <li id="ref-32">NTT DOCOMO, <a href="https://www.docomo.ne.jp/info/network/kanto/pages/261023_00_m.html">Okinawa typhoon-related voice/data report</a>, updated 27 October 2026. Reported restoration retains possible difficulty or reduced speeds under temporary recovery; not an unqualified all-clear or a confirmed continuing outage for every user.</li>
+  <li id="ref-1">FabCafe, <a href="https://fabcafe.com/">homepage maintenance notice</a>, observed 4 November 2026 at 11:29 JST with HTTP 503. The notice attributes website suspension to a PHP vulnerability and says venues/events continue. This endpoint observation does not establish onset, continuous duration, physical operations independently, or every locale's website availability.</li>
+  <li id="ref-2">xz backdoor, <a href="https://www.openwall.com/lists/oss-security/2024/03/29/4">oss-security disclosure</a>, 29 March 2024, naming build and distribution conditions.</li>
+  <li id="ref-3">Debian, <a href="https://www.debian.org/security/2024/dsa-5649">DSA-5649</a>, stable not known affected; testing and unstable affected.</li>
+  <li id="ref-4">Apache Log4j, <a href="https://web.archive.org/web/20211220000136/https://logging.apache.org/log4j/2.x/security.html">archived security page</a>, 20 December 2021 capture. Names earlier mitigations as insufficient and retains class removal as a fallback.</li>
+  <li id="ref-5">Durumeric et al., <em>The Matter of Heartbleed</em>, IMC 2014, <a href="https://jhalderm.com/pub/papers/heartbleed-imc14.pdf">author-hosted PDF</a>. Comparison is early-notified contacts against not-yet-notified contacts; contact-level outcome means at least one listed host patched, not a fully secured host.</li>
+  <li id="ref-6">May First, <a href="https://status.mayfirst.org/2026/16/">PHP upgrade notice</a>, 21 October 2026, reporting webserver work between 14:00 and 15:00 UTC. Encouragement to move sites forward, not a requirement; operator statement, not independent runtime verification. Member outcomes are not measured.</li>
+  <li id="ref-7">May First, <a href="https://mayfirst.coop/membership-options/membership-agreement/">membership agreement</a>, assigning shared equipment and software maintenance to the cooperative, as members' needs and its capability allow, and site-specific software to members.</li>
+  <li id="ref-8">NTT DOCOMO, <a href="https://www.docomo.ne.jp/info/network/kanto/pages/261028_01_m.html">28 October 2026 voice-service restoration report</a>. Approximate 16:30–17:29 JST interval, scoped possible impact across named eastern areas; emergency calls affected for some users. Cause under confirmation; no PHP attribution.</li>
+  <li id="ref-9">TEPCO Power Grid, <a href="https://www.tepco.co.jp/pg/emergency/pdf/261027j0101.pdf">27 October 2026 emergency notice</a>. Twenty households in difficult-access areas of Chiba still without power at 12:00 after Typhoon 25. Snapshot, not a restoration clock; the September peak is outside the study window and is not onset.</li>
+  <li id="ref-10">JR East homepage captures of <a href="https://web.archive.org/web/20261020070813id_/https://www.jreast.co.jp/">20 October</a> and <a href="https://web.archive.org/web/20261028200332id_/https://www.jreast.co.jp/">29 October JST</a>. Both carry the weather-related Chiba train banner. The separate software-related group-service notice is present in the later sample and says train operation is unaffected by that issue. Its earlier absence is not evidence of successful service.</li>
+  <li id="ref-11">Mitsubishi UFJ NICOS, <a href="https://info.cr.mufg.jp/info/down2.php?attach_id=1091&amp;seq=11195&amp;category=2&amp;page=2">26 October 2026 WEB-service resumption notice</a>. Login-page presentation and some functions; corporate purchasing-card statement retrieval is not separately named. Generic software-vulnerability attribution, not an explicit PHP identification.</li>
+  <li id="ref-12">Kansai Transmission &amp; Distribution, 22 October 2026 <a href="https://www.kansai-td.co.jp/corporate/information/2026/pdf/20261022_1_01.pdf">website-function suspension</a> and <a href="https://www.kansai-td.co.jp/corporate/information/2026/pdf/20261022_3_01.pdf">restoration notice</a>. Sequential start from 00:00, no end hour; not electricity-supply interruption/restoration. Software is not named as PHP.</li>
+  <li id="ref-13">NTT DOCOMO, <a href="https://www.docomo.ne.jp/info/network/kanto/pages/261023_00_m.html">Okinawa typhoon-related voice/data report</a>, updated 27 October 2026. Reported restoration retains possible difficulty or reduced speeds under temporary recovery; not an unqualified all-clear or a confirmed continuing outage for every user.</li>
+  <li id="ref-14">Binance Blog, <a href="https://www.binance.com/en/square/post/384312159834579">initial incident account</a>, 3 November 2026, also linked to the <a href="https://www.binance.com/en/blog/community/3229153443759566763">canonical blog</a>. Operator account, not independent forensic validation or a current withdrawal-availability statement.</li>
 </ol>
-
-</details>
