@@ -2,6 +2,11 @@
 // No per-key provenance block: no human-authored keys yet — provenance is git.
 window.I18N = {
   "brand": "Henkaku Center · Chiba Tech SDS",
+  "loading.title": "Getting the slides ready",
+  "loading.detail": "Loading images, video and the robot animation. This may take a moment.",
+  "loading.error": "Some assets could not be loaded. You can retry or continue with the slides.",
+  "loading.retry": "Retry",
+  "loading.continue": "Continue",
   "capability.eyebrow": "01 · Individual · Capabilities expanding",
   "capability.foot": "<br>",
   "capability.h2": "Non-engineering students can build robots.",

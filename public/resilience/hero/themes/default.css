@@ -1,0 +1,103 @@
+/* The single presentation palette. See ../THEMING.md before editing.
+ * Physical wiring, probe/test colours and safety colours are deliberately absent.
+ * Scene RGB triples are space-separated, normalized 0–1 (not CSS colours).
+ * Their original precision is retained for pixel-equivalent rendering. */
+:root {
+  --paper: #f6f4ef;
+  --card: #ffffff;
+  --ink: #17171a;
+  --muted: #6b6a66;
+  --rule: #d9d5cc;
+  --accent: #ed5c1f;
+  --on-accent: #fff;
+  --on-ink: #fff;
+  --link: #245d96;
+  --panel-background: var(--card);
+  --step-number: var(--ink);
+  --parts-background: #f6f4ef;
+  --parts-hover: #fff;
+  --tool-background: #fff7ec;
+  --model-background: #f3f1ec;
+  --model-border: #b5b0a4;
+  --model-ink: #4a4843;
+  --info-background: #eaf4fb;
+  --info-border: #9cc7e4;
+  --chip-instructor: var(--muted);
+  --chip-measured: var(--muted);
+  --chip-photo: var(--muted);
+  --chip-model: var(--muted);
+  --label-background: #fff;
+  --label-ink: var(--ink);
+  --label-dot: var(--accent);
+  --leader-halo: #fff;
+  --check-accent: var(--accent);
+  --check-current: #f3f1ec;
+  --timeline-background: var(--card);
+  --timeline-accent: var(--accent);
+  --tick-hover: #eee;
+  --tick-active: var(--ink);
+  --tooltip-background: rgba(255, 253, 247, .96);
+  --tooltip-border: #bcb8ac;
+  --ch-board: #3f8f5a;
+  --ch-converter: #2f6fc4;
+  --ch-connectors: #c9a227;
+  --ch-hub: #8a4fc4;
+  --ch-wiring: #6b7280;
+  --ch-install: #d0452f;
+  --ch-power: #ca812b;
+  --ch-motion: #238c91;
+  --ch-body: #a65514;
+
+  --font-body: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP", "Yu Gothic", Meiryo, sans-serif;
+  --font-heading: var(--font-body);
+  --font-mono: ui-monospace, Menlo, monospace;
+  --font-code: ui-monospace, monospace;
+  --font-pre: monospace;
+  --font-info: Georgia, serif;
+  --weight-normal: 400;
+  --weight-bold: 700;
+  --weight-heavy: 800;
+  --weight-black: 900;
+
+  --scene-background: 0.965 0.957 0.937;
+  --scene-highlight: 0.93 0.36 0.12;
+  --scene-hover: var(--scene-highlight);
+  --scene-ink: 0.09 0.09 0.1;
+  --scene-line-surface: 0.965 0.96 0.95;
+  --scene-light-tint: 1 1 1;
+  /* Only substrate vertices, never copper, terminals, markings or wires. */
+  --part-carrier: #146b3d;
+  --part-converter: #324c34;
+  --part-converter-edge: #1a331a;
+  --part-hub: #2b527b;
+  --part-s3: #161718;
+  --part-upper-leg: #e0ad87;
+  --part-lower-leg: #8cb5c4;
+  /* Existing illustrative list swatches (not electrical colour codes). */
+  --swatch-carrier: #1f6b3d;
+  --swatch-converter: #2a5dab;
+  --swatch-hub: #2b56a8;
+  --swatch-s3: #1a1a1a;
+  --swatch-printed-plastic: #eeeee8;
+  --swatch-upper-leg: var(--swatch-printed-plastic);
+  --swatch-lower-leg: var(--swatch-printed-plastic);
+
+  --embed-paper: #fff;
+  --embed-ink: #111;
+  --embed-accent: #2c40d3;
+  --embed-scene-background: 1 1 1;
+  --embed-scene-highlight: 0.17254901960784313 0.25098039215686274 0.8274509803921568;
+  --kiosk-title-size: clamp(28px, 3vw, 56px);
+  --kiosk-number-size: clamp(40px, 4vw, 72px);
+}
+
+/* :where keeps specificity equal to :root so a later theme can override any
+ * token with :root. Override --embed-* to change only the compact palette. */
+:root:where(.embedded) {
+  --paper: var(--embed-paper);
+  --ink: var(--embed-ink);
+  --accent: var(--embed-accent);
+  --step-number: var(--accent);
+  --scene-background: var(--embed-scene-background);
+  --scene-highlight: var(--embed-scene-highlight);
+}

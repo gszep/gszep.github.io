@@ -1,6 +1,19 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><link rel="stylesheet" href="survive.css"><script src="../../../engine/i18n.js"></script></head>
 <body><div class="slide ink title-slide">
+  <aside class="startup-loading" hidden aria-live="polite">
+    <div class="startup-card">
+      <b data-i18n="loading.title"></b>
+      <p data-i18n="loading.detail"></p>
+      <progress max="100" value="0" aria-label="Loading progress"></progress>
+      <span class="startup-count">0%</span>
+      <div class="startup-error" hidden>
+        <p data-i18n="loading.error"></p>
+        <button class="startup-retry" data-i18n="loading.retry"></button>
+        <button class="startup-continue" data-i18n="loading.continue"></button>
+      </div>
+    </div>
+  </aside>
   <span class="eyebrow part" data-i18n="title.eyebrow"></span>
   <h1 class="t" data-i18n="title.h1"></h1>
   <p class="lede" data-i18n="title.lede"></p>
@@ -10,4 +23,5 @@
   </a>
   <div class="foot"><span data-i18n="title.foot"></span><span class="wordmark" data-i18n="brand"></span></div>
 </div>
+<script src="startup.js"></script>
 </body></html>

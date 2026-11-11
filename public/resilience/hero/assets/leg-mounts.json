@@ -1,0 +1,153 @@
+{
+  "schema": 1,
+  "sourceRevision": "481630e4e7600e851618d3b8c0db7acef9d0b82e",
+  "parts": {
+    "L1": {
+      "source": "assets/stl/upstream/L1-v117.stl",
+      "sha256": "081896568cc9776393c038d05ecc8caf01090c6971efebe799d064def4c92558",
+      "bounds": [
+        [
+          -12.44672966003418,
+          8.87775707244873,
+          -66.18745422363281
+        ],
+        [
+          7.873270511627197,
+          39.357757568359375,
+          -16.666772842407227
+        ]
+      ],
+      "lateralSign": -1
+    },
+    "L2": {
+      "source": "assets/stl/upstream/L2-v117.stl",
+      "sha256": "4e47eef40bf523aa0d7b0ac285f3086b3e6c5ccd347525f5c93bbf0c5bcd1fbf",
+      "bounds": [
+        [
+          -12.44672966003418,
+          8.87775707244873,
+          16.666772842407227
+        ],
+        [
+          7.873270511627197,
+          39.357757568359375,
+          66.18745422363281
+        ]
+      ],
+      "lateralSign": 1
+    },
+    "L3": {
+      "source": "assets/stl/upstream/L3-v117.stl",
+      "sha256": "136b0f28814629c654a45da1ebed93f496399c0d97007c6c02e1df4422be56a3",
+      "bounds": [
+        [
+          3.7629330158233643,
+          5.702756881713867,
+          -106.90676879882812
+        ],
+        [
+          13.287933349609375,
+          24.752756118774414,
+          -48.48676681518555
+        ]
+      ],
+      "lateralSign": -1
+    },
+    "L4": {
+      "source": "assets/stl/upstream/L4-v117.stl",
+      "sha256": "731819f13cd34efb4ab1b9121e9fae835a463ae11f6689670f7800113ec7b470",
+      "bounds": [
+        [
+          3.7629330158233643,
+          5.702756881713867,
+          48.48676681518555
+        ],
+        [
+          13.287933349609375,
+          24.752756118774414,
+          106.90676879882812
+        ]
+      ],
+      "lateralSign": 1
+    },
+    "R1": {
+      "source": "assets/stl/upstream/R1-v117.stl",
+      "sha256": "443f956016ad416699d8d5e56ab2fb0e36b10d42f02ff47ea02ae5986180e871",
+      "bounds": [
+        [
+          -12.44672966003418,
+          8.87775707244873,
+          16.666772842407227
+        ],
+        [
+          7.873270511627197,
+          39.357757568359375,
+          66.18745422363281
+        ]
+      ],
+      "lateralSign": 1
+    },
+    "R2": {
+      "source": "assets/stl/upstream/R2-v117.stl",
+      "sha256": "fab2770d0d7f1384c4888e2b3a25cd7a6729c2b4230894b4771a177b73c6452c",
+      "bounds": [
+        [
+          -12.44672966003418,
+          8.87775707244873,
+          -66.18745422363281
+        ],
+        [
+          7.873270511627197,
+          39.357757568359375,
+          -16.666772842407227
+        ]
+      ],
+      "lateralSign": -1
+    },
+    "R3": {
+      "source": "assets/stl/upstream/R3-v117.stl",
+      "sha256": "c2c35b4c948849878649d99e512af6702b5fcbbd2b30578bbec87ab15b8ec99e",
+      "bounds": [
+        [
+          3.7629330158233643,
+          5.702756881713867,
+          48.48676681518555
+        ],
+        [
+          13.287933349609375,
+          24.752756118774414,
+          106.90676879882812
+        ]
+      ],
+      "lateralSign": 1
+    },
+    "R4": {
+      "source": "assets/stl/upstream/R4-v117.stl",
+      "sha256": "131348a19491edad32f29d7a64109fdfadc3a03e01feedbf08dc1769e050938a",
+      "bounds": [
+        [
+          3.7629330158233643,
+          5.702756881713867,
+          -106.90676879882812
+        ],
+        [
+          13.287933349609375,
+          24.752756118774414,
+          -48.48676681518555
+        ]
+      ],
+      "lateralSign": -1
+    }
+  },
+  "datums": {
+    "hipAxisX": 1.5,
+    "hipAxisLateral": 23.04,
+    "footAxisLateral": 59.9,
+    "footAxisHeight": 15.25,
+    "hipHornRecessRoof": 37.834,
+    "footHornRecessRoof": -10.834,
+    "illustrativeHornThickness": 1.5
+  },
+  "evidence": "Hip/foot axes and 36.86 mm spacing follow sim/prepare_assets.py and sim/build_mjcf.py. Recess roofs follow the native upper-leg STL planes. The foot horn is fixed in the hip part; its servo body is carried by the printed foot. Horn thickness/reference-servo seating are illustrative, not purchased-variant/spline fit acceptance. Each labelled STL retains its handed geometry; transformations are rotations/translations only.",
+  "mountingReference": "Instructor 2026-10-28: own L/R, front up-screen, front hips L1/R1, hip shafts toward fore/aft corners and upward, horns outward along the lateral axis. Rest/90 mounting is distinct from the photographed standing pose."
+}
