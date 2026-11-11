@@ -74,6 +74,8 @@ try {
   report(85);
   scene = await createServoScene(canvas, { assembly: { manifest, binary }, mode: 'robot',
     prefer: 'webgl', groupForPart: id => groups.get(id) || id });
+  // The renderer's default is camera-only gestures; this is an audience slide.
+  canvas.style.touchAction = 'auto';
   scene.setAppearance({ style: 1, accent: [.93, .36, .12], ink: [.09, .09, .1], lineSurface: [.96, .96, .95], lightTint: [1, 1, 1] });
   if (reduced.matches) clock = HERO_BUILD_MS + 7000;
   paint(); scene.setVisible(active);
