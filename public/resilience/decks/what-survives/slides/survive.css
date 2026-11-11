@@ -16,6 +16,14 @@ h2.t { max-width: 1120px; }
 .audience-link b { display: block; font-size: 26px; line-height: 1.2; }
 .audience-link span span { display: block; margin-top: 8px; font-size: 20px; }
 .audience-link .audience-url { font-family: var(--ct-font-mono); color: var(--ct-blue-light); }
+.startup-loading { position: absolute; inset: 0; z-index: 10; display: grid; place-items: center; background: var(--ct-black); }
+.startup-loading[hidden], .startup-error[hidden] { display: none; }
+.startup-card { width: 520px; padding: 30px; border: 3px solid var(--ct-white); color: var(--ct-white); }
+.startup-card b { font-size: 28px; }
+.startup-card p { font-size: 20px; line-height: 1.5; margin: 14px 0; }
+.startup-card progress { width: 100%; height: 16px; accent-color: var(--ct-blue-light); }
+.startup-count { display: block; margin-top: 10px; font: 18px var(--ct-font-mono); }
+.startup-card button { background: var(--ct-white); color: var(--ct-black); border: 0; padding: 10px 16px; margin: 6px 12px 0 0; font: inherit; cursor: pointer; }
 
 /* the two questions */
 .asks { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 34px; flex: 1; min-height: 0; }

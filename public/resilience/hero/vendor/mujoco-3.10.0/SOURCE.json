@@ -1,0 +1,13 @@
+{
+  "package": "@mujoco/mujoco",
+  "version": "3.10.0",
+  "tarball_sha1": "39327afab1e15cccf1c509b38556383e5933ad85",
+  "files": {
+    "mujoco.js": "45e8e0e1617c19fbf7f00b36a6a72d1c0c980c0a4f38523e04f0641e8fbab7b9",
+    "mujoco.d.ts": "d9827b23e7d775cc16274d7007698401f619e6fab1332496dbc451dc33d59b3e",
+    "LICENSE": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30",
+    "README.md": "8aac6a48315d961e9f5d06b1df254f6033ce541e4e8b7ba8d376859d6ad6b570",
+    "package.json": "71bd565a806e8ae902ff2b0e3b536d171412b20f52ba292c75daa32054ea7e93",
+    "mujoco.wasm": "832597ae0a0e306c97ed43d2a9bbca033cf3e547eced410fb9011d87a68d4207"
+  }
+}

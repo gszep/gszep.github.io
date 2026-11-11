@@ -1,14 +1,18 @@
-/* Full-bleed Sesame build-guide hero. A still poster sits underneath until the
- * guide reports ready; presentation keys are forwarded back to the deck. */
+/* Eagerly prepare the standalone two-eye animation; play only on this slide. */
 (() => {
   const boot = () => {
     const slide = document.querySelector('.hero-slide');
-    const origin = 'https://aps.chibatech.dev';
+    const source = location.pathname.startsWith('/resilience/')
+      ? new URL('../../../hero/', location.href)
+      : new URL('https://gszep.com/resilience/hero/');
+    const origin = source.origin;
     const language = () => document.documentElement.lang === 'ja' ? 'ja' : 'en';
     if (location.protocol === 'file:') return;
     const frame = document.createElement('iframe');
     frame.title = slide.getAttribute('aria-label') || 'Sesame';
-    frame.src = `${origin}/ii/sesame-build/?embed=1&lang=${language()}`;
+    source.searchParams.set('lang', language());
+    frame.src = source.href;
+    frame.loading = 'eager';
     frame.referrerPolicy = 'strict-origin-when-cross-origin';
     frame.allow = 'fullscreen';
     let ready = false, lastActive;
@@ -23,9 +27,14 @@
       if (event.origin !== origin || event.source !== frame.contentWindow) return;
       if (event.data?.type === 'sesame-build-ready') {
         ready = true; lastActive = undefined;
+        document.documentElement.dataset.heroReady = 'true';
         send({ type: 'sesame-build-locale', lang: language() });
         syncActivity();
         frame.classList.add('ready');
+      } else if (event.data?.type === 'sesame-build-progress') {
+        document.documentElement.dataset.heroProgress = String(event.data.value);
+      } else if (event.data?.type === 'sesame-build-error') {
+        document.documentElement.dataset.heroError = event.data.message;
       } else if (event.data?.type === 'sesame-build-key' &&
         ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'PageUp', 'PageDown', 'Home', 'End', ' ', 'Enter', 'Backspace', 'Tab', 'l', 'L', 'f', 'F'].includes(event.data.key)) {
         window.dispatchEvent(new KeyboardEvent('keydown', { key: event.data.key, bubbles: true, cancelable: true }));

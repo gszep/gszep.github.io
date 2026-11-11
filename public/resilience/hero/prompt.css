@@ -1,0 +1,13 @@
+.hero-prompt { position: absolute; top: 9%; left: clamp(12px, 56%, calc(100% - 200px)); z-index: 3; pointer-events: none;
+  background: var(--card); color: #8a4300; border: 2px solid #f7941a; border-radius: 16px; padding: 8px 16px;
+  font-weight: var(--weight-heavy); font-size: 18px; white-space: nowrap; box-shadow: 0 3px 0 #f7941a; min-height: 1.4em; }
+.hero-prompt::after { content: ""; position: absolute; left: 22px; bottom: -11px; border: 9px solid transparent; border-top-color: #f7941a; border-bottom: 0; }
+.hero-prompt-legs { top: calc(9% + 56px); color: #0b4f8a; border-color: #1f8ff5; box-shadow: 0 3px 0 #1f8ff5; }
+.hero-prompt-legs::after { border-top-color: #1f8ff5; }
+/* The same composition in the landing page and chrome-free event recording. */
+body.cover-open .hero-prompt { left: auto; right: 5%; top: 5%; font-size: clamp(16px, 3.8vw, 40px); }
+body.cover-open .hero-prompt-legs { top: calc(5% + clamp(58px, 9vw, 100px)); }
+@media (min-aspect-ratio: 4/3) {
+  body.cover-open .hero-prompt { right: 4%; top: 7%; font-size: clamp(24px, 2.5vw, 52px); padding: .3em .6em; border-radius: .4em; }
+  body.cover-open .hero-prompt-legs { top: calc(7% + clamp(76px, 6vw, 124px)); }
+}

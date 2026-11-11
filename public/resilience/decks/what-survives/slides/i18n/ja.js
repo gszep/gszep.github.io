@@ -2,6 +2,11 @@
 // No per-key provenance block: no human-authored keys yet — provenance is git.
 window.I18N = {
   "brand": "Henkaku Center · Chiba Tech SDS",
+  "loading.title": "スライドを準備しています",
+  "loading.detail": "画像・動画・ロボットのアニメーションを読み込み中です。少しお待ちください。",
+  "loading.error": "一部を読み込めませんでした。もう一度試すか、そのままスライドをご覧いただけます。",
+  "loading.retry": "もう一度試す",
+  "loading.continue": "スライドを見る",
   "capability.eyebrow": "01 · 個人 · できることが広がる",
   "capability.foot": "<br>",
   "capability.h2": "工学が専門でなくても、ロボットは作れます。",
