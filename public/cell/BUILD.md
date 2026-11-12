@@ -1,6 +1,6 @@
 # Cell demo publication
 
-Source: `alife-institute/webgpu_collab_stringed_entities`, commit `c343d57`.
+Source: `alife-institute/webgpu_collab_stringed_entities`, commit `913e5c8`.
 
 `/cell/` publishes the source build's `colony.html`: ten interacting cells on a
 shared GPU, with 61,440 actin equivalents split into separate per-cell pools.
@@ -11,6 +11,11 @@ The cohort adds coarse three-strand protrusion bundles with growth/retraction,
 temporary substrate attachment and membrane coupling. These are approximate
 filopodial mechanisms, not molecularly calibrated filopodia. Green granulation
 is an illustrative rendering of network density.
+
+A tap leaves a persistent orange goal; each cell's prescribed polarity is re-aimed
+at it, so the cohort turns and converges there (an imposed cue, not sensing). The
+microscope image is computed at display resolution and its stain follows network
+density. Touch evidence: `evidence/colony-touch-local/`.
 
 Source checks and evidence: `docs/COLONY.md`, `evidence/colony-release-local/`
 and `evidence/colony-release-nvidia/`. The tested ten-cell live rate was about
