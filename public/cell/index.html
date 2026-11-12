@@ -25,7 +25,7 @@
         z-index: 10;
         position: fixed;
         left: 18px;
-        top: 18px;
+        top: max(18px, env(safe-area-inset-top));
         pointer-events: none;
       }
       header strong {
@@ -38,11 +38,12 @@
       nav {
         z-index: 10;
         position: fixed;
-        bottom: 20px;
+        bottom: max(20px, env(safe-area-inset-bottom));
         left: 50%;
         transform: translateX(-50%);
         display: flex;
         gap: 8px;
+        white-space: nowrap;
       }
       button {
         padding: 10px 15px;
@@ -54,6 +55,21 @@
         font: inherit;
         cursor: pointer;
       }
+      button:disabled { opacity: .45; cursor: default; }
+      button:focus-visible, summary:focus-visible, a:focus-visible, canvas:focus-visible { outline: 3px solid #24666a; outline-offset: 3px; }
+      #step-label { display: block; margin-top: 7px; font-variant-numeric: tabular-nums; }
+      #goal { position: fixed; left: 0; top: 0; z-index: 5; width: 0; height: 0; pointer-events: none; }
+      #goal::before, #goal::after { content: ""; position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
+      #goal::before { width: 12px; height: 12px; background: #c2571a; box-shadow: 0 0 0 3px #f3f6ecd9; }
+      #goal::after { width: 44px; height: 44px; border: 2px solid #c2571a; opacity: 0.55; animation: beacon 2.4s ease-out infinite; }
+      #goal.pulse::after { animation: tap 0.7s ease-out 1, beacon 2.4s ease-out 0.7s infinite; }
+      @keyframes beacon { from { width: 14px; height: 14px; opacity: 0.7; } to { width: 64px; height: 64px; opacity: 0; } }
+      @keyframes tap { from { width: 14px; height: 14px; opacity: 1; border-width: 4px; } to { width: 130px; height: 130px; opacity: 0; } }
+      #hint { z-index: 10; position: fixed; left: 50%; bottom: max(84px, calc(env(safe-area-inset-bottom) + 64px)); transform: translateX(-50%); margin: 0; padding: 9px 16px; border-radius: 22px; background: #34473be6; color: #f3f6ec; font-size: 15px; white-space: nowrap; pointer-events: none; transition: opacity 0.6s; }
+      .touched #hint { opacity: 0; }
+      @media (prefers-reduced-motion: reduce) { #goal::after, #goal.pulse::after { animation: none; width: 44px; height: 44px; } }
+      details ol { padding-left: 22px; line-height: 1.5; }
+      details li + li { margin-top: 10px; }
       #status {
         z-index: 20;
         position: fixed;
@@ -74,7 +90,7 @@
         top: 18px;
         right: 18px;
         z-index: 10;
-        max-width: min(270px, 70vw);
+        max-width: min(310px, calc(100vw - 36px));
       }
       summary {
         list-style: none;
@@ -83,12 +99,16 @@
         border-radius: 24px;
         background: #f3f6ece6;
         border: 1px solid #61765e33;
+        min-height: 44px;
+        box-sizing: border-box;
       }
       details[open] {
         padding: 12px;
         background: #f3f6ecf5;
         border-radius: 14px;
         box-shadow: 0 4px 20px #34473b22;
+        max-height: calc(100dvh - 140px);
+        overflow: auto;
       }
       details p {
         line-height: 1.5;
@@ -97,17 +117,25 @@
         color: inherit;
       }
     </style>
-  <script defer src="runtime.bundle.js?6b8b31e4ffdc0e661b42"></script><script defer src="colony.bundle.js?6b8b31e4ffdc0e661b42"></script></head>
+  <script defer src="runtime.bundle.js?9149873cab3d86abd817"></script><script defer src="colony.bundle.js?9149873cab3d86abd817"></script></head>
   <body>
-    <header><strong>Living cells</strong><small>10 cells · drag to steer</small></header>
+    <header><strong>Living cells</strong><small>Tap the dish to call the cells</small><small id="step-label">Preparing model</small></header>
     <details>
-      <summary>Settings</summary>
-      <p>Ten interacting cells with a shared particle budget. Drag to guide the group.</p>
+      <summary>Explore</summary>
+      <ol>
+        <li><b>Observe.</b> Follow one outline as its internal bundles extend and retract.</li>
+        <li><b>Intervene.</b> Tap the dish to leave an orange goal. Each cell rebuilds its dense front on the side facing it, then crawls there. Tap elsewhere and watch the fronts swing round.</li>
+        <li><b>Inspect.</b> Pause, then advance one step at a time. What would you measure to test the mechanism?</li>
+      </ol>
+      <p>Ten interacting compartments. The goal sets each cell's polarity directly; this is an imposed cue, not a model of sensing. The network inside is 2D mechanics, not microscopy. They repel, move and deform, but do not divide.</p>
       <p>Each cell has its own actin pool and membrane. The green tint is an illustrative density texture.</p>
+      <p>Keyboard: focus the dish, use arrow keys to steer and Space to pause. Computation pauses when this tab is hidden.</p>
       <p><a href="single.html?demo=1">Single-cell view and diagnostics</a></p>
       <p id="stats"></p>
     </details>
-    <p id="status">Preparing ten cells…</p>
-    <nav><button id="pause">Pause</button><button id="restart">Restart</button></nav>
+    <p id="status" role="status">Preparing ten cells…</p>
+    <div id="goal" hidden></div>
+    <p id="hint">Tap anywhere — the cells will come to you</p>
+    <nav aria-label="Simulation controls"><button id="pause" disabled>Pause</button><button id="step" disabled>Step +1</button><button id="restart">Restart</button></nav>
   </body>
 </html>
