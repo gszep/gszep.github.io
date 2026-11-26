@@ -86,6 +86,12 @@
       [hidden] {
         display: none !important;
       }
+      /* Two experiences share the page: predators hunting prey (default) and ten cells that follow a touch (?prey=0). */
+      body.hunting .steer,
+      body:not(.hunting) .hunt {
+        display: none !important;
+      }
+      #tally { display: block; margin-top: 3px; font-variant-numeric: tabular-nums; }
       details {
         position: fixed;
         top: 18px;
@@ -118,26 +124,42 @@
         color: inherit;
       }
     </style>
-  <script defer src="runtime.bundle.js?7e63cc1841a861357e54"></script><script defer src="colony.bundle.js?7e63cc1841a861357e54"></script></head>
+  <script defer src="runtime.bundle.js?5557e7f9a69b721e9443"></script><script defer src="colony.bundle.js?5557e7f9a69b721e9443"></script></head>
   <body>
-    <header><strong>Living cells</strong><small>Tap the dish to call the cells</small><small id="step-label">Preparing model</small></header>
+    <header>
+      <strong>Living cells</strong>
+      <small class="steer">Tap the dish to call the cells</small>
+      <small class="hunt">Large cells catch, wrap and digest small ones</small>
+      <small id="tally" class="hunt"></small>
+      <small id="step-label">Preparing model</small>
+    </header>
     <details>
       <summary>Explore</summary>
-      <ol>
+      <ol class="steer">
         <li><b>Observe.</b> Follow one outline as its internal bundles extend and retract.</li>
         <li><b>Intervene.</b> Tap the dish to leave an orange goal. Each cell rebuilds its dense front on the side facing it, then crawls there. Tap elsewhere and watch the fronts swing round.</li>
         <li><b>Inspect.</b> Pause, then advance one step at a time. What would you measure to test the mechanism?</li>
       </ol>
-      <p>Ten interacting compartments. The goal sets each cell's polarity directly; this is an imposed cue, not a model of sensing. The network inside is 2D mechanics, not microscopy. They repel, move and deform, but do not divide.</p>
-      <p>Each cell has its own actin pool and membrane. The green tint is an illustrative density texture.</p>
-      <p>Keyboard: focus the dish, use arrow keys to steer and Space to pause. Computation pauses when this tab is hidden.</p>
-      <p><a href="single.html?demo=1">Single-cell view and diagnostics</a></p>
+      <p class="steer">Ten interacting compartments. The goal sets each cell's polarity directly; this is an imposed cue, not a model of sensing. The network inside is 2D mechanics, not microscopy. They repel, move and deform, but do not divide.</p>
+      <p class="steer">Each cell has its own actin pool and membrane. The green tint is an illustrative density texture.</p>
+      <p class="steer">Keyboard: focus the dish, use arrow keys to steer and Space to pause. Computation pauses when this tab is hidden.</p>
+      <ol class="hunt">
+        <li><b>Observe.</b> A large cell meets a small one. Its rim advances around the prey, the two lips meet, and the prey is inside. There it breaks down and shrinks while the large cell grows.</li>
+        <li><b>Intervene.</b> Tap the dish to release another prey there. <i>Whole dish</i> shows every cell; <i>Follow</i> stays with one hunt.</li>
+        <li><b>Inspect.</b> Pause at any moment. What would you measure to tell a cup that will close from one that stalls?</li>
+      </ol>
+      <p class="hunt"><b>Simulated:</b> each cell's membrane, its actin network and the forces between them, for prey and predator alike. A prey is the same model at a smaller size (magenta stain).</p>
+      <p class="hunt"><b>Imposed:</b> who chases whom (each cell's polarity is aimed directly, which is not a model of sensing); extra membrane for a cell that holds a prey; the joining of the two lips into a closed pocket once they touch; and the breakdown that begins inside it. Everything is 2D mechanics, not microscopy.</p>
+      <p class="hunt">Space pauses. Computation pauses when this tab is hidden.</p>
+      <p><a class="hunt" href="?prey=0">Ten cells that follow your touch</a><a class="steer" href="?">Predators and prey</a> · <a href="single.html?demo=1">Single-cell view and diagnostics</a></p>
       <p id="stats"></p>
     </details>
-    <p id="status" role="status">Preparing ten cells…</p>
+    <p id="status" role="status">Preparing the dish…</p>
     <canvas id="signal" aria-hidden="true"></canvas>
     <div id="goal" hidden></div>
-    <p id="hint">Tap anywhere — the cells will come to you</p>
-    <nav aria-label="Simulation controls"><button id="pause" disabled>Pause</button><button id="step" disabled>Step +1</button><button id="restart">Restart</button></nav>
+    <p id="hint"><span class="steer">Tap anywhere — the cells will come to you</span><span class="hunt">Tap anywhere to release another prey</span></p>
+    <nav aria-label="Simulation controls">
+      <button id="pause" disabled>Pause</button><button id="step" class="steer" disabled>Step +1</button><button id="view" class="hunt">Whole dish</button><button id="restart">Restart</button>
+    </nav>
   </body>
 </html>

@@ -1,27 +1,31 @@
 # Cell demo publication
 
-Source: `alife-institute/webgpu_collab_stringed_entities`, commit `89c1fa0`.
+Source: `alife-institute/webgpu_collab_stringed_entities`, branch
+`feat/phagocytosis`, commit `15849a1` (staging only; production still serves
+`89c1fa0`).
 
-`/cell/` publishes the source build's `colony.html`: ten interacting cells on a
-shared GPU, with 61,440 actin equivalents split into separate per-cell pools.
-It starts automatically with the Explore panel closed. A tap leaves a persistent
-orange goal; each cell's prescribed polarity is re-aimed at it, so the cohort turns
-and converges there (an imposed cue, not sensing).
-A display-only pulse runs from the touch to each cell and leaves a heading arrow,
-so the response is visible at once.
+`/cell/` publishes the source build's `colony.html`. It now opens on predation:
+six large cells, each with a nucleus, catch, wrap and digest small cells built
+from the same model. A touch releases another prey and the nearest free
+predator turns to it. `Whole dish` and `Follow` switch the view.
+`/cell/?prey=0` is the earlier page: ten cells that follow a touch.
 `single.html` retains the higher-detail single-cell demo and its diagnostics.
 
-The cohort adds coarse three-strand protrusion bundles with growth/retraction,
-temporary substrate attachment and membrane coupling. These are approximate
-filopodial mechanisms, not molecularly calibrated filopodia. The microscope image
-is computed at display resolution; its green stain follows simulated network
-density and the fine grain is illustrative.
+Simulated for every cell: membrane, actin network and the forces between them.
+Imposed and labelled on the page and in the source: who chases whom, extra
+membrane for a cell that holds a prey, the joining of the two lips of a cup,
+the breakdown that follows, the rigid nucleus, and the correction that stops
+membranes of two cells from staying crossed. The reaching protrusion tethers a
+prey at its tip and does not pull it in. Everything is 2D mechanics with
+uncalibrated time, not microscopy.
 
-Source checks and evidence: `docs/COLONY.md`, `evidence/colony-release-local/`,
-`evidence/colony-release-nvidia/` and `evidence/colony-touch-local/`. The tested ten-cell live rate was about
-29 fps on NVIDIA Lovelace and 12 fps locally; performance varies by device.
-The point/bond recovery fixes remain included, with no quota on successful
-recoveries. No Tailscale connection or server-side simulation is required.
+Source notes, checks and evidence: `docs/PHAGOCYTOSIS.md`,
+`docs/PHAGOCYTOSIS-SOURCES.md`, `docs/COLONY.md` and
+`evidence/adhesion-sweep/419051a/`. Checked on this build: default page 3000
+steps in two seeds (eight prey engulfed, no runtime errors or faults), the
+ten-cell page for 600 steps, the single-cell page, and a live phone-sized run.
+The live rate was about 12 steps per second on an Intel UHD 630; performance
+varies by device. No Tailscale connection or server-side simulation is required.
 
 To update, build the source repository and copy **all** `dist/*.bundle.js`
 files (including worker dependencies), `colony.html` as `index.html`, and
