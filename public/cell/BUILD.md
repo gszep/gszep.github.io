@@ -1,12 +1,14 @@
 # Cell demo publication
 
-Source: `alife-institute/webgpu_collab_stringed_entities`, commit `913e5c8`.
+Source: `alife-institute/webgpu_collab_stringed_entities`, commit `89c1fa0`.
 
 `/cell/` publishes the source build's `colony.html`: ten interacting cells on a
 shared GPU, with 61,440 actin equivalents split into separate per-cell pools.
 It starts automatically with the Explore panel closed. A tap leaves a persistent
 orange goal; each cell's prescribed polarity is re-aimed at it, so the cohort turns
 and converges there (an imposed cue, not sensing).
+A display-only pulse runs from the touch to each cell and leaves a heading arrow,
+so the response is visible at once.
 `single.html` retains the higher-detail single-cell demo and its diagnostics.
 
 The cohort adds coarse three-strand protrusion bundles with growth/retraction,

@@ -58,6 +58,7 @@
       button:disabled { opacity: .45; cursor: default; }
       button:focus-visible, summary:focus-visible, a:focus-visible, canvas:focus-visible { outline: 3px solid #24666a; outline-offset: 3px; }
       #step-label { display: block; margin-top: 7px; font-variant-numeric: tabular-nums; }
+      #signal { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
       #goal { position: fixed; left: 0; top: 0; z-index: 5; width: 0; height: 0; pointer-events: none; }
       #goal::before, #goal::after { content: ""; position: absolute; border-radius: 50%; transform: translate(-50%, -50%); }
       #goal::before { width: 12px; height: 12px; background: #c2571a; box-shadow: 0 0 0 3px #f3f6ecd9; }
@@ -117,7 +118,7 @@
         color: inherit;
       }
     </style>
-  <script defer src="runtime.bundle.js?9149873cab3d86abd817"></script><script defer src="colony.bundle.js?9149873cab3d86abd817"></script></head>
+  <script defer src="runtime.bundle.js?7e63cc1841a861357e54"></script><script defer src="colony.bundle.js?7e63cc1841a861357e54"></script></head>
   <body>
     <header><strong>Living cells</strong><small>Tap the dish to call the cells</small><small id="step-label">Preparing model</small></header>
     <details>
@@ -134,6 +135,7 @@
       <p id="stats"></p>
     </details>
     <p id="status" role="status">Preparing ten cells…</p>
+    <canvas id="signal" aria-hidden="true"></canvas>
     <div id="goal" hidden></div>
     <p id="hint">Tap anywhere — the cells will come to you</p>
     <nav aria-label="Simulation controls"><button id="pause" disabled>Pause</button><button id="step" disabled>Step +1</button><button id="restart">Restart</button></nav>
