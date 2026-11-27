@@ -1,7 +1,7 @@
 # Cell demo publication
 
 Source: `alife-institute/webgpu_collab_stringed_entities`, branch `feat/chase`,
-commit `732969c` (staging only; production still serves `89c1fa0`).
+commit `1785c38` (staging only; production still serves `89c1fa0`).
 
 `/cell/` publishes the source build's `colony.html`. It now opens on a chase by
 smell. One large cell (the hunter) finds one small cell (the prey) by its scent
@@ -33,12 +33,13 @@ uncalibrated time, not microscopy.
 
 Source notes, checks and evidence: `docs/PHAGOCYTOSIS.md`,
 `docs/PHAGOCYTOSIS-SOURCES.md`, `docs/COLONY.md` and `evidence/chase/3080f3e/`
-in the source repository (the script files here are the same bytes as at
-`3080f3e`; later commits changed page text, notes and evidence). Checked on
-that build: the page as it opens for 4000 steps in three seeds and for 20,000
+in the source repository. The commits after `3080f3e` changed page text, notes,
+evidence and the moment at which the picture of the scent is taken, not what
+the cells do. Checked on `3080f3e`: the page as it opens for 4000 steps in three seeds and for 20,000
 steps in one (no runtime errors or faults, no membrane of one cell inside
 another at any sampled step), the six-cup page for 3000 steps, the ten-cell
-page for 600 steps, the single-cell page, and a live phone-sized run. The live
+page for 600 steps, the single-cell page, and a live phone-sized run; on
+`1785c38` the page as it opens for 4000 steps and a live phone-sized run. The live
 rate at phone size was about 24 steps per second on an Intel UHD 630, and the
 first capture takes 1800 to 2700 steps; performance varies by device. No Tailscale connection or server-side simulation
 is required.
