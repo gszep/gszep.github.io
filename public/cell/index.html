@@ -86,11 +86,16 @@
       [hidden] {
         display: none !important;
       }
-      /* Two experiences share the page: predators hunting prey (default) and ten cells that follow a touch (?prey=0). */
+      /* Three experiences share the page: a chase by smell (default), predators beside their prey
+         (?layout=pairs) and ten cells that follow a touch (?prey=0). `prey` marks what the first two share. */
       body.hunting .steer,
+      body:not(.hunting) .prey,
+      body:not(.chasing) .chase,
+      body.chasing .hunt,
       body:not(.hunting) .hunt {
         display: none !important;
       }
+      details label { display: flex; gap: 8px; align-items: center; min-height: 44px; }
       #tally { display: block; margin-top: 3px; font-variant-numeric: tabular-nums; }
       details {
         position: fixed;
@@ -124,13 +129,14 @@
         color: inherit;
       }
     </style>
-  <script defer src="runtime.bundle.js?5557e7f9a69b721e9443"></script><script defer src="colony.bundle.js?5557e7f9a69b721e9443"></script></head>
+  <script defer src="runtime.bundle.js?d678d3975d57425d0f8a"></script><script defer src="colony.bundle.js?d678d3975d57425d0f8a"></script></head>
   <body>
     <header>
       <strong>Living cells</strong>
       <small class="steer">Tap the dish to call the cells</small>
       <small class="hunt">Large cells catch, wrap and digest small ones</small>
-      <small id="tally" class="hunt"></small>
+      <small class="chase">One cell hunts another by smell</small>
+      <small id="tally" class="prey"></small>
       <small id="step-label">Preparing model</small>
     </header>
     <details>
@@ -148,18 +154,28 @@
         <li><b>Intervene.</b> Tap the dish to release another prey there. <i>Whole dish</i> shows every cell; <i>Follow</i> stays with one hunt.</li>
         <li><b>Inspect.</b> Pause at any moment. What would you measure to tell a cup that will close from one that stalls?</li>
       </ol>
+      <ol class="chase">
+        <li><b>Observe.</b> The small cell gives off a scent, the pink haze. It spreads through the dish and around the pale resting cells. The hunter reads it at its own membrane and crawls toward the side where it is stronger.</li>
+        <li><b>And the other way.</b> The hunter gives off a scent too, the blue haze. The small cell rests until that is strong, then crawls toward where it is weaker and slips away between the resting cells. It is slower, and in the end it is wrapped and digested.</li>
+        <li><b>Intervene.</b> Tap the dish to release another prey there. <i>Whole dish</i> shows everything; <i>Follow</i> stays with the chase.</li>
+        <li><b>Inspect.</b> Pause at any moment. Which way would the hunter go if one resting cell were taken away?</li>
+      </ol>
+      <label class="chase"><input type="checkbox" id="scent-shown" checked /> Show the two scents</label>
+      <p class="chase"><b>Simulated:</b> each cell's membrane, its actin network and the forces between them; the two scents, which are released at membranes, spread, fade and cannot pass through cells; and what each cell reads of them around its own membrane. Nobody is told where anybody is.</p>
+      <p class="chase"><b>Imposed:</b> how a cell turns its front once it has read a side (its polarity is set directly; there is no signalling network inside); that the small cell stops running once about a third of it is wrapped; that resting cells have no network, keep round and give way when pushed; the stiff disc that stands for a nucleus; extra membrane for a cell that holds a prey; the joining of the two lips into a closed pocket; and the breakdown that begins inside it, where what is left is kept a round droplet. Also set by us: a running cell turns along what it leans on; the wall of the dish stops the hunter later than the others, so that a cup can close on a prey at the wall; where and when the next prey enters; and that the hunter slowly uses up what it ate. Everything is 2D mechanics with uncalibrated time, not microscopy.</p>
+      <p class="chase">Space pauses. Computation pauses when this tab is hidden.</p>
       <p class="hunt"><b>Simulated:</b> each cell's membrane, its actin network and the forces between them, for prey and predator alike. A prey is the same model at a smaller size (magenta stain).</p>
       <p class="hunt"><b>Imposed:</b> who chases whom (each cell's polarity is aimed directly, which is not a model of sensing); extra membrane for a cell that holds a prey; the joining of the two lips into a closed pocket once they touch; and the breakdown that begins inside it. Everything is 2D mechanics, not microscopy.</p>
       <p class="hunt">Space pauses. Computation pauses when this tab is hidden.</p>
-      <p><a class="hunt" href="?prey=0">Ten cells that follow your touch</a><a class="steer" href="?">Predators and prey</a> · <a href="single.html?demo=1">Single-cell view and diagnostics</a></p>
+      <p><a class="prey" href="?prey=0">Ten cells that follow your touch</a><a class="steer" href="?">A chase by smell</a><span class="chase"> · <a href="?layout=pairs&amp;prey=8&amp;predators=6">Six cups at once</a></span><span class="hunt"> · <a href="?">A chase by smell</a></span> · <a href="single.html?demo=1">Single-cell view and diagnostics</a></p>
       <p id="stats"></p>
     </details>
     <p id="status" role="status">Preparing the dish…</p>
     <canvas id="signal" aria-hidden="true"></canvas>
     <div id="goal" hidden></div>
-    <p id="hint"><span class="steer">Tap anywhere — the cells will come to you</span><span class="hunt">Tap anywhere to release another prey</span></p>
+    <p id="hint"><span class="steer">Tap anywhere — the cells will come to you</span><span class="prey">Tap anywhere to release another prey</span></p>
     <nav aria-label="Simulation controls">
-      <button id="pause" disabled>Pause</button><button id="step" class="steer" disabled>Step +1</button><button id="view" class="hunt">Whole dish</button><button id="restart">Restart</button>
+      <button id="pause" disabled>Pause</button><button id="step" class="steer" disabled>Step +1</button><button id="view" class="prey">Whole dish</button><button id="restart">Restart</button>
     </nav>
   </body>
 </html>
